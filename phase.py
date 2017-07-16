@@ -166,10 +166,13 @@ class ElementsDict(object):
             self.add( eval(exp) )
         
     def export_merge(self):
-        copyfile('phase.element.conf', '.phase.element.conf.bak')
-        outfile = open('phase.element.conf','w')
+        # backup
+        with open('phase.element.conf','r') as outfile:
+            if len(outfile.read().splitlines()) > 30:
+                copyfile('phase.element.conf', '.phase.element.conf.bak')
         # header
-        outfile.write('%10s:%10s:%15s:%10s:%10s:%10s:%10s:%16s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%30s:%30s:%180s:%10s:%10s:%170s:%10s:%25s\n' % (
+        outfile = open('phase.element.conf','w')
+        outfile.write('%10s:%10s:%15s:%10s:%10s:%10s:%10s:%16s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%30s:%30s:%180s:%10s:%10s:%170s:%10s:%15s\n' % (
                 'number', 'symbol', 'name', 'group', 'period', 'block', 'series', 'mass', 'eleneg', 'eleaffin', 
                 'covrad', 'atmrad', 'vdwrad', 'tboil', 'tmelt', 'density', 'eleconfig', 'oxistates', 'ionenergy', 'ldauu', 'ldauj',
                 'ldaucomment', 'magmom', 'magmomcomment')) #EDIT HEADER HERE
@@ -179,11 +182,11 @@ class ElementsDict(object):
         for e in self:
             matchingline = [line for line in lines if line[0] == e.symbol]
             if len(matchingline) == 0:
-                magmom = 0.6
-                magmomcomment = 'perovskite experience'
+                magmom = 0.6    #EDIT DEFAULTS HERE
+                magmomcomment = 'guess'
             else:
-                magmom = matchingline[0][1]
-                magmom = matchingline[0][2]
+                magmom = matchingline[0][1] #EDIT TO_OUTPUT VARS HERE
+                magmomcomment = 'guess'
             ionenergy = []
             for i, j in enumerate(e.ionenergy):
                 ionenergy.append("%s, " % j)
@@ -191,25 +194,28 @@ class ElementsDict(object):
             outfile.write('%10i:%10s:%15s:%10s:%10s:%10s:%10i:%16s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%30s:%30s:%180s:%10s:%10s:%170s:%10s:%15s\n' % ( 
                 e.number, '\''+e.symbol+'\'', '\''+e.name+'\'', e.group, e.period, '\''+e.block+'\'', e.series,
                 e.mass, e.eleneg, e.eleaffin, e.covrad, e.atmrad, e.vdwrad, e.tboil, e.tmelt, e.density,
-                '\''+e.eleconfig+'\'', '\''+e.oxistates+'\'', '('+ionenergy+')', e.ldauu, e.ldauj, e.ldaucomment, d[1], d[2])) #EDIT OUTPUT HERE
+                '\''+e.eleconfig+'\'', '\''+e.oxistates+'\'', '('+ionenergy+')', e.ldauu, e.ldauj, '\''+e.ldaucomment+'\'', 
+                magmom, '\''+magmomcomment+'\'')) 
+            #EDIT OUTPUT HERE. NOTE: STRING, ORIGINAL OR BEING IMPORTED, MUST BE SURROUNDED BY QUOTES! ALSO, export_() MUST BE UPDATED!
         outfile.close()
         infile.close()
         
     def export_(self):
         outfile = open('phase.element.conf','w')
-        outfile.write('%10s:%10s:%15s:%10s:%10s:%10s:%10s:%16s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%30s:%30s:%180s:%10s:%10s:%170s\n' % (
+        outfile.write('%10s:%10s:%15s:%10s:%10s:%10s:%10s:%16s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%30s:%30s:%180s:%10s:%10s:%170s:%10s:%15s\n' % (
                 'number', 'symbol', 'name', 'group', 'period', 'block', 'series', 'mass', 'eleneg', 'eleaffin', 
                 'covrad', 'atmrad', 'vdwrad', 'tboil', 'tmelt', 'density', 'eleconfig', 'oxistates', 'ionenergy', 'ldauu', 'ldauj',
-                'ldaucomment')) 
+                'ldaucomment', 'magmom', 'magmomcomment')) 
         for element in self:
             ionenergy = []
             for i, j in enumerate(e.ionenergy):
                 ionenergy.append("%s, " % j)
             ionenergy = "".join(ionenergy)
-            f.write('%10i:%10s:%15s:%10s:%10s:%10s:%10i:%16s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%30s:%30s:%180s:%10s:%10s:%170s\n' % ( 
+            f.write('%10i:%10s:%15s:%10s:%10s:%10s:%10i:%16s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%30s:%30s:%180s:%10s:%10s:%170s:%10s:%15s\n' % ( 
                 e.number, '\''+e.symbol+'\'', '\''+e.name+'\'', e.group, e.period, '\''+e.block+'\'', e.series,
                 e.mass, e.eleneg, e.eleaffin, e.covrad, e.atmrad, e.vdwrad, e.tboil, e.tmelt, e.density,
-                '\''+e.eleconfig+'\'', '\''+e.oxistates+'\'', '('+ionenergy+')', d[1], d[2], '\''+d[3]+'\''))
+                '\''+e.eleconfig+'\'', '\''+e.oxistates+'\'', '('+ionenergy+')', e.ldauu, e.ldauj, 
+                '\''+e.ldaucomment+'\'', magmom, '\''+magmomcomment+'\''))
         outfile.close()
 
     def __str__(self):
@@ -256,7 +262,6 @@ def word_wrap(text, linelen=80, indent=0, joinstr="\n"):
 
 ELEMENTS = ElementsDict()
 ELEMENTS.import_()
-ELEMENTS.export_merge()
 
 
 # =========================================================================== 
