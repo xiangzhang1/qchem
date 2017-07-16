@@ -1,3 +1,11 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+import os
+import sys
+import re
+import numpy as np
+import scipy
+
 class Poscar(object):   # Parses poscar.
     def __init__(self):
         f=open("POSCAR","r")

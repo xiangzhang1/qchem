@@ -1,6 +1,15 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+import itertools
+import sys
+import numpy as np
+import scipy
+import os
+import re
+
+import engine
+
 
 # Element, ELEMENTS
 # =========================================================================
@@ -128,6 +137,75 @@ class ElementsDict(object):
             self._dict[element.symbol] = element
             self._dict[element.name] = element
 
+    def add(self,*elements):
+        for element in elements:
+            if element.number > len(self._list) + 1:
+                raise ValueError("Elements must be added in order")
+            if element.number <= len(self._list):
+                self._list[element.number - 1] = element
+            else:
+                self._list.append(element)
+            self._dict[element.number] = element
+            self._dict[element.symbol] = element
+            self._dict[element.name] = element
+    
+    def import_(self):
+        infile = open('phase.element.conf','r')
+        lines = [[field.strip() for field in line.split(':')] for line in infile.read().splitlines()]
+        header = lines[0]
+        for line_idx, line in enumerate(lines):
+            if line_idx == 0:
+                continue
+            exp = 'Element('
+            for idx in range(0,len(line)):
+                exp += header[idx] + '=' + line[idx]
+                if idx != len(line)-1:
+                    exp += ','
+            exp += ')'
+            self.add( eval(exp) )
+        
+    def export_merge(self):
+        outfile = open('phase.element.conf','w')
+        outfile.write('%10s:%10s:%15s:%10s:%10s:%10s:%10s:%16s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%30s:%30s:%180s:%10s:%10s:%170s:%15s\n' % (
+                'number', 'symbol', 'name', 'group', 'period', 'block', 'series', 'mass', 'eleneg', 'eleaffin', 
+                'covrad', 'atmrad', 'vdwrad', 'tboil', 'tmelt', 'density', 'eleconfig', 'oxistates', 'ionenergy', 'ldauu', 'ldauj',
+                'ldaucomment', 'NEWPROPERTY')) 
+        infile = open('NEWFILE.CSV','r')
+        lines = [[field.strip() for field in line.split(':')] for line in infile.read().splitlines()]
+        for element in self:
+            matchingline = [line for line in lines if line[0] == element.symbol]
+            if len(matchingline) == 0:
+                NEWPROPERTY = ''
+            else:
+                NEWPROPERTY = matchingline[1]
+            ionenergy = []
+            for i, j in enumerate(e.ionenergy):
+                ionenergy.append("%s, " % j)
+            ionenergy = "".join(ionenergy)
+            f.write('%10i:%10s:%15s:%10s:%10s:%10s:%10i:%16s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%30s:%30s:%180s:%10s:%10s:%170s:%15s\n' % ( 
+                e.number, '\''+e.symbol+'\'', '\''+e.name+'\'', e.group, e.period, '\''+e.block+'\'', e.series,
+                e.mass, e.eleneg, e.eleaffin, e.covrad, e.atmrad, e.vdwrad, e.tboil, e.tmelt, e.density,
+                '\''+e.eleconfig+'\'', '\''+e.oxistates+'\'', '('+ionenergy+')', d[1], d[2], '\''+d[3]+'\'', NEWPROPERTY))
+        outfile.close()
+        infile.close()
+        
+    def export_(self):
+        outfile = open('phase.element.conf','w')
+        outfile.write('%10s:%10s:%15s:%10s:%10s:%10s:%10s:%16s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%30s:%30s:%180s:%10s:%10s:%170s\n' % (
+                'number', 'symbol', 'name', 'group', 'period', 'block', 'series', 'mass', 'eleneg', 'eleaffin', 
+                'covrad', 'atmrad', 'vdwrad', 'tboil', 'tmelt', 'density', 'eleconfig', 'oxistates', 'ionenergy', 'ldauu', 'ldauj',
+                'ldaucomment')) 
+        for element in self:
+            ionenergy = []
+            for i, j in enumerate(e.ionenergy):
+                ionenergy.append("%s, " % j)
+            ionenergy = "".join(ionenergy)
+            f.write('%10i:%10s:%15s:%10s:%10s:%10s:%10i:%16s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%30s:%30s:%180s:%10s:%10s:%170s\n' % ( 
+                e.number, '\''+e.symbol+'\'', '\''+e.name+'\'', e.group, e.period, '\''+e.block+'\'', e.series,
+                e.mass, e.eleneg, e.eleaffin, e.covrad, e.atmrad, e.vdwrad, e.tboil, e.tmelt, e.density,
+                '\''+e.eleconfig+'\'', '\''+e.oxistates+'\'', '('+ionenergy+')', d[1], d[2], '\''+d[3]+'\''))
+        outfile.close()
+
     def __str__(self):
         return "[%s]" % ", ".join(ele.symbol for ele in self._list)
 
@@ -170,71 +248,44 @@ def word_wrap(text, linelen=80, indent=0, joinstr="\n"):
         result.append(" ".join(line))
     return joinstr.join(result)
 
+ELEMENTS = ElementsDict()
+ELEMENTS.import_()
 
-def export_merge_ELEMENTS():
-    outfile = open('classes.element.csv','w')
-    outfile.write('%10s:%10s:%15s:%10s:%10s:%10s:%10s:%16s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%30s:%30s:%180s:%10s:%10s:%170s:%15s\n' % (
-            'number', 'symbol', 'name', 'group', 'period', 'block', 'series', 'mass', 'eleneg', 'eleaffin', 
-            'covrad', 'atmrad', 'vdwrad', 'tboil', 'tmelt', 'density', 'eleconfig', 'oxistates', 'ionenergy', 'ldauu', 'ldauj',
-            'ldaucomment', 'NEWPROPERTY')) 
-    infile = open('NEWFILE.CSV','r')
-    lines = [[field.strip() for field in line.split(':')] for line in infile.read().splitlines()]
-    for element in ELEMENTS:
-        matchingline = [line for line in lines if line[0] == element.symbol]
-        if len(matchingline) == 0:
-            NEWPROPERTY = ''
-        else:
-            NEWPROPERTY = matchingline[1]
-        ionenergy = []
-        for i, j in enumerate(e.ionenergy):
-            ionenergy.append("%s, " % j)
-        ionenergy = "".join(ionenergy)
-        f.write('%10i:%10s:%15s:%10s:%10s:%10s:%10i:%16s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%30s:%30s:%180s:%10s:%10s:%170s:%15s\n' % ( 
-            e.number, '\''+e.symbol+'\'', '\''+e.name+'\'', e.group, e.period, '\''+e.block+'\'', e.series,
-            e.mass, e.eleneg, e.eleaffin, e.covrad, e.atmrad, e.vdwrad, e.tboil, e.tmelt, e.density,
-            '\''+e.eleconfig+'\'', '\''+e.oxistates+'\'', '('+ionenergy+')', d[1], d[2], '\''+d[3]+'\'', NEWPROPERTY))
-    outfile.close()
-    infile.close()
-    
-def export_ELEMENTS():
-    outfile = open('classes.element.csv','w')
-    outfile.write('%10s:%10s:%15s:%10s:%10s:%10s:%10s:%16s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%30s:%30s:%180s:%10s:%10s:%170s\n' % (
-            'number', 'symbol', 'name', 'group', 'period', 'block', 'series', 'mass', 'eleneg', 'eleaffin', 
-            'covrad', 'atmrad', 'vdwrad', 'tboil', 'tmelt', 'density', 'eleconfig', 'oxistates', 'ionenergy', 'ldauu', 'ldauj',
-            'ldaucomment')) 
-    for element in ELEMENTS:
-        ionenergy = []
-        for i, j in enumerate(e.ionenergy):
-            ionenergy.append("%s, " % j)
-        ionenergy = "".join(ionenergy)
-        f.write('%10i:%10s:%15s:%10s:%10s:%10s:%10i:%16s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%30s:%30s:%180s:%10s:%10s:%170s\n' % ( 
-            e.number, '\''+e.symbol+'\'', '\''+e.name+'\'', e.group, e.period, '\''+e.block+'\'', e.series,
-            e.mass, e.eleneg, e.eleaffin, e.covrad, e.atmrad, e.vdwrad, e.tboil, e.tmelt, e.density,
-            '\''+e.eleconfig+'\'', '\''+e.oxistates+'\'', '('+ionenergy+')', d[1], d[2], '\''+d[3]+'\''))
-    
-    outfile.close()
 
-def import_ELEMENTS():
-    infile = open('classes.element.csv','r')
-    lines = [[field.strip() for field in line.split(':')] for line in infile.read().splitlines()]
-    header = lines[0]
-    exp = 'ELEMENTS=ElementsDict('
-    for line_idx, line in enumerate(lines):
-        if line_idx!=1: 
-            continue
-        exp += 'Element('
-        for idx in range(0,len(line)):
-            exp += header[idx] + '=' + line[idx]
-            if idx != len(line)-1:
-                exp += ','
-        exp += ')'
-        if line_idx != len(lines)-1:
-            exp += ','
-    exp += ')'
-    exec(exp)
-
-import_ELEMENTS()
+# =========================================================================== 
 
 
 
-# =========================================================================
+# Wf
+
+WFS = {}
+
+class Wf(object):
+
+    def __init__(self):
+        # evaluate if_
+        if_ = open('wf.conf','r')
+        argv = [x.split('\n') for x in if_.read().split('\n\n')]
+        for arg in argv:
+            if 'phase' in arg[0]:
+                self.phase = arg[1].strip()
+            if 'pos' in arg[0]:
+                self.pos = engine.Pos(arg[1:])
+            if 'outline' in arg[0]:
+                self.outline = engine.Outline(arg[1:])
+            if 'path' in arg[0]:
+                self.filesystem.path = arg[1].strip()
+        if_.close()
+        WFS[os.path.basename(os.path.normpath(self.filesystem.path)) = self
+        # dynamic composition
+        for p in self.phase.split():
+            constructor = globals()[p]
+            setattr(self, p, constructor(self))
+
+
+
+
+# =========================================================================== 
+
+class Qd(object):
+    pass
