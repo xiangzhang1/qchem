@@ -6,9 +6,9 @@
 # 
 # 输入有效要求:
 # maintain kw_legal_set, kw_internal_set, mod_legal_set
-# parse_require: if in argv flow, add not. else, add.
-# parse_if: if in argv flow, add not. if in if flow, add kw not. else, add.
-# 实现: 血月系统: self.moonphase=0(argv)|1(if)|2(require)|3(reshuffle)
+# parse_require: if in input_ flow, add not. else, add.
+# parse_if: if in input_ flow, add not. if in if flow, add kw not. else, add.
+# 实现: 血月系统: self.moonphase=0(input_)|1(if)|2(require)|3(reshuffle)
 
 import os
 import sys
@@ -19,7 +19,7 @@ import scipy
 
 class Gen(object):   # Stores the logical structure of keywords and modules. A unique construct deserving a name.
 
-    def evaluate(self,expression):                  # Parses a literal value or (funcname)
+    def evaluate(self,expression):                  # Evaluates expression to string: literal or (funcname)
         if expression.startswith('(') and expression.endswith(')'): 
             func = getattr(self, re.sub('\(|\)','',expression).strip())
             if not func:
@@ -28,7 +28,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         else:   # literal
             return expression
 
-    def parse_require(self,expression,run=False):   # Parses single expression. Accepts empty expression.
+    def parse_require(self,expression,run=False):   # Executes single require expression. Accepts empty expression as True.
         operation_map = {
                 '='  : lambda x,y : x & y,
                 '!=' : lambda x,y : x - y,
@@ -67,7 +67,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         else:                               ## parse if expression
             return self.parse_if(expression)
 
-    def parse_if(self,expression):  # recursively parse complex if condition. accepts empty expression.
+    def parse_if(self,expression):  # recursively evaluate complex if condition. accepts empty expression.
         operation_map = {
                 '&&'  :  lambda x,y : x and y,
                 '||'  :  lambda x,y : x or y,
@@ -102,7 +102,8 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
             if self.moonphase>0:    self.mod_legal_set.add(expression)
             return (expression in self.mod and self.mod[expression]==set([True]))        
 
-    def __init__(self,argv): # argv is a string like 'generic opt hse06 prec=Low'
+    def __init__(self,input_,cell): 
+        self.cell = cell
 	# 读mod, kw
         self.mod = {}
 	self.kw = {}
@@ -110,8 +111,8 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         self.kw_internal_set = set()
         self.mod_legal_set = set()
         self.moonphase = 0
-        argv = argv.split()
-        for item in argv:
+        input_ = input_.split()
+        for item in input_:
             self.parse_require(item,True)
 	# 执行require
         self.require = []
@@ -161,15 +162,13 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
                 print self.__class__.__name__+' error: non-unique output. Kw[%s]={%s} has not been restricted to 1 value.' %(name,self.kw[name]) ; sys.exit(1)
             else:
                 self.kw[name] = next(iter(self.kw[name]))
-        self.moonphase=3
+        self.moonphase=3    # parsing of input_ is complete.
 
-    # misc methods for use with require
+
     def getkw(self,kwname):
 	if len(self.kw[kwname])!=1:
 	    raise ValueError('self.kw[kwname] does not have 1 and only 1 value. wait till that happens and try again.')
 	return next(iter(self.kw[kwname]))
-    ## methods that return value
-    ## methods that return boolean
     def ismear5check(self):
 	try:
 	    kpoints = self.getkw('kpoints').split(' ')
@@ -185,38 +184,44 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
 	    return kpoints[0]%nkredx==0 and kpoints[1]%nkredy==0 and kpoints[2]%nkredz==0
 	except (KeyError, AttributeError, ValueError) as KwError:
 	    return False
-    ## methods that writes files
-    def compute(self):
-	with open('INCAR','w') as of:
-	    for name in self.kw:
-                if name not in self.kw_internal_set:
-	            of.write('\t'+name.upper()+' \t= '+self.kw[name]+'\n')
-        # to be continued!
 
+    # create output: ready-to-compute files, and compute script
+    def compute(self):
+        if self.parse_if('vasp'):
+    	    with open('INCAR','w') as of:
+    	        for name in self.kw:
+                    if name not in self.kw_internal_set:
+    	                of.write('\t'+name.upper()+' \t= '+self.kw[name]+'\n')
+            self.cell.write_()
+    
 
 # =========================================================================== 
 
-# Pos: stores and parses poscar.
 
-class Poscar(object):
-    def __init__(self):
-        f=open("POSCAR","r")
-        self.lines=f.readlines()
-        self.cell=[self.lines[i].split() for i in range(2,5)]
-        self.base=[self.lines[i].split()[0:3] for i in range(8,len(self.lines))]
-        self.elements = self.lines[5].split()
-        self.nelements = len(self.elements)
-        self.atomcounts = np.int_(self.lines[6].split())
-        self.natoms = sum(self.atomcounts)
-        self.cell=np.float64(self.cell)
-        self.base=np.float64(self.base)
-        f.close()
-        with open('POSCAR','r') as infile:
-            self.lines = infile.read().splitlines()
-            self.name = self.lines[0]
-            self.cell = np.float_([ line.split() for line in lines[2:5] ]) * float(lines[1])
-            if 
-            self.elements = dict( zip(lines[5].split(), map(int,lines[6])) )
-            if not lines[7].startswith('D'):
-                print 'pre.poscar error: unsupported format. Only direct coordinates are supported. Explanation: who the heck uses Cartesian?'
+# Cell: stores and parses atomic configuration file.
+
+class Cell(object):
+
+    def __init__(self,lines): 
+        self.name = lines[0]
+        self.base = np.float_([ line.split() for line in lines[2:5] ]) * float(lines[1])
+        self.coordinates = np.float_([ line.split() for line in lines[8:] ])
+        self.stoichiometry = dict( zip(lines[5].split(), map(int,lines[6])) )
+        if not lines[7].startswith('D'):
+            raise SyntaxError('unsupported POSCAR5 format. Only direct coordinates are supported.')
+        if len(lines) - 8 != sum(self.stoichiometry.values()):
+            raise SyntaxError('POSCAR5 verification failed. Line count does not match stoichiometry. Blank lines?')
+
+    def write_(self):
+        with open('POSCAR','w') as of:
+            of.write(self.name+'\n')   
+            of.write('1\n')
+            for line in base:
+                of.write(' '.join(line)+'\n')
+            of.write(' '.join(self.stoichiometry.keys()))
+            of.write(' '.join(self.stoichiometry.values()))
+            of.write('Direct\n')
+            for line in coordinates:
+                of.write(' '.join(line)+'\n')
+
 

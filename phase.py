@@ -1,12 +1,14 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+from __future__ import division
 import itertools
 import sys
 import numpy as np
 import scipy
 import os
 import re
+from shutil import copyfile
 
 import engine
 
@@ -14,7 +16,6 @@ import engine
 # Element, ELEMENTS
 # =========================================================================
 
-from __future__ import division
 
 __version__ = '2015.01.29'
 __docformat__ = 'restructuredtext en'
@@ -165,27 +166,32 @@ class ElementsDict(object):
             self.add( eval(exp) )
         
     def export_merge(self):
+        copyfile('phase.element.conf', '.phase.element.conf.bak')
         outfile = open('phase.element.conf','w')
-        outfile.write('%10s:%10s:%15s:%10s:%10s:%10s:%10s:%16s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%30s:%30s:%180s:%10s:%10s:%170s:%15s\n' % (
+        # header
+        outfile.write('%10s:%10s:%15s:%10s:%10s:%10s:%10s:%16s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%30s:%30s:%180s:%10s:%10s:%170s:%10s:%25s\n' % (
                 'number', 'symbol', 'name', 'group', 'period', 'block', 'series', 'mass', 'eleneg', 'eleaffin', 
                 'covrad', 'atmrad', 'vdwrad', 'tboil', 'tmelt', 'density', 'eleconfig', 'oxistates', 'ionenergy', 'ldauu', 'ldauj',
-                'ldaucomment', 'NEWPROPERTY')) 
-        infile = open('NEWFILE.CSV','r')
+                'ldaucomment', 'magmom', 'magmomcomment')) #EDIT HEADER HERE
+        # read and write
+        infile = open('Mdatabase','r')  #EDIT INFILE HERE
         lines = [[field.strip() for field in line.split(':')] for line in infile.read().splitlines()]
-        for element in self:
-            matchingline = [line for line in lines if line[0] == element.symbol]
+        for e in self:
+            matchingline = [line for line in lines if line[0] == e.symbol]
             if len(matchingline) == 0:
-                NEWPROPERTY = ''
+                magmom = 0.6
+                magmomcomment = 'perovskite experience'
             else:
-                NEWPROPERTY = matchingline[1]
+                magmom = matchingline[0][1]
+                magmom = matchingline[0][2]
             ionenergy = []
             for i, j in enumerate(e.ionenergy):
                 ionenergy.append("%s, " % j)
             ionenergy = "".join(ionenergy)
-            f.write('%10i:%10s:%15s:%10s:%10s:%10s:%10i:%16s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%30s:%30s:%180s:%10s:%10s:%170s:%15s\n' % ( 
+            outfile.write('%10i:%10s:%15s:%10s:%10s:%10s:%10i:%16s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%30s:%30s:%180s:%10s:%10s:%170s:%10s:%15s\n' % ( 
                 e.number, '\''+e.symbol+'\'', '\''+e.name+'\'', e.group, e.period, '\''+e.block+'\'', e.series,
                 e.mass, e.eleneg, e.eleaffin, e.covrad, e.atmrad, e.vdwrad, e.tboil, e.tmelt, e.density,
-                '\''+e.eleconfig+'\'', '\''+e.oxistates+'\'', '('+ionenergy+')', d[1], d[2], '\''+d[3]+'\'', NEWPROPERTY))
+                '\''+e.eleconfig+'\'', '\''+e.oxistates+'\'', '('+ionenergy+')', e.ldauu, e.ldauj, e.ldaucomment, d[1], d[2])) #EDIT OUTPUT HERE
         outfile.close()
         infile.close()
         
@@ -250,6 +256,7 @@ def word_wrap(text, linelen=80, indent=0, joinstr="\n"):
 
 ELEMENTS = ElementsDict()
 ELEMENTS.import_()
+ELEMENTS.export_merge()
 
 
 # =========================================================================== 
@@ -264,9 +271,9 @@ class Wf(object):
 
     def __init__(self):
         # evaluate if_
-        if_ = open('wf.conf','r')
-        argv = [x.split('\n') for x in if_.read().split('\n\n')]
-        for arg in argv:
+        if_ = open('input_','r')
+        input_ = [x.split('\n') for x in if_.read().split('\n\n')]
+        for arg in input_:
             if 'phase' in arg[0]:
                 self.phase = arg[1].strip()
             if 'pos' in arg[0]:
@@ -276,7 +283,7 @@ class Wf(object):
             if 'path' in arg[0]:
                 self.filesystem.path = arg[1].strip()
         if_.close()
-        WFS[os.path.basename(os.path.normpath(self.filesystem.path)) = self
+        WFS[os.path.basename(os.path.normpath(self.filesystem.path))] = self
         # dynamic composition
         for p in self.phase.split():
             constructor = globals()[p]
