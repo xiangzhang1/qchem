@@ -168,30 +168,30 @@ class ElementsDict(object):
         # BACKUP CONF FILE!
         # header
         outfile = open('phase.element.conf','w')
-        outfile.write('%10s:%10s:%15s:%10s:%10s:%10s:%10s:%16s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%30s:%30s:%180s:%10s:%10s:%170s:%10s:%15s:%150s:%15s\n' % (
+        outfile.write('%10s:%10s:%15s:%10s:%10s:%10s:%10s:%16s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%30s:%30s:%180s:%10s:%10s:%170s:%10s:%15s:%150s:%15s:%10s\n' % (
                 'number', 'symbol', 'name', 'group', 'period', 'block', 'series', 'mass', 'eleneg', 'eleaffin', 
                 'covrad', 'atmrad', 'vdwrad', 'tboil', 'tmelt', 'density', 'eleconfig', 'oxistates', 'ionenergy', 'ldauu', 'ldauj',
-                'ldaucomment', 'magmom', 'magmomcomment', 'pot', 'pot_extension')) #EDIT HEADER HERE
+                'ldaucomment', 'magmom', 'magmomcomment', 'pot', 'pot_extension','pot_zval')) #EDIT HEADER HERE
         # read and write
-        infile = open('POTdatabase','r')  #EDIT INFILE HERE
+        infile = open('ZVALdatabase','r')  #EDIT INFILE HERE
         lines = [[field.strip() for field in line.split(':')] for line in infile.read().splitlines()]
         for e in self:
             matchingline = [line for line in lines if line[0] == e.symbol]
             if len(matchingline) == 0:
-                potcar_list = '[]'
-                potcar_postfix = ''
+                pot_zval = None
             else:
-                potcar_list = '[' + ','.join(['\''+x.strip()+'\'' for x in matchingline[0][1].split(',') ]) + ']' #EDIT TO_OUTPUT VARS HERE
-                potcar_postfix = matchingline[0][2]
+                pot_zval = matchingline[0][1] #EDIT TO_OUTPUT VARS HERE
+            # original elements formatting
             ionenergy = []
             for i, j in enumerate(e.ionenergy):
                 ionenergy.append("%s, " % j)
             ionenergy = "".join(ionenergy)
-            outfile.write('%10i:%10s:%15s:%10s:%10s:%10s:%10i:%16s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%30s:%30s:%180s:%10s:%10s:%170s:%10s:%15s:%150s:%15s\n' % ( 
+            # write
+            outfile.write('%10i:%10s:%15s:%10s:%10s:%10s:%10i:%16s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%30s:%30s:%180s:%10s:%10s:%170s:%10s:%15s:%150s:%15s:%10s\n' % ( 
                 e.number, '\''+e.symbol+'\'', '\''+e.name+'\'', e.group, e.period, '\''+e.block+'\'', e.series,
                 e.mass, e.eleneg, e.eleaffin, e.covrad, e.atmrad, e.vdwrad, e.tboil, e.tmelt, e.density,
                 '\''+e.eleconfig+'\'', '\''+e.oxistates+'\'', '('+ionenergy+')', e.ldauu, e.ldauj, '\''+e.ldaucomment+'\'', 
-                e.magmom, '\''+e.magmomcomment + '\'', potcar_list, '\''+potcar_postfix+'\'')) 
+                e.magmom, '\''+e.magmomcomment + '\'', e.pot, '\''+e.pot_extension+'\'', pot_zval)) 
             #EDIT OUTPUT HERE. NOTE: STRING, WHETHER ORIGINAL OR BEING IMPORTED, MUST BE SURROUNDED BY QUOTES! 
         outfile.close()
         infile.close()

@@ -210,16 +210,33 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
             of_.write('0 0 0')
 
     def write_potcar(symbol):
-        path = print(os.path.dirname(os.path.realpath(__file__)))
         if len(ELEMENTS[symbol].pot) == 0:
             raise ReferenceError('POTCAR for '+symbol+' not found.')
-        path += '/paw_pbe/'+ELEMENTS[symbol].pot[0] + '/POTCAR' + ELEMENTS[symbol].pot_extension
+        path = os.path.dirname(os.path.realpath(__file__))
+        path += '/data/paw_pbe/'+ELEMENTS[symbol].pot[0] + '/POTCAR' + ELEMENTS[symbol].pot_extension
         if_ = open(path,'r')
         of_ = open('./POTCAR','w')
         of_.write( if_.read() )
 
     # User-defined (funcname)
     # -----------------------
+
+    def nbands(self):
+        print self.__class__.__name__ + ' warning: nbands may not be that reliable'
+        if self.parse_if('spin=ncl'):
+            nbands = ( self.cell.nelect * 3 / 5 + self.cell.nion * 3 / 2 ) * 2
+        elif self.parse_if('spin=para'):
+            nbands = self.cell.nelect * 3 / 5 + self.cell.nion * 1 / 2
+        elif self.parse_if('spin=afm|spin=fm'):
+            nbands = self.cell.nelect / 2 + self.cell.nion / 2
+        else:
+            raise SyntaxError('spin variable is not fm, afm or para, cannot compute nbands')
+        # hse case when hse mod is not even defined. for ref, i think. hiya, later self.
+        if self.parse_if('hse|prehf'):
+            npar = int(self.getkw('npar'))
+            nbands = (nbands + npar -1 ) / npar * npar 
+        return nbands
+
     
     def lmaxmix(self):
         b_l_map = { 's': 2, 'p': 2, 'd': 4, 'f': 6, 'g': 8 }
@@ -294,6 +311,9 @@ class Cell(object):
             raise SyntaxError('unsupported POSCAR5 format. Only direct coordinates are supported.')
         if len(lines) - 8 != sum(self.stoichiometry.values()):
             raise SyntaxError('POSCAR5 verification failed. Line count does not match stoichiometry. Blank lines?')
+        # some computation
+        self.nion = sum(self.stoichiometry.values())
+        self.nelect = sum( [self.stoichiometry[symbol] * ELEMENTS[symbol].pot_zval for symbol in self.stoichiometry] )
 
     def write_(self):
         with open('POSCAR','w') as of:
