@@ -1,5 +1,19 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+
+# Regarding import: 
+# `import phase` is forbidden. Check for cyclic import.
+#
+# Regarding errors and warnings:
+# Be flexible between print and raise. Use self.__class__.__name__
+#
+# Regarding __init__, compute, and write_:
+# Do not define compute() unless necessary.
+#
+# ================================================================================
+#
+# Gen
+# 
 # 
 # Part of qchem
 # Implement require grammar
@@ -16,8 +30,17 @@ import re
 import numpy as np
 import scipy
 
+from phase import ELEMENTS
+
 
 class Gen(object):   # Stores the logical structure of keywords and modules. A unique construct deserving a name.
+
+    # Utilities
+    # ---------
+    def getkw(self,kwname):
+	if len(self.kw[kwname])!=1:
+	    raise ValueError('self.kw[kwname] does not have 1 and only 1 value. wait till that happens and try again.')
+	return next(iter(self.kw[kwname]))
 
     def evaluate(self,expression):                  # Evaluates expression to string: literal or (funcname)
         if expression.startswith('(') and expression.endswith(')'): 
@@ -102,6 +125,9 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
             if self.moonphase>0:    self.mod_legal_set.add(expression)
             return (expression in self.mod and self.mod[expression]==set([True]))        
 
+    # main qchem API
+    # -------------
+
     def __init__(self,input_,cell): 
         self.cell = cell
 	# 读mod, kw
@@ -164,17 +190,56 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
                 self.kw[name] = next(iter(self.kw[name]))
         self.moonphase=3    # parsing of input_ is complete.
 
+    def write_(self):
+        if self.parse_if('vasp'):
+    	    with open('INCAR','w') as of_:
+    	        for name in self.kw:
+                    if name not in self.kw_internal_set:
+    	                of_.write('\t'+name.upper()+' \t= '+self.kw[name]+'\n')
+            self.cell.write_()
+            for symbol in self.cell.stoichiometry.keys():
+                self.write_potcar(symbol)
+            self.write_kpoints(kpoints)
 
-    def getkw(self,kwname):
-	if len(self.kw[kwname])!=1:
-	    raise ValueError('self.kw[kwname] does not have 1 and only 1 value. wait till that happens and try again.')
-	return next(iter(self.kw[kwname]))
+    def write_kpoints(kpoints):
+        with open('KPOINTS','w') as of_:
+            of_.write('KPOINTS\n')
+            of_.write('0\n')
+            of_.write(kpoints.split()[3])
+            of_.write( ' '.join(kpoints.split()[0:3]) + '\n' )
+            of_.write('0 0 0')
+
+    def write_potcar(symbol):
+        path = print(os.path.dirname(os.path.realpath(__file__)))
+        if len(ELEMENTS[symbol].pot) == 0:
+            raise ReferenceError('POTCAR for '+symbol+' not found.')
+        path += '/paw_pbe/'+ELEMENTS[symbol].pot[0] + '/POTCAR' + ELEMENTS[symbol].pot_extension
+        if_ = open(path,'r')
+        of_ = open('./POTCAR','w')
+        of_.write( if_.read() )
+
+    # User-defined (funcname)
+    # -----------------------
+    
+    def lmaxmix(self):
+        b_l_map = { 's': 2, 'p': 2, 'd': 4, 'f': 6, 'g': 8 }
+        lmaxmix = max( [ b_l_map[ ELEMENTS[symbol].block ] for symbol in  self.cell.stoichiometry.keys() ] )
+        return lmaxmix
+
     def ismear5check(self):
 	try:
 	    kpoints = self.getkw('kpoints').split(' ')
 	    return np.prod(map(int,kpoints)) > 2
 	except (KeyError, AttributeError, ValueError) as KwError:
 	    return False
+
+    def kpointscheck(self):
+        if len(kpoints.split()) != 4 or not kpoints.split()[3].startswith(('G','g','M','m')):
+            print self.__class__.__name__ + ' error: bad kpoints format. kpoints should be "kx ky kz monkhorst|G'
+            return False
+        else:
+            return True
+
     def nkred_divide(self):
 	try:
 	    kpoints = map(int,self.getkw('kpoints').split(' '))
@@ -183,17 +248,34 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
 	    nkredz = int(self.getkw('nkredz'))
 	    return kpoints[0]%nkredx==0 and kpoints[1]%nkredy==0 and kpoints[2]%nkredz==0
 	except (KeyError, AttributeError, ValueError) as KwError:
+            print self.__class__.__name__ + ' error: kx should be divisible by nkredx, etc.'
 	    return False
 
-    # create output: ready-to-compute files, and compute script
-    def compute(self):
-        if self.parse_if('vasp'):
-    	    with open('INCAR','w') as of:
-    	        for name in self.kw:
-                    if name not in self.kw_internal_set:
-    	                of.write('\t'+name.upper()+' \t= '+self.kw[name]+'\n')
-            self.cell.write_()
-    
+    def magmom(self):
+        magmom = ''
+        if self.parse_if('spin=afm'):
+            print self.__class__.__name__ + ' warning: more than 1 AFM pattern exists.'
+            for symbol in self.cell.stoichiometry:
+                l = [0] * self.cell.stoichiometry[symbol]
+                base = ELEMENTS[symbol].magmom
+                l[::2] = base
+                l[1::2] = -1 * base
+                magmom += ' '.join(l)
+        if self.parse_if('spin=fm'):
+            for symbol in self.cell.stoichiometry:
+                base = ELEMENTS[symbol].magmom
+                magmom += str( self.cell.stoichiometry[symbol] ) + '*' + str( base )
+        return magmom
+    def ldauu(self):
+        ldauu = ''
+        for symbol in self.cell.stoichiometry:
+            ldauu += str( ELEMENTS[symbol].ldauu )
+        return ldauu
+    def ldauj(self):
+        ldauj = ''
+        for symbol in self.cell.stoichiometry:
+            ldauj += str( ELEMENTS[symbol].ldauj )
+        return ldauj
 
 # =========================================================================== 
 
@@ -203,6 +285,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
 class Cell(object):
 
     def __init__(self,lines): 
+        # basics
         self.name = lines[0]
         self.base = np.float_([ line.split() for line in lines[2:5] ]) * float(lines[1])
         self.coordinates = np.float_([ line.split() for line in lines[8:] ])
@@ -223,5 +306,5 @@ class Cell(object):
             of.write('Direct\n')
             for line in coordinates:
                 of.write(' '.join(line)+'\n')
-
+            
 
