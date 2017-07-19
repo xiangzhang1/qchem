@@ -12,7 +12,7 @@
 #
 # ================================================================================
 #
-# Gen
+# Vasp
 # 
 # 
 # Part of qchem
@@ -26,14 +26,16 @@
 
 import os
 import sys
+import subprocess
 import re
 import numpy as np
 import scipy
+import shutils
 
 from phase import ELEMENTS
 
 
-class Gen(object):   # Stores the logical structure of keywords and modules. A unique construct deserving a name.
+class Vasp(object):   # Stores the logical structure of keywords and modules. A unique construct deserving a name.
 
     # Utilities
     # ---------
@@ -143,7 +145,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
 	# 执行require
         self.require = []
         self.moonphase = 1
-	with open('engine.gen.conf') as conf:
+	with open('engine.vasp.conf') as conf:
 	    lines = conf.read().splitlines()
             for line in [ [p.strip() for p in l.split(':')] for l in lines if not l.startswith('#') ]:
                 if len(line) < 3:
@@ -180,26 +182,24 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
 	for kwname in set(self.kw.keys())-self.kw_legal_set:
 	    print self.__class__.__name__+' warning: illegal name. Kw {%s} is not required and has been ignored.' % kwname
 	    del self.kw[kwname]
-        for name in self.mod.keys():
-            if self.mod[name] == set([True]):
-                self.mod[name] = True
         for name in self.kw:
             if len(self.kw[name]) != 1:
                 print self.__class__.__name__+' error: non-unique output. Kw[%s]={%s} has not been restricted to 1 value.' %(name,self.kw[name]) ; sys.exit(1)
-            else:
-                self.kw[name] = next(iter(self.kw[name]))
-        self.moonphase=3    # parsing of input_ is complete.
+        self.moonphase=3    # parsing and validating of input_ is complete.
+        self.check_memory()
 
     def write_(self):
+        if self.moonphase != 3:
+            raise SyntaxError('write_ must be called in blood moon.')
         if self.parse_if('vasp'):
     	    with open('INCAR','w') as of_:
     	        for name in self.kw:
                     if name not in self.kw_internal_set:
-    	                of_.write('\t'+name.upper()+' \t= '+self.kw[name]+'\n')
+    	                of_.write('\t'+name.upper()+' \t= '+self.getkw(name)+'\n')
             self.cell.write_()
             for symbol in self.cell.stoichiometry.keys():
                 self.write_potcar(symbol)
-            self.write_kpoints(kpoints)
+            self.write_kpoints(self.getkw('kpoints'))
 
     def write_kpoints(kpoints):
         with open('KPOINTS','w') as of_:
@@ -218,8 +218,56 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         of_ = open('./POTCAR','w')
         of_.write( if_.read() )
 
+    def check_memory(self):
+        if self.moonphase != 3:
+            raise SyntaxError('write_ must be called in blood moon.')
+        # make temporary dir
+        os.mkdir('memory_check')
+        os.chdir('memory_check')
+        # alter and write
+        wayback_dict = []
+        if self.parse_if('isym=-1'):
+            wayback_dict.add( lambda x: x.kw['isym']=['-1'] )
+            multiplier = 2
+            self.kw['isym'] = ['-1']
+        if self.parse_if('lsorbit=.TRUE.'):
+            wayback_dict.add( lambda x: x.kw['lsorbit']=['.TRUE.']
+            multiplier = 2
+            self.kw['lsorbit'] = ['.FALSE.']
+        self.write_()
+        for funcname in wayback_dict:
+            funcname(self)
+        os.system("sed -i '6d' POSCAR")
+        # calculate and read
+        path = os.path.dirname(os.path.realpath(__file__))
+        output = subprocess.check_output([path+'/data/makeparam']).splitlines()
+        try:
+            self.memory = {}
+            self.memory['arraygrid'] = int( next(l for l in output if 'arrays on large grid' in l).split()[7] )
+            self.memory['wavefunction']  = int( next(l for l in output if 'sets of wavefunctions' in l).split()[4] )
+            self.memory['projector_real']  = abs(int( next(l for l in output if 'projectors in real space' in l).split()[4] ))
+            self.memory['projector_reciprocal']  = abs(int( next(l for l in output if 'projectors in reciprocal space' in l).split()[4] ))
+        except StopIteration, KeyError:
+            print self.__class__.__name__ + 'error: makeparam output illegal. Check POSCAR4 format and memory leak.'
+            raise SystemError
+        # parse and raise error
+        if self.parse_if('hse'):
+            memory_required = ( (memory['projector_real']+memory['project_reciprocal'])*self.getkw('npar')+3*memory['wavefunction']*self.getkw('kpar') )/1024^3 + self.getkw('nodes')
+        else:
+            memory_required = ( (memory['projector_real']+memory['project_reciprocal'])*self.getkw('npar')+memory['wavefunction']*self.getkw('kpar') )/1024^3 + self.getkw('nodes')*3/2
+        memory_required *= multiplier
+        memory_availble = int(self.getkw('nodes')) * int(self.getkw('mempernode')
+        if memory_required > memory_available:
+            print self.__class__name + 'warning: insufficient memory. Mem required is {' + str(memory_required) + '} GB. Available mem is {' + memory_available + '} GB.' 
+        # cleanup
+        os.chdir('..')
+        shutil.rmtree('memory_check')
+
     # User-defined (funcname)
     # -----------------------
+
+    def totalnumbercores(self):
+        return str( int(self.getkw('nodes')) * int(self.getkw('corespernode')) )
 
     def nbands(self):
         print self.__class__.__name__ + ' warning: nbands may not be that reliable'
@@ -328,3 +376,19 @@ class Cell(object):
                 of.write(' '.join(line)+'\n')
             
 
+# =========================================================================== 
+
+# PropertyWanted: stores and parses nodemap-like structure
+
+class PropertyWantedMapNode(object):
+    def __init__(self,uid,property_wanted):
+        self.uid = uid
+        self.property_wanted = property_wanted
+        self.moonphase = None
+
+class PropertyWantedMap(object):
+    def __init__(self,input_):
+        # nodes part and graph part
+        nodes_input = input_.split('\n\n')[0].splitlines()
+        graph_input = input_.split('\n\n')[1].splitlines()
+        # parse nodes part

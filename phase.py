@@ -248,32 +248,29 @@ ELEMENTS.import_()
 
 import engine
 
-# Wf
+KETS = {}
 
-WFS = {}
-
-class Wf(object):
+class Ket(object):
 
     def __init__(self):
         # evaluate if_
         if_ = open('input_','r')
-        input_ = [x.split('\n') for x in if_.read().split('\n\n')]
-        for arg in input_:
-            if 'phase' in arg[0]:
-                self.phase = arg[1].strip()
-            if 'pos' in arg[0]:
-                self.pos = engine.Pos(arg[1:])
-            if 'outline' in arg[0]:
-                self.outline = engine.Outline(arg[1:])
-            if 'path' in arg[0]:
-                self.filesystem.path = arg[1].strip()
+        input_ = [x.splitlines() for x in if_.read().split('\n\n\n')]
+        for chunk in input_:
+            if 'phase' in chunk[0]:
+                self.phase = chunk[1].strip()
+            if 'cell' in chunk[0]:
+                self.cell = engine.Cell(chunk[1:])
+            if 'property_wanted' in chunk[0]:
+                self.property_wanted = engine.PropertyWanted(chunk[1:])
+            if 'path' in chunk[0]:
+                self.filesystem.path = chunk[1].strip()
         if_.close()
         WFS[os.path.basename(os.path.normpath(self.filesystem.path))] = self
         # dynamic composition
         for p in self.phase.split():
             constructor = globals()[p]
             setattr(self, p, constructor(self))
-
 
 
 
