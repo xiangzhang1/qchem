@@ -252,9 +252,8 @@ KETS = {}
 
 class Ket(object):
 
-    def __init__(self, phase, cell, property_wanted, path,uid):
+    def __init__(self, phase, cell, property_wanted, path):
         self.phase, self.cell, self.property_wanted, self.path = phase, cell, property_wanted, path
-        self.uid = uid if uid else os.path.basename(os.path.normpath(self.path))
         # dynamic composition
         for p in self.phase:
             constructor = globals()[p]
