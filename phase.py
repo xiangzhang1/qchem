@@ -252,31 +252,72 @@ KETS = {}
 
 class Ket(object):
 
-    def __init__(self,phase,cell,property_wanted,path):
-        input_ = [x.splitlines() for x in input_.split('\n\n\n')]
-        self.uid = os.path.basename(os.path.normpath(self.path))
-        WFS[self.uid] = self
+    def __init__(self,phase,cell,property_wanted,path,uid=None):
+        self.phase, self.cell, self.property_wanted, self.path = phase, cell, property_wanted, path
+        self.uid = uid if uid else os.path.basename(os.path.normpath(self.path))
         # dynamic composition
-        for p in re.split('\s*,\s*',self.phase):
+        for p in self.phase:
             constructor = globals()[p]
             setattr(self, p, constructor(self))
+        # add to KETS
+        if uid in KETS:
+            raise SyntaxError('uid %s already in KETS' %uid)
+        else:
+            KETS[uid] = self
     
     def moonphase(self):
         if len(self.property_wanted.nodes) != 1:    # workflow, phantom
             return self.property_wanted.moonphase()
         else:   # copy
-            return getattr(self,self.gen.getkw('engine')).moonphase()
+            engine_ = getattr(self,self.gen.getkw('engine'),None)
+            if engine_:
+                return engine_.moonphase()
+            else:
+                return 0
 
     def compute(self):
         # phantom or workflow
         if len(self.property_wanted.nodes) != 1:
-            uid = self.property_wanted.compute()
-            if uid in KETS:
-                raise SyntaxError('uid %s already exists' %uid)
-            KETS['uid'] = 
+            node = self.property_wanted.compute()
+            uid = node.keys()[0]
+            path = node[uid][1]
+            if uid not in KETS:
+                KETS[uid] = Ket(self.phase, self.cell, node, path, uid)
+                KETS[uid].compute()
+            else:
+                KETS[uid].compute()
         # copy
+        else:
+            self.gen = engine.Gen(' '.join(self.phase) + ' ' + self.property_wanted.nodes.values()[0][0], self.cell)
+            name_ = self.gen.getkw('engine')
+            engine_ = getattr(self,self.gen.getkw('engine'),None)
+            if not engine_:
+                class_ = getattr(engine, name_.title())
+                engine_ = class_(self.gen, self.cell, self.path)
+                setattr(self, name_, engine_)
+                getattr(self, name_).compute()
+
+    def edit(self):
+        input_ = raw_input('Enter a filename to read/write, or just call ket.property_wanted.read_(): ')
+        if os.path.isfile(input_):
+            self.property_wanted.read_(if_=input_)
+        else:
+            self.property_wanted.write_(of_=input_)
+
+    def delete(self):
+            name_ = self.gen.getkw('engine')
+            engine_ = getattr(self,self.gen.getkw('engine'),None)
+            if engine_:
+                engine_.delete()
+            KETS.pop(self.uid)
+
+    def consider(self,uid):
+        return KETS[uid]
+        
 
 # =========================================================================== 
 
 class Qd(object):
     pass
+
+

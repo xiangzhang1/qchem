@@ -39,7 +39,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
             func = getattr(self, re.sub('\(|\)','',expression).strip())
             if not func:
                 print self.__class__.__name__+' error: Bad Grammar. Unable to find function {%s}' % re.sub('\(|\)','',expression)
-            return func()
+            return func(cell)
         else:   # literal
             return expression
 
@@ -120,7 +120,6 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
     # main
     # -------------
     def __init__(self,input_,cell): 
-        self.cell = cell
 	# 读mod, kw
         self.mod = {}
 	self.kw = {}
@@ -177,35 +176,35 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         self.moonphase=3    # parsing and validating of input_ is complete.
         self.check_memory()
 
-    def write_(self):
-        if self.moonphase != 3:
-            raise SyntaxError('write_ must be called in blood moon.')
-        if self.parse_if('vasp'):
-    	    with open('INCAR','w') as of_:
-    	        for name in self.kw:
-                    if name not in self.kw_internal_set:
-    	                of_.write('\t'+name.upper()+' \t= '+self.getkw(name)+'\n')
-            self.cell.write_()
-            for symbol in self.cell.stoichiometry.keys():
-                self.write_potcar(symbol)
-            self.write_kpoints(self.getkw('kpoints'))
-
-    def write_kpoints(kpoints):
-        with open('KPOINTS','w') as of_:
-            of_.write('KPOINTS\n')
-            of_.write('0\n')
-            of_.write(kpoints.split()[3])
-            of_.write( ' '.join(kpoints.split()[0:3]) + '\n' )
-            of_.write('0 0 0')
-
-    def write_potcar(symbol):
-        if len(ELEMENTS[symbol].pot) == 0:
-            raise ReferenceError('POTCAR for '+symbol+' not found.')
-        path = os.path.dirname(os.path.realpath(__file__))
-        path += '/data/paw_pbe/'+ELEMENTS[symbol].pot[0] + '/POTCAR' + ELEMENTS[symbol].pot_extension
-        if_ = open(path,'r')
-        of_ = open('./POTCAR','w')
-        of_.write( if_.read() )
+#    def write_(self, cell):  # Gen is just a parser. Move this to compute engine.
+#        if self.moonphase != 3:
+#            raise SyntaxError('write_ must be called in blood moon.')
+#        if self.parse_if('vasp'):
+#    	    with open('INCAR','w') as of_:
+#    	        for name in self.kw:
+#                    if name not in self.kw_internal_set:
+#    	                of_.write('\t'+name.upper()+' \t= '+self.getkw(name)+'\n')
+#            cell.write_()
+#            for symbol in cell.stoichiometry.keys():
+#                self.write_potcar(symbol)
+#            self.write_kpoints(self.getkw('kpoints'))
+#
+#    def write_kpoints(kpoints):
+#        with open('KPOINTS','w') as of_:
+#            of_.write('KPOINTS\n')
+#            of_.write('0\n')
+#            of_.write(kpoints.split()[3])
+#            of_.write( ' '.join(kpoints.split()[0:3]) + '\n' )
+#            of_.write('0 0 0')
+#
+#    def write_potcar(symbol):
+#        if len(ELEMENTS[symbol].pot) == 0:
+#            raise ReferenceError('POTCAR for '+symbol+' not found.')
+#        path = os.path.dirname(os.path.realpath(__file__))
+#        path += '/data/paw_pbe/'+ELEMENTS[symbol].pot[0] + '/POTCAR' + ELEMENTS[symbol].pot_extension
+#        if_ = open(path,'r')
+#        of_ = open('./POTCAR','w')
+#        of_.write( if_.read() )
 
     def check_memory(self):
         if self.moonphase != 3:
@@ -254,10 +253,10 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
 
     # User-defined (funcname)
     # -----------------------
-    def totalnumbercores(self):
+    def totalnumbercores(self,cell):
         return str( int(self.getkw('nodes')) * int(self.getkw('corespernode')) )
 
-    def nbands(self):
+    def nbands(self,cell):
         print self.__class__.__name__ + ' warning: nbands may not be that reliable'
         if self.parse_if('spin=ncl'):
             nbands = ( self.cell.nelect * 3 / 5 + self.cell.nion * 3 / 2 ) * 2
@@ -369,7 +368,8 @@ class Cell(object):
 from phase import KETS  # possible cyclic import
 
 class Property_wanted(object):  # bad name, but good for logic
-    def __init__(self,input_,path_prefix):
+    def __init__(self,input_,path_prefix=None):
+        self.path_prefix = path_prefix
         # nodes part and graph part
         nodes_input = input_.split('\n\n')[0].splitlines()
         graph_input = input_.split('\n\n')[1].splitlines()
@@ -380,10 +380,13 @@ class Property_wanted(object):  # bad name, but good for logic
             for line_ in nodes_input:
                 line = [ x.strip() for x in line_.split(':') ]
                 uid = line[0]
-                if uid in KETS:
-                    raise SyntaxError('uid already in KETS')
                 text = line[1]
-                path = line[2] if len(line[2])>3 else path_prefix+'/'+uid
+                if '/' in line[2]:
+                    path = line[2]
+                else:
+                    if not path_prefix:
+                        raise SyntaxError('you are specifying path using uid shorthand, but not providing path_prefix')
+                    path = path_prefix + '/' + uid
                 self.nodes[uid] = [text,path]                
                 self.edges[uid] = []
             for line_ in graph_input:
@@ -396,8 +399,12 @@ class Property_wanted(object):  # bad name, but good for logic
         if set(self.edges.keys()) != set(self.nodes.keys()):
             raise SyntaxError('node list in self.nodes does not match self.edges')
 
-    def edit(self,input_,path_prefix):
-        self.__init__(input_,path_prefix)
+    def subset(self,uid_list):
+        result = Property_wanted('')
+        result.nodes = { uid : self.nodes[uid] for uid in uid_list }
+        result.edges = { uid : [x for x in self.edges[uid] if x in uid_list] for uid in uid_list }
+        return result
+
 
     def compute(self,proposed_uid=None):
         self.update()
@@ -413,9 +420,9 @@ class Property_wanted(object):  # bad name, but good for logic
         if not result:
             print self.__class__.__name__ + ': Nothing to compute'.
         if proposed_uid and proposed_uid in result:
-            return proposed_uid
+            return self.subset(proposed_uid)
         else:
-            return result[0]
+            return self.subset(result[0])
 
     def moonphase(self):
         if any( [x not in KETS or KETS[x].moonphase()==1 for x in self.nodes ] ):
@@ -425,9 +432,38 @@ class Property_wanted(object):  # bad name, but good for logic
         else:
             return 3
 
+    def write_(self, of_=None):
+        result = ''
+        for node in self.nodes:
+            result += node + ' : ' + self.nodes[node][0] + ' : ' + '.' if len(self.nodes)==1 else node + '\n'
+        result += '\n'
+        for from_ in self.edges:
+            for to_ in self.edges[from_]:
+                result += from_ + ' -> ' + to_ + '\n'
+        if of_:
+            with open(of_, 'w') as outfile:
+                outfile.write(result)
+            return result
+        else:
+            return result
+        
+    def read_(self,input_=None, if_=None):
+        if if_:
+            with open(if_,'r') as infile:
+                input_ = infile.read()
+        self.__init__(input_,self.path_prefix)
+            
+        
 
 
 #===========================================================================  
 
 
+class Vasp(object):
+
+    def __init__(self, gen, cell, path):
+
+    def compute(self):
+
+    def moonphase(self):
 
