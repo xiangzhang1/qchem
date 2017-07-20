@@ -1,0 +1,10 @@
+
+        for chunk in input_:
+            if 'phase' in chunk[0]:
+                self.phase = chunk[1].strip()
+            if 'cell' in chunk[0]:
+                self.cell = engine.Cell(chunk[1:])
+            if 'path' in chunk[0]:
+                self.path = chunk[1].strip()
+            if 'property_wanted' in chunk[0]:
+                self.property_wanted = engine.Property_wanted(chunk[1:],self.path) #path neesd to come first

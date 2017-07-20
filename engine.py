@@ -12,17 +12,7 @@
 #
 # ================================================================================
 #
-# Vasp
-# 
-# 
-# Part of qchem
-# Implement require grammar
-# 
-# 输入有效要求:
-# maintain kw_legal_set, kw_internal_set, mod_legal_set
-# parse_require: if in input_ flow, add not. else, add.
-# parse_if: if in input_ flow, add not. if in if flow, add kw not. else, add.
-# 实现: 血月系统: self.moonphase=0(input_)|1(if)|2(require)|3(reshuffle)
+# Gen
 
 import os
 import sys
@@ -35,7 +25,7 @@ import shutils
 from phase import ELEMENTS
 
 
-class Vasp(object):   # Stores the logical structure of keywords and modules. A unique construct deserving a name.
+class Gen(object):   # Stores the logical structure of keywords and modules. A unique construct deserving a name.
 
     # Utilities
     # ---------
@@ -127,9 +117,8 @@ class Vasp(object):   # Stores the logical structure of keywords and modules. A 
             if self.moonphase>0:    self.mod_legal_set.add(expression)
             return (expression in self.mod and self.mod[expression]==set([True]))        
 
-    # main qchem API
+    # main
     # -------------
-
     def __init__(self,input_,cell): 
         self.cell = cell
 	# 读mod, kw
@@ -145,7 +134,7 @@ class Vasp(object):   # Stores the logical structure of keywords and modules. A 
 	# 执行require
         self.require = []
         self.moonphase = 1
-	with open('engine.vasp.conf') as conf:
+	with open('engine.gen.conf') as conf:
 	    lines = conf.read().splitlines()
             for line in [ [p.strip() for p in l.split(':')] for l in lines if not l.startswith('#') ]:
                 if len(line) < 3:
@@ -265,7 +254,6 @@ class Vasp(object):   # Stores the logical structure of keywords and modules. A 
 
     # User-defined (funcname)
     # -----------------------
-
     def totalnumbercores(self):
         return str( int(self.getkw('nodes')) * int(self.getkw('corespernode')) )
 
@@ -378,17 +366,68 @@ class Cell(object):
 
 # =========================================================================== 
 
-# PropertyWanted: stores and parses nodemap-like structure
+from phase import KETS  # possible cyclic import
 
-class PropertyWantedMapNode(object):
-    def __init__(self,uid,property_wanted):
-        self.uid = uid
-        self.property_wanted = property_wanted
-        self.moonphase = None
-
-class PropertyWantedMap(object):
-    def __init__(self,input_):
+class Property_wanted(object):  # bad name, but good for logic
+    def __init__(self,input_,path_prefix):
         # nodes part and graph part
         nodes_input = input_.split('\n\n')[0].splitlines()
         graph_input = input_.split('\n\n')[1].splitlines()
+        self.nodes = {}
+        self.edges = {}
         # parse nodes part
+        try:
+            for line_ in nodes_input:
+                line = [ x.strip() for x in line_.split(':') ]
+                uid = line[0]
+                if uid in KETS:
+                    raise SyntaxError('uid already in KETS')
+                text = line[1]
+                path = line[2] if len(line[2])>3 else path_prefix+'/'+uid
+                self.nodes[uid] = [text,path]                
+                self.edges[uid] = []
+            for line_ in graph_input:
+                line = [ x.strip() for x in line_.split('->') ]
+                from_ = line[0]
+                to_ = line[1] if line[1] else None
+                self.edges[from_].add(to_)
+        except (KeyError, IndexError) as SyntaxError:
+            print 'bad graph syntax'
+        if set(self.edges.keys()) != set(self.nodes.keys()):
+            raise SyntaxError('node list in self.nodes does not match self.edges')
+
+    def edit(self,input_,path_prefix):
+        self.__init__(input_,path_prefix)
+
+    def compute(self,proposed_uid=None):
+        self.update()
+        list0 = [] ; list1 = [] #1 status have priority
+        for x in self.nodes:
+            if x in KETS and KETS[x].moonphase()==1:
+                list1.add(x)
+            if x not in KETS:
+                parents = [y for y in self.nodes if x in self.edges[y]]
+                if not parents or any([y in KETS and KETS[y].moonphase()==3 for y in parents]):
+                    list0.add(x)
+        result = list0 + list1
+        if not result:
+            print self.__class__.__name__ + ': Nothing to compute'.
+        if proposed_uid and proposed_uid in result:
+            return proposed_uid
+        else:
+            return result[0]
+
+    def moonphase(self):
+        if any( [x not in KETS or KETS[x].moonphase()==1 for x in self.nodes ] ):
+            return 1
+        elif any( [ KETS[x].moonphase()==2 for x in self.nodes ] ):
+            return 2
+        else:
+            return 3
+
+
+
+#===========================================================================  
+
+
+

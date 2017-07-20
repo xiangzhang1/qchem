@@ -252,27 +252,29 @@ KETS = {}
 
 class Ket(object):
 
-    def __init__(self):
-        # evaluate if_
-        if_ = open('input_','r')
-        input_ = [x.splitlines() for x in if_.read().split('\n\n\n')]
-        for chunk in input_:
-            if 'phase' in chunk[0]:
-                self.phase = chunk[1].strip()
-            if 'cell' in chunk[0]:
-                self.cell = engine.Cell(chunk[1:])
-            if 'property_wanted' in chunk[0]:
-                self.property_wanted = engine.PropertyWanted(chunk[1:])
-            if 'path' in chunk[0]:
-                self.filesystem.path = chunk[1].strip()
-        if_.close()
-        WFS[os.path.basename(os.path.normpath(self.filesystem.path))] = self
+    def __init__(self,phase,cell,property_wanted,path):
+        input_ = [x.splitlines() for x in input_.split('\n\n\n')]
+        self.uid = os.path.basename(os.path.normpath(self.path))
+        WFS[self.uid] = self
         # dynamic composition
-        for p in self.phase.split():
+        for p in re.split('\s*,\s*',self.phase):
             constructor = globals()[p]
             setattr(self, p, constructor(self))
+    
+    def moonphase(self):
+        if len(self.property_wanted.nodes) != 1:    # workflow, phantom
+            return self.property_wanted.moonphase()
+        else:   # copy
+            return getattr(self,self.gen.getkw('engine')).moonphase()
 
-
+    def compute(self):
+        # phantom or workflow
+        if len(self.property_wanted.nodes) != 1:
+            uid = self.property_wanted.compute()
+            if uid in KETS:
+                raise SyntaxError('uid %s already exists' %uid)
+            KETS['uid'] = 
+        # copy
 
 # =========================================================================== 
 
