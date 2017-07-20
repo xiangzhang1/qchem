@@ -39,7 +39,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
             func = getattr(self, re.sub('\(|\)','',expression).strip())
             if not func:
                 print self.__class__.__name__+' error: Bad Grammar. Unable to find function {%s}' % re.sub('\(|\)','',expression)
-            return func(cell)
+            return func(self)
         else:   # literal
             return expression
 
@@ -117,9 +117,36 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
             if self.moonphase>0:    self.mod_legal_set.add(expression)
             return (expression in self.mod and self.mod[expression]==set([True]))        
 
+    def write_(self, of_=None):
+        if of_ == 'INCAR':
+            with open('INCAR','w') as outfile:
+                for name in self.kw:
+                    if name not in self.kw_internal_set:
+        	        outfile.write('\t'+name.upper()+' \t= '+self.getkw(name)+'\n')
+            with open('KPOINTS','w') as outfile:
+                outfile.write('KPOINTS\n')
+                outfile.write('0\n')
+                outfile.write(self.getkw(kpoints).split()[3])
+                outfile.write( ' '.join(self.getkw(kpoints).split()[0:3]) + '\n' )
+                outfile.write('0 0 0')
+        else:
+            result = ''
+            for name in self.mod:
+                if self.parse_if(name):
+                    result += name
+            for name in self.kw:
+                result += name + '=' + self.getkw(name) + ' '
+            if of_:
+                with open(of_,'w') as outfile:
+                    outfile.write(result)
+            else:
+                return result
+        
+
     # main
     # -------------
     def __init__(self,input_,cell): 
+        self.cell = cell
 	# 读mod, kw
         self.mod = {}
 	self.kw = {}
@@ -176,36 +203,6 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         self.moonphase=3    # parsing and validating of input_ is complete.
         self.check_memory()
 
-#    def write_(self, cell):  # Gen is just a parser. Move this to compute engine.
-#        if self.moonphase != 3:
-#            raise SyntaxError('write_ must be called in blood moon.')
-#        if self.parse_if('vasp'):
-#    	    with open('INCAR','w') as of_:
-#    	        for name in self.kw:
-#                    if name not in self.kw_internal_set:
-#    	                of_.write('\t'+name.upper()+' \t= '+self.getkw(name)+'\n')
-#            cell.write_()
-#            for symbol in cell.stoichiometry.keys():
-#                self.write_potcar(symbol)
-#            self.write_kpoints(self.getkw('kpoints'))
-#
-#    def write_kpoints(kpoints):
-#        with open('KPOINTS','w') as of_:
-#            of_.write('KPOINTS\n')
-#            of_.write('0\n')
-#            of_.write(kpoints.split()[3])
-#            of_.write( ' '.join(kpoints.split()[0:3]) + '\n' )
-#            of_.write('0 0 0')
-#
-#    def write_potcar(symbol):
-#        if len(ELEMENTS[symbol].pot) == 0:
-#            raise ReferenceError('POTCAR for '+symbol+' not found.')
-#        path = os.path.dirname(os.path.realpath(__file__))
-#        path += '/data/paw_pbe/'+ELEMENTS[symbol].pot[0] + '/POTCAR' + ELEMENTS[symbol].pot_extension
-#        if_ = open(path,'r')
-#        of_ = open('./POTCAR','w')
-#        of_.write( if_.read() )
-
     def check_memory(self):
         if self.moonphase != 3:
             raise SyntaxError('write_ must be called in blood moon.')
@@ -253,10 +250,10 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
 
     # User-defined (funcname)
     # -----------------------
-    def totalnumbercores(self,cell):
+    def totalnumbercores(self):
         return str( int(self.getkw('nodes')) * int(self.getkw('corespernode')) )
 
-    def nbands(self,cell):
+    def nbands(self):
         print self.__class__.__name__ + ' warning: nbands may not be that reliable'
         if self.parse_if('spin=ncl'):
             nbands = ( self.cell.nelect * 3 / 5 + self.cell.nion * 3 / 2 ) * 2
@@ -272,7 +269,6 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
             nbands = (nbands + npar -1 ) / npar * npar 
         return nbands
 
-    
     def lmaxmix(self):
         b_l_map = { 's': 2, 'p': 2, 'd': 4, 'f': 6, 'g': 8 }
         lmaxmix = max( [ b_l_map[ ELEMENTS[symbol].block ] for symbol in  self.cell.stoichiometry.keys() ] )
@@ -350,17 +346,21 @@ class Cell(object):
         self.nion = sum(self.stoichiometry.values())
         self.nelect = sum( [self.stoichiometry[symbol] * ELEMENTS[symbol].pot_zval for symbol in self.stoichiometry] )
 
-    def write_(self):
-        with open('POSCAR','w') as of:
-            of.write(self.name+'\n')   
-            of.write('1\n')
-            for line in base:
-                of.write(' '.join(line)+'\n')
-            of.write(' '.join(self.stoichiometry.keys()))
-            of.write(' '.join(self.stoichiometry.values()))
-            of.write('Direct\n')
-            for line in coordinates:
-                of.write(' '.join(line)+'\n')
+    def write_(self, of_=None):
+        result = self.name+'\n'
+        result += '1\n'
+        for line in base:
+            result += ' '.join(line)+'\n'
+        result += ' '.join(self.stoichiometry.keys())
+        result += ' '.join(self.stoichiometry.values())
+        result += 'Direct\n'
+        for line in coordinates:
+            result += ' '.join(line)+'\n'
+        if of_:
+            with open(of_,'w') as outfile:
+                outfile.write(result)
+        else:
+            return result
             
 
 # =========================================================================== 
@@ -405,6 +405,11 @@ class Property_wanted(object):  # bad name, but good for logic
         result.edges = { uid : [x for x in self.edges[uid] if x in uid_list] for uid in uid_list }
         return result
 
+    def prev(self,uid):
+        for x in self.nodes:
+            if uid in self.edges[x]:
+                return x
+        return None
 
     def compute(self,proposed_uid=None):
         self.update()
@@ -420,9 +425,9 @@ class Property_wanted(object):  # bad name, but good for logic
         if not result:
             print self.__class__.__name__ + ': Nothing to compute'.
         if proposed_uid and proposed_uid in result:
-            return self.subset(proposed_uid)
+            return proposed_uid
         else:
-            return self.subset(result[0])
+            return result[0]
 
     def moonphase(self):
         if any( [x not in KETS or KETS[x].moonphase()==1 for x in self.nodes ] ):
@@ -458,12 +463,76 @@ class Property_wanted(object):  # bad name, but good for logic
 
 #===========================================================================  
 
-
 class Vasp(object):
 
-    def __init__(self, gen, cell, path):
+    def __init__(self, gen, cell, path, uid):
+        self.gen = gen
+        self.cell = cell
+        self.path = path
+        os.mkdir(path) ; os.chdir(path)
 
     def compute(self):
+        if self.moonphase() > 1:
+            raise SystemError('moonphase > 1')
+        # prev_uid
+        for ket in KETS:
+            if self.uid in ket.property_wanted.nodes:
+                prev_uid = ket.property_wanted.prev(self.uid)
+        prev = KETS[prev_uid]
+        print self.__class__.__name__ + ': copying %s to %s' %(prev.path, self.path)
+        shutil.copytree(prev.path+'/', self.path+'/')
+        shutil.copy('CONTCAR','POSCAR')
+        # write incar etc
+        os.chdir(self.path)
+        self.gen.write_(of_='INCAR')
+        cell.write_(of_='POSCAR')
+        for symbol in self.cell.stoichiometry.keys():
+        # setting variables for wrapper
+        totalnumbercores = self.gen.getkw('totalnumbercores')
+        if self.gen.parse_if('spin=ncl'):   # vasp flavor
+            flavor = 'ncl'
+        elif all([int(x)==1 for x in self.gen.getkw('kpoints').split()[0:3]]):
+            flavor = 'gam'
+        elif self.gen.getkw('totalnumbercores') == '0':
+            totalnumbercores = 1
+            flavor = 'gpu'
+            print self.__class__.__name__ + ': vasp_gpu'
+        else:
+            flavor = 'std'
+        # write wrapper
+        wrapper = '#!/bin/bash\n' ; subfile = ''
+        if self.gen.getkw('platform') == 'dellpc':
+            wrapper += 'nohup mpiexec.hydra -n %s /home/xzhang1/src/vasp.5.4.1/bin/vasp_%s 2>&1 > run.log &' %(totalnumbercores, flavor)
+        if self.gen.getkw('platform') == 'nanaimo':
+            wrapper += 'sbatch --nodes=%s --ntasks=%s --job-name=%s -t 12:00:00 --export=ALL subfile' %(self.gen.getkw('nodes'),totalnumbercores,self.uid)
+            subfile += '#!/bin/bash\n. /usr/share/Modules/init/bash\nmodule purge\nmodule load intel\nmodule load impi\nmpirun -np %s /opt/vasp.5.4.4/bin/vasp_%s' %(totalnumbercores, flavor)
+        with open('wrapper','w') as of_:
+            of_.write(wrapper)
+        if subfile:
+            with open('subfile','w') as of_:
+                of_.write(subfile)
 
     def moonphase(self):
+        if not os.path.isfile(path+'/wrapper'):
+            return 1
+        os.chdir(path)
+        if not os.path.isfile('vasprun.xml') or os.path.getmtime('vasprun.xml')<os.path.getmtime('wrapper'):
+            return 2
+        with open('vasprun.xml','r') as if_:
+            if vasprun.xml.read.splitlines()[-1] != '</modeling>':
+                if os.path.isfile('ignore_error'):
+                    print self.__class__.__name__ + ' warning: vasprun.xml incomplete in %s. ignored.' %path
+                    return 3
+                else:
+                    raise SystemError('vasprun.xml incomplete in %s' %path)
+                    return -1
+
+    def pot(symbol):
+        if len(ELEMENTS[symbol].pot) == 0:
+            raise ReferenceError('POTCAR for '+symbol+' not found.')
+        path = os.path.dirname(os.path.realpath(__file__))
+        path += '/data/paw_pbe/'+ELEMENTS[symbol].pot[0] + '/POTCAR' + ELEMENTS[symbol].pot_extension
+        if_ = open(path,'r')
+        of_ = open('./POTCAR','w')
+        of_.write( if_.read() )
 

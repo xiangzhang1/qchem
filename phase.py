@@ -252,7 +252,7 @@ KETS = {}
 
 class Ket(object):
 
-    def __init__(self,phase,cell,property_wanted,path,uid=None):
+    def __init__(self, phase, cell, property_wanted, path,uid):
         self.phase, self.cell, self.property_wanted, self.path = phase, cell, property_wanted, path
         self.uid = uid if uid else os.path.basename(os.path.normpath(self.path))
         # dynamic composition
@@ -278,11 +278,12 @@ class Ket(object):
     def compute(self):
         # phantom or workflow
         if len(self.property_wanted.nodes) != 1:
-            node = self.property_wanted.compute()
+            next_uid = self.property_wanted.compute()
+            prev_uid = self.property_wanted.prev(next_uid)
             uid = node.keys()[0]
             path = node[uid][1]
             if uid not in KETS:
-                KETS[uid] = Ket(self.phase, self.cell, node, path, uid)
+                KETS[uid] = Ket(self.phase, self.cell, self.property_wanted.subset([next_uid]), self.property_wanted.nodes[next_uid][1], uid)
                 KETS[uid].compute()
             else:
                 KETS[uid].compute()
@@ -293,7 +294,7 @@ class Ket(object):
             engine_ = getattr(self,self.gen.getkw('engine'),None)
             if not engine_:
                 class_ = getattr(engine, name_.title())
-                engine_ = class_(self.gen, self.cell, self.path)
+                engine_ = class_(self.gen, self.cell, self.path, self.uid)
                 setattr(self, name_, engine_)
                 getattr(self, name_).compute()
 
