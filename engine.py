@@ -56,7 +56,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
             kwvalset = set()
             for kwval_part in kwval_expression.split('|'):
                 kwval_part = kwval_part.strip()
-                kwvalset.add(self.evaluate(kwval_part))
+                kwvalset.append(self.evaluate(kwval_part))
             if kwname in self.kw and bool(self.kw[kwname]):
                 result = operation_map[operator](self.kw[kwname],kwvalset)
             else:
@@ -65,11 +65,11 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
                 self.kw[kwname] = result
             if run and not bool(result):
                 print 'Target %s={%s}. ' %(kwname,self.kw[kwname] if kwname in self.kw else 'null')
-            if self.moonphase>0:    self.kw_legal_set.add(kwname)
+            if self.moonphase>0:    self.kw_legal_set.append(kwname)
             return bool(result)
         elif 'internal' in expression:      ## parse kwname internal
             kwname = re.sub('internal','',expression).strip()
-            if self.moonphase>0:  self.kw_internal_set.add(kwname)
+            if self.moonphase>0:  self.kw_internal_set.append(kwname)
             return True
         elif not '(' in expression and not 'null' in expression:    ## parse !modname
             modname = re.sub('!','',expression).strip()
@@ -79,7 +79,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
                 result = ( self.mod[modname] if modname in self.mod else set() ) | set([True])
             if run and bool(result):        ### output
                 self.mod[modname] = result
-            if self.moonphase>0:  self.mod_legal_set.add(modname)
+            if self.moonphase>0:  self.mod_legal_set.append(modname)
             return bool(result)
         else:                               ## parse if expression
             return self.parse_if(expression)
@@ -104,7 +104,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
             name = expression.split('=')[0].strip()
             val = expression.split('=')[1].strip()
             result = (name in self.kw and self.kw[name]==set([val]))
-            if self.moonphase==2 or (self.moonphase==1 and result):  self.kw_legal_set.add(name)
+            if self.moonphase==2 or (self.moonphase==1 and result):  self.kw_legal_set.append(name)
             return result
         elif expression.startswith('(') and expression.endswith(')'):    ## parse (funcname)
             return self.evaluate(expression)
@@ -113,10 +113,10 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         elif 'null' in expression:              ## parse kwname null
             kwname = re.sub('null','',expression).strip()
             result = not ( kwname in self.kw and bool(self.kw[kwname]) )
-            if self.moonphase==2 or (self.moonphase==1 and result):  self.kw_legal_set.add(kwname)
+            if self.moonphase==2 or (self.moonphase==1 and result):  self.kw_legal_set.append(kwname)
             return result
         else:                                   ## parse modname
-            if self.moonphase>0:    self.mod_legal_set.add(expression)
+            if self.moonphase>0:    self.mod_legal_set.append(expression)
             return (expression in self.mod and self.mod[expression]==set([True]))        
 
     def write_(self, of_=None):
@@ -216,11 +216,11 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         # alter and write
         wayback_dict = []
         if self.parse_if('isym=-1'):
-            wayback_dict.add( lambda x: x.kw['isym']=['-1'] )
+            wayback_dict.append( lambda x: x.kw['isym']=['-1'] )
             multiplier = 2
             self.kw['isym'] = ['-1']
         if self.parse_if('lsorbit=.TRUE.'):
-            wayback_dict.add( lambda x: x.kw['lsorbit']=['.TRUE.']
+            wayback_dict.append( lambda x: x.kw['lsorbit']=['.TRUE.']
             multiplier = 2
             self.kw['lsorbit'] = ['.FALSE.']
         self.write_()
@@ -229,7 +229,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         os.system("sed -i '6d' POSCAR")
         # calculate and read
         path = os.path.dirname(os.path.realpath(__file__))
-        output = subprocess.check_output([path+'/data/makeparam']).splitlines()
+        output = subprocess.check_output([path+'/resource/makeparam']).splitlines()
         try:
             self.memory = {}
             self.memory['arraygrid'] = int( next(l for l in output if 'arrays on large grid' in l).split()[7] )
@@ -439,7 +439,7 @@ class Vasp(object):
         if len(ELEMENTS[symbol].pot) == 0:
             raise ReferenceError('POTCAR for '+symbol+' not found.')
         path = os.path.dirname(os.path.realpath(__file__))
-        path += '/data/paw_pbe/'+ELEMENTS[symbol].pot[0] + '/POTCAR' + ELEMENTS[symbol].pot_extension
+        path += '/resource/paw_pbe/'+ELEMENTS[symbol].pot[0] + '/POTCAR' + ELEMENTS[symbol].pot_extension
         if_ = open(path,'r')
         of_ = open('./POTCAR','w')
         of_.write( if_.read() )
@@ -453,41 +453,63 @@ class Vasp(object):
 
 
 class Map(object):
+
+
+    def lookup(self, name):
+
+        if name in NODES:
+            return NODES.pop(name)
+        elif any([x.name == name for x in self.map]):
+            return next([x for x in self.map if x.name == name])
+        elif '.' in name:
+            return self.lookup('.'.join(name.split('.')[:-2]).map.lookup(name.split('.')[-1])
+        elif name == 'master' and name not in NODES:
+            raise SystemError('你是我的master吗? 找不到master了，求喂食')
+        elif name == 'master' and name in NODES:
+            return NODES['master']
+        else:
+            raise LookupError('Node %s not found' %name)
+
+
     def __init__(self, text):
-        self._dict = {}
+    
+        self._dict, self._dict2 = {}
         if '\n' in text:
             text = text.splitlines()
+
+        # src -> dst
         for line in text:
             line = [x.strip() for x in re.split('\(->\|-->\)', line)]
-            name = line[0]
-            if name not in NODES:
-                raise ValueError('Node %s not found in NODES' %name)
             if len(line) == 1:
-                self._dict[NODES[name]] = []
+                src = self.lookup(line[0])
+                self._dict[src] = []
             elif len(line) == 3:
-
+                src, dist = self.lookup(line[0]), self.lookup(line[2])
+                m = self._dict if line[2]=='->' else self._dict2
+                m[src] = [dist] if src not in m else m[src]+[dist]
             else:
                 raise SyntaxError('Map: src -> dst. 3 parts needed')
         
+
     def __str__(self):
-        return "[%s]" % ", ".join(ele.symbol for ele in self._list)
+        result = ''
+        for m in self._dict, self._dict2:
+            for src in m:
+                for dst in m[src]:
+                    result += src.name + '->' if m==self._dict else '-->' + dst.name + '\n'
+                if not m[src]:
+                    result += src.name + '\n'
+        return result
 
     def __contains__(self, item):
         return item in self._dict
 
     def __iter__(self):
-        return iter(self._list)
+        return iter(self._dict)
 
     def __len__(self):
-        return len(self._list)
+        return len(self._dict)
 
     def __getitem__(self, key):
-        try:
-            return self._dict[key]
-        except KeyError:
-            try:
-                start, stop, step = key.indices(len(self._list))
-                return self._list[slice(start - 1, stop - 1, step)]
-            except:
-                raise KeyError
-
+        return self._dict[key]
+    
