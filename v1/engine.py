@@ -9,11 +9,10 @@
 #
 # Regarding __init__, compute, and write_:
 # Do not define compute() unless necessary.
-
-
-
+#
+# ================================================================================
+#
 # Gen
-# ===========================================================================
 
 import os
 import sys
@@ -25,7 +24,8 @@ import shutils
 from pprint import pprint
 import tempfile
 
-from shared import ELEMENTS, NODES
+from phase import ELEMENTS
+
 
 class Gen(object):   # Stores the logical structure of keywords and modules. A unique construct deserving a name.
 
@@ -149,8 +149,6 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
     # -------------
     def __init__(self,input_,cell): 
         self.cell = cell
-        if '\n' in input_:
-            input_.input_.splitlines()[0]
 	# 读mod, kw
         self.mod = {}
 	self.kw = {}
@@ -281,7 +279,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
     def ismear5check(self):
 	try:
 	    kpoints = self.getkw('kpoints').split(' ')
-	    return np.prod([int(x) for x in kpoints]) > 2
+	    return np.prod(map(int,kpoints)) > 2
 	except (KeyError, AttributeError, ValueError) as KwError:
 	    return False
 
@@ -294,7 +292,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
 
     def nkred_divide(self):
 	try:
-	    kpoints = [int(x) for x in self.getkw('kpoints').split(' ')]
+	    kpoints = map(int,self.getkw('kpoints').split(' '))
 	    nkredx = int(self.getkw('nkredx'))
 	    nkredy = int(self.getkw('nkredy'))
 	    nkredz = int(self.getkw('nkredz'))
@@ -338,12 +336,10 @@ class Cell(object):
 
     def __init__(self,lines): 
         # basics
-        if '\n' in lines:
-            lines = lines.splitlines()
         self.name = lines[0]
         self.base = np.float_([ line.split() for line in lines[2:5] ]) * float(lines[1])
         self.coordinates = np.float_([ line.split() for line in lines[8:] ])
-        self.stoichiometry = dict( zip(lines[5].split(), [int(x) for x ini lines[6]]) )
+        self.stoichiometry = dict( zip(lines[5].split(), map(int,lines[6])) )
         if not lines[7].startswith('D'):
             raise SyntaxError('unsupported POSCAR5 format. Only direct coordinates are supported.')
         if len(lines) - 8 != sum(self.stoichiometry.values()):
@@ -370,6 +366,112 @@ class Cell(object):
             
 
 # =========================================================================== 
+
+from phase import KETS
+
+class Property_wanted(object):
+
+    def node(self, input_):
+        result = [ x for x in self.nodes if input_ in x ]   #
+        if len(result) != 1:
+            raise ValueError('Could not find unique %s in self.lookup_' %input_)
+        return result[0]    #
+        
+    def __init__(self, input_): # nodes and graph
+        if not input_:  
+            self.nodes = [] ; self.edges = [] ; return
+        nodes_input = input_.split('\n\n')[0].splitlines()
+        graph_input = input_.split('\n\n')[1].splitlines()
+        self.nodes = []
+        self.edges = []
+        #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 
+        if any( [ len(x.split(':')) < 3 for x in self.nodes ] ):
+            print self.__class__.__name__ + ': Need property_wanted_ : path: label. Press Enter to continue.' + raw_input()
+            f, fname = tempfile.mkstemp()
+            f.write(input_)
+            f.close()
+            cmd = 'vi' + ' ' + fname
+            subprocess.call(cmd, shell=True)
+            with open(fname, 'r') as f:
+                input_ = f.read()
+            os.unlink(fname)
+        #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< 
+        for line_ in nodes_input:
+            line = [ x.strip() for x in line_.split(':') ]
+            property_wanted_ = line[0]
+            self.nodes.add( [ line[0], line[1] if len(line)>1 else None, line[2] if len(line)>2 else None ] )
+        for line_ in graph_input:
+            line = [ x.strip() for x in re.split('(->|-l->)', line_) ]
+            from_ = self.node(line[0])[0]
+            arrow_ = line[1]
+            to_ = self.node(line[2])[0]
+            if not to_:
+                raise SyntaxError('Don\'t include single nodes in edges.')
+            self.edges.add( [ from_, to_, arrow_ ] )
+
+    def subset(self, list_):
+        result = Property_wanted('')
+        l_ = [self.node(i)[0] for i in list_]  #
+        result.nodes = [ n for n in self.nodes if n[0] in l_  ]
+        result.edges = [ e for e in self.edges if e[0] in l_ and e[1] in l_ ]
+        return result
+
+    def prev(self, input_):
+        input_ = self.node[input_][0]   #
+        for n in self.nodes:
+            if n[1] == input_:
+                return n[0]
+        return None
+
+    def compute(self,proposed_=None):
+        proposed_ = self.node(proposed_)[0] #
+        l = []
+        for n in self.nodes:
+            if n[1] in KETS and KETS[n[1]].moonphase()==1: #
+                l = [ n[0] ] + l
+            if n[1] not in KETS:    #
+                parents = [e[0] for e in self.edges if e[1]==n[0]]
+                if not parents or any([self.node(p)[1] in KETS and KETS[self.node(p)[1]].moonphase()==3 for p in parents]): #
+                    l.append(n[0])
+        if not l:
+            print self.__class__.__name__ + ': Nothing computable'.
+        if proposed_ and proposed_ in l:
+            return proposed_
+        else:
+            return l[0]
+
+    def moonphase(self):
+        if any( [n[1] not in KETS or KETS[n[1]].moonphase()==1 for n in self.nodes ] ):  #
+            return 1
+        elif any( [ KETS[n[1]].moonphase()==2 for n in self.nodes ] ):
+            return 2
+        else:
+            return 3
+
+    def write_(self, of_=None):
+        result = ''
+        for n in self.nodes:
+            result += ' : '.join(n) + '\n'
+        result += '\n'
+        for e in self.edges:
+                result += self.node(e[0])[2] + e[2] + self.node(e[1])[2] + '\n' #
+        if of_:
+            with open(of_, 'w') as outfile:
+                outfile.write(result)
+            return result
+        else:
+            return result
+        
+    def read_(self,input_=None, if_=None):
+        if if_:
+            with open(if_,'r') as infile:
+                input_ = infile.read()
+        self.__init__(input_)
+            
+        
+
+
+#===========================================================================  
 
 class Vasp(object):
 
@@ -447,47 +549,3 @@ class Vasp(object):
     def delete(self):
         if os.path.isdir(self.path):
             shutils.rmtree(self.path)
-
-
-# ===========================================================================  
-
-
-class Map(object):
-    def __init__(self, text):
-        self._dict = {}
-        if '\n' in text:
-            text = text.splitlines()
-        for line in text:
-            line = [x.strip() for x in re.split('\(->\|-->\)', line)]
-            name = line[0]
-            if name not in NODES:
-                raise ValueError('Node %s not found in NODES' %name)
-            if len(line) == 1:
-                self._dict[NODES[name]] = []
-            elif len(line) == 3:
-
-            else:
-                raise SyntaxError('Map: src -> dst. 3 parts needed')
-        
-    def __str__(self):
-        return "[%s]" % ", ".join(ele.symbol for ele in self._list)
-
-    def __contains__(self, item):
-        return item in self._dict
-
-    def __iter__(self):
-        return iter(self._list)
-
-    def __len__(self):
-        return len(self._list)
-
-    def __getitem__(self, key):
-        try:
-            return self._dict[key]
-        except KeyError:
-            try:
-                start, stop, step = key.indices(len(self._list))
-                return self._list[slice(start - 1, stop - 1, step)]
-            except:
-                raise KeyError
-
