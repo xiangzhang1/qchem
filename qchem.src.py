@@ -62,7 +62,7 @@ class Node(object):
             return min([x.moonphase() for x in self.map])
         elif getattr(self, 'gen', None) and getattr(self, self.gen.getkw('engine'), None):
             return getattr(self, self.gen.getkw('engine')).moonphase()
-        else
+        else:
             return 0
     
             
@@ -78,7 +78,7 @@ class Node(object):
 
         if getattr(self, 'map', None):
             l = self.map.compute()
-            n = next([x in self.map if x.name == proposed]) if proposed else l[0]
+            n = next([x for x in self.map if x.name == proposed]) if proposed else l[0]
             n.phase, n.cell = self.phase, self.cell
             n.compute()
 

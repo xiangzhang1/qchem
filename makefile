@@ -1,17 +1,7 @@
-compile: *.src.py
-	for filename in *.src.py
-	do
-	    f=${filename%%.*}
-	    cp ${f}.src.py ${f}.py
-	    sed -i "s/'''//g" ${f}.py
-	done
-clean:
-	for filename in *.src.py
-	do
-	    f=${filename%%.*}
-		trash *.py
-	done
-test:
-	cp test/* .
-	python test.py
-	trash test.*
+.PHONY : compile, clean, test
+compile : *.src.py
+	for f in *.src.py ; do sed "s/'''//g" "$$f" > "$${f%.src.py}.py"; done
+clean :
+	for f in *.src.py ; do rm -rf "$${f%.src.py}.py"; done; rm -rf *.pyc
+test : compile
+	cp test/* .; python test.py; rm -rf test.*

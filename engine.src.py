@@ -10,7 +10,7 @@ import subprocess
 import re
 import numpy as np
 import scipy
-import shutils
+import shutil
 from pprint import pprint
 import tempfile
 
@@ -112,7 +112,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         with open('INCAR','w') as outfile:
             for name in self.kw:
                 if name not in self.kw_internal_set:
-    	        outfile.write('\t'+name.upper()+' \t= '+self.getkw(name)+'\n')
+    	            outfile.write('\t'+name.upper()+' \t= '+self.getkw(name)+'\n')
         with open('KPOINTS','w') as outfile:
             outfile.write('KPOINTS\n')
             outfile.write('0\n')
@@ -197,16 +197,20 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         os.mkdir('memory_check')
         os.chdir('memory_check')
         # alter and write
-        wayback_dict = []
+        wayback = []
         if self.parse_if('isym=-1'):
-            wayback_dict.append( lambda x: x.kw['isym']=['-1'] )
+            wayback.append( 'isym=-1' )
             multiplier = 2
-            self.kw['isym'] = ['-1']
+            self.kw['isym'] = ['0']
         if self.parse_if('lsorbit=.TRUE.'):
-            wayback_dict.append( lambda x: x.kw['lsorbit']=['.TRUE.'] )
+            wayback_dict.append( 'lsorbit=.TRUE.' )
             multiplier = 2
             self.kw['lsorbit'] = ['.FALSE.']
         self.writefiles()
+        if 'isym=-1' in wayback:
+            self.kw['isym'] = ['-1']
+        if 'lsorbit=.TRUE.' in wayback:
+            self.kw['lsorbit'] = ['.TRUE.']
         for funcname in wayback_dict:
             funcname(self)
         os.system("sed -i '6d' POSCAR")
@@ -228,7 +232,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         else:
             memory_required = ( (memory['projector_real']+memory['project_reciprocal'])*self.getkw('npar')+memory['wavefunction']*self.getkw('kpar') )/1024^3 + self.getkw('nodes')*3/2
         memory_required *= multiplier
-        memory_availble = int(self.getkw('nodes')) * int(self.getkw('mempernode')
+        memory_availble = int(self.getkw('nodes')) * int(self.getkw('mempernode'))
         if memory_required > memory_available:
             print self.__class__name + 'warning: insufficient memory. Mem required is {' + str(memory_required) + '} GB. Available mem is {' + memory_available + '} GB.' 
         # cleanup
@@ -326,7 +330,7 @@ class Cell(object):
         self.name = lines[0]
         self.base = np.float_([ line.split() for line in lines[2:5] ]) * float(lines[1])
         self.coordinates = np.float_([ line.split() for line in lines[8:] ])
-        self.stoichiometry = dict( zip(lines[5].split(), [int(x) for x ini lines[6]]) )
+        self.stoichiometry = dict( zip(lines[5].split(), [int(x) for x in lines[6]]) )
         if not lines[7].startswith('D'):
             raise SyntaxError('unsupported POSCAR5 format. Only direct coordinates are supported.')
         if len(lines) - 8 != sum(self.stoichiometry.values()):
@@ -363,7 +367,7 @@ class Vasp(object):
             raise SystemError('moonphase > 1')
         # prev_label
         for ket in KETS:
-            if self gofromhere in ket.property_wanted.nodes:
+            if self in ket.property_wanted.nodes:
                 prev_label = ket.property_wanted.prev(self.label)
         prev = KETS[prev_label]
         print self.__class__.__name__ + ': copying %s to %s' %(prev.path, self.path)
@@ -375,6 +379,7 @@ class Vasp(object):
         with open('POSCAR','w') as f:
             f.write(str(self.cell))
         for symbol in self.cell.stoichiometry.keys():
+            self.pot(symbol)
         # setting variables for wrapper
         totalnumbercores = self.gen.getkw('totalnumbercores')
         if self.gen.parse_if('spin=ncl'):   # vasp flavor
@@ -426,7 +431,7 @@ class Vasp(object):
 
     def delete(self):
         if os.path.isdir(self.path):
-            shutils.rmtree(self.path)
+            shutil.rmtree(self.path)
 
 
 # ===========================================================================  
@@ -442,9 +447,10 @@ class Map(object):
         elif any([x.name == name for x in self.map]):
             return next([x for x in self.map if x.name == name])
         elif '.' in name:
-            return self.lookup('.'.join(name.split('.')[:-2]).map.lookup(name.split('.')[-1])
+            return self.lookup('.'.join(name.split('.')[:-2])).map.lookup(name.split('.')[-1])
         elif name == 'master':
-            return NODES['master']
+            if name in NODES:   return NODES['master']
+            else: raise SystemError('找不到master，求喂食')
         else:
             raise LookupError('Node %s not found' %name)'''
 
