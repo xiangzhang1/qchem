@@ -14,6 +14,16 @@ import shutil
 from pprint import pprint
 import tempfile
 import hashlib
+from subprocess import call
+
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
+import time
+import progressbar
+from progressbar import Bar, Counter, ETA,FormatLabel, Percentage,ProgressBar 
+from scipy.interpolate import Rbf
+from scipy.optimize import minimize
+from scipy import spatial
 
 from shared import ELEMENTS, NODES
 
@@ -24,7 +34,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
     def getkw(self,kwname):
 	if len(self.kw[kwname])!=1:
 	    raise ValueError('self.kw[kwname] does not have 1 and only 1 value. wait till that happens and try again.')
-	return next(iter(self.kw[kwname]))
+	return next(iter(self.kw[kwname])) if self.kw[kwname] else None
 
     def evaluate(self,expression):                  # Evaluates expression to string: literal or (funcname)
         if expression.startswith('(') and expression.endswith(')'): 
@@ -150,7 +160,8 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
 	# 执行require
         self.require = []
         self.moonphase = 1
-	with open('engine.gen.conf') as conf:
+        engine_name = next([x for x in input_.split() if x.startswith('engine')]).split('=')[0].strip()
+	with open('engine.gen.' + engine_name + '.conf') as conf:
 	    lines = conf.read().splitlines()
             for line in [ [p.strip() for p in l.split(':')] for l in lines if not l.startswith('#') ]:
                 if len(line) < 3:
@@ -367,10 +378,9 @@ class Vasp(object):
 
     def compute(self):
 
-        if not getattr(self, 'wrapper'):
+        if not getattr(self, 'wrapper', None):
             if not os.path.isdir(self.path):
                 os.mkdir(self.path)
-            shutil.copytree(self.prev.path, self.path)
             if self.gen.parse_if('icharg=1|icharg=11'):
                 shutil.copyfile(self.prev.path+'/CHGCAR', self.path+'/CHGCAR')
             if self.gen.parse_if('icharg=0|icharg=10|istart=1|istart=2'):
@@ -422,12 +432,14 @@ class Vasp(object):
             print self.__class__.__name__ + ': waiting for system. Leave me on, or save/load.'
 
         elif not getattr(self,'log',None):
-            if os.path.isfile('./vasprun.xml'):
+            if os.path.isfile('vasprun.xml') and os.path.getmtime('vasprun.xml')>os.path.getmtime('wrapper'):
                 with open('vasprun.xml','r') as if_:
                     if if_.read.splitlines()[-1] != '</modeling>' and not os.path.isfile('ignore_error'):
                         raise SystemError('Vasp computation at %s went wrong. Touch ignore_error to ignore.' %self.path)
                     else:
-                        with open('run.log','r') as if_:
+                        l = os.lsdir(self.path)
+                        filename = next([x for x in l if x.startswith(('slurm-','run.log','OSZICAR'))])
+                        with open(filename,'r') as if_:
                             self.log = if_.read()
 
         else:
@@ -536,3 +548,529 @@ class Map(object):
             for n in m:
                 m[n] = [x for x in m[n] if x != node]
     '''
+
+
+
+
+#=========================================================================== 
+
+# Electron
+class Electron(object):
+    def __init__(self, gen, path, prev):
+        self.gen = gen
+        self.path = path
+        self.prev = prev
+
+    def compute(self):
+        if not getattr(self, 'log', None):
+            shutil.copytree(self.prev.path, self.path)
+            if self.gen.parse_if('poscar'):
+                self.poscar = Poscar()  # obviously can be improved
+            if self.gen.parse_if('grepen'):
+                self.grepen = Grepen()
+            if self.gen.parse_if('dos'):
+                self.dos = Dos(self.grepen)
+            if self.gen.parse_if('charge'):
+                self.charge = Charge(self.poscar, self.grepen, self.dos)
+            if self.gen.parse_if('bands'):
+                self.bands = Bands(self.grepen)
+            if self.gen.parse_if('errors'):
+                if self.gen.getkw('nodeB'):
+                    nodeB = self.prev.map.lookup(self.gen.getkw('nodeB'))
+                    self.errors = Errors(self.grepen, self.dos, self.bands, nodeB.electron.grepen, nodeB.electron.dos, nodeB.electron.bands)
+                else:
+                    self.errors = Errors(self.grepen, self.dos, self.bands)
+            self.log = '' 
+
+    def moonphase(self):
+        return 2 if getattr(self, 'log', None) else 0
+    
+
+# reads poscar, and generates 3*3*3 mirror for all kinds of purposes.
+class Poscar(object):
+    def __init__(self):
+        self.log = ''
+        #0.parameters:
+        #exclude_dist, exlude_pair, truncate_dist_at, exclude_ele_pair
+        #1.get system parameters
+        f=open("POSCAR","r")
+        self.lines=f.readlines()
+        self.cell=[self.lines[i].split() for i in range(2,5)]
+        self.base=[self.lines[i].split()[0:3] for i in range(8,len(self.lines))]
+        self.elements = self.lines[5].split()
+        self.nelements = len(self.elements)
+        self.atomcounts = np.int_(self.lines[6].split())
+        self.natoms = sum(self.atomcounts)
+        if len(self.base[-1])==0:
+         print 'poscar.py warning: last line of POSCAR should not be empty, watch it! Removing the last line...'
+         self.base.pop(-1)
+        if len(self.base[-1])==0:
+         print 'poscar.py error: last line of POSCAR still empty! '
+         exit(-1)
+        if any(len(x.strip())==0 for x in self.lines):
+            print  'poscar.py error: no empty lines allowed in POSCAR. that is , second half of poscar is not allowed.'
+            exit(-1)
+        self.cell=np.float64(self.cell)
+        self.base=np.float64(self.base)
+        #2.image to supercell
+        self.pos_imaged=[]
+        self.rpos_imaged=[]
+        for i in [0,1,-1]:
+         for j in [0,1,-1]:
+          for k in [0,1,-1]:
+           tmp_image_shift=np.float64([i,j,k])
+           for id_base in range(0,len(self.base)):
+            ele_pos_imaged=tmp_image_shift+self.base[id_base]
+            self.rpos_imaged.append(ele_pos_imaged)
+            ele_pos_imaged=np.dot(ele_pos_imaged,self.cell)
+            self.pos_imaged.append(ele_pos_imaged)
+        self.pos_imaged=np.float64(self.pos_imaged)
+        self.rpos_imaged=np.float64(self.rpos_imaged)
+        self.pos_original=np.dot(self.base,self.cell)
+        self.pos_original=np.float64(self.pos_original)
+        #3.calculate distances
+        #calculate dist_qui. this is the quintuplet [id1_pos_imaged, id2_pos_imaged, id1_base, id2_base, tmp_dist]
+        self.dist_qui=[]
+        changefromto=[]
+        for id1_base in range(0,len(self.base)):
+         for id2_base in range(0,len(self.base)):
+          for id2_pos_imaged in [id2_base+tmp_image_shift*len(self.base) for tmp_image_shift in range(0,27)]:
+           tmp_dist=np.linalg.norm(self.pos_original[id1_base]-self.pos_imaged[id2_pos_imaged])
+           if abs(tmp_dist)<0.1:
+            continue
+           # add 0.4 to distances when necessary, to separate say Pb from S.
+           # i is the index of first atom, starting from 0. j is that of the second. k is the index of imaged second atom.
+           #if i>1 and j>1:
+            #dist=dis`t+0.4
+           id1_pos_imaged=id1_base
+           self.dist_qui.append([id1_pos_imaged,id2_pos_imaged,id1_base,id2_base,tmp_dist])
+        self.dist_qui=np.float64(self.dist_qui)
+        self.dist_qui=self.dist_qui[np.argsort(self.dist_qui[:,4])]
+        #get the excluded distances using exclude_ele_pair
+        self.exclude_pairs = []
+        self.exclude_dists = []
+        for ele_exclude_pair in self.exclude_pairs:
+            ele_exclude_pair=np.float64(ele_exclude_pair)
+            exclude_quis=[ele_dist_qui for ele_dist_qui in self.dist_qui if ele_dist_qui[2]==ele_exclude_pair[0] and ele_dist_qui[3]==ele_exclude_pair[1]]
+            if exclude_quis != []:
+                self.exclude_dists.append(exclude_quis[0][4])
+        self.exclude_dists = np.float64(self.exclude_dists)
+   
+class Grepen(object):
+    def __init__(self):
+        self.log=''
+        self.energy=float(os.popen('grep "energy without" OUTCAR | tail -1 | awk \'{print $5}\'').read())
+        self.efermi=float(os.popen('grep "E-fermi" OUTCAR | awk \'{print $3}\'').read())
+        self.nbands=int(os.popen('grep NBANDS OUTCAR | awk \'{print $15}\'').read())
+        self.nedos=int(os.popen('grep NEDOS OUTCAR | awk \'{print $6}\'').read())
+        self.ispin=int(os.popen('grep ISPIN OUTCAR | awk \'{print $3}\'').read())
+        self.lsorbit=os.popen('grep LSORBIT OUTCAR | awk \'{print $3}\'').read().strip('\n').strip('\t')
+        self.sigma=float(os.popen('grep SIGMA OUTCAR | head -1 | awk \'{print $6}\'').read())
+        self.ismear=int(os.popen('grep ISMEAR OUTCAR | awk \'{print $3}\'').read().strip('\n').strip(';'))
+        with open('DOSCAR') as doscar_file:
+            doscar_lines=doscar_file.readlines()
+            self.doscar_usable = (len(doscar_lines) > 10) 
+        with open('KPOINTS') as kpoints_file:
+            kpoints_lines = kpoints_file.readlines()
+            self.kpoints_meshable = (len(kpoints_lines) < 8)
+    
+# dos related utility
+class Dos(object):
+    def __init__(self,grepen):  
+        # initialization
+        self.log=''
+        self.log += '*' * 72 + '\n'  # print '*' * 35, ' dos of ',os.getcwd(),' ', '*' * 35    #pretty print
+        if not(grepen.doscar_usable):
+            print 'dos.py warning: doscar is not usable (as determined by grepen). dos object is empty.'
+            return
+        ## parameter: min_dos. is dos considered 0 if it's 0.002? 
+        min_dos=1E-3
+        ## initialize dos file. all dos -> np.float64::tdos
+        doscar_file=open("DOSCAR","r")
+        tmplines=doscar_file.readlines()
+        doscar_lines=[tmplines[i].split() for i in range(6,6+grepen.nedos)]
+        self.dos=np.float64(doscar_lines)
+        idx_fermi=abs(self.dos[:,0]-grepen.efermi).argmin()+1
+
+        # Fork: DOSCAR format: ispin=1? lsorbit=T?
+        if grepen.ispin==1 or grepen.lsorbit!='F': 
+            ##ispin=1 or spin-orbit coupling.
+            if abs(self.dos[idx_fermi][1])>min_dos:
+                self.log += 'dos.py: conductor.\n'
+            else: 
+                self.VB=self.dos[idx_fermi:0:-1]
+                self.CB=self.dos[idx_fermi:len(self.dos)]
+                self.VB1=[self.VB[x][0] for x in range(0,len(self.VB)) if abs(self.VB[x][1])>min_dos]
+                self.CB1=[self.CB[x][0] for x in range(0,len(self.CB)) if abs(self.CB[x][1])>min_dos]
+                if len(self.VB1)==0 or len(self.CB1)==0:
+                    self.log += 'dos.py: weird. len(self.VB1/self.CB1) is 0\n'
+                    exit(1)
+                self.VBM1=self.VB1[0]
+                self.CBM1=self.CB1[0]
+                self.log += 'dos.py: DOS* type is insulator. DOS bandgap* is: ' + self.CBM1-self.VBM1 + ' eV.\n'
+        elif grepen.ispin==2:
+            ##ispin=2
+            if abs(self.dos[idx_fermi][1])>min_dos and abs(self.dos[idx_fermi][2])>min_dos:
+                self.log += 'dos.py: conductor. quite probably. but check dos anyway.\n'
+            elif abs(self.dos[idx_fermi][1])<min_dos and abs(self.dos[idx_fermi][2])<min_dos: 
+                self.VB=self.dos[idx_fermi:0:-1]
+                self.CB=self.dos[idx_fermi:len(self.dos)]
+                self.VB1=[self.VB[x][0] for x in range(0,len(self.VB)) if abs(self.VB[x][1])>min_dos]
+                self.VB2=[self.VB[x][0] for x in range(0,len(self.VB)) if abs(self.VB[x][2])>min_dos]
+                self.CB1=[self.CB[x][0] for x in range(0,len(self.CB)) if abs(self.CB[x][1])>min_dos]
+                self.CB2=[self.CB[x][0] for x in range(0,len(self.CB)) if abs(self.CB[x][2])>min_dos]
+                if len(self.VB1)==0 or len(self.VB2)==0 or len(self.CB1)==0 or len(self.CB2)==0:
+                    self.log += 'dos.py: weird. len(self.VB1) is ' + str(len(self.VB1)) + '. len(self.VB2) is ' + str(len(self.VB2)) + '. len(self.CB1) is ' + str(len(self.CB1)) + '. len(self.CB2) is ' + str(len(self.CB2))
+                    exit(1)
+                self.VBM1=self.VB1[0] ; self.CBM1=self.CB1[0] ; self.VBM2=self.VB2[0] ; self.CBM2=self.CB2[0]
+                CV_divide=0.45
+                self.VBM1S=self.VBM1*(1-CV_divide)+self.CBM1*CV_divide ; self.CBM1S = self.CBM1*(1-CV_divide) + self.VBM1*CV_divide ; self.VBM2S = self.VBM2*(1-CV_divide) + self.CBM2*CV_divide ; self.CBM2S = self.CBM2*(1-CV_divide) + self.VBM2*CV_divide
+                if abs(self.VBM1-self.VBM2)<min_dos or abs(self.CBM1-self.CBM2)<min_dos:
+                    self.log += 'dos.py: DOS* type is nonmagnetic insulator. Bandgap* is: ' + str(self.CBM1-self.VBM1) + ' eV.\n'
+                else:
+                    self.log += 'BMS ' + str(min(abs(self.VBM1-self.VBM2)) + str(min(self.VBM1,self.VBM2)-max(self.CBM1,self.CBM2)) + str(abs(self.CBM1-self.CBM2))) + '\n'
+            elif abs(self.dos[idx_fermi][1])<min_dos and abs(self.dos[idx_fermi][2])>min_dos:
+                self.VB=self.dos[idx_fermi:0:-1]
+                self.CB=self.dos[idx_fermi:len(self.dos)]
+                self.VBM1=next(self.VB[x][0] for x in range(0,len(self.VB)) if abs(self.VB[x][1])>min_dos or abs(self.VB[x][2])<min_dos)
+                self.CBM1=next(self.CB[x][0] for x in range(0,len(self.CB)) if abs(self.CB[x][1])>min_dos or abs(self.CB[x][2])<min_dos)
+                self.log += 'HM ' + str(self.CBM1-self.VBM1) + '\n'
+            elif abs(self.dos[idx_fermi][1])>min_dos and abs(self.dos[idx_fermi][2])<min_dos:
+                self.VB=dos[idx_fermi:0:-1]
+                self.CB=dos[idx_fermi:len(self.dos)]
+                self.VBM1=next(self.VB[x][0] for x in range(0,len(self.VB)) if abs(self.VB[x][2])>min_dos or abs(self.VB[x][1])<min_dos)
+                self.CBM1=next(self.CB[x][0] for x in range(0,len(self.CB)) if abs(self.CB[x][2])>min_dos or abs(self.CB[x][1])<min_dos)
+                self.log += 'HM ' + str(self.CBM1-self.VBM1) + '\n'
+        else:
+                self.log += 'dos.py: ispin is not 1 or 2. data corrupt.\n'
+
+        # site-projected dos
+        split_indices = [i for i, x in enumerate(tmplines) if x == tmplines[5]]
+        split_indices.append(len(tmplines))
+        self.site_dos = []
+        for i in range(0,len(split_indices)-1):
+            tmp = tmplines[split_indices[i]+1:split_indices[i+1]]
+            self.site_dos.append(np.float_([x.split() for x in tmp]))
+
+        print self.log
+
+# imports bandstructure from EIGENVAL. 
+# imports kpoints list.
+# interpolates.
+# finds all sources of errors in bandstructure.
+class Bands(object):
+    def __init__(self,grepen):  
+        self.log=''
+        self.log += '*' * 72 + '\n'  # print '*' * 35, ' bands of ',os.getcwd(),' ', '*' * 35    #pretty print
+        # initialize
+        eigenval_file=open("EIGENVAL","r")
+        tmplines=eigenval_file.readlines()
+        eigenval_lines=[tmplines[i].split() for i in range(6,len(tmplines))]
+        nkpts=len(eigenval_lines)/(grepen.nbands+2)
+        list_band_kpte=[]
+
+        # Forking: EIGENVAL format: ispin=1? lsorbit=T?
+        if grepen.ispin==1 or grepen.lsorbit!='F':
+            eigenval_e_idx = 1
+            eigenval_occ_idx = 2
+        else:
+            eigenval_e_idx = 1
+            eigenval_occ_idx = 3
+
+        # initialise all bands [kx,ky,kz,e,occupancy] -> np.float64::bands
+        for i_band in range(0,grepen.nbands):
+            band_kpte=[]
+            for i_kpt in range(0,nkpts):
+                kpte = eigenval_lines[i_kpt*(grepen.nbands+2)+1][0:3]
+                energy = float(eigenval_lines[i_kpt*(grepen.nbands+2)+i_band+2][eigenval_e_idx])
+                occ = 1 if energy < grepen.efermi else 0
+                kpte.append(energy)
+                kpte.append(occ)
+                band_kpte.append(kpte)
+            list_band_kpte.append(band_kpte)
+        self.bands=np.float64(list_band_kpte)
+        ## initialise kpoints
+        kpts=[kpte[0:3] for kpte in self.bands[0]]
+        ### get kpts nearest neighbor list
+        min_kpt_dist = np.amin(spatial.distance.pdist(kpts))
+        kpts_nn_tree = spatial.cKDTree(kpts)
+        kpts_nn_list = kpts_nn_tree.query_pairs(r=min_kpt_dist*1.5,output_type='ndarray')
+        self.log += "bands.py: finite kpoint mesh precision delta_k (2pi/a) is %.5f; number of kpoints sampled is %d\n" %(min_kpt_dist, len(kpts))
+        ## compute bandstructure-wise CBM and VBM
+        self.flat_bands=[] # flattened out:
+        for band in self.bands:
+            for kpte in band:
+                self.flat_bands.append(kpte)
+        self.flat_bands=np.float64(self.flat_bands)
+        CBM1_kpte_idx=np.argmin([kpte[3] for kpte in self.flat_bands if kpte[4]==0])
+        VBM1_kpte_idx=np.argmax([kpte[3] for kpte in self.flat_bands if kpte[4]==1])
+        self.CBM1_kpte=[kpte for kpte in self.flat_bands if kpte[4]==0][CBM1_kpte_idx]
+        self.VBM1_kpte=[kpte for kpte in self.flat_bands if kpte[4]==1][VBM1_kpte_idx]
+        self.CBM1=self.CBM1_kpte[3]
+        self.VBM1=self.VBM1_kpte[3]
+        CV_divide=0.5
+        self.VBM1S=self.VBM1*(1-CV_divide)+self.CBM1*CV_divide ; self.CBM1S = self.CBM1*(1-CV_divide) + self.VBM1*CV_divide 
+        self.log += "bands.py: bandstructure bandgap* is %.5f, CBM1* is %s, VBM1* is %s\n" %(self.CBM1-self.VBM1,self.CBM1_kpte[0:4],self.VBM1_kpte[0:4])
+        ## compute neargap bands
+        self.neargap_bands=[]
+        for band in self.bands:
+            if any([(kpte[3]<self.VBM1S and kpte[3]>self.VBM1-0.5) for kpte in band]) or any([(kpte[3]>self.CBM1S and kpte[3]<self.CBM1+0.5) for kpte in band]):   
+                self.neargap_bands.append(band)
+        self.neargap_bands=np.float_(self.neargap_bands)
+        self.log += 'bands.py: number of neargap_bands is %d\n' %(len(self.neargap_bands))
+        self.log += 'bands.py: warning: bands.py has not been adapted for magnetic systems. ispin=2 is fine, but only spin channel 1 is considered.\n'
+
+        # precision check 
+        ## calculate DeltaE_KPOINTS by grabbing average E diff / average E diff near bandgap from EIGENVAL.
+        ### specify ranges to look for
+        range_avg_kpt_de=[0.1,0.15,0.2,0.5]
+        ### pretty print
+        widgets = ['precision check bands: ', Percentage(), ' ', Bar(), ' ', ETA()] #pretty print
+        pbar = ProgressBar(widgets=widgets, maxval=len(self.neargap_bands)).start()
+        ### loop over each band (otherwise mixing is undesirable)
+        avg_kpt_de=np.float_([0]*len(range_avg_kpt_de))
+        count_avg_kpt_de=np.float_([0]*len(range_avg_kpt_de))
+        for i_band,band in enumerate(self.neargap_bands):
+            #### for each NN pair, compute |delta_e| if energy is within bound
+            for nn_pair in kpts_nn_list:
+                ee_pair = band[nn_pair][:,3]
+                for idx,val in enumerate(range_avg_kpt_de):
+                    if all([self.VBM1-val<i<self.VBM1S for i in ee_pair]) or all([self.CBM1S<i<self.CBM1+val for i in ee_pair]): 
+                        avg_kpt_de[idx] += abs(ee_pair[0]-ee_pair[1])
+                        count_avg_kpt_de[idx] += 1
+            pbar.update(i_band+1) #pretty print
+        pbar.finish() #pretty print
+        for idx,val in enumerate(count_avg_kpt_de):
+            if val==0:
+                count_avg_kpt_de[idx]=1E-8  
+        avg_kpt_de=np.divide(avg_kpt_de,count_avg_kpt_de)
+        self.log += 'bands.py: NN kpoints energy delta_E = E_j\'-E_j is:\n'
+        for idx,val in enumerate(range_avg_kpt_de):
+            self.log += '  CBM/VBM +- %.2f eV, difference is %.5f; number of samples is %d.\n' %(val,avg_kpt_de[idx],count_avg_kpt_de[idx])
+        self.de_kpoints = max(avg_kpt_de)
+        ## fit the band for i) verifying smoothness ii) estimating bandgap
+        if grepen.kpoints_meshable:
+            widgets = ['fitting each band: ', Percentage(), ' ', Bar(), ' ', ETA()] #pretty print
+            pbar = ProgressBar(widgets=widgets, maxval=len(self.neargap_bands)).start()
+            self.fit_neargap_bands = []
+            for i_band,band in enumerate(self.neargap_bands):
+                pbar.update(i_band)
+                fit_neargap_band = Rbf(band[:,0],band[:,1],band[:,2],band[:,3])
+                self.fit_neargap_bands.append(fit_neargap_band)
+            pbar.finish()
+        ### ii) estimate bandgap
+        #### in each kpoint, get a bandgap (for each fit, get a max/min, then get the band). get the global bandgap. 
+        if grepen.kpoints_meshable:
+            widgets = ['interpolating bandgap: ', Percentage(), ' ', Bar(), ' ', ETA()] #pretty print
+            pbar = ProgressBar(widgets=widgets, maxval=len(kpts)).start()
+            fit_1kpt_bandgaps=[]
+            for i_kpt,kpt in enumerate(kpts):
+                if i_kpt % 100 == 0:
+                    pbar.update(i_kpt)
+                near_kpt_maxmin_bnd=[[x-min_kpt_dist/2,x+min_kpt_dist/2] for x in kpt]
+                near_kpt_maxmin_energies = []
+                for (i_fit_neargap_band,fit_neargap_band) in enumerate(self.fit_neargap_bands):
+                    if fit_neargap_band(kpt[0],kpt[1],kpt[2]) < self.VBM1S:
+                        fun = lambda x: -1*fit_neargap_band(x[0],x[1],x[2]) 
+                        near_kpt_maxmin_energy = -1 * minimize(fun,kpt,bounds=near_kpt_maxmin_bnd).fun
+                        near_kpt_maxmin_energies.append(near_kpt_maxmin_energy)
+                    elif fit_neargap_band(kpt[0],kpt[1],kpt[2]) > self.CBM1S:
+                        fun = lambda x: fit_neargap_band(x[0],x[1],x[2]) 
+                        near_kpt_maxmin_energy = minimize(fun,kpt,bounds=near_kpt_maxmin_bnd).fun
+                        near_kpt_maxmin_energies.append(near_kpt_maxmin_energy)
+                    else: 
+                        print 'bands.py initialisation error: fit_neargap_band ',kpt,' ',fit_neargap_band(kpt[0],kpt[1],kpt[2]),' energy is not above bands.VBM1s or below bands.CBM1S. ignoring.'
+                    if self.VBM1 < near_kpt_maxmin_energy < self.CBM1:
+                        i_energy = min(self.neargap_bands[:,i_kpt,3], key=lambda x:abs(x-near_kpt_maxmin_energy))
+                        o_energy = near_kpt_maxmin_energy
+                        # print 'band.py: interpolated eigenstate found. Energy* is %.4f -> %.4f eV; kpoint* is %s -> %s' %(i_energy,o_energy,kpt,minimize(fun,kpt,bounds=near_kpt_maxmin_bnd).x)
+                near_kpt_maxmin_energies.append(self.VBM1)
+                near_kpt_maxmin_energies.append(self.CBM1)
+                fit_1kpt_bandgap = min([e for e in near_kpt_maxmin_energies if e > self.CBM1S]) - max([e for e in near_kpt_maxmin_energies if e < self.VBM1S])
+                fit_1kpt_bandgaps.append(fit_1kpt_bandgap)
+            self.fit_bandgap = min(fit_1kpt_bandgaps)
+            pbar.finish()
+            self.log += "bands.py: fitted bandgap* is %.5f. Usually bandgap is between fitted and raw bandgap*. For errors see errors.py.\n" %(self.fit_bandgap)
+
+        print self.log
+    
+    # plot E(KPOINT)
+    def plot(self,i):
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        xs = self.bands[i][:,0]
+        ys = self.bands[i][:,1]
+        zs = self.bands[i][:,2]
+        cs = self.bands[i][:,3]
+        p = ax.scatter(xs, ys, zs, s=15, c=cs)
+        #
+        ax.set_xlabel('KX')
+        ax.set_ylabel('KY')
+        ax.set_zlabel('KZ')
+        #
+        fig.colorbar(p)
+        #
+        plt.show()
+        return
+        
+# executes population analysis
+class Charge(object):
+    def __init__(self,poscar,grepen,dos):  
+        self.log = ''
+        self.log += '*' * 72 + '\n'
+        # sanity check
+        if len(dos.site_dos) < 2 or len(dos.site_dos[1]) < 10:
+            print 'charge.py error: site-project DOSCAR too short.'
+            sys.exit(1)
+        if len(dos.site_dos[1][0]) not in [10,19,37]:
+            print 'charge.py error: we only support up-to-and-only-d compound. fixing is easy. exiting.'
+            sys.exit(1)
+
+        # let's start!
+        # pristine electronic configuration
+        self.log += 'GS electron configurations for elements in POSCAR\n'
+        for element in poscar.elements:
+            self.log += element + ': ' + ELEMENTS[element].eleconfig
+
+        # integrating site-projected pdos
+        self.log += '\nIntegrated Projected DOS: integration of DOS of wavefunctions projected onto spherical harmonics within spheres of a radius RWIGS\n'
+        if grepen.lsorbit == 'T':
+            self.nspin = 4 # used in: i * nspin + j
+            spins = 'tot x y z'.split()
+        elif grepen.ispin == 2:
+            self.nspin = grepen.ispin
+            spins = 'UP DN'.split()
+        else:
+            self.nspin = grepen.ispin
+            spins = ['tot']
+        orbitals = 's p_y p_z p_x d_xy d_yz d_z2 d_xz d_x^2-y^2'.split()
+        
+        for idx_element in range(0,len(poscar.elements)):
+            element=poscar.elements[idx_element]
+            for idx_atom in range(sum(poscar.atomcounts[0:idx_element]),sum(poscar.atomcounts[0:idx_element+1])):
+                for idx_spin in range(0,self.nspin):
+                    self.log += element+str(idx_atom)+'_'+spins[idx_spin]+'\t'
+                    doscurve=dos.site_dos[idx_atom+1]
+                    idx_fermi=(np.abs(doscurve[:,0]-grepen.efermi)).argmin()
+                    idx_top_integral=(np.abs(doscurve[:,0]-grepen.efermi-5)).argmin()
+                    for idx_orbital,orbital in enumerate(orbitals):
+                        integral = np.trapz(doscurve[:idx_fermi,self.nspin * idx_orbital + idx_spin + 1],x=doscurve[:idx_fermi,0])
+                        integral = abs(integral)
+                        maxintegral = np.trapz(doscurve[:idx_top_integral,2*idx_orbital + idx_spin + 1],x=doscurve[:idx_top_integral,0])
+                        self.log += orbital+' '+str('{0:.2f}'.format(integral))
+                    self.log += '\n'
+
+        # Bader charge
+        self.log += "\nBader charge. Boundaries are defined as zero-flux surfaces. Note that certain flags should be set (e.g. LAECHG) for this to be reasonable.\n"
+        os.popen('bader CHGCAR').read()
+        with open('ACF.dat','r') as f:
+            lines = f.readlines()
+        for idx_element in range(0,len(poscar.elements)):
+            element=poscar.elements[idx_element]
+            self.log += element
+            for idx_atom in range(sum(poscar.atomcounts[0:idx_element]),sum(poscar.atomcounts[0:idx_element+1])):
+                nline = idx_atom + 2
+                self.log += lines[nline].split()[4]
+            self.log += '\n'
+
+        # OUTCAR RWIGS [decomposed] charge
+        self.log += "\nTotal charge inside the Wigner-Seitz Radius in OUTCAR\n"
+        with open('OUTCAR','r') as f:
+            lines = f.readlines()
+            for idx_line,line in enumerate(lines):
+                if '# of ion' in line: # this is only an anchor. that particular line doesn't matter.
+                    break
+            for idx2_line in range(idx_line ,idx_line + 4 + poscar.natoms):
+                self.log += lines[idx2_line]
+
+        # Bader magnetic moment
+        if grepen.ispin == 2:
+            self.log += "\nAn oversimplified version of Bader magnetic moment.\n"
+            os.popen('chgsplit.sh CHGCAR').read()
+            os.popen('bader cf2').read()
+            for idx_element in range(0,len(poscar.elements)):
+                element=poscar.elements[idx_element]
+                self.log += element
+                for idx_atom in range(sum(poscar.atomcounts[0:idx_element]),sum(poscar.atomcounts[0:idx_element+1])):
+                    nline = idx_atom + 2
+                    with open('ACF.dat','r') as f:
+                        lines = f.readlines()
+                        self.log += lines[nline].split()[4]
+                self.log += '\n'
+
+        # OUTCAR RWIGS magnetic moment
+        self.log += "\nMagnetization (x) [total magnetic moment inside the Wigner-Seitz Radius] in OUTCAR\n"
+        with open('OUTCAR','r') as f:
+            lines = f.readlines()
+            for idx_line,line in enumerate(lines):
+                if 'magnetization (x)' in line: # this is only an anchor. that particular line doesn't matter.
+                    break
+            for idx2_line in range(idx_line + 2,idx_line + 6 + poscar.natoms):
+                self.log += lines[idx2_line]
+
+        print self.log
+
+
+class Errors(object):
+    def __init__(self,Agrepen,Ados,Abands,Bgrepen=None,Bdos=None,Bbands=None):
+        
+        self.log = '*' * 75 + '\n'
+        ## self.rules in dirA
+        self.rules = []
+        self.de = 0
+        if Agrepen.ismear == 0:
+            self.de_sigma = Agrepen.sigma * 2
+            if self.de_sigma > self.de: 
+                self.de = self.de_sigma
+            rule='gaussian smearing smoothes out irregularities with size sigma: sigma[%.4f] < DE[%.4f]/2' %(Agrepen.sigma,self.de)
+            self.rules.append(rule)
+        ## rule
+        self.de_kpoints = Abands.de_kpoints * 2
+        if self.de_kpoints > self.de:
+            self.de = self.de_kpoints
+        rule='sparse kpoints grid may miss in-between eigenvalues. E(j)-E(j\')[%.4f] < DE[%.4f]/2' %(Abands.de_kpoints,self.de)
+        self.rules.append(rule)
+        ## rule
+        self.de_nedos = 10.0/float(Agrepen.nedos) * 2
+        if self.de_nedos > self.de:
+            self.de = self.de_nedos
+        rule='all details between two DOS points are lost. 10/NEDOS[%.4f] < DE[%.4f]/2' %(10.0/Agrepen.nedos,self.de)
+        self.rules.append(rule)
+        ## rule
+        if 10.0/float(Agrepen.nedos) < Abands.de_kpoints:
+            rule='error! '
+        else:
+            rule=''
+        rule += 'DOS should not be so fine that kpoint mesh coarseness is obvious. 10/NEDOS[%.4f] > DE_KPOINTS[%.4f]' %(10.0/Agrepen.nedos,Abands.de_kpoints)
+        self.rules.append(rule)
+
+        # comparing against dirB
+        if not Bgrepen:
+            print 'errors.py: skipping E(k) numerical error (interpolated) check. this is usually okay since such errors should be smaller than 0.01 eV. '
+        else: 
+            self.de_interpd = 0
+            for i_band,band in enumerate(Bbands.neargap_bands):
+                fitband=[[kpt_e[0],kpt_e[1],kpt_e[2],float(Abands.fit_neargap_bands[i_band](kpt_e[0],kpt_e[1],kpt_e[2])),kpt_e[4]] for kpt_e in band]
+                for kpt_e in band:
+                    self.log += str(kpt_e[0]) + str(kpt_e[1]) + str(kpt_e[2]) + str(kpt_e[3]) + str(float(Abands.fit_neargap_bands[i_band](kpt_e[0],kpt_e[1],kpt_e[2]))) + '\n'
+                fitband = np.float_(fitband)
+                band = np.float_(band)
+                band_deviation = abs((band - sum(band)/len(band)) - (fitband - sum(fitband)/len(fitband)))
+                avg_deviation = sum(band_deviation[:,3])/len(band_deviation[:,3])
+                self.de_interpd += avg_deviation
+                self.log += 'check_interpolate.py: in band %d, between dirA and dirB, interpolation plus Cauchy error is %.5f.\n' %(i_band,avg_deviation)
+            ## rule
+            self.de_interpd /= len(Bbands.neargap_bands)
+            if Agrepen.ismear == 0 and Agrepen.sigma * 3 < self.de_interpd:
+                rule='error! '
+            else:
+                rule=''
+            rule=rule+'smearing should be larger than numerical energy error: sigma[%.4f] > DE_INTERPD[%.4f]' %(Agrepen.sigma,self.de_interpd)
+            self.rules.append(rule)
+
+        # printing self.rules
+        self.log += 'errors.py: you should expect an error around %.4f eV in dirA. see details below.\n' %(self.de)
+        for rule in self.rules:
+            self.log += ' '*4 + rule + '\n'
+
+        print self.log
