@@ -13,6 +13,7 @@ import scipy
 import shutil
 from pprint import pprint
 import tempfile
+import hashlib
 
 from shared import ELEMENTS, NODES
 
@@ -108,7 +109,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
             if self.moonphase>0:    self.mod_legal_set.append(expression)
             return (expression in self.mod and self.mod[expression]==set([True]))        
 
-    def writefiles(self):
+    def write_incar_kpoints(self):
         with open('INCAR','w') as outfile:
             for name in self.kw:
                 if name not in self.kw_internal_set:
@@ -206,7 +207,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
             wayback_dict.append( 'lsorbit=.TRUE.' )
             multiplier = 2
             self.kw['lsorbit'] = ['.FALSE.']
-        self.writefiles()
+        self.write_incar_kpoints()
         if 'isym=-1' in wayback:
             self.kw['isym'] = ['-1']
         if 'lsorbit=.TRUE.' in wayback:
@@ -360,27 +361,21 @@ class Vasp(object):
         self.gen = gen
         self.cell = cell
         self.path = path
-        os.mkdir(path) ; os.chdir(path)
+        os.mkdir(self.path)
 
     def compute(self):
-        if self.moonphase() > 1:
-            raise SystemError('moonphase > 1')
-        # prev_label
-        for ket in KETS:
-            if self in ket.property_wanted.nodes:
-                prev_label = ket.property_wanted.prev(self.label)
-        prev = KETS[prev_label]
-        print self.__class__.__name__ + ': copying %s to %s' %(prev.path, self.path)
-        shutil.copytree(prev.path+'/', self.path+'/')
-        shutil.copy('CONTCAR','POSCAR')
+        '''if self.moonphase() == 2:
+            raise SystemError('%s: Calculation already completed.')
+        if not os.path.isdir(self.path):
+            os.mkdir(self.path)'''
         # write incar etc
         os.chdir(self.path)
-        self.gen.writefiles()
+        self.gen.write_incar_kpoints()
         with open('POSCAR','w') as f:
             f.write(str(self.cell))
         for symbol in self.cell.stoichiometry.keys():
             self.pot(symbol)
-        # setting variables for wrapper
+        # setting variables
         totalnumbercores = self.gen.getkw('totalnumbercores')
         if self.gen.parse_if('spin=ncl'):   # vasp flavor
             flavor = 'ncl'
@@ -392,18 +387,31 @@ class Vasp(object):
             print self.__class__.__name__ + ': vasp_gpu'
         else:
             flavor = 'std'
-        # write wrapper
-        wrapper = '#!/bin/bash\n' ; subfile = ''
+        foldername = self.path.split('/')[-2] + '_' + self.path.split('/')[-1] + '_' + hashlib.md5(self.path)
+        # write scripts and instructions
+        wrapper = '#!/bin/bash\n' ; subfile = '' ; instruction = ''
         if self.gen.getkw('platform') == 'dellpc':
-            wrapper += 'nohup mpiexec.hydra -n %s /home/xzhang1/src/vasp.5.4.1/bin/vasp_%s 2>&1 > run.log &' %(totalnumbercores, flavor)
+            subfile += 'echo $PWD `date` start; echo '+'-'*75+'\n'
+            subfile += 'mpiexec.hydra -n %s /home/xzhang1/src/vasp.5.4.1/bin/vasp_%s </dev/null \n' %(totalnumbercores, flavor)
+            subfile += 'mail -s "VASP job finished: {${PWD##*/}}" 8576361405@vtext.com <<<EOM'
+            subfile += 'echo $PWD `date` end  ; echo '+'-'*75+'\n'
+            wrapper += 'nohup ./subfile 2>&1 >> run.log &'
         if self.gen.getkw('platform') == 'nanaimo':
-            wrapper += 'sbatch --nodes=%s --ntasks=%s --job-name=%s -t 12:00:00 --export=ALL subfile' %(self.gen.getkw('nodes'),totalnumbercores,self.label)
+            wrapper += 'rsync -a . nanaimo:~/%s\n'
+            wrapper += 'ssh nanaimo <<EOF\n'
+            wrapper += ' cd %s\n'
+            wrapper += ' sbatch --nodes=%s --ntasks=%s --job-name=%s -t 12:00:00 --export=ALL subfile' %(self.gen.getkw('nodes'),totalnumbercores,self.path)
+            wrapper += 'EOF\n'
             subfile += '#!/bin/bash\n. /usr/share/Modules/init/bash\nmodule purge\nmodule load intel\nmodule load impi\nmpirun -np %s /opt/vasp.5.4.4/bin/vasp_%s' %(totalnumbercores, flavor)
         with open('wrapper','w') as of_:
             of_.write(wrapper)
         if subfile:
             with open('subfile','w') as of_:
                 of_.write(subfile)
+        print self.__class__.__name__ + ': %s ready to be computed. Run wrapper or press y.'
+        if raw_input() == 'y':
+            os.system(wrapper)
+        print self.__class__.__name__ + ': waiting for system. Leave me on, or save/load.'
 
     def moonphase(self):
         if not os.path.isfile(self.path+'/wrapper'):
@@ -452,7 +460,17 @@ class Map(object):
             if name in NODES:   return NODES['master']
             else: raise SystemError('找不到master，求喂食')
         else:
-            raise LookupError('Node %s not found' %name)'''
+            raise LookupError('Node %s not found' %name)
+
+
+    def prev(self, node):
+        l = [x for x in self._map if node in x]
+        if len(l) > 1: 
+            raise LookupError('%s has more than 1 parent node. (wtf?)' %name)
+        elif len(l) == 1:
+            return l[0]
+        else:
+            return None'''
 
 
     def __init__(self, text):
@@ -473,6 +491,19 @@ class Map(object):
                 m[src] = [dist] if src not in m else m[src]+[dist]'''
             else:
                 raise SyntaxError('Map: src -> dst. 3 parts needed')
+
+
+    def compute(self, proposed_name = None):
+        l = [x for x in self._map if x.moonphase()==1] + [x for x in self._map if x.moonphase()==0 and self.prev(x).moonphase()==2]
+        '''if any([x.name == proposed_name for x in self._map]):
+            return next([x for x in self._map if x.name==proposed_name])
+        elif l:
+            return l[0]
+        else:
+            print self.__class__.__name__ + ': nothing computable'
+            return None'''
+
+
         
 
     '''def __str__(self):

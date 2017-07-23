@@ -74,22 +74,41 @@ class Node(object):
     '''
 
 
-    def compute(self, proposed=None):
+    def compute(self, proposed_name=None):
 
         if getattr(self, 'map', None):
-            l = self.map.compute()
-            n = next([x for x in self.map if x.name == proposed]) if proposed else l[0]
-            n.phase, n.cell = self.phase, self.cell
+
+            n = self.map.compute(proposed_name)
+            if not n:
+                print self.__class__.__name__ + ': nothing to compute in node %s' %self.name
+
+            '''if getattr(self, 'phase', None):    # folder & vars    
+                n.phase = self.phase
+            if getattr(self, 'cell', None):     
+                n.cell = self.cell
+            if getattr(n, 'property', None):
+                n.path = n.path if getattr(n, 'path', None) else raw_input('Provide path for this node: \n %s \n >:' %str(n))
+                prev = self.map.prev(n)
+                if os.path.isdir(n.path):
+                    raise ValueError('Next.path %s already exists' %n.path)
+                if not getattr(prev, 'path', None):
+                    raise SyntaxError('None-computable -> computable is meaningless.')
+                print self.__class__.__name__ + ': copying %s to %s' %(prev.path, n.path)
+                shutil.copytree(prev.path, n.path)
+                os.chdir(n.path)
+                if os.path.isfile('wrapper'):
+                    os.remove('wrapper')'''
+
             n.compute()
 
         elif not getattr(self, 'property', None):
-            raise ValueError('Node %s is blank. ' %self.name)
+            raise ValueError('Node %s is not computable.' %self.name)
 
         else:
-            if not getattr(self, 'path', None):
-                self.path = raw_input('Provide path for this node: \n %s \n >:' %str(self))
+            '''if not getattr(self, 'path', None):
+                self.path = raw_input('Provide path for this node: \n %s \n >:' %str(self))'''
             if not getattr(self, 'gen', None):
-                self.gen = engine.Gen(self.phase + ' ' + self.property)
+                self.gen = engine.Gen(self.phase + ' ' + self.property, self.cell)
             if not getattr(self, self.gen.getkw('engine'), None):
                 engine_class = getattr(engine, self.gen.getkw('engine').title())
                 engine_ = engine_class(self.gen, self.cell, self.path)
