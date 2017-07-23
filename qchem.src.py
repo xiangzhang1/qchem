@@ -45,30 +45,34 @@ class Node(object):
 
     def edit(self, filename):
         '''if not os.path.isfile(filename):
-            with open(filename, 'w') as f:
+            with open(filename, 'w') as f:'''
                 f.write(str(self))
-        else:
-            with open(filename, 'r') as f:
-                text = f.read()'''
+        '''else:
             for x in self._map:
-                NODES[x.name] = x
-            new_node = Node(text)
-            '''for varname in vars(self):
-                set(self, varname, getattr(new_node, varname, None))'''
+                NODES[x.name] = x'''
+            Import(filename)
+            '''if self.name in NODES:
+                new_node = NODES[self.name]
+            else:
+                raise SyntaxError('Node with name %s is not defined in %s' %(self.name, filename))
+            for varname in [x for x in vars(self) if getattr(new_node, x, None):
+                setattr(self, varname, getattr(new_node, varname))'''
 
 
-    '''def moonphase(self):    #0=pre,1=peri,2=post
+    def moonphase(self):
         if getattr(self, 'map', None):
             return min([x.moonphase() for x in self.map])
         elif getattr(self, 'gen', None) and getattr(self, self.gen.getkw('engine'), None):
             return getattr(self, self.gen.getkw('engine')).moonphase()
-        else:
+        elif getattr(self, 'property', None):
             return 0
+        else:
+            return 2
     
             
-    def __str__(self):
+    '''def __str__(self):
         result = self.name + '\n\n\n'
-        for varname in vars(self):
+        for varname in [x for x in vars(self) if x in ['name','phase','cell','property','map']]:
             result += varname + ':\n' + str(vars(self)[varname]) + '\n\n'
         result += '\n\n\n'
     '''
@@ -97,13 +101,11 @@ class Node(object):
                 self.path = raw_input('Provide path for this node: \n %s \n >:' %str(self))
             if not getattr(self, 'gen', None):
                 self.gen = engine.Gen(self.phase + ' ' + self.property, self.cell)
-            if self.gen.parse_if('icharg=1|icharg=11'
             if not getattr(self, self.gen.getkw('engine'), None):
                 engine_class = getattr(engine, self.gen.getkw('engine').title())
-                engine_ = engine_class(self.gen, self.cell, self.path)
+                engine_ = engine_class(self.gen, self.cell, self.path, self.prev)
                 setattr(self, self.gen.getkw('engine'), engine_)
-            return getattr(self, self.gen.getkw('engine')).compute()
-
+            getattr(self, self.gen.getkw('engine')).compute()
 
         else:
             raise ValueError('Node %s is not computable.' %self.name)

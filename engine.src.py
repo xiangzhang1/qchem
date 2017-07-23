@@ -357,76 +357,90 @@ class Cell(object):
 
 class Vasp(object):
 
-    def __init__(self, gen, cell, path):
+    def __init__(self, gen, cell, path, prev):
         self.gen = gen
         self.cell = cell
         self.path = path
+        self.prev = prev
         os.mkdir(self.path)
 
+
     def compute(self):
-        '''if self.moonphase() == 2:
-            raise SystemError('%s: Calculation already completed.')
-        if not os.path.isdir(self.path):
-            os.mkdir(self.path)'''
-        # write incar etc
-        os.chdir(self.path)
-        self.gen.write_incar_kpoints()
-        with open('POSCAR','w') as f:
-            f.write(str(self.cell))
-        for symbol in self.cell.stoichiometry.keys():
-            self.pot(symbol)
-        # setting variables
-        totalnumbercores = self.gen.getkw('totalnumbercores')
-        if self.gen.parse_if('spin=ncl'):   # vasp flavor
-            flavor = 'ncl'
-        elif all([int(x)==1 for x in self.gen.getkw('kpoints').split()[0:3]]):
-            flavor = 'gam'
-        elif self.gen.getkw('totalnumbercores') == '0':
-            totalnumbercores = 1
-            flavor = 'gpu'
-            print self.__class__.__name__ + ': vasp_gpu'
+
+        if not getattr(self, 'wrapper'):
+            if not os.path.isdir(self.path):
+                os.mkdir(self.path)
+            shutil.copytree(self.prev.path, self.path)
+            if self.gen.parse_if('icharg=1|icharg=11'):
+                shutil.copyfile(self.prev.path+'/CHGCAR', self.path+'/CHGCAR')
+            if self.gen.parse_if('icharg=0|icharg=10|istart=1|istart=2'):
+                shutil.copyfile(self.prev.path+'/WAVECAR', self.path+'/WAVECAR')
+            # write incar etc
+            os.chdir(self.path)
+            self.gen.write_incar_kpoints()
+            with open('POSCAR','w') as f:
+                f.write(str(self.cell))
+            for symbol in self.cell.stoichiometry.keys():
+                self.pot(symbol)
+            # setting variables
+            totalnumbercores = self.gen.getkw('totalnumbercores')
+            if self.gen.parse_if('spin=ncl'):   # vasp flavor
+                flavor = 'ncl'
+            elif all([int(x)==1 for x in self.gen.getkw('kpoints').split()[0:3]]):
+                flavor = 'gam'
+            elif self.gen.getkw('totalnumbercores') == '0':
+                totalnumbercores = 1
+                flavor = 'gpu'
+                print self.__class__.__name__ + ': vasp_gpu'
+            else:
+                flavor = 'std'
+            foldername = self.path.split('/')[-2] + '_' + self.path.split('/')[-1] + '_' + hashlib.md5(self.path)
+            # write scripts and instructions
+            wrapper = '#!/bin/bash\n' ; subfile = '' ; instruction = ''
+            if self.gen.getkw('platform') == 'dellpc':
+                subfile += 'echo $PWD `date` start; echo '+'-'*75+'\n'
+                subfile += 'mpiexec.hydra -n %s /home/xzhang1/src/vasp.5.4.1/bin/vasp_%s </dev/null \n' %(totalnumbercores, flavor)
+                subfile += 'mail -s "VASP job finished: {${PWD##*/}}" 8576361405@vtext.com <<<EOM'
+                subfile += 'echo $PWD `date` end  ; echo '+'-'*75+'\n'
+                wrapper += 'nohup ./subfile 2>&1 >> run.log &'
+            if self.gen.getkw('platform') == 'nanaimo':
+                wrapper += 'rsync -a . nanaimo:~/%s\n'
+                wrapper += 'ssh nanaimo <<EOF\n'
+                wrapper += ' cd %s\n'
+                wrapper += ' sbatch --nodes=%s --ntasks=%s --job-name=%s -t 12:00:00 --export=ALL subfile' %(self.gen.getkw('nodes'),totalnumbercores,self.path)
+                wrapper += 'EOF\n'
+                subfile += '#!/bin/bash\n. /usr/share/Modules/init/bash\nmodule purge\nmodule load intel\nmodule load impi\nmpirun -np %s /opt/vasp.5.4.4/bin/vasp_%s' %(totalnumbercores, flavor)
+            with open('wrapper','w') as of_:
+                of_.write(wrapper)
+                os.system('chmod +x wrapper')
+            if subfile:
+                with open('subfile','w') as of_:
+                    of_.write(subfile)
+            print self.__class__.__name__ + ': %s ready to be computed. Run wrapper or press y.'
+            if raw_input() == 'y':
+                os.system(wrapper)
+            print self.__class__.__name__ + ': waiting for system. Leave me on, or save/load.'
+
+        elif not getattr(self,'log',None):
+            if os.path.isfile('./vasprun.xml'):
+                with open('vasprun.xml','r') as if_:
+                    if if_.read.splitlines()[-1] != '</modeling>' and not os.path.isfile('ignore_error'):
+                        raise SystemError('Vasp computation at %s went wrong. Touch ignore_error to ignore.' %self.path)
+                    else:
+                        with open('run.log','r') as if_:
+                            self.log = if_.read()
+
         else:
-            flavor = 'std'
-        foldername = self.path.split('/')[-2] + '_' + self.path.split('/')[-1] + '_' + hashlib.md5(self.path)
-        # write scripts and instructions
-        wrapper = '#!/bin/bash\n' ; subfile = '' ; instruction = ''
-        if self.gen.getkw('platform') == 'dellpc':
-            subfile += 'echo $PWD `date` start; echo '+'-'*75+'\n'
-            subfile += 'mpiexec.hydra -n %s /home/xzhang1/src/vasp.5.4.1/bin/vasp_%s </dev/null \n' %(totalnumbercores, flavor)
-            subfile += 'mail -s "VASP job finished: {${PWD##*/}}" 8576361405@vtext.com <<<EOM'
-            subfile += 'echo $PWD `date` end  ; echo '+'-'*75+'\n'
-            wrapper += 'nohup ./subfile 2>&1 >> run.log &'
-        if self.gen.getkw('platform') == 'nanaimo':
-            wrapper += 'rsync -a . nanaimo:~/%s\n'
-            wrapper += 'ssh nanaimo <<EOF\n'
-            wrapper += ' cd %s\n'
-            wrapper += ' sbatch --nodes=%s --ntasks=%s --job-name=%s -t 12:00:00 --export=ALL subfile' %(self.gen.getkw('nodes'),totalnumbercores,self.path)
-            wrapper += 'EOF\n'
-            subfile += '#!/bin/bash\n. /usr/share/Modules/init/bash\nmodule purge\nmodule load intel\nmodule load impi\nmpirun -np %s /opt/vasp.5.4.4/bin/vasp_%s' %(totalnumbercores, flavor)
-        with open('wrapper','w') as of_:
-            of_.write(wrapper)
-        if subfile:
-            with open('subfile','w') as of_:
-                of_.write(subfile)
-        print self.__class__.__name__ + ': %s ready to be computed. Run wrapper or press y.'
-        if raw_input() == 'y':
-            os.system(wrapper)
-        print self.__class__.__name__ + ': waiting for system. Leave me on, or save/load.'
+            print self.__class__.__name__ + ': calculation already completed at %s. Why are you here?' %self.path
 
     def moonphase(self):
-        if not os.path.isfile(self.path+'/wrapper'):
-            return 1
-        os.chdir(self.path)
-        if not os.path.isfile('vasprun.xml') or os.path.getmtime('vasprun.xml')<os.path.getmtime('wrapper'):
+        if not getattr(self, 'wrapper', None):
+            return 0
+        elif not getattr(self, 'log', None):
+            self.compute()
+            if not getattr(self, 'log', None):  return 1
+        else:
             return 2
-        with open('vasprun.xml','r') as if_:
-            if vasprun.xml.read.splitlines()[-1] != '</modeling>':
-                if os.path.isfile('ignore_error'):
-                    print self.__class__.__name__ + ' warning: vasprun.xml incomplete in %s. ignored.' %path
-                    return 3
-                else:
-                    raise SystemError('vasprun.xml incomplete in %s. touch ignore_error to ignore.' %path)
-                    return -1
 
     def pot(symbol):
         if len(ELEMENTS[symbol].pot) == 0:
