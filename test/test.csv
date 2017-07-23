@@ -1,0 +1,21 @@
+opt : opt
+
+
+qd
+
+phase:
+qd
+
+cell:
+poscar
+1
+1 0 0
+0 1 0
+0 0 1
+H
+1
+D
+0 0 0
+
+graph:
+opt

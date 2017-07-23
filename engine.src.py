@@ -1,17 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Regarding import: 
-# `import phase` is forbidden. Check for cyclic import.
-#
-# Regarding errors and warnings:
-# Be flexible between print and raise. Use self.__class__.__name__
-#
-# Regarding __init__, compute, and write_:
-# Do not define compute() unless necessary.
-
-
-
 # Gen
 # ===========================================================================
 
@@ -119,31 +108,27 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
             if self.moonphase>0:    self.mod_legal_set.append(expression)
             return (expression in self.mod and self.mod[expression]==set([True]))        
 
-    def write_(self, of_=None):
-        if of_ == 'INCAR':
-            with open('INCAR','w') as outfile:
-                for name in self.kw:
-                    if name not in self.kw_internal_set:
-        	        outfile.write('\t'+name.upper()+' \t= '+self.getkw(name)+'\n')
-            with open('KPOINTS','w') as outfile:
-                outfile.write('KPOINTS\n')
-                outfile.write('0\n')
-                outfile.write(self.getkw(kpoints).split()[3])
-                outfile.write( ' '.join(self.getkw(kpoints).split()[0:3]) + '\n' )
-                outfile.write('0 0 0')
-        else:
-            result = ''
-            for name in self.mod:
-                if self.parse_if(name):
-                    result += name
+    def writefiles(self):
+        with open('INCAR','w') as outfile:
             for name in self.kw:
-                result += name + '=' + self.getkw(name) + ' '
-            if of_:
-                with open(of_,'w') as outfile:
-                    outfile.write(result)
-            else:
-                return result
-        
+                if name not in self.kw_internal_set:
+    	        outfile.write('\t'+name.upper()+' \t= '+self.getkw(name)+'\n')
+        with open('KPOINTS','w') as outfile:
+            outfile.write('KPOINTS\n')
+            outfile.write('0\n')
+            outfile.write(self.getkw(kpoints).split()[3])
+            outfile.write( ' '.join(self.getkw(kpoints).split()[0:3]) + '\n' )
+            outfile.write('0 0 0')
+
+    def __str__(self):
+        result = ''
+        for name in self.mod:
+            if self.parse_if(name):
+                result += name
+        for name in self.kw:
+            result += name + '=' + self.getkw(name) + ' '
+        return result
+    
 
     # main
     # -------------
@@ -208,8 +193,6 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         self.check_memory()
 
     def check_memory(self):
-        if self.moonphase != 3:
-            raise SyntaxError('write_ must be called in blood moon.')
         # make temporary dir
         os.mkdir('memory_check')
         os.chdir('memory_check')
@@ -223,7 +206,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
             wayback_dict.append( lambda x: x.kw['lsorbit']=['.TRUE.'] )
             multiplier = 2
             self.kw['lsorbit'] = ['.FALSE.']
-        self.write_()
+        self.writefiles()
         for funcname in wayback_dict:
             funcname(self)
         os.system("sed -i '6d' POSCAR")
@@ -352,7 +335,7 @@ class Cell(object):
         self.nion = sum(self.stoichiometry.values())
         self.nelect = sum( [self.stoichiometry[symbol] * ELEMENTS[symbol].pot_zval for symbol in self.stoichiometry] )
 
-    def write_(self, of_=None):
+    '''def __str__(self):
         result = self.name+'\n'
         result += '1\n'
         for line in base:
@@ -362,11 +345,7 @@ class Cell(object):
         result += 'Direct\n'
         for line in coordinates:
             result += ' '.join(line)+'\n'
-        if of_:
-            with open(of_,'w') as outfile:
-                outfile.write(result)
-        else:
-            return result
+        return result'''
             
 
 # =========================================================================== 
@@ -392,8 +371,9 @@ class Vasp(object):
         shutil.copy('CONTCAR','POSCAR')
         # write incar etc
         os.chdir(self.path)
-        self.gen.write_(of_='INCAR')
-        cell.write_(of_='POSCAR')
+        self.gen.writefiles()
+        with open('POSCAR','w') as f:
+            f.write(str(self.cell))
         for symbol in self.cell.stoichiometry.keys():
         # setting variables for wrapper
         totalnumbercores = self.gen.getkw('totalnumbercores')
@@ -463,9 +443,7 @@ class Map(object):
             return next([x for x in self.map if x.name == name])
         elif '.' in name:
             return self.lookup('.'.join(name.split('.')[:-2]).map.lookup(name.split('.')[-1])
-        elif name == 'master' and name not in NODES:
-            raise SystemError('你是我的master吗? 找不到master了，求喂食')
-        elif name == 'master' and name in NODES:
+        elif name == 'master':
             return NODES['master']
         else:
             raise LookupError('Node %s not found' %name)'''
@@ -512,4 +490,10 @@ class Map(object):
 
     def __getitem__(self, key):
         return self._dict[key]
+
+    def pop(self, node):
+        for m in self._map, self._map2:
+            del m[node]
+            for n in m:
+                m[n] = [x for x in m[n] if x != node]
     '''
