@@ -78,44 +78,37 @@ class Node(object):
 
         if getattr(self, 'map', None):
 
-            n = self.map.compute(proposed_name)
-            if not n:
-                print self.__class__.__name__ + ': nothing to compute in node %s' %self.name
+            l = [x for x in self.map if x.moonphase()==0] + [x for x in self._map if x.moonphase()==0 and self.prev(x).moonphase()==2]
+            '''if not l:
+                print self.__class__.__name__ + ': nothing to compute'
+                return
+            if any([x.name==proposed_name for x in l]):
+                n = next([x for x in l if x.name == proposed_name])
+            else:'''
+                n = l[0]
 
-            '''if getattr(self, 'phase', None):    # folder & vars    
-                n.phase = self.phase
-            if getattr(self, 'cell', None):     
-                n.cell = self.cell
-            if getattr(n, 'property', None):
-                n.path = n.path if getattr(n, 'path', None) else raw_input('Provide path for this node: \n %s \n >:' %str(n))
-                prev = self.map.prev(n)
-                if os.path.isdir(n.path):
-                    raise ValueError('Next.path %s already exists' %n.path)
-                if not getattr(prev, 'path', None):
-                    raise SyntaxError('None-computable -> computable is meaningless.')
-                print self.__class__.__name__ + ': copying %s to %s' %(prev.path, n.path)
-                shutil.copytree(prev.path, n.path)
-                os.chdir(n.path)
-                if os.path.isfile('wrapper'):
-                    os.remove('wrapper')'''
-
+            for vname in [x for x in vars(self) if x not in ['name','map','path','property'] and getattr(self,x,None) and not getattr(n,x,None)]:
+                setattr(n,x,getattr(self,x))
+            n.prev = self.map.prev(n)
             n.compute()
 
-        elif not getattr(self, 'property', None):
-            raise ValueError('Node %s is not computable.' %self.name)
-
-        else:
-            '''if not getattr(self, 'path', None):
-                self.path = raw_input('Provide path for this node: \n %s \n >:' %str(self))'''
+        elif getattr(self, 'property', None):
+            if not getattr(self, 'path', None):
+                self.path = raw_input('Provide path for this node: \n %s \n >:' %str(self))
             if not getattr(self, 'gen', None):
                 self.gen = engine.Gen(self.phase + ' ' + self.property, self.cell)
+            if self.gen.parse_if('icharg=1|icharg=11'
             if not getattr(self, self.gen.getkw('engine'), None):
                 engine_class = getattr(engine, self.gen.getkw('engine').title())
                 engine_ = engine_class(self.gen, self.cell, self.path)
                 setattr(self, self.gen.getkw('engine'), engine_)
-            getattr(self, self.gen.getkw('engine')).compute()
+            return getattr(self, self.gen.getkw('engine')).compute()
 
 
+        else:
+            raise ValueError('Node %s is not computable.' %self.name)
+
+        
     '''def delete(self):
             engine_name = self.gen.getkw('engine')
             engine_ = getattr(self,self.gen.getkw('engine'),None)

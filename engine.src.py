@@ -493,18 +493,6 @@ class Map(object):
                 raise SyntaxError('Map: src -> dst. 3 parts needed')
 
 
-    def compute(self, proposed_name = None):
-        l = [x for x in self._map if x.moonphase()==1] + [x for x in self._map if x.moonphase()==0 and self.prev(x).moonphase()==2]
-        '''if any([x.name == proposed_name for x in self._map]):
-            return next([x for x in self._map if x.name==proposed_name])
-        elif l:
-            return l[0]
-        else:
-            print self.__class__.__name__ + ': nothing computable'
-            return None'''
-
-
-        
 
     '''def __str__(self):
         result = ''
