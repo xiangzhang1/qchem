@@ -547,7 +547,7 @@ class Map(object):
             del m[node]
             for n in m:
                 m[n] = [x for x in m[n] if x != node]
-    '''
+'''
 
 
 
