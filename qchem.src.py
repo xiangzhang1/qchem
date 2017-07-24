@@ -1,6 +1,8 @@
+import pickle
+import re
+import os
 import engine
 from shared import ELEMENTS, NODES
-import re
 
 
 
@@ -16,6 +18,14 @@ def Import(filename):
             raise KeyError('Node name %s is in NODES.' %n.name)'''
         NODES[n.name] = n
 
+
+def Dump():
+    with open(os.path.dirname(os.path.abspath(__file__)+'/qchem.dump'),'w') as dumpfile:
+        pickle.dump(ELEMENTS, dumpfile, protocol=pickle.HIGHEST_PROTOCOL)
+
+def Load():
+    with open(os.path.dirname(os.path.abspath(__file__)+'/qchem.dump'),'r') as dumpfile:
+        pickle.load(dumpfile)
 
 
 class Node(object):
