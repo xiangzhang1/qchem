@@ -1,14 +1,16 @@
 # master
 
-graph:
+map:
 qd_base -> qd_facet
 qd_base -> 2
-qd_base ->3
+qd_base -> 3
 
 ## qd_base
 
-graph:
+map:
 bulk -> qd
+
+### qd
 
 ### bulk
 
@@ -29,14 +31,9 @@ D
 map:
 opt -> static
 
-#### opt
-
-property: 
-engine=vasp, spin=fm
+#### opt : engine=vasp, spin=fm
 
 #### static
-
-### qd
 
 ## qd_facet
 

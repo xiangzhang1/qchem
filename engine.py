@@ -351,7 +351,7 @@ class Cell(object):
         self.nion = sum(self.stoichiometry.values())
         self.nelect = sum( [self.stoichiometry[symbol] * ELEMENTS[symbol].pot_zval for symbol in self.stoichiometry] )
 
-    '''def __str__(self):
+    def __str__(self):
         result = self.name+'\n'
         result += '1\n'
         for line in base:
@@ -361,7 +361,7 @@ class Cell(object):
         result += 'Direct\n'
         for line in coordinates:
             result += ' '.join(line)+'\n'
-        return result'''
+        return result
             
 
 # =========================================================================== 
@@ -474,7 +474,7 @@ class Vasp(object):
 class Map(object):
 
 
-    '''def lookup(self, name):
+    def lookup(self, name):
 
         if name in NODES:
             return NODES.pop(name)
@@ -498,31 +498,31 @@ class Map(object):
             return None
 
     def traverse(self):
-        return set([x for x in self]) + set().union( *(x.map.traverse() for x in self if getattr(x,'map',None)) )'''
+        return set([x for x in self]) + set().union( *(x.map.traverse() for x in self if getattr(x,'map',None)) )
 
 
     def __init__(self, text):
     
-        '''self._dict, self._dict2 = {}, {}
-        text = text.split('\n')'''
+        self._dict, self._dict2 = {}, {}
+        text = text.split('\n')
 
         # src -> dst
         for line in text:
-            '''line = [x.strip() for x in re.split('(->|-->)', line)]'''
+            line = [x.strip() for x in re.split('(->|-->)', line)]
             if len(line) == 1:
                 src = self.lookup(line[0])
                 if src not in self._dict:   self._dict[src] = []
             elif len(line) == 3:
                 src, dist = self.lookup(line[0]), self.lookup(line[2])
                 if src not in self._dict:   self._dict[src] = []
-                '''m = self._dict if line[2]=='->' else self._dict2
-                m[src] = [dist] if src not in m else m[src]+[dist]'''
+                m = self._dict if line[2]=='->' else self._dict2
+                m[src] = [dist] if src not in m else m[src]+[dist]
             else:
                 raise SyntaxError('Map: src -> dst. 3 parts needed')
 
 
 
-    '''def __str__(self):
+    def __str__(self):
         result = ''
         for m in self._dict, self._dict2:
             for src in m:
@@ -549,7 +549,7 @@ class Map(object):
             del m[node]
             for n in m:
                 m[n] = [x for x in m[n] if x != node]
-'''
+
 
 
 
