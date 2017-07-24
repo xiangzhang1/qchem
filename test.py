@@ -1,3 +1,4 @@
-import qchem
+from qchem import *
 
-qchem.Import('test.md')
+Import('test.md')
+

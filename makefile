@@ -4,4 +4,4 @@ compile : *.src.py
 clean :
 	for f in *.src.py ; do rm -rf "$${f%.src.py}.py"; done; rm -rf *.pyc
 test : compile
-	cp test/* .; python test.py; rm -rf test.*
+	python test.py

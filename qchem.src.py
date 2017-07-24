@@ -21,7 +21,7 @@ def Import(filename):
 
 def Dump():
     with open(os.path.dirname(os.path.abspath(__file__)+'/qchem.dump'),'w') as dumpfile:
-        pickle.dump(ELEMENTS, dumpfile, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(NODES, dumpfile, protocol=pickle.HIGHEST_PROTOCOL)
 
 def Load():
     with open(os.path.dirname(os.path.abspath(__file__)+'/qchem.dump'),'r') as dumpfile:
@@ -68,6 +68,28 @@ class Node(object):
                 raise SyntaxError('Node with name %s is not defined in %s' %(self.name, filename))
             for varname in [x for x in vars(self) if getattr(new_node, x, None)]:
                 setattr(self, varname, getattr(new_node, varname))'''
+
+
+    def update(self, input_):    #repetitive code, but i'm out of time. jeff and huashan'll be angry.
+        
+        for x in self._map:
+            NODES[x.name] = x
+        
+        l = re.split('^#+\s*', f.read(), flags=re.MULTILINE) ; l.pop(0)
+        while l:
+            print 'Import: parsing %s' %(l[-1].splitlines()[0] if l[-1].splitlines() else '')
+            n = Node(l.pop())
+            if n.name in NODES:
+                raise KeyError('Node name %s is in NODES.' %n.name)
+            NODES[n.name] = n
+
+        if self.name in NODES:
+            new_node = NODES[self.name]
+        else:
+            raise SyntaxError('Node with name %s is not defined in %s' %(self.name, filename))
+        for varname in [x for x in vars(self) if getattr(new_node, x, None)]:
+            setattr(self, varname, getattr(new_node, varname))
+
 
 
     def moonphase(self):
