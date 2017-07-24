@@ -1,3 +1,3 @@
 import qchem
 
-qchem.Import('test.csv')
+qchem.Import('test.md')

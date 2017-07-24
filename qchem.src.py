@@ -1,15 +1,16 @@
 import engine
 from shared import ELEMENTS, NODES
+import re
 
 
 
 def Import(filename):
 
     with open(filename, 'r') as f:
-        l = f.read().split('\n\n\n')
+        l = re.split('(^#+\s+)', f.read(), flags=re.MULTILINE) ; l.pop(0)
 
     while l:
-        n = Node(l.pop(0))
+        n = Node(l.pop())
         '''if n.name in NODES:
             raise KeyError('Node name %s is in NODES.' %n.name)'''
         NODES[n.name] = n
