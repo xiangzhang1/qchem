@@ -5,11 +5,12 @@ import engine
 from shared import ELEMENTS, NODES
 
 
+# ==================================================
 
-def Import(filename):
+# Node
 
-    with open(filename, 'r') as f:
-        l = re.split('^#+\s*', f.read(), flags=re.MULTILINE) ; l.pop(0)
+def Import(text):
+    l = re.split('^#+\s*', text, flags=re.MULTILINE) ; l.pop(0)
 
     while l:
         print 'Import: parsing %s' %(l[-1].splitlines()[0] if l[-1].splitlines() else '')
@@ -17,7 +18,6 @@ def Import(filename):
         '''if n.name in NODES:
             raise KeyError('Node name %s is in NODES.' %n.name)'''
         NODES[n.name] = n
-
 
 def Dump():
     with open(os.path.dirname(os.path.abspath(__file__)+'/qchem.dump'),'w') as dumpfile:
@@ -28,10 +28,10 @@ def Load():
         pickle.load(dumpfile)
 
 
+
 class Node(object):
 
-
-    def __init__(self, text):
+    def __init__(self, text):   # parses 1 node at a time. searches in NODES
 
         namevalpairs = text.split('\n\n')
 
@@ -44,52 +44,32 @@ class Node(object):
         if len(l) == 2: self.property = l[1]
         
         # node.__dict__
+        
         while namevalpairs:
             namevalpair = namevalpairs.pop(0)
-            if not namevalpair.rstrip():    continue
+            if not namevalpair.rstrip():
+                continue
             name = namevalpair.split('\n')[0].strip(': ')
+            if name not in ['name','phase','cell','property','map']:    # This may NEED to be rather frequently UPDATED!
+                continue
             value = namevalpair.split('\n',1)[1]
             if getattr(engine, name.title(), None):
                 value = getattr(engine, name.title())(value)
             setattr(self, name, value)
 
 
-    def edit(self, filename):
-        '''if not os.path.isfile(filename):
-            with open(filename, 'w') as f:'''
-                f.write(str(self))
-        '''else:
-            for x in self._map:
-                NODES[x.name] = x'''
-            Import(filename)
-            '''if self.name in NODES:
-                new_node = NODES[self.name]
-            else:
-                raise SyntaxError('Node with name %s is not defined in %s' %(self.name, filename))
-            for varname in [x for x in vars(self) if getattr(new_node, x, None)]:
-                setattr(self, varname, getattr(new_node, varname))'''
-
-
-    def update(self, input_):    #repetitive code, but i'm out of time. jeff and huashan'll be angry.
-        
+    def edit(self, text):   
+        # counterpart: str(self).
+        # edit phase, cell, property, map at this level.
         for x in self._map:
             NODES[x.name] = x
-        
-        l = re.split('^#+\s*', f.read(), flags=re.MULTILINE) ; l.pop(0)
-        while l:
-            print 'Import: parsing %s' %(l[-1].splitlines()[0] if l[-1].splitlines() else '')
-            n = Node(l.pop())
-            if n.name in NODES:
-                raise KeyError('Node name %s is in NODES.' %n.name)
-            NODES[n.name] = n
-
-        if self.name in NODES:
+        Import(text)
+        '''if self.name in NODES:
             new_node = NODES[self.name]
         else:
             raise SyntaxError('Node with name %s is not defined in %s' %(self.name, filename))
         for varname in [x for x in vars(self) if getattr(new_node, x, None)]:
-            setattr(self, varname, getattr(new_node, varname))
-
+            setattr(self, varname, getattr(new_node, varname))'''
 
 
     def moonphase(self):
@@ -104,10 +84,10 @@ class Node(object):
     
             
     '''def __str__(self):
-        result = self.name + '\n\n\n'
-        for varname in [x for x in vars(self) if x in ['name','phase','cell','property','map']]:
+        result = '# ' + self.name + '\n\n'
+        for varname in vars(self):
             result += varname + ':\n' + str(vars(self)[varname]) + '\n\n'
-        result += '\n\n\n'
+        result += '\n\n'
     '''
 
 
