@@ -4,6 +4,11 @@ import os
 import engine
 from shared import ELEMENTS, NODES
 
+import string
+import random
+from fuzzywuzzy import fuzz, process
+def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
+    return ''.join(random.choice(chars) for _ in range(size))
 
 # ==================================================
 
@@ -20,12 +25,14 @@ def Import(text):
         NODES[n.name] = n
 
 def Dump():
-    with open(os.path.dirname(os.path.abspath(__file__)+'/qchem.dump'),'w') as dumpfile:
+    with open(os.path.dirname(os.path.realpath(__file__))+'/data/dump','wb') as dumpfile:
         pickle.dump(NODES, dumpfile, protocol=pickle.HIGHEST_PROTOCOL)
+    print 'Dumped' + str(NODES)
 
 def Load():
-    with open(os.path.dirname(os.path.abspath(__file__)+'/qchem.dump'),'r') as dumpfile:
-        pickle.load(dumpfile)
+    with open(os.path.dirname(os.path.realpath(__file__))+'/data/dump','rb') as dumpfile:
+        NODES = pickle.load(dumpfile)
+    print 'Loaded' + str(NODES)
 
 
 
@@ -132,7 +139,4 @@ class Node(object):
             for node in NODES['master'].map.traverse():
                 node.map.pop(self)
     '''
-
-
-
 

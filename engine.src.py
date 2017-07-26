@@ -467,6 +467,12 @@ class Vasp(object):
         if os.path.isdir(self.path):
             shutil.rmtree(self.path)
 
+    '''def __str__(self):
+        if getattr(self, 'log', None):
+            return self.log
+        else:
+            return ''   '''
+
 
 # ===========================================================================  
 
@@ -586,6 +592,13 @@ class Electron(object):
 
     def moonphase(self):
         return 2 if getattr(self, 'log', None) else 0
+
+    '''def __str__(self):
+        result = ''
+        for name in ['grepen', 'dos', 'charge', 'bands', 'errors']:
+            if getattr(self,name,None) and getattr(getattr(self,name),'log',None):
+                result += str( getattr(getattr(self,name),'log') )
+        return result'''
     
 
 # reads poscar, and generates 3*3*3 mirror for all kinds of purposes.

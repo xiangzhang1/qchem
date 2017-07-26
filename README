@@ -1,0 +1,9 @@
+Fragile parts:
+
+qchem.Node.__init__, which nodes are readable
+
+
+sigma.var config.hovers.node_tmp
+
+
+qchem.Node.beautify_json
