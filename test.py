@@ -1,10 +1,9 @@
 import qchem
+import shared
 
 with open('data/markdown') as f:
     qchem.Import(f.read())
 
-#qchem.Dump()
+print shared.NODES['master'].map
 
-qchem.Load()
-
-print qchem.NODES
+print shared.NODES['master'].map.lookup('master.qd_base').name

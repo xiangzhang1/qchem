@@ -25,7 +25,7 @@ from scipy.interpolate import Rbf
 from scipy.optimize import minimize
 from scipy import spatial
 
-from shared import ELEMENTS, NODES
+import shared
 
 class Gen(object):   # Stores the logical structure of keywords and modules. A unique construct deserving a name.
 
@@ -274,7 +274,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
 
     def lmaxmix(self):
         b_l_map = { 's': 2, 'p': 2, 'd': 4, 'f': 6, 'g': 8 }
-        lmaxmix = max( [ b_l_map[ ELEMENTS[symbol].block ] for symbol in  self.cell.stoichiometry.keys() ] )
+        lmaxmix = max( [ b_l_map[ shared.ELEMENTS[symbol].block ] for symbol in  self.cell.stoichiometry.keys() ] )
         return lmaxmix
 
     def ismear5check(self):
@@ -308,24 +308,24 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
             print self.__class__.__name__ + ' warning: more than 1 AFM pattern exists.'
             for symbol in self.cell.stoichiometry:
                 l = [0] * self.cell.stoichiometry[symbol]
-                base = ELEMENTS[symbol].magmom
+                base = shared.ELEMENTS[symbol].magmom
                 l[::2] = base
                 l[1::2] = -1 * base
                 magmom += ' '.join(l)
         if self.parse_if('spin=fm'):
             for symbol in self.cell.stoichiometry:
-                base = ELEMENTS[symbol].magmom
+                base = shared.ELEMENTS[symbol].magmom
                 magmom += str( self.cell.stoichiometry[symbol] ) + '*' + str( base )
         return magmom
     def ldauu(self):
         ldauu = ''
         for symbol in self.cell.stoichiometry:
-            ldauu += str( ELEMENTS[symbol].ldauu )
+            ldauu += str( shared.ELEMENTS[symbol].ldauu )
         return ldauu
     def ldauj(self):
         ldauj = ''
         for symbol in self.cell.stoichiometry:
-            ldauj += str( ELEMENTS[symbol].ldauj )
+            ldauj += str( shared.ELEMENTS[symbol].ldauj )
         return ldauj
 
 # =========================================================================== 
@@ -349,18 +349,18 @@ class Cell(object):
             raise SyntaxError('POSCAR5 verification failed. Line count does not match stoichiometry. Blank lines?')
         # some computation
         self.nion = sum(self.stoichiometry.values())
-        self.nelect = sum( [self.stoichiometry[symbol] * ELEMENTS[symbol].pot_zval for symbol in self.stoichiometry] )
+        self.nelect = sum( [self.stoichiometry[symbol] * shared.ELEMENTS[symbol].pot_zval for symbol in self.stoichiometry] )
 
     '''def __str__(self):
         result = self.name+'\n'
         result += '1\n'
-        for line in base:
+        for line in map(str, self.base):
             result += ' '.join(line)+'\n'
         result += ' '.join(self.stoichiometry.keys())
-        result += ' '.join(self.stoichiometry.values())
+        result += ' '.join(map(str,self.stoichiometry.values()))
         result += 'Direct\n'
-        for line in coordinates:
-            result += ' '.join(line)+'\n'
+        for line in map(str, self.coordinates):
+            result += ' '.join(map(str,line))+'\n'
         return result'''
             
 
@@ -455,10 +455,10 @@ class Vasp(object):
             return 2
 
     def pot(symbol):
-        if len(ELEMENTS[symbol].pot) == 0:
+        if len(shared.ELEMENTS[symbol].pot) == 0:
             raise ReferenceError('POTCAR for '+symbol+' not found.')
         path = os.path.dirname(os.path.realpath(__file__))
-        path += '/resource/paw_pbe/'+ELEMENTS[symbol].pot[0] + '/POTCAR' + ELEMENTS[symbol].pot_extension
+        path += '/resource/paw_pbe/'+shared.ELEMENTS[symbol].pot[0] + '/POTCAR' + shared.ELEMENTS[symbol].pot_extension
         if_ = open(path,'r')
         of_ = open('./POTCAR','w')
         of_.write( if_.read() )
@@ -482,14 +482,14 @@ class Map(object):
 
     '''def lookup(self, name):
 
-        if name in NODES:
-            return NODES.pop(name)
+        if name in shared.NODES:
+            return shared.NODES.pop(name)
         elif any([x.name == name for x in self._dict]):
             return [x for x in self._dict if x.name == name][0]
         elif '.' in name:
             return self.lookup('.'.join(name.split('.')[:-2])).map.lookup(name.split('.')[-1])
         elif name == 'master':
-            if name in NODES:   return NODES['master']
+            if name in shared.NODES:   return shared.NODES['master']
             else: raise SystemError('找不到master，求喂食')
         else:
             raise LookupError('Node %s not found' %name)
@@ -519,23 +519,25 @@ class Map(object):
                 src = self.lookup(line[0])
                 if src not in self._dict:   self._dict[src] = []
             elif len(line) == 3:
-                src, dist = self.lookup(line[0]), self.lookup(line[2])
-                if src not in self._dict:   self._dict[src] = []
-                '''m = self._dict if line[2]=='->' else self._dict2
-                m[src] = [dist] if src not in m else m[src]+[dist]'''
+                src, dst = self.lookup(line[0]), self.lookup(line[2])
+                if src not in self._dict:   
+                    self._dict[src] = []
+                '''m = self._dict if line[1]=='->' else self._dict2
+                m[src] = [dst] if src not in m else m[src]+[dst]'''
             else:
                 raise SyntaxError('Map: src -> dst. 3 parts needed')
 
 
-
     '''def __str__(self):
         result = ''
-        for m in self._dict, self._dict2:
-            for src in m:
-                for dst in m[src]:
-                    result += src.name + '->' if m==self._dict else '-->' + dst.name + '\n'
-                if not m[src]:
+        for src in self._dict:
+            for dst in self._dict[src]:
+                result += src.name + '->' + dst.name + '\n'
+                if not self._dict[src]:
                     result += src.name + '\n'
+        for src in self._dict2:
+            for dst in self._dict2[src]:
+                result += src.name + '-->' + dst.name + '\n'
         return result
 
     def __contains__(self, item):
@@ -945,7 +947,7 @@ class Charge(object):
         # pristine electronic configuration
         self.log += 'GS electron configurations for elements in POSCAR\n'
         for element in poscar.elements:
-            self.log += element + ': ' + ELEMENTS[element].eleconfig
+            self.log += element + ': ' + shared.ELEMENTS[element].eleconfig
 
         # integrating site-projected pdos
         self.log += '\nIntegrated Projected DOS: integration of DOS of wavefunctions projected onto spherical harmonics within spheres of a radius RWIGS\n'

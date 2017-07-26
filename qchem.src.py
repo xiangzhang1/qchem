@@ -2,13 +2,9 @@ import pickle
 import re
 import os
 import engine
-from shared import ELEMENTS, NODES
 
-import string
-import random
-from fuzzywuzzy import fuzz, process
-def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
-    return ''.join(random.choice(chars) for _ in range(size))
+import shared
+
 
 # ==================================================
 
@@ -18,27 +14,27 @@ def Import(text):
     l = re.split('^#+\s*', text, flags=re.MULTILINE) ; l.pop(0)
 
     while l:
-        print 'Import: parsing %s' %(l[-1].splitlines()[0] if l[-1].splitlines() else '')
+        # print 'Import: parsing %s' %(l[-1].splitlines()[0] if l[-1].splitlines() else '')
         n = Node(l.pop())
-        '''if n.name in NODES:
-            raise KeyError('Node name %s is in NODES.' %n.name)'''
-        NODES[n.name] = n
+        '''if n.name in shared.NODES:
+            raise KeyError('Node name %s is in shared.NODES.' %n.name)'''
+        shared.NODES[n.name] = n
 
 def Dump():
     with open(os.path.dirname(os.path.realpath(__file__))+'/data/dump','wb') as dumpfile:
-        pickle.dump(NODES, dumpfile, protocol=pickle.HIGHEST_PROTOCOL)
-    print 'Dumped' + str(NODES)
+        pickle.dump(shared.NODES, dumpfile, protocol=pickle.HIGHEST_PROTOCOL)
+    print 'Dumped' + str(shared.NODES)
 
 def Load():
     with open(os.path.dirname(os.path.realpath(__file__))+'/data/dump','rb') as dumpfile:
-        NODES = pickle.load(dumpfile)
-    print 'Loaded' + str(NODES)
+        shared.NODES = pickle.load(dumpfile)
+    print 'Loaded' + str(shared.NODES)
 
 
 
 class Node(object):
 
-    def __init__(self, text):   # parses 1 node at a time. searches in NODES
+    def __init__(self, text):   # parses 1 node at a time. searches in shared.NODES
 
         namevalpairs = text.split('\n\n')
 
@@ -57,7 +53,7 @@ class Node(object):
             if not namevalpair.rstrip():
                 continue
             name = namevalpair.split('\n')[0].strip(': ')
-            if name not in ['name','phase','cell','property','map']:    # This may NEED to be rather frequently UPDATED!
+            if name not in ['name','phase','cell','property','map']:  
                 continue
             value = namevalpair.split('\n',1)[1]
             if getattr(engine, name.title(), None):
@@ -69,10 +65,10 @@ class Node(object):
         # counterpart: str(self).
         # edit phase, cell, property, map at this level.
         for x in self._map:
-            NODES[x.name] = x
+            shared.NODES[x.name] = x
         Import(text)
-        '''if self.name in NODES:
-            new_node = NODES[self.name]
+        '''if self.name in shared.NODES:
+            new_node = shared.NODES[self.name]
         else:
             raise SyntaxError('Node with name %s is not defined in %s' %(self.name, filename))
         for varname in [x for x in vars(self) if getattr(new_node, x, None)]:
@@ -136,7 +132,7 @@ class Node(object):
             engine_ = getattr(self,self.gen.getkw('engine'),None)
             if getattr(self,self.gen.getkw('engine'),None):
                 getattr(self,self.gen.getkw('engine'),None).delete()
-            for node in NODES['master'].map.traverse():
+            for node in shared.NODES['master'].map.traverse():
                 node.map.pop(self)
     '''
 
