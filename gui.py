@@ -190,15 +190,3 @@ def request_():  # either merge json, or use NODES['master']
         new_json = combine_json(new_json)
         return jsonify(new_json)
 
-
-@app.route('/add_node', methods=['POST'])
-@patch_through
-def add_node():
-    j = request.get_json(force=True)
-    shared.NODES['master'].map.lookup(j['cur']).map.add_node(qchem.Node(j['name']))
-
-@app.route('/del_node', methods=['POST'])
-@patch_through
-def del_node():
-    j = request.get_json(force=True)
-    shared.NODES['master'].map.lookup(j['cur']).map.del_node(qchem.Node(j['name']))

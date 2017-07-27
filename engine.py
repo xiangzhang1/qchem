@@ -351,7 +351,7 @@ class Cell(object):
         self.nion = sum(self.stoichiometry.values())
         self.nelect = sum( [self.stoichiometry[symbol] * shared.ELEMENTS[symbol].pot_zval for symbol in self.stoichiometry] )
 
-    '''def __str__(self):
+    def __str__(self):
         result = self.name+'\n'
         result += '1\n'
         for line in map(str, self.base):
@@ -361,7 +361,7 @@ class Cell(object):
         result += 'Direct\n'
         for line in map(str, self.coordinates):
             result += ' '.join(map(str,line))+'\n'
-        return result'''
+        return result
             
 
 # =========================================================================== 
@@ -467,11 +467,11 @@ class Vasp(object):
         if os.path.isdir(self.path):
             shutil.rmtree(self.path)
 
-    '''def __str__(self):
+    def __str__(self):
         if getattr(self, 'log', None):
             return self.log
         else:
-            return ''   '''
+            return ''   
 
 
 # ===========================================================================  
@@ -480,7 +480,7 @@ class Vasp(object):
 class Map(object):
 
 
-    '''def lookup(self, name):
+    def lookup(self, name):
 
         if name in shared.NODES:
             return shared.NODES.pop(name)
@@ -504,18 +504,17 @@ class Map(object):
             return None
 
     def traverse(self):
-        return set([x for x in self]) + set().union( *(x.map.traverse() for x in self if getattr(x,'map',None)) )'''
-        
+        return set([x for x in self]) + set().union( *(x.map.traverse() for x in self if getattr(x,'map',None)) )
 
 
     def __init__(self, text):
     
-        '''self._dict, self._dict2 = {}, {}
-        text = text.split('\n')'''
+        self._dict, self._dict2 = {}, {}
+        text = text.split('\n')
 
         # src -> dst
         for line in text:
-            '''line = [x.strip() for x in re.split('(->|-->)', line)]'''
+            line = [x.strip() for x in re.split('(->|-->)', line)]
             if len(line) == 1:
                 src = self.lookup(line[0])
                 if src not in self._dict:   self._dict[src] = []
@@ -525,19 +524,13 @@ class Map(object):
                     self._dict[src] = []
                 if dst not in self._dict:   
                     self._dict[dst] = []
-                '''m = self._dict if line[1]=='->' else self._dict2
-                m[src] = [dst] if src not in m else m[src]+[dst]'''
+                m = self._dict if line[1]=='->' else self._dict2
+                m[src] = [dst] if src not in m else m[src]+[dst]
             else:
                 raise SyntaxError('Map: src -> dst. 3 parts needed')
 
 
-    def add_node(self, node):
-        if node in self._dict:
-            raise SyntaxError('node %s already in self._dict' %node.name)
-        else:
-            self._dict[node] = []
-
-    '''def __str__(self):
+    def __str__(self):
         result = ''
         for src in self._dict:
             for dst in self._dict[src]:
@@ -566,7 +559,7 @@ class Map(object):
             del m[node]
             for n in m:
                 m[n] = [x for x in m[n] if x != node]
-'''
+
 
 
 
@@ -604,12 +597,12 @@ class Electron(object):
     def moonphase(self):
         return 2 if getattr(self, 'log', None) else 0
 
-    '''def __str__(self):
+    def __str__(self):
         result = ''
         for name in ['grepen', 'dos', 'charge', 'bands', 'errors']:
             if getattr(self,name,None) and getattr(getattr(self,name),'log',None):
                 result += str( getattr(getattr(self,name),'log') )
-        return result'''
+        return result
     
 
 # reads poscar, and generates 3*3*3 mirror for all kinds of purposes.
