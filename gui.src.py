@@ -57,6 +57,10 @@ def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
 # json translation api
 def to_json(n):
     new_json = {}
+    # beautify_json
+    new_json['label']=new_json['id']=n.name
+    palette = ['#777', 
+    # to_json
     for attr_name in vars(n):
         if attr_name != 'map':
             new_json[attr_name] = str( getattr(n,attr_name,None) )
@@ -69,7 +73,6 @@ def to_json(n):
                 for dst in n.map._dict2[src] if src in n.map._dict2 else []:
                     map_json['edges'].append( {'id': id_generator(), 'source': src.name, 'target': dst.name, 'type' : 'dashed'} )
             new_json['map'] = map_json
-    new_json['label']=new_json['id']=new_json['name']   # beautify
     return new_json
 
 

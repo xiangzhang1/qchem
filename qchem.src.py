@@ -35,8 +35,6 @@ class Node(object):
 
     def __init__(self, text):   # parses 1 node at a time. searches in NODES
 
-        # readable list: ['name','phase','cell','property','map']
-
         namevalpairs = text.split('\n\n')
 
         # node.name
