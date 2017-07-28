@@ -4,6 +4,7 @@ import os
 import engine
 
 import shared
+from exceptions import *
 
 
 # ==================================================
@@ -36,6 +37,8 @@ class Node(object):
 
     def __init__(self, text):   # parses 1 node at a time. searches in shared.NODES
 
+        # readable list: ['name','phase','cell','property','map']
+
         namevalpairs = text.split('\n\n')
 
         # node.name
@@ -53,7 +56,7 @@ class Node(object):
             if not namevalpair.rstrip():
                 continue
             name = namevalpair.split('\n')[0].strip(': ')
-            if name not in ['name','phase','cell','property','map']:  
+            if name not in  ['name','phase','cell','property','map']: 
                 continue
             value = namevalpair.split('\n',1)[1]
             if getattr(engine, name.title(), None):
@@ -61,19 +64,27 @@ class Node(object):
             setattr(self, name, value)
 
 
+
     def edit(self, text):   
         # counterpart: str(self).
         # edit phase, cell, property, map at this level.
-        for x in self._map:
+        for x in self.map:
             shared.NODES[x.name] = x
         Import(text)
         '''if self.name in shared.NODES:
             new_node = shared.NODES[self.name]
         else:
-            raise SyntaxError('Node with name %s is not defined in %s' %(self.name, filename))
-        for varname in [x for x in vars(self) if getattr(new_node, x, None)]:
+            raise SyntaxError('You have not defined a same-name node (aka node with name %s which would have been read)' %(self.name))'''
+        for varname in vars(self):
+            if not getattr(new_node, varname, None):
+                delattr(self, varname)
+        for varname in vars(new_node):
             setattr(self, varname, getattr(new_node, varname))'''
 
+    def edit_vars(self,j):
+        # only edit text variables. takes a dictionary (aka json)
+        for key in j:
+            setattr(self,key,j[key])
 
     def moonphase(self):
         if getattr(self, 'map', None):
@@ -89,8 +100,10 @@ class Node(object):
     '''def __str__(self):
         result = '# ' + self.name + '\n\n'
         for varname in vars(self):
-            result += varname + ':\n' + str(vars(self)[varname]) + '\n\n'
+            if varname != 'name':
+                result += varname + ':\n' + str(vars(self)[varname]) + '\n\n'
         result += '\n\n'
+        return result
     '''
 
 

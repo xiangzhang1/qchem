@@ -5,6 +5,7 @@ from flask import request
 from flask import jsonify
 
 import shared
+from exceptions import *
 
 from cStringIO import StringIO
 import sys
@@ -19,6 +20,10 @@ import os
 
 import pickle
 
+import logging
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
+
 app = Flask(__name__)
 CORS(app)
 
@@ -31,18 +36,18 @@ def patch_through(func):
             func(*args, **kwargs)
             sys.stdout  = sys.__stdout__
             return mystdout.getvalue() + '\n' + '-'*30 + '\ngui: +' + func.__name__ + '+ success'
-        except Exception as e:
+        except CustomError as e:
             sys.stdout  = sys.__stdout__
-            return mystdout.getvalue() + '\n' + str(e) + '\n' + '-'*30 + '\ngui: ' + func.__name__ + ' failed' 
+            return mystdout.getvalue() + '\n' + '-'*30 + '\ngui: ' + func.__name__ + ' failed: ' + str(e) 
     return wrapped
 
 def return_through(func):
     @wraps(func)
     def wrapped(*args, **kwargs):
-#        try:
+        try:
             return func(*args, **kwargs)
-#        except Exception as e:
-#            return jsonify( {'error':str(e) } )
+        except CustomError as e:
+            return jsonify( {'error':str(e) } )
     return wrapped
 
 
@@ -58,21 +63,18 @@ def to_json(n):
             new_json[attr_name] = str( getattr(n,attr_name,None) )
         if attr_name == 'map':
             map_json = {'nodes': [], 'edges':[]}
-            #print 'to loop thru:\n -----\n %s ------\n' %n.map
             for src in n.map._dict:
-                #print 'loop %s' %src.name
                 map_json['nodes'].append( to_json(src) )
                 for dst in n.map._dict[src]:
                     map_json['edges'].append( {'id': id_generator(), 'source': src.name, 'target': dst.name, 'type' : 'arrow'} )
                 for dst in n.map._dict2[src] if src in n.map._dict2 else []:
-                    map_json['edges'].append( {'id': id_generator(), 'source': src.name, 'target': dst.name, 'type' : 'dotted'} )
+                    map_json['edges'].append( {'id': id_generator(), 'source': src.name, 'target': dst.name, 'type' : 'dashed'} )
             new_json['map'] = map_json
     new_json['label']=new_json['id']=new_json['name']   # beautify
     return new_json
 
 
 def traverse_json(j, cur_prefix=None):   # [ cur, jam([name, phase, cell, property]), [other property list] ]     
-    print j
     if cur_prefix:
         cur = cur_prefix + '.' + j['name']
     else:
@@ -85,7 +87,7 @@ def traverse_json(j, cur_prefix=None):   # [ cur, jam([name, phase, cell, proper
             jam += ' ' + j[key]
         elif key == 'cell':
             jam += ' ' + j[key].splitlines()[5] + j[key].splitlines()[6]
-        elif key == 'map':
+        elif key in ['id', 'label'] or ':' in key:
             pass
         else:
             other[key] = j[key]
@@ -115,27 +117,36 @@ def combine_json(new_json, old_json=None):
                 oldj = [oldj for oldj in traverse_json(old_json) if oldj[0]==newj[0]][0]
             else:
                 best_jam = process.extractOne(newj[1], [oldj[1] for oldj in traverse_json(old_json)])
-                if best_jam[1] > 90:
+                if best_jam[1] > 50:
+                    print '*='*50
+                    print 'yeah found match'
+                    print '-new-'*20
+                    print newj
+                    print '-old-'*20
+                    print oldj
+                    print '*='*50
                     oldj = [oldj for oldj in traverse_json(old_json) if oldj[1]==best_jam[0]][0]
                 else:
                     oldj = [oldj[0], oldj[1], {}]
-                if 'x' not in oldj[2] or 'y' not in oldj[2]:
-                    oldj[2]['x'] = random.uniform(0,1)
-                    oldj[2]['y'] = random.uniform(0,1)
-                else:
+                if 'x' in oldj[2] and 'y' in oldj[2]:
                     oldj[2]['x'] = float(oldj[2]['x']) + random.uniform(0,0.1)
                     oldj[2]['y'] = float(oldj[2]['x']) + random.uniform(0,0.1)
             for key in oldj[2]:
                 if oldj[2][key] and key not in newj[2]:
                     newj[2][key] = oldj[2][key]
                     lookup_json(new_json,newj[0])[key] = oldj[2][key]
-        return new_json
-    else:
-        for newj in traverse_json(new_json):
-            tmp = lookup_json(new_json, newj[0])
+    for newj in traverse_json(new_json):
+        tmp = lookup_json(new_json, newj[0])
+        if 'x' not in tmp or 'y' not in tmp:
             tmp['x'] = random.uniform(0,1)
             tmp['y'] = random.uniform(0,1)
-        return new_json
+        if 'read_cam0:x' not in tmp or 'read_cam0:y' not in tmp:
+            tmp['read_cam0:x'] = 200 * tmp['x'] - 100
+            tmp['read_cam0:y'] = 200 * tmp['y'] - 100
+        if 'renderer1:x' not in tmp or 'renderer1:y' not in tmp:
+            tmp['renderer1:x'] = 500 * tmp['x'] 
+            tmp['read_cam0:y'] = 250 * tmp['y']
+    return new_json
 
 @app.route('/reset_', methods=['GET'])
 @patch_through
@@ -195,10 +206,47 @@ def request_():  # either merge json, or use NODES['master']
 @patch_through
 def add_node():
     j = request.get_json(force=True)
-    shared.NODES['master'].map.lookup(j['cur']).map.add_node(qchem.Node(j['name']))
+    n = shared.NODES['master'].map.lookup(j['cur'])
+    print shared.NODES
+    n.map.add_node(qchem.Node(j['name']))
 
 @app.route('/del_node', methods=['POST'])
 @patch_through
 def del_node():
     j = request.get_json(force=True)
-    shared.NODES['master'].map.lookup(j['cur']).map.del_node(qchem.Node(j['name']))
+    shared.NODES['master'].map.lookup(j['cur']).map.del_node(j['name'])
+
+@app.route('/edit_vars', methods=['POST'])
+@patch_through
+def edit_vars():
+    j = request.get_json(force=True)
+    shared.NODES['master'].map.lookup(j.pop('cur')).edit_vars(j)
+
+@app.route('/get_text', methods=['POST'])
+@return_through
+def get_text():  
+    j = request.get_json(force=True)
+    n = shared.NODES['master'].map.lookup(j['cur'])
+    return jsonify({'text':str(n)})
+
+@app.route('/edit', methods=['POST'])
+@patch_through
+def edit():
+    j = request.get_json(force=True)
+    shared.NODES['master'].map.lookup(j.pop('cur')).edit(j['text'])
+
+@app.route('/check_status', methods=['GET'])
+@return_through
+def check_status():
+    if getattr(shared, 'NODES', None) and 'master' in shared.NODES and getattr(shared.NODES['master'], 'map', None):
+        return jsonify({'text':'success'})
+    else:
+        return jsonify({'text':'warning'})
+
+
+@app.route('/add_edge', methods=['POST'])
+@patch_through
+def add_edge():
+    j = request.get_json(force=True)
+    n = shared.NODES['master'].map.lookup(j['cur'])
+    n.map.add_edge(j['src'],j['dst'])

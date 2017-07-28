@@ -26,6 +26,7 @@ from scipy.optimize import minimize
 from scipy import spatial
 
 import shared
+from exceptions import *
 
 class Gen(object):   # Stores the logical structure of keywords and modules. A unique construct deserving a name.
 
@@ -354,12 +355,12 @@ class Cell(object):
     '''def __str__(self):
         result = self.name+'\n'
         result += '1\n'
-        for line in map(str, self.base):
-            result += ' '.join(line)+'\n'
-        result += ' '.join(self.stoichiometry.keys())
-        result += ' '.join(map(str,self.stoichiometry.values()))
+        for line in self.base:
+            result += '\t'.join(map(str,line)) + '\n'
+        result += '  '.join(self.stoichiometry.keys()) + '\n'
+        result += '  '.join(map(str,self.stoichiometry.values())) + '\n'
         result += 'Direct\n'
-        for line in map(str, self.coordinates):
+        for line in self.coordinates:
             result += ' '.join(map(str,line))+'\n'
         return result'''
             
@@ -482,15 +483,15 @@ class Map(object):
 
     '''def lookup(self, name):
 
-        if name in shared.NODES:
+        if name == 'master':
+            if name in shared.NODES:   return shared.NODES['master']
+            else: raise SystemError('找不到master，求喂食')
+        elif name in shared.NODES:
             return shared.NODES.pop(name)
         elif any([x.name == name for x in self._dict]):
             return [x for x in self._dict if x.name == name][0]
         elif '.' in name:
             return self.lookup('.'.join(name.split('.')[:-1])).map.lookup(name.split('.')[-1])
-        elif name == 'master':
-            if name in shared.NODES:   return shared.NODES['master']
-            else: raise SystemError('找不到master，求喂食')
         else:
             raise LookupError('Node %s not found' %name)
 
@@ -531,13 +532,37 @@ class Map(object):
                 raise SyntaxError('Map: src -> dst. 3 parts needed')
 
 
-    def add_node(self, node):
+    '''def add_node(self, node):
         if node in self._dict:
             raise SyntaxError('node %s already in self._dict' %node.name)
         else:
             self._dict[node] = []
+    def del_node(self, name):
+        if [n for n in self._dict if n.name==name]:
+            node = [n for n in self._dict if n.name==name][0]
+        else:
+            raise KeyError('name %s not in node %s' %(name, self.name))
+        for m in (self._dict, self._dict2):
+            m.pop(node,None)
+            for n in m:
+                m[n] = [x for x in m[n] if x != node]'''
 
-    '''def __str__(self):
+    def add_edge(self, src_name, dst_name):
+        src = self.lookup(src_name)
+        dst = self.lookup(dst_name)
+        if src in self._dict[dst] or dst in self._dict2 and src in self._dict2[dst]:
+            raise SyntaxError('add_edge: dst %s -> src %s link exists' %(dst_name, src_name))
+        if dst in self._dict[src]:
+            self._dict[src].remove(dst)
+            self._dict2[src] = self._dict2[src]+[dst] if src in self._dict2 else [dst]
+        elif dst in self._dict2[src]:
+            self._dict2[src].remove(dst)
+            self._dict[src] = self._dict[src]+[dst] if src in self._dict else [dst]
+        else:
+            self._dict[src] = [dst]
+
+
+    def __str__(self):
         result = ''
         for src in self._dict:
             for dst in self._dict[src]:
@@ -561,11 +586,6 @@ class Map(object):
     def __getitem__(self, key):
         return self._dict[key]
 
-    def pop(self, node):
-        for m in self._map, self._map2:
-            del m[node]
-            for n in m:
-                m[n] = [x for x in m[n] if x != node]
 '''
 
 

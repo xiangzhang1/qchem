@@ -1,9 +1,14 @@
 Fragile parts:
 
-qchem.Node.__init__, which nodes are readable
+qchem.Node.readable_list: which vars to read.
+
+sigma.var = config.{{{tmp}}}: which vars to print.
+
+gui.beautify_json: id->label, etc. relatively stable.
+
+gui.traverse_json: [cur, some_identifier, {key:val}]. relatively stable.
 
 
-sigma.var config.hovers.node_tmp
+Temporary fixes:
 
-
-qchem.Node.beautify_json
+I just disabled return_through. Remember to patch it back.
