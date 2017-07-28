@@ -18,7 +18,7 @@ def Import(text):
         # print 'Import: parsing %s' %(l[-1].splitlines()[0] if l[-1].splitlines() else '')
         n = Node(l.pop())
         '''if n.name in shared.NODES:
-            raise KeyError('Node name %s is in shared.NODES.' %n.name)'''
+            raise CustomError(' Import: Node name %s is in shared.NODES.' %n.name)'''
         shared.NODES[n.name] = n
 
 def Dump():
@@ -43,7 +43,7 @@ class Node(object):
 
         # node.name
         '''if len(namevalpairs[0].splitlines()) != 1:
-            raise SyntaxError('Section header format is name [: property]. Your header is:\n %s' %namevalpairs[0])'''
+            raise CustomError(self.__class__.__name +': __init__: Section header format is name [: property]. Your header is:\n %s' %namevalpairs[0])'''
         titleline = namevalpairs.pop(0).splitlines()[0]
         l = [x.strip() for x in titleline.split(':')]
         self.name = l[0]
@@ -74,7 +74,7 @@ class Node(object):
         '''if self.name in shared.NODES:
             new_node = shared.NODES[self.name]
         else:
-            raise SyntaxError('You have not defined a same-name node (aka node with name %s which would have been read)' %(self.name))'''
+            raise CustomError(self.__class__.__name__ + ': edit: You have not defined a same-name node (aka node with name %s which would have been read)' %(self.name))'''
         for varname in vars(self):
             if not getattr(new_node, varname, None):
                 delattr(self, varname)
@@ -137,7 +137,7 @@ class Node(object):
             getattr(self, self.gen.getkw('engine')).compute()
 
         else:
-            raise ValueError('Node %s is not computable.' %self.name)
+            raise CustomError(self.__class___.__name__ + ': compute: Node %s is not computable.' %self.name)
 
         
     '''def delete(self):
