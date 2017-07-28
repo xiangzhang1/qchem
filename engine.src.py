@@ -27,7 +27,6 @@ from scipy.optimize import minimize
 from scipy import spatial
 
 import shared
-from shared import moonphase_wrap, CustomError
 
 class Gen(object):   # Stores the logical structure of keywords and modules. A unique construct deserving a name.
 
@@ -35,7 +34,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
     # ---------
     def getkw(self,kwname):
 	if len(self.kw[kwname])!=1:
-	    raise CustomError('self.kw[kwname] does not have 1 and only 1 value. wait till that happens and try again.')
+	    raise shared.CustomError('self.kw[kwname] does not have 1 and only 1 value. wait till that happens and try again.')
 	return next(iter(self.kw[kwname])) if self.kw[kwname] else None
 
     def evaluate(self,expression):                  # Evaluates expression to string: literal or (funcname)
@@ -238,7 +237,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
             self.memory['projector_real']  = abs(int( next(l for l in output if 'projectors in real space' in l).split()[4] ))
             self.memory['projector_reciprocal']  = abs(int( next(l for l in output if 'projectors in reciprocal space' in l).split()[4] ))
         except StopIteration, KeyError:
-            raise CustomError(self.__class__.__name__ + 'error: makeparam output illegal. Check POSCAR4 format and memory leak.')
+            raise shared.CustomError(self.__class__.__name__ + 'error: makeparam output illegal. Check POSCAR4 format and memory leak.')
         # parse and raise error
         if self.parse_if('hse'):
             memory_required = ( (memory['projector_real']+memory['project_reciprocal'])*self.getkw('npar')+3*memory['wavefunction']*self.getkw('kpar') )/1024^3 + self.getkw('nodes')
@@ -266,7 +265,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         elif self.parse_if('spin=afm|spin=fm'):
             nbands = self.cell.nelect / 2 + self.cell.nion / 2
         else:
-            raise CustomError(self.__class__.__name__+'spin variable is not fm, afm or para, cannot compute nbands')
+            raise shared.CustomError(self.__class__.__name__+'spin variable is not fm, afm or para, cannot compute nbands')
         # hse case when hse mod is not even defined. for ref, i think. hiya, later self.
         if self.parse_if('hse|prehf'):
             npar = int(self.getkw('npar'))
@@ -345,9 +344,9 @@ class Cell(object):
         self.coordinates = np.float_([ line.split() for line in lines[8:] ])
         self.stoichiometry = dict( zip(lines[5].split(), [int(x) for x in lines[6]]) )
         if not lines[7].startswith('D'):
-            raise CustomError(self.__class__.__name__+'__init__: unsupported POSCAR5 format. Only direct coordinates are supported.')
+            raise shared.CustomError(self.__class__.__name__+'__init__: unsupported POSCAR5 format. Only direct coordinates are supported.')
         if len(lines) - 8 != sum(self.stoichiometry.values()):
-            raise CustomError(self.__class__.__name__+'__init__: POSCAR5 verification failed. Line count does not match stoichiometry. Blank lines?')
+            raise shared.CustomError(self.__class__.__name__+'__init__: POSCAR5 verification failed. Line count does not match stoichiometry. Blank lines?')
         # some computation
         self.nion = sum(self.stoichiometry.values())
         self.nelect = sum( [self.stoichiometry[symbol] * shared.ELEMENTS[symbol].pot_zval for symbol in self.stoichiometry] )
@@ -376,7 +375,7 @@ class Map(object):
 
         if name == 'master':
             if name in shared.NODES:   return shared.NODES['master']
-            else: raise CustomError('找不到master，求喂食')
+            else: raise shared.CustomError('找不到master，求喂食')
         elif name in shared.NODES:
             return shared.NODES.pop(name)
         elif any([x.name == name for x in self._dict]):
@@ -384,12 +383,12 @@ class Map(object):
         elif '.' in name:
             return self.lookup('.'.join(name.split('.')[:-1])).map.lookup(name.split('.')[-1])
         else:
-            raise CustomError(self.__class__.__name__ + ' lookup: Node %s not found' %name)
+            raise shared.CustomError(self.__class__.__name__ + ' lookup: Node %s not found' %name)
 
     def prev(self, node):
         l = [x for x in self._map if node in x]
         if len(l) > 1: 
-            raise CustomError(self.__class__.__name__ + ' prev: %s has more than 1 prev node. (wtf?)' %name)
+            raise shared.CustomError(self.__class__.__name__ + ' prev: %s has more than 1 prev node. (wtf?)' %name)
         elif len(l) == 1:
             return l[0]
         else:
@@ -420,19 +419,19 @@ class Map(object):
                 '''m = self._dict if line[1]=='->' else self._dict2
                 m[src] = [dst] if src not in m else m[src]+[dst]'''
             else:
-                raise CustomError(self.__class__.__name__ + '__init__: src -> dst. 3 parts needed')
+                raise shared.CustomError(self.__class__.__name__ + '__init__: src -> dst. 3 parts needed')
 
 
     '''def add_node(self, node):
         if node in self._dict:
-            raise CustomError(self.__class__.__name__+' add_node: node %s already in self._dict' %node.name)
+            raise shared.CustomError(self.__class__.__name__+' add_node: node %s already in self._dict' %node.name)
         else:
             self._dict[node] = []
     def del_node(self, name):
         if [n for n in self._dict if n.name==name]:
             node = [n for n in self._dict if n.name==name][0]
         else:
-            raise CustomError(__self.__class__.__name__ + 'del_node: name %s not in node %s' %(name, self.name))
+            raise shared.CustomError(__self.__class__.__name__ + 'del_node: name %s not in node %s' %(name, self.name))
         for m in (self._dict, self._dict2):
             m.pop(node,None)
             for n in m:
@@ -442,7 +441,7 @@ class Map(object):
         src = self.lookup(src_name)
         dst = self.lookup(dst_name)
         if src in self._dict[dst] or dst in self._dict2 and src in self._dict2[dst]:
-            raise CustomError(self.__class__.__name__ + ' add_edge: dst %s -> src %s link exists' %(dst_name, src_name))
+            raise shared.CustomError(self.__class__.__name__ + ' add_edge: dst %s -> src %s link exists' %(dst_name, src_name))
         if dst in self._dict[src]:
             self._dict[src].remove(dst)
             self._dict2[src] = self._dict2[src]+[dst] if src in self._dict2 else [dst]
@@ -456,13 +455,13 @@ class Map(object):
         src = self.lookup(src_name)
         dst = self.lookup(dst_name)
         if src in self._dict[dst] or dst in self._dict2 and src in self._dict2[dst]:
-            raise CustomError(self.__class__.__name__ + ' del_edge: dst %s -> src %s link exists' %(dst_name, src_name))
+            raise shared.CustomError(self.__class__.__name__ + ' del_edge: dst %s -> src %s link exists' %(dst_name, src_name))
         if dst in self._dict[src]:
             self._dict[src].remove(dst)
         elif dst in self._dict2[src]:
             self._dict2[src].remove(dst)
         else:
-            raise CustomError(self.__class__.__name__ + ' del_edge: no edge to delete')
+            raise shared.CustomError(self.__class__.__name__ + ' del_edge: no edge to delete')
 
     def __str__(self):
         result = ''
@@ -553,10 +552,10 @@ class Vasp(object):
             if subfile:
                 with open('subfile','w') as of_:
                     of_.write(subfile)
-            print self.__class__.__name__ + ': %s ready to be computed. Run wrapper or press y.'
-            if raw_input() == 'y':
-                os.system(wrapper)
-            print self.__class__.__name__ + ': waiting for system. Leave me on, or save/load.'
+            # print self.__class__.__name__ + ': %s ready to be computed. Run wrapper or press y.'
+            # if raw_input() == 'y':
+            #    os.system(wrapper)
+            print self.__class__.__name__ + ': wrapper generated, waiting for system. Leave me on, or save/load.'
 
         elif not getattr(self,'log',None):
             if os.path.isfile('vasprun.xml') and os.path.getmtime('vasprun.xml')>os.path.getmtime('wrapper'):
@@ -574,7 +573,7 @@ class Vasp(object):
         else:
             print self.__class__.__name__ + ': calculation already completed at %s. Why are you here?' %self.path
 
-    @moonphase_wrap
+    @shared.moonphase_wrap
     def moonphase(self):
         if not getattr(self, 'wrapper', None):
             return 0
@@ -586,7 +585,7 @@ class Vasp(object):
 
     def pot(symbol):
         if len(shared.ELEMENTS[symbol].pot) == 0:
-            raise CustomError(self.__class__.__name__+' pot: POTCAR for '+symbol+' not found.')
+            raise shared.CustomError(self.__class__.__name__+' pot: POTCAR for '+symbol+' not found.')
         path = os.path.dirname(os.path.realpath(__file__))
         path += '/resource/paw_pbe/'+shared.ELEMENTS[symbol].pot[0] + '/POTCAR' + shared.ELEMENTS[symbol].pot_extension
         if_ = open(path,'r')
@@ -624,7 +623,7 @@ class Dummy(object):
         if dcmp.left_only or dcmp.right_only or dcmp.diff_files:
             shutil.copytree(self.prev.path, self.path)
 
-    @moonphase_wrap
+    @shared.moonphase_wrap
     def moonphase(self):
         if not os.path.isdir(self.path):
             return 0
@@ -664,7 +663,7 @@ class Electron(object):
                     self.errors = Errors(self.grepen, self.dos, self.bands)
             self.log = '' 
 
-    @moonphase_wrap
+    @shared.moonphase_wrap
     def moonphase(self):
         return 2 if getattr(self, 'log', None) else 0
 

@@ -15,8 +15,6 @@ from cStringIO import StringIO
 
 import qchem
 import shared
-from shared import moonphase_wrap, CustomError
-
 
 import logging
 log = logging.getLogger('werkzeug')
@@ -36,7 +34,7 @@ def patch_through(func):
             func(*args, **kwargs)
             sys.stdout  = sys.__stdout__
             return mystdout.getvalue() + '\n' + '-'*30 + '\ngui: +' + func.__name__ + '+ success'
-        except CustomError as e:
+        except shared.CustomError as e:
             sys.stdout  = sys.__stdout__
             return mystdout.getvalue() + '\n' + '-'*30 + '\ngui: ' + func.__name__ + ' failed: ' + str(e) 
     return wrapped
@@ -46,7 +44,7 @@ def return_through(func):
     def wrapped(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except CustomError as e:
+        except shared.CustomError as e:
             return jsonify( {'error':str(e) } )
     return wrapped
 
@@ -245,6 +243,12 @@ def edit_vars():
     j = request.get_json(force=True)
     shared.NODES['master'].map.lookup(j.pop('cur')).edit_vars(j)
 
+@app.route('/edit_path', methods=['POST'])
+@patch_through
+def edit_path():
+    j = request.get_json(force=True)
+    setattr(shared.NODES['master'].map.lookup(j['cur']), 'path', j['path'])
+
 @app.route('/get_text', methods=['POST'])
 @return_through
 def get_text():  
@@ -262,13 +266,9 @@ def edit():
 @return_through
 def check_status():
     if 'master' in shared.NODES and getattr(shared.NODES['master'], 'map', None):
-        return jsonify({'text':'success'})
+        return jsonify({'color':shared.COLOR_PALETTE[2]})
     else:
-        if 'master' in shared.NODES:
-            print shared.NODES['master']
-        else:
-            print shared.NODES
-        return jsonify({'text':'warning'})
+        return jsonify({'color':shared.COLOR_PALETTE[-1]})
 
 @app.route('/paste_node', methods=['POST'])
 @patch_through

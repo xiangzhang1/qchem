@@ -31,7 +31,7 @@ NODES = {}
 
 # qchem.Node.readable_list: which vars to read *input-able*
 
-READABLE_ATTR_LIST = ['name','phase','cell','property','map']
+READABLE_ATTR_LIST = ['name','phase','cell','property','map']   # note that path is not here
 
 # sigma.var = config.{{{tmp}}}: which vars to print *physical* (not sigma) : ['name','phase','cell','property','gen','vasp','electron']
 # EDIT IN PLACE
@@ -42,8 +42,9 @@ READABLE_ATTR_LIST = ['name','phase','cell','property','map']
 # EDIT IN PLACE
 
 # gui|sigma . palette
-# COLOR_PALETTE = {-1: 'A44', 0: '#777',  1: '#863', 2: '#373'}   # text-*
-COLOR_PALETTE = {-1: 'd53', 0: '#777',  1: '#fa4', 2: '#5b5'} # brand-*
+COLOR_PALETTE = {-1: '#a94442', 0: '#000000',  1: '#8a6d3b', 2: '#3c763d'}   # text-*
+# COLOR_PALETTE = {-1: '#d9534f', 0: '#000000',  1: '#f0ad4e', 2: '#5cb85c'} # brand-*
+# sigma null response: #a94442
 
 
 # Element, ELEMENTS

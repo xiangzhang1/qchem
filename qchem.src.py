@@ -4,7 +4,6 @@ import os
 import engine
 
 import shared
-from shared import moonphase_wrap, CustomError
 
 # ==================================================
 
@@ -17,7 +16,7 @@ def Import(text):
         # print 'Import: parsing %s' %(l[-1].splitlines()[0] if l[-1].splitlines() else '')
         n = Node(l.pop())
         '''if n.name in shared.NODES:
-            raise CustomError(' Import: Node name %s is in already in shared.NODES.' %n.name)'''
+            raise shared.CustomError(' Import: Node name %s is in already in shared.NODES.' %n.name)'''
         shared.NODES[n.name] = n
 
 def Dump():
@@ -40,7 +39,7 @@ class Node(object):
 
         # node.name
         '''if len(namevalpairs[0].splitlines()) != 1:
-            raise CustomError(self.__class__.__name +': __init__: Section header format is name [: property]. Your header is:\n %s' %namevalpairs[0])'''
+            raise shared.CustomError(self.__class__.__name +': __init__: Section header format is name [: property]. Your header is:\n %s' %namevalpairs[0])'''
         titleline = namevalpairs.pop(0).splitlines()[0]
         l = [x.strip() for x in titleline.split(':')]
         self.name = l[0]
@@ -65,13 +64,13 @@ class Node(object):
     def edit(self, text):   
         # counterpart: str(self).
         # edit phase, cell, property, map at this level.
-        for x in self.map:
+        for x in self.map if getattr(self,'map',None) else []:
             shared.NODES[x.name] = x
         Import(text)
         '''if self.name in shared.NODES:
             new_node = shared.NODES[self.name]
         else:
-            raise CustomError(self.__class__.__name__ + ': edit: You have not defined a same-name node (aka node with name %s which would have been read)' %(self.name))'''
+            raise shared.CustomError(self.__class__.__name__ + ': edit: You have not defined a same-name node (aka node with name %s which would have been read)' %(self.name))'''
         for varname in vars(self):
             if not getattr(new_node, varname, None):
                 delattr(self, varname)
@@ -88,7 +87,7 @@ class Node(object):
         for key in j:
             setattr(self,key,j[key])
 
-    @moonphase_wrap
+    @shared.moonphase_wrap
     def moonphase(self):
         if getattr(self, 'map', None):
             return min([x.moonphase() for x in self.map])
@@ -97,7 +96,7 @@ class Node(object):
         elif getattr(self, 'property', None):
             return 0
         else:
-            return 2
+            return 0
     
             
     '''def __str__(self):
@@ -130,7 +129,7 @@ class Node(object):
 
         elif getattr(self, 'property', None):
             if not getattr(self, 'path', None):
-                self.path = raw_input('Provide path for this node: \n %s \n >:' %str(self))
+                self.path = raw_input('Provide path for this node: \n %s \n >:' %str(self))    # counterpart implemented in sigmajs
             if not getattr(self, 'gen', None):
                 self.gen = engine.Gen(self.phase + ' ' + self.property, self.cell)
             if not getattr(self, self.gen.getkw('engine'), None):
@@ -140,7 +139,7 @@ class Node(object):
             getattr(self, self.gen.getkw('engine')).compute()
 
         else:
-            raise CustomError(self.__class___.__name__ + ': compute: Node %s is not computable.' %self.name)
+            raise shared.CustomError(self.__class___.__name__ + ': compute: Node %s is not computable.' %self.name)
 
         
     '''def delete(self):
