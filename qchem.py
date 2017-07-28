@@ -16,8 +16,8 @@ def Import(text):
     while l:
         # print 'Import: parsing %s' %(l[-1].splitlines()[0] if l[-1].splitlines() else '')
         n = Node(l.pop())
-        '''if n.name in NODES:
-            raise CustomError(' Import: Node name %s is in NODES.' %n.name)'''
+        if n.name in NODES:
+            raise CustomError(' Import: Node name %s is in NODES.' %n.name)
         NODES[n.name] = n
 
 def Dump():
@@ -39,8 +39,8 @@ class Node(object):
         namevalpairs = text.split('\n\n')
 
         # node.name
-        '''if len(namevalpairs[0].splitlines()) != 1:
-            raise CustomError(self.__class__.__name +': __init__: Section header format is name [: property]. Your header is:\n %s' %namevalpairs[0])'''
+        if len(namevalpairs[0].splitlines()) != 1:
+            raise CustomError(self.__class__.__name +': __init__: Section header format is name [: property]. Your header is:\n %s' %namevalpairs[0])
         titleline = namevalpairs.pop(0).splitlines()[0]
         l = [x.strip() for x in titleline.split(':')]
         self.name = l[0]
@@ -68,10 +68,10 @@ class Node(object):
         for x in self.map:
             NODES[x.name] = x
         Import(text)
-        '''if self.name in NODES:
+        if self.name in NODES:
             new_node = NODES[self.name]
         else:
-            raise CustomError(self.__class__.__name__ + ': edit: You have not defined a same-name node (aka node with name %s which would have been read)' %(self.name))'''
+            raise CustomError(self.__class__.__name__ + ': edit: You have not defined a same-name node (aka node with name %s which would have been read)' %(self.name))
         for varname in vars(self):
             if not getattr(new_node, varname, None):
                 delattr(self, varname)
@@ -100,14 +100,14 @@ class Node(object):
             return 2
     
             
-    '''def __str__(self):
+    def __str__(self):
         result = '# ' + self.name + '\n\n'
         for varname in vars(self):
             if varname != 'name':
                 result += varname + ':\n' + str(vars(self)[varname]) + '\n\n'
         result += '\n\n'
         return result
-    '''
+    
 
 
     def compute(self, proposed_name=None):
@@ -115,12 +115,12 @@ class Node(object):
         if getattr(self, 'map', None):
 
             l = [x for x in self.map if x.moonphase()==0] + [x for x in self._map if x.moonphase()==0 and self.prev(x).moonphase()==2]
-            '''if not l:
+            if not l:
                 print self.__class__.__name__ + ': nothing to compute'
                 return
             if any([x.name==proposed_name for x in l]):
                 n = [x for x in l if x.name == proposed_name][0]
-            else:'''
+            else:
                 n = l[0]
 
             for vname in [x for x in vars(self) if x not in ['name','map','path','property'] and getattr(self,x,None) and not getattr(n,x,None)]:
@@ -143,12 +143,12 @@ class Node(object):
             raise CustomError(self.__class___.__name__ + ': compute: Node %s is not computable.' %self.name)
 
         
-    '''def delete(self):
+    def delete(self):
             engine_name = self.gen.getkw('engine')
             engine_ = getattr(self,self.gen.getkw('engine'),None)
             if getattr(self,self.gen.getkw('engine'),None):
                 getattr(self,self.gen.getkw('engine'),None).delete()
             for node in NODES['master'].map.traverse():
                 node.map.pop(self)
-    '''
+    
 

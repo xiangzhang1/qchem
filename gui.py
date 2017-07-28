@@ -274,6 +274,13 @@ def check_status():
     else:
         return jsonify({'text':'warning'})
 
+@app.route('/del_node', methods=['POST'])
+@patch_through
+def del_node():
+    j = request.get_json(force=True)
+    n = NODES['master'].map.lookup(j['cur'])
+    NODES[j['name']] = n.map.lookup(j['name'])
+    n.map.del_node(j['name'])
 
 @app.route('/paste_node', methods=['POST'])
 @patch_through
