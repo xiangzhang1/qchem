@@ -14,7 +14,8 @@ import pickle
 from cStringIO import StringIO
 
 import qchem
-from shared import *
+import shared
+from shared import moonphase_wrap, CustomError
 
 
 import logging
@@ -24,7 +25,7 @@ log.setLevel(logging.ERROR)
 app = Flask(__name__)
 CORS(app)
 
-qchem.Load()    # startup load. wouldn't hurt.
+# qchem.Load()    # startup load. wouldn't hurt.
 
 # the modifier
 def patch_through(func):
@@ -59,7 +60,8 @@ def to_json(n):
     new_json = {}
     # beautify_json
     new_json['label']=new_json['id']=n.name
-    palette = {-1: 'A44', 0: '#777',  1: '#863', 2: '#373'}
+    # palette = {-1: 'A44', 0: '#777',  1: '#863', 2: '#373'}   # text-*
+    palette = {-1: 'd53', 0: '#777',  1: '#fa4', 2: '#5b5'} # brand-*
     new_json['color'] = palette[n.moonphase()]
     # to_json
     for attr_name in vars(n):
@@ -155,7 +157,7 @@ def combine_json(new_json, old_json=None):
 @app.route('/reset_', methods=['GET'])
 @patch_through
 def reset_():
-    NODES = {}
+    shared.NODES = {}
 
 @app.route('/import_', methods=['GET'])
 @patch_through
@@ -166,7 +168,7 @@ def import_():
 @app.route('/new_', methods=['GET'])
 @patch_through
 def new_():
-    NODES['master'] = qchem.Node('master')
+    shared.NODES['master'] = qchem.Node('master')
 
 @app.route('/dump_nodes', methods=['GET'])
 @patch_through
@@ -194,14 +196,14 @@ def load_sigma():
 
 @app.route('/request_', methods=['POST','GET'])
 @return_through
-def request_():  # either merge json, or use NODES['master']
+def request_():  # either merge json, or use shared.NODES['master']
     if request.method == 'POST':
         old_json = request.get_json(force=True)
-        new_json = to_json(NODES['master'])
+        new_json = to_json(shared.NODES['master'])
         new_json = combine_json(new_json, old_json)
         return jsonify( new_json )
     else:
-        new_json = to_json(NODES['master'])
+        new_json = to_json(shared.NODES['master'])
         new_json = combine_json(new_json)
         return jsonify(new_json)
 
@@ -210,130 +212,84 @@ def request_():  # either merge json, or use NODES['master']
 @patch_through
 def add_node():
     j = request.get_json(force=True)
-    n = NODES['master'].map.lookup(j['cur'])
+    n = shared.NODES['master'].map.lookup(j['cur'])
     n.map.add_node(qchem.Node(j['name']))
 
 @app.route('/del_node', methods=['POST'])
 @patch_through
 def del_node():
     j = request.get_json(force=True)
-    NODES['master'].map.lookup(j['cur']).map.del_node(j['name'])
+    shared.NODES['master'].map.lookup(j['cur']).map.del_node(j['name'])
 
 @app.route('/reset_node', methods=['POST'])
 @patch_through
 def reset_node():
     j = request.get_json(force=True)
-    NODES['master'].map.lookup(j['cur']).reset()
+    shared.NODES['master'].map.lookup(j['cur']).reset()
 
 @app.route('/cut_node', methods=['POST'])
 @patch_through
 def cut_node():
     j = request.get_json(force=True)
-    n = NODES['master'].map.lookup(j['cur'])
-    NODES[j['name']] = n.map.lookup(j['name'])
+    n = shared.NODES['master'].map.lookup(j['cur'])
+    shared.NODES[j['name']] = n.map.lookup(j['name'])
     n.map.del_node(j['name'])
-
-@app.route('/paste_node', methods=['POST'])
-@patch_through
-def paste_node():
-    j = request.get_json(force=True)
-    n = NODES['master'].map.lookup(j['cur'])
-    NODES[j['name']] = n.map.lookup(j['name'])
-    n.map.add_node(n.map.lookup(j['name']))
 
 @app.route('/compute_node', methods=['POST'])
 @patch_through
 def compute_node():
     j = request.get_json(force=True)
-    NODES['master'].map.lookup(j['cur']).compute()
+    shared.NODES['master'].map.lookup(j['cur']).compute()
 
 @app.route('/edit_vars', methods=['POST'])
 @patch_through
 def edit_vars():
     j = request.get_json(force=True)
-    NODES['master'].map.lookup(j.pop('cur')).edit_vars(j)
+    shared.NODES['master'].map.lookup(j.pop('cur')).edit_vars(j)
 
 @app.route('/get_text', methods=['POST'])
 @return_through
 def get_text():  
     j = request.get_json(force=True)
-    n = NODES['master'].map.lookup(j['cur'])
+    n = shared.NODES['master'].map.lookup(j['cur'])
     return jsonify({'text':str(n)})
 
 @app.route('/edit', methods=['POST'])
 @patch_through
 def edit():
     j = request.get_json(force=True)
-    NODES['master'].map.lookup(j.pop('cur')).edit(j['text'])
+    shared.NODES['master'].map.lookup(j.pop('cur')).edit(j['text'])
 
 @app.route('/check_status', methods=['GET'])
 @return_through
 def check_status():
-    if getattr(shared, 'NODES', None) and 'master' in NODES and getattr(NODES['master'], 'map', None):
+    if 'master' in shared.NODES and getattr(shared.NODES['master'], 'map', None):
         return jsonify({'text':'success'})
     else:
+        if 'master' in shared.NODES:
+            print shared.NODES['master']
+        else:
+            print shared.NODES
         return jsonify({'text':'warning'})
-
-@app.route('/del_node', methods=['POST'])
-@patch_through
-def del_node():
-    j = request.get_json(force=True)
-    n = NODES['master'].map.lookup(j['cur'])
-    NODES[j['name']] = n.map.lookup(j['name'])
-    n.map.del_node(j['name'])
 
 @app.route('/paste_node', methods=['POST'])
 @patch_through
 def paste_node():
     j = request.get_json(force=True)
-    n = NODES['master'].map.lookup(j['cur'])
-    NODES[j['name']] = n.map.lookup(j['name'])
+    n = shared.NODES['master'].map.lookup(j['cur'])
+    shared.NODES[j['name']] = n.map.lookup(j['name'])
     n.map.add_node(n.map.lookup(j['name']))
-
-@app.route('/compute_node', methods=['POST'])
-@patch_through
-def compute_node():
-    j = request.get_json(force=True)
-    NODES['master'].map.lookup(j['cur']).compute()
-
-@app.route('/edit_vars', methods=['POST'])
-@patch_through
-def edit_vars():
-    j = request.get_json(force=True)
-    NODES['master'].map.lookup(j.pop('cur')).edit_vars(j)
-
-@app.route('/get_text', methods=['POST'])
-@return_through
-def get_text():  
-    j = request.get_json(force=True)
-    n = NODES['master'].map.lookup(j['cur'])
-    return jsonify({'text':str(n)})
-
-@app.route('/edit', methods=['POST'])
-@patch_through
-def edit():
-    j = request.get_json(force=True)
-    NODES['master'].map.lookup(j.pop('cur')).edit(j['text'])
-
-@app.route('/check_status', methods=['GET'])
-@return_through
-def check_status():
-    if getattr(shared, 'NODES', None) and 'master' in NODES and getattr(NODES['master'], 'map', None):
-        return jsonify({'text':'success'})
-    else:
-        return jsonify({'text':'warning'})
-
 
 @app.route('/add_edge', methods=['POST'])
 @patch_through
 def add_edge():
     j = request.get_json(force=True)
-    n = NODES['master'].map.lookup(j['cur'])
+    n = shared.NODES['master'].map.lookup(j['cur'])
     n.map.add_edge(j['src'],j['dst'])
 
 @app.route('/del_edge', methods=['POST'])
 @patch_through
 def del_edge():
     j = request.get_json(force=True)
-    n = NODES['master'].map.lookup(j['cur'])
+    n = shared.NODES['master'].map.lookup(j['cur'])
     n.map.del_edge(j['src'],j['dst'])

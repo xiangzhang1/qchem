@@ -3,8 +3,8 @@ import re
 import os
 import engine
 
-
-from shared import *
+import shared
+from shared import moonphase_wrap, CustomError
 
 # ==================================================
 
@@ -16,19 +16,19 @@ def Import(text):
     while l:
         # print 'Import: parsing %s' %(l[-1].splitlines()[0] if l[-1].splitlines() else '')
         n = Node(l.pop())
-        '''if n.name in NODES:
-            raise CustomError(' Import: Node name %s is in NODES.' %n.name)'''
-        NODES[n.name] = n
+        '''if n.name in shared.NODES:
+            raise CustomError(' Import: Node name %s is in already in shared.NODES.' %n.name)'''
+        shared.NODES[n.name] = n
 
 def Dump():
-    with open(os.path.dirname(os.path.realpath(__file__))+'/data/NODES.dump','wb') as dumpfile:
-        pickle.dump(NODES, dumpfile, protocol=pickle.HIGHEST_PROTOCOL)
-    print 'Dumped' + str(NODES)
+    with open(os.path.dirname(os.path.realpath(__file__))+'/data/shared.NODES.dump','wb') as dumpfile:
+        pickle.dump(shared.NODES, dumpfile, protocol=pickle.HIGHEST_PROTOCOL)
+    print 'Dumped' + str(shared.NODES)
 
 def Load():
-    with open(os.path.dirname(os.path.realpath(__file__))+'/data/NODES.dump','rb') as dumpfile:
-        NODES = pickle.load(dumpfile)
-    print 'Loaded' + str(NODES)
+    with open(os.path.dirname(os.path.realpath(__file__))+'/data/shared.NODES.dump','rb') as dumpfile:
+        shared.NODES = pickle.load(dumpfile)
+    print 'Loaded' + str(shared.NODES)
 
 
 
@@ -53,7 +53,7 @@ class Node(object):
             if not namevalpair.rstrip():
                 continue
             name = namevalpair.split('\n')[0].strip(': ')
-            if name not in READABLE_ATTR_LIST: 
+            if name not in shared.READABLE_ATTR_LIST: 
                 continue
             value = namevalpair.split('\n',1)[1]
             if getattr(engine, name.title(), None):
@@ -66,10 +66,10 @@ class Node(object):
         # counterpart: str(self).
         # edit phase, cell, property, map at this level.
         for x in self.map:
-            NODES[x.name] = x
+            shared.NODES[x.name] = x
         Import(text)
-        '''if self.name in NODES:
-            new_node = NODES[self.name]
+        '''if self.name in shared.NODES:
+            new_node = shared.NODES[self.name]
         else:
             raise CustomError(self.__class__.__name__ + ': edit: You have not defined a same-name node (aka node with name %s which would have been read)' %(self.name))'''
         for varname in vars(self):
@@ -80,7 +80,7 @@ class Node(object):
 
     def reset(self):
         for varname in vars(self):
-            if varname not in READABLE_ATTR_LIST:
+            if varname not in shared.READABLE_ATTR_LIST:
                 delattr(self, varname)
 
     def edit_vars(self,j):
@@ -148,7 +148,7 @@ class Node(object):
             engine_ = getattr(self,self.gen.getkw('engine'),None)
             if getattr(self,self.gen.getkw('engine'),None):
                 getattr(self,self.gen.getkw('engine'),None).delete()
-            for node in NODES['master'].map.traverse():
+            for node in shared.NODES['master'].map.traverse():
                 node.map.pop(self)
     '''
 

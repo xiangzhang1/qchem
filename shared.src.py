@@ -41,6 +41,10 @@ READABLE_ATTR_LIST = ['name','phase','cell','property','map']
 # gui.*beautify*: name -> id,label. moonphase -> color(bootstrap: gray -> yellow -> green; red)
 # EDIT IN PLACE
 
+# gui|sigma . palette
+# COLOR_PALETTE = {-1: 'A44', 0: '#777',  1: '#863', 2: '#373'}   # text-*
+COLOR_PALETTE = {-1: 'd53', 0: '#777',  1: '#fa4', 2: '#5b5'} # brand-*
+
 
 # Element, ELEMENTS
 # ===========================================================================
