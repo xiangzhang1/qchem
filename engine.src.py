@@ -26,8 +26,7 @@ from scipy.interpolate import Rbf
 from scipy.optimize import minimize
 from scipy import spatial
 
-import shared
-from exceptions import *
+from shared import *
 
 class Gen(object):   # Stores the logical structure of keywords and modules. A unique construct deserving a name.
 
@@ -275,7 +274,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
 
     def lmaxmix(self):
         b_l_map = { 's': 2, 'p': 2, 'd': 4, 'f': 6, 'g': 8 }
-        lmaxmix = max( [ b_l_map[ shared.ELEMENTS[symbol].block ] for symbol in  self.cell.stoichiometry.keys() ] )
+        lmaxmix = max( [ b_l_map[ ELEMENTS[symbol].block ] for symbol in  self.cell.stoichiometry.keys() ] )
         return lmaxmix
 
     def ismear5check(self):
@@ -309,24 +308,24 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
             print self.__class__.__name__ + ' warning: more than 1 AFM pattern exists.'
             for symbol in self.cell.stoichiometry:
                 l = [0] * self.cell.stoichiometry[symbol]
-                base = shared.ELEMENTS[symbol].magmom
+                base = ELEMENTS[symbol].magmom
                 l[::2] = base
                 l[1::2] = -1 * base
                 magmom += ' '.join(l)
         if self.parse_if('spin=fm'):
             for symbol in self.cell.stoichiometry:
-                base = shared.ELEMENTS[symbol].magmom
+                base = ELEMENTS[symbol].magmom
                 magmom += str( self.cell.stoichiometry[symbol] ) + '*' + str( base )
         return magmom
     def ldauu(self):
         ldauu = ''
         for symbol in self.cell.stoichiometry:
-            ldauu += str( shared.ELEMENTS[symbol].ldauu )
+            ldauu += str( ELEMENTS[symbol].ldauu )
         return ldauu
     def ldauj(self):
         ldauj = ''
         for symbol in self.cell.stoichiometry:
-            ldauj += str( shared.ELEMENTS[symbol].ldauj )
+            ldauj += str( ELEMENTS[symbol].ldauj )
         return ldauj
 
 # =========================================================================== 
@@ -350,7 +349,7 @@ class Cell(object):
             raise CustomError(self.__class__.__name__+'__init__: POSCAR5 verification failed. Line count does not match stoichiometry. Blank lines?')
         # some computation
         self.nion = sum(self.stoichiometry.values())
-        self.nelect = sum( [self.stoichiometry[symbol] * shared.ELEMENTS[symbol].pot_zval for symbol in self.stoichiometry] )
+        self.nelect = sum( [self.stoichiometry[symbol] * ELEMENTS[symbol].pot_zval for symbol in self.stoichiometry] )
 
     '''def __str__(self):
         result = self.name+'\n'
@@ -375,10 +374,10 @@ class Map(object):
     '''def lookup(self, name):
 
         if name == 'master':
-            if name in shared.NODES:   return shared.NODES['master']
+            if name in NODES:   return NODES['master']
             else: raise CustomError('找不到master，求喂食')
-        elif name in shared.NODES:
-            return shared.NODES.pop(name)
+        elif name in NODES:
+            return NODES.pop(name)
         elif any([x.name == name for x in self._dict]):
             return [x for x in self._dict if x.name == name][0]
         elif '.' in name:
@@ -561,8 +560,8 @@ class Vasp(object):
         elif not getattr(self,'log',None):
             if os.path.isfile('vasprun.xml') and os.path.getmtime('vasprun.xml')>os.path.getmtime('wrapper'):
                 with open('vasprun.xml','r') as if_:
-                    if if_.read.splitlines()[-1] != '</modeling>' and not os.path.isfile('ignore_error'):
-                        raise CustomError(self.__class__.__name__+'compute: Vasp computation at %s went wrong. Touch ignore_error to ignore.' %self.path)
+                    if if_.read.splitlines()[-1] != '</modeling>' and not os.path.isfile('ignore_error') and not os.path.isfile('moonphase'):
+                        raise CustomError(self.__class__.__name__+'compute: Vasp computation at %s went wrong. Touch ignore_error or use moonphase to ignore.' %self.path)
                     else:
                         l = os.lsdir(self.path)
                         filename = [x for x in l if x.startswith(('slurm-','run.log','OSZICAR'))][0]
@@ -572,6 +571,7 @@ class Vasp(object):
         else:
             print self.__class__.__name__ + ': calculation already completed at %s. Why are you here?' %self.path
 
+    @moonphase_wrap
     def moonphase(self):
         if not getattr(self, 'wrapper', None):
             return 0
@@ -582,10 +582,10 @@ class Vasp(object):
             return 2
 
     def pot(symbol):
-        if len(shared.ELEMENTS[symbol].pot) == 0:
+        if len(ELEMENTS[symbol].pot) == 0:
             raise CustomError(self.__class__.__name__+' pot: POTCAR for '+symbol+' not found.')
         path = os.path.dirname(os.path.realpath(__file__))
-        path += '/resource/paw_pbe/'+shared.ELEMENTS[symbol].pot[0] + '/POTCAR' + shared.ELEMENTS[symbol].pot_extension
+        path += '/resource/paw_pbe/'+ELEMENTS[symbol].pot[0] + '/POTCAR' + ELEMENTS[symbol].pot_extension
         if_ = open(path,'r')
         of_ = open('./POTCAR','w')
         of_.write( if_.read() )
@@ -621,6 +621,7 @@ class Dummy(object):
         if dcmp.left_only or dcmp.right_only or dcmp.diff_files:
             shutil.copytree(self.prev.path, self.path)
 
+    @moonphase_wrap
     def moonphase(self):
         if not os.path.isdir(self.path):
             return 0
@@ -660,6 +661,7 @@ class Electron(object):
                     self.errors = Errors(self.grepen, self.dos, self.bands)
             self.log = '' 
 
+    @moonphase_wrap
     def moonphase(self):
         return 2 if getattr(self, 'log', None) else 0
 
@@ -1015,7 +1017,7 @@ class Charge(object):
         # pristine electronic configuration
         self.log += 'GS electron configurations for elements in POSCAR\n'
         for element in poscar.elements:
-            self.log += element + ': ' + shared.ELEMENTS[element].eleconfig
+            self.log += element + ': ' + ELEMENTS[element].eleconfig
 
         # integrating site-projected pdos
         self.log += '\nIntegrated Projected DOS: integration of DOS of wavefunctions projected onto spherical harmonics within spheres of a radius RWIGS\n'

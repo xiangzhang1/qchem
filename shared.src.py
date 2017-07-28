@@ -11,6 +11,15 @@ import re
 from shutil import copyfile
 import shutil
 from pprint import pprint
+from functools import wraps
+
+
+# INDEX
+# =====
+# NODES
+# ELEMENTS
+# CustomError
+# @moonphase_wrap
 
 
 # Nodes
@@ -247,3 +256,29 @@ ELEMENTS = ElementsDict()
 #ELEMENTS.import_()
 #ELEMENTS.export_merge()
 ELEMENTS.import_()
+
+
+# ===========================================================================
+
+# Exceptions
+
+class CustomError(Exception):
+    pass
+
+
+# ===========================================================================
+
+# @moonphase_wrap
+
+def moonphase_wrap(func):
+    @wraps(func)
+    def wrapped(self, *args, **kwargs):
+        if os.path.isfile(self.path + '/moonphase'):
+            with open('moonphase') as f:
+                l = f.read().splitlines(0)
+                if int(l[0]) > -2 and int(l[0]) < 3:
+                    return int(l[0])
+        else:
+            return func(self, *args, **kwargs)
+    return wrapped
+

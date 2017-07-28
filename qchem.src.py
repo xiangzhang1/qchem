@@ -4,8 +4,6 @@ import os
 import engine
 
 import shared
-from exceptions import *
-
 
 # ==================================================
 
@@ -17,25 +15,25 @@ def Import(text):
     while l:
         # print 'Import: parsing %s' %(l[-1].splitlines()[0] if l[-1].splitlines() else '')
         n = Node(l.pop())
-        '''if n.name in shared.NODES:
-            raise CustomError(' Import: Node name %s is in shared.NODES.' %n.name)'''
-        shared.NODES[n.name] = n
+        '''if n.name in NODES:
+            raise CustomError(' Import: Node name %s is in NODES.' %n.name)'''
+        NODES[n.name] = n
 
 def Dump():
     with open(os.path.dirname(os.path.realpath(__file__))+'/data/NODES.dump','wb') as dumpfile:
-        pickle.dump(shared.NODES, dumpfile, protocol=pickle.HIGHEST_PROTOCOL)
-    print 'Dumped' + str(shared.NODES)
+        pickle.dump(NODES, dumpfile, protocol=pickle.HIGHEST_PROTOCOL)
+    print 'Dumped' + str(NODES)
 
 def Load():
     with open(os.path.dirname(os.path.realpath(__file__))+'/data/NODES.dump','rb') as dumpfile:
-        shared.NODES = pickle.load(dumpfile)
-    print 'Loaded' + str(shared.NODES)
+        NODES = pickle.load(dumpfile)
+    print 'Loaded' + str(NODES)
 
 
 
 class Node(object):
 
-    def __init__(self, text):   # parses 1 node at a time. searches in shared.NODES
+    def __init__(self, text):   # parses 1 node at a time. searches in NODES
 
         # readable list: ['name','phase','cell','property','map']
 
@@ -69,10 +67,10 @@ class Node(object):
         # counterpart: str(self).
         # edit phase, cell, property, map at this level.
         for x in self.map:
-            shared.NODES[x.name] = x
+            NODES[x.name] = x
         Import(text)
-        '''if self.name in shared.NODES:
-            new_node = shared.NODES[self.name]
+        '''if self.name in NODES:
+            new_node = NODES[self.name]
         else:
             raise CustomError(self.__class__.__name__ + ': edit: You have not defined a same-name node (aka node with name %s which would have been read)' %(self.name))'''
         for varname in vars(self):
@@ -86,6 +84,7 @@ class Node(object):
         for key in j:
             setattr(self,key,j[key])
 
+    @moonphase_wrap
     def moonphase(self):
         if getattr(self, 'map', None):
             return min([x.moonphase() for x in self.map])
@@ -145,7 +144,7 @@ class Node(object):
             engine_ = getattr(self,self.gen.getkw('engine'),None)
             if getattr(self,self.gen.getkw('engine'),None):
                 getattr(self,self.gen.getkw('engine'),None).delete()
-            for node in shared.NODES['master'].map.traverse():
+            for node in NODES['master'].map.traverse():
                 node.map.pop(self)
     '''
 
