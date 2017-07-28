@@ -560,6 +560,17 @@ class Map(object):
         else:
             self._dict[src] = [dst]
 
+    def del_edge(self, src_name, dst_name):
+        src = self.lookup(src_name)
+        dst = self.lookup(dst_name)
+        if src in self._dict[dst] or dst in self._dict2 and src in self._dict2[dst]:
+            raise CustomError(self.__class__.__name__ + ' del_edge: dst %s -> src %s link exists' %(dst_name, src_name))
+        if dst in self._dict[src]:
+            self._dict[src].remove(dst)
+        elif dst in self._dict2[src]:
+            self._dict2[src].remove(dst)
+        else:
+            raise CustomError(self.__class__.__name__ + ' del_edge: no edge to delete')
 
     def __str__(self):
         result = ''

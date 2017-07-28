@@ -27,6 +27,8 @@ log.setLevel(logging.ERROR)
 app = Flask(__name__)
 CORS(app)
 
+qchem.Load()    # startup load. wouldn't hurt.
+
 # the modifier
 def patch_through(func):
     @wraps(func)
@@ -207,7 +209,6 @@ def request_():  # either merge json, or use NODES['master']
 def add_node():
     j = request.get_json(force=True)
     n = shared.NODES['master'].map.lookup(j['cur'])
-    print shared.NODES
     n.map.add_node(qchem.Node(j['name']))
 
 @app.route('/del_node', methods=['POST'])
@@ -215,6 +216,28 @@ def add_node():
 def del_node():
     j = request.get_json(force=True)
     shared.NODES['master'].map.lookup(j['cur']).map.del_node(j['name'])
+
+@app.route('/cut_node', methods=['POST'])
+@patch_through
+def cut_node():
+    j = request.get_json(force=True)
+    n = shared.NODES['master'].map.lookup(j['cur'])
+    shared.NODES[j['name']] = n.map.lookup(j['name'])
+    n.map.del_node(j['name'])
+
+@app.route('/paste_node', methods=['POST'])
+@patch_through
+def paste_node():
+    j = request.get_json(force=True)
+    n = shared.NODES['master'].map.lookup(j['cur'])
+    shared.NODES[j['name']] = n.map.lookup(j['name'])
+    n.map.add_node(n.map.lookup(j['name']))
+
+@app.route('/compute_node', methods=['POST'])
+@patch_through
+def compute_node():
+    j = request.get_json(force=True)
+    shared.NODES['master'].map.lookup(j['cur']).compute()
 
 @app.route('/edit_vars', methods=['POST'])
 @patch_through
@@ -250,3 +273,10 @@ def add_edge():
     j = request.get_json(force=True)
     n = shared.NODES['master'].map.lookup(j['cur'])
     n.map.add_edge(j['src'],j['dst'])
+
+@app.route('/del_edge', methods=['POST'])
+@patch_through
+def del_edge():
+    j = request.get_json(force=True)
+    n = shared.NODES['master'].map.lookup(j['cur'])
+    n.map.del_edge(j['src'],j['dst'])
