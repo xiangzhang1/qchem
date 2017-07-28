@@ -15,6 +15,7 @@ from pprint import pprint
 import tempfile
 import hashlib
 from subprocess import call
+from filecmp import dircmp
 
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
@@ -364,115 +365,6 @@ class Cell(object):
         return result'''
             
 
-# =========================================================================== 
-
-class Vasp(object):
-
-    def __init__(self, gen, cell, path, prev):
-        self.gen = gen
-        self.cell = cell
-        self.path = path
-        self.prev = prev
-        os.mkdir(self.path)
-
-
-    def compute(self):
-
-        if not getattr(self, 'wrapper', None):
-            if not os.path.isdir(self.path):
-                os.mkdir(self.path)
-            if self.gen.parse_if('icharg=1|icharg=11'):
-                shutil.copyfile(self.prev.path+'/CHGCAR', self.path+'/CHGCAR')
-            if self.gen.parse_if('icharg=0|icharg=10|istart=1|istart=2'):
-                shutil.copyfile(self.prev.path+'/WAVECAR', self.path+'/WAVECAR')
-            # write incar etc
-            os.chdir(self.path)
-            self.gen.write_incar_kpoints()
-            with open('POSCAR','w') as f:
-                f.write(str(self.cell))
-            for symbol in self.cell.stoichiometry.keys():
-                self.pot(symbol)
-            # setting variables
-            totalnumbercores = self.gen.getkw('totalnumbercores')
-            if self.gen.parse_if('spin=ncl'):   # vasp flavor
-                flavor = 'ncl'
-            elif all([int(x)==1 for x in self.gen.getkw('kpoints').split()[0:3]]):
-                flavor = 'gam'
-            elif self.gen.getkw('totalnumbercores') == '0':
-                totalnumbercores = 1
-                flavor = 'gpu'
-                print self.__class__.__name__ + ': vasp_gpu'
-            else:
-                flavor = 'std'
-            foldername = self.path.split('/')[-2] + '_' + self.path.split('/')[-1] + '_' + hashlib.md5(self.path)
-            # write scripts and instructions
-            wrapper = '#!/bin/bash\n' ; subfile = '' ; instruction = ''
-            if self.gen.getkw('platform') == 'dellpc':
-                subfile += 'echo $PWD `date` start; echo '+'-'*75+'\n'
-                subfile += 'mpiexec.hydra -n %s /home/xzhang1/src/vasp.5.4.1/bin/vasp_%s </dev/null \n' %(totalnumbercores, flavor)
-                subfile += 'mail -s "VASP job finished: {${PWD##*/}}" 8576361405@vtext.com <<<EOM'
-                subfile += 'echo $PWD `date` end  ; echo '+'-'*75+'\n'
-                wrapper += 'nohup ./subfile 2>&1 >> run.log &'
-            if self.gen.getkw('platform') == 'nanaimo':
-                wrapper += 'rsync -a . nanaimo:~/%s\n'
-                wrapper += 'ssh nanaimo <<EOF\n'
-                wrapper += ' cd %s\n'
-                wrapper += ' sbatch --nodes=%s --ntasks=%s --job-name=%s -t 12:00:00 --export=ALL subfile' %(self.gen.getkw('nodes'),totalnumbercores,self.path)
-                wrapper += 'EOF\n'
-                subfile += '#!/bin/bash\n. /usr/share/Modules/init/bash\nmodule purge\nmodule load intel\nmodule load impi\nmpirun -np %s /opt/vasp.5.4.4/bin/vasp_%s' %(totalnumbercores, flavor)
-            with open('wrapper','w') as of_:
-                of_.write(wrapper)
-                os.system('chmod +x wrapper')
-            if subfile:
-                with open('subfile','w') as of_:
-                    of_.write(subfile)
-            print self.__class__.__name__ + ': %s ready to be computed. Run wrapper or press y.'
-            if raw_input() == 'y':
-                os.system(wrapper)
-            print self.__class__.__name__ + ': waiting for system. Leave me on, or save/load.'
-
-        elif not getattr(self,'log',None):
-            if os.path.isfile('vasprun.xml') and os.path.getmtime('vasprun.xml')>os.path.getmtime('wrapper'):
-                with open('vasprun.xml','r') as if_:
-                    if if_.read.splitlines()[-1] != '</modeling>' and not os.path.isfile('ignore_error'):
-                        raise CustomError(self.__class__.__name__+'compute: Vasp computation at %s went wrong. Touch ignore_error to ignore.' %self.path)
-                    else:
-                        l = os.lsdir(self.path)
-                        filename = [x for x in l if x.startswith(('slurm-','run.log','OSZICAR'))][0]
-                        with open(filename,'r') as if_:
-                            self.log = if_.read()
-
-        else:
-            print self.__class__.__name__ + ': calculation already completed at %s. Why are you here?' %self.path
-
-    def moonphase(self):
-        if not getattr(self, 'wrapper', None):
-            return 0
-        elif not getattr(self, 'log', None):
-            self.compute()
-            if not getattr(self, 'log', None):  return 1
-        else:
-            return 2
-
-    def pot(symbol):
-        if len(shared.ELEMENTS[symbol].pot) == 0:
-            raise CustomError(self.__class__.__name__+' pot: POTCAR for '+symbol+' not found.')
-        path = os.path.dirname(os.path.realpath(__file__))
-        path += '/resource/paw_pbe/'+shared.ELEMENTS[symbol].pot[0] + '/POTCAR' + shared.ELEMENTS[symbol].pot_extension
-        if_ = open(path,'r')
-        of_ = open('./POTCAR','w')
-        of_.write( if_.read() )
-
-    def delete(self):
-        if os.path.isdir(self.path):
-            shutil.rmtree(self.path)
-
-    '''def __str__(self):
-        if getattr(self, 'log', None):
-            return self.log
-        else:
-            return ''   '''
-
 
 # ===========================================================================  
 
@@ -596,9 +488,146 @@ class Map(object):
     def __getitem__(self, key):
         return self._dict[key]
 
-'''
 
 
+
+# =========================================================================== 
+
+class Vasp(object):
+
+    def __init__(self, gen, cell, path, prev):
+        self.gen = gen
+        self.cell = cell
+        self.path = path
+        self.prev = prev
+        os.mkdir(self.path)
+
+
+    def compute(self):
+
+        if not getattr(self, 'wrapper', None):
+            if not os.path.isdir(self.path):
+                os.mkdir(self.path)
+            if self.gen.parse_if('icharg=1|icharg=11'):
+                shutil.copyfile(self.prev.path+'/CHGCAR', self.path+'/CHGCAR')
+            if self.gen.parse_if('icharg=0|icharg=10|istart=1|istart=2'):
+                shutil.copyfile(self.prev.path+'/WAVECAR', self.path+'/WAVECAR')
+            # write incar etc
+            os.chdir(self.path)
+            self.gen.write_incar_kpoints()
+            with open('POSCAR','w') as f:
+                f.write(str(self.cell))
+            for symbol in self.cell.stoichiometry.keys():
+                self.pot(symbol)
+            # setting variables
+            totalnumbercores = self.gen.getkw('totalnumbercores')
+            if self.gen.parse_if('spin=ncl'):   # vasp flavor
+                flavor = 'ncl'
+            elif all([int(x)==1 for x in self.gen.getkw('kpoints').split()[0:3]]):
+                flavor = 'gam'
+            elif self.gen.getkw('totalnumbercores') == '0':
+                totalnumbercores = 1
+                flavor = 'gpu'
+                print self.__class__.__name__ + ': vasp_gpu'
+            else:
+                flavor = 'std'
+            foldername = self.path.split('/')[-2] + '_' + self.path.split('/')[-1] + '_' + hashlib.md5(self.path)
+            # write scripts and instructions
+            wrapper = '#!/bin/bash\n' ; subfile = '' ; instruction = ''
+            if self.gen.getkw('platform') == 'dellpc':
+                subfile += 'echo $PWD `date` start; echo '+'-'*75+'\n'
+                subfile += 'mpiexec.hydra -n %s /home/xzhang1/src/vasp.5.4.1/bin/vasp_%s </dev/null \n' %(totalnumbercores, flavor)
+                subfile += 'mail -s "VASP job finished: {${PWD##*/}}" 8576361405@vtext.com <<<EOM'
+                subfile += 'echo $PWD `date` end  ; echo '+'-'*75+'\n'
+                wrapper += 'nohup ./subfile 2>&1 >> run.log &'
+            if self.gen.getkw('platform') == 'nanaimo':
+                wrapper += 'rsync -a . nanaimo:~/%s\n'
+                wrapper += 'ssh nanaimo <<EOF\n'
+                wrapper += ' cd %s\n'
+                wrapper += ' sbatch --nodes=%s --ntasks=%s --job-name=%s -t 12:00:00 --export=ALL subfile' %(self.gen.getkw('nodes'),totalnumbercores,self.path)
+                wrapper += 'EOF\n'
+                subfile += '#!/bin/bash\n. /usr/share/Modules/init/bash\nmodule purge\nmodule load intel\nmodule load impi\nmpirun -np %s /opt/vasp.5.4.4/bin/vasp_%s' %(totalnumbercores, flavor)
+            with open('wrapper','w') as of_:
+                of_.write(wrapper)
+                os.system('chmod +x wrapper')
+            if subfile:
+                with open('subfile','w') as of_:
+                    of_.write(subfile)
+            print self.__class__.__name__ + ': %s ready to be computed. Run wrapper or press y.'
+            if raw_input() == 'y':
+                os.system(wrapper)
+            print self.__class__.__name__ + ': waiting for system. Leave me on, or save/load.'
+
+        elif not getattr(self,'log',None):
+            if os.path.isfile('vasprun.xml') and os.path.getmtime('vasprun.xml')>os.path.getmtime('wrapper'):
+                with open('vasprun.xml','r') as if_:
+                    if if_.read.splitlines()[-1] != '</modeling>' and not os.path.isfile('ignore_error'):
+                        raise CustomError(self.__class__.__name__+'compute: Vasp computation at %s went wrong. Touch ignore_error to ignore.' %self.path)
+                    else:
+                        l = os.lsdir(self.path)
+                        filename = [x for x in l if x.startswith(('slurm-','run.log','OSZICAR'))][0]
+                        with open(filename,'r') as if_:
+                            self.log = if_.read()
+
+        else:
+            print self.__class__.__name__ + ': calculation already completed at %s. Why are you here?' %self.path
+
+    def moonphase(self):
+        if not getattr(self, 'wrapper', None):
+            return 0
+        elif not getattr(self, 'log', None):
+            self.compute()
+            if not getattr(self, 'log', None):  return 1
+        else:
+            return 2
+
+    def pot(symbol):
+        if len(shared.ELEMENTS[symbol].pot) == 0:
+            raise CustomError(self.__class__.__name__+' pot: POTCAR for '+symbol+' not found.')
+        path = os.path.dirname(os.path.realpath(__file__))
+        path += '/resource/paw_pbe/'+shared.ELEMENTS[symbol].pot[0] + '/POTCAR' + shared.ELEMENTS[symbol].pot_extension
+        if_ = open(path,'r')
+        of_ = open('./POTCAR','w')
+        of_.write( if_.read() )
+
+    def delete(self):
+        if os.path.isdir(self.path):
+            shutil.rmtree(self.path)
+
+    '''def __str__(self):
+        if getattr(self, 'log', None):
+            return self.log
+        else:
+            return ''   '''
+
+
+#=========================================================================== 
+
+class Dummy(object):
+
+    def __init__(self, gen, cell, path, prev):
+        self.gen = gen
+        self.cell = cell
+        self.path = path
+        self.prev = prev
+        os.mkdir(self.path)
+
+
+    def compute(self):
+        
+        if not os.path.isdir(self.path):
+            os.mkdir(self.path)
+        dcmp = dircmp(self.prev.path, self.path)
+        if dcmp.left_only or dcmp.right_only or dcmp.diff_files:
+            shutil.copytree(self.prev.path, self.path)
+
+    def moonphase(self):
+        if not os.path.isdir(self.path):
+            return 0
+        dcmp = dircmp(self.prev.path, self.path)
+        if dcmp.left_only or dcmp.right_only or dcmp.diff_files:
+            return 0
+        return 2
 
 
 #=========================================================================== 
