@@ -25,10 +25,13 @@ def Dump():
     print 'Dumped' + str(shared.NODES)
 
 def Load():
-    with open(os.path.dirname(os.path.realpath(__file__))+'/data/shared.NODES.dump','rb') as dumpfile:
-        shared.NODES = pickle.load(dumpfile)
-    print 'Loaded' + str(shared.NODES)
-
+    filename = os.path.dirname(os.path.realpath(__file__))+'/data/shared.NODES.dump'
+    if os.path.isfile(filename):
+        with open(filename,'rb') as dumpfile:
+            shared.NODES = pickle.load(dumpfile)
+        print 'Loaded' + str(shared.NODES)
+    else:
+        raise shared.CustomError('No shared.NODES.dump file to load')
 
 
 class Node(object):

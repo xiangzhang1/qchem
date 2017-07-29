@@ -26,6 +26,10 @@ app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
 def patch_through(func):
     @wraps(func)
     def wrapped(*args, **kwargs):
+        # auth
+        auth = request.authorization
+        if not auth or auth.username!='xzhang1' or auth.password!='yror':
+            return Response('Bad username/pswd', 401, {'WWW-Authenticate': 'Basic realm="Login Required"'})
         sys.stdout = mystdout = StringIO()
         try:
             func(*args, **kwargs)
@@ -184,8 +188,14 @@ def load_nodes():
 @app.route('/load_sigma', methods=['GET'])
 @return_through
 def load_sigma():
-    with open(os.path.dirname(os.path.realpath(__file__))+'/data/sigma.dump','rb') as dumpfile:
-        old_json = pickle.load(dumpfile)
+    filename = os.path.dirname(os.path.realpath(__file__))+'/data/sigma.dump'
+    if os.path.isfile(filename):
+        with open(filename,'rb') as dumpfile:
+            old_json = pickle.load(dumpfile)
+        print 'Loaded sigma.dump'
+    else:
+        print 'No sigma.dump to load'
+        old_json = {}
     return jsonify(old_json)
 
 @app.route('/request_', methods=['POST','GET'])
