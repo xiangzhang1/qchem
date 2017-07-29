@@ -1,0 +1,305 @@
+﻿<topset uid='dress_code'>
+	<d></d>
+	<c></c>
+	<b></b>
+	<occasion></occasion>
+	<combo></combo>
+</topset>
+
+!less formal comfy dress code：灵剑山
+
+<dress_code uid='casual'>
+	<occasion>mit_lab</occasion>
+	<d>
+		Plain T-shirt (no slogans), polo shirt, turtleneck
+		Casual button-down shirt and/or sweater
+		Khakis or good jeans (clean, no holes)
+		classical_sneakers: dark formal (plain) classical shoes, white bottom is okay; loafers
+		<u>http://www.artofmanliness.com/2012/10/31/sharp-casual-young-man-guide/</u>
+	</d>
+	<combo>
+		(less dressy) bright  arcteryx style jacket + brown dressy trousers / dark jeans
+		deep-colored (red/brown) shirt + blue jeans + non-round-head tennis shoe / near-classic sneakers / brown work shoes / boots
+		dressy white-based shirt + very dark fitting jeans
+		grey/brown/very light blue shirt + Khakis
+		jeans + shoes <u>https://www.youtube.com/watch?v=lQ8CTa12Jk8</u>
+		overall <u>http://www.artofmanliness.com/2012/10/31/sharp-casual-young-man-guide/</u>
+			<b>BuDnJeans201611261222.jpg</b>
+			<b>WhBtDnKs201611261224.jpg</b>
+	</combo>
+	<c>The bare body looks repulsive. Thus, most comfortable is, too.
+</dress_code>
+
+<dress_code uid='smart_casual'>
+	<occasion>mit_meet_professor</occasion>
+	<d>
+		Seasonal sport coat or blazer
+		dressy/collared shirt, sweaters, combination
+		neat slacks (chinos, khakis) or very dark fitting jeans
+		Derbies/Brogues/Loafers, Converse shoes
+	</d>
+	<c>
+		coat + dress shirt + very dark fitting jeans + Brogues <u>https://en.wikipedia.org/wiki/Smart_casual</u><u>http://www.realmenrealstyle.com/dress-shoes-jeans/</u>
+		sports coat (optional) + light hue sweater combo + khakis/chinos + brown unscruffy shoes <u>https://www.mrporter.com/journal/dress-code/how-to-nail-smart-casual/410</u>
+		sweaters / combo + (dark) jeans + brown unscuffy <u>https://www.grana.com/granaworld/the-beginners-guide-to-mens-smart-casual/</u>
+		downcoat (optional) + sweaters / combo inside + black dressy (informal) trousers + boots <u>http://www.fashionbeans.com/2014/mens-autumn-winter-style-tips/</u>
+	</c>
+	<c>smart casual doesn't go further than 1 layer over sweaters, and isn't warm outdoors.</c>
+</dress_code>
+
+<topset name='occasion'>
+	<d></d>
+	<dress_code></dress_code>
+</topset>
+
+<occasion uid='mit_lab'>
+	<d>Most of the days. When you're not meeting with your advisor.</d>
+	<dress_code>casual</dress_code>
+</occasion>
+
+<occasion uid='mit_meet_professor'>
+	<d>When you're meeting/eating with your advisor or a professional at MIT. </d>
+	<c>MIT has a slack nerd culture. While professors wear formally when they meet us, normally we don't wear business formal. Tshirts or button-downs work. </c>
+	<dress_code>casual</dress_code>
+	<c>more formal than casual, and no blazer for smart casual</c>
+	<dress_code>smart_casual</dress_code>
+</occasion>
+
+<topset uid='sit'>
+	<d>question; solution</d>
+	<c></c>
+</topset>
+
+<sit uid='warm'>
+</sit>
+
+<sit uid='boston_winter_warm'>
+	<d>What you need to survive the wind and snow in Boston winter -5C. Key is layering.</d>
+	<d>室内高温：衬衫，无秋衣裤子</d>
+	<d>
+		室外低温：
+		秋衣
+		mid-layer (merino wool sweaters @J.Crew | fleece layers@Patagonia/Arcteryx)
+		warm, waterproof jacket (冲锋衣+抓绒@canada goose,northface | down jacket@Moncler | peacoat呢大衣/topcoat短风衣 @ J.Crew, Banana Republic, Loro Piana)
+		wool long socks
+		waterproof boots for snowy days (@L.L.Bean, Sorels)
+		hats (fine if colorful), scarfs, (capacitive) gloves 
+		slippers 
+	</d>
+	<c>购物地点：衣服款式无要求outlets like wrentham village，有要求boston downtown Newbury street.</c>
+	<r>boston></r><r>clothing</r>
+</sit>
+
+<topset uid='clothing'>
+	<d></d>
+	<s></s>
+</topset>
+
+<clothing name='shoes'>
+	<d>footwear.</d>
+	<r>Tuxedo shoe, Oxford, Brogues, brown seasonal dress shoe, loafer, boot, tennis shoe, athletic shoe, flip-flop</r>
+	<c>10.5 shoe size. 11 would work. 12 for slippers.</c>
+</clothing>
+
+<clothing uid='sneakers'>
+	<in>shoes</in>
+	<d>Sneakers is another word for athletic shoes. Cool and relax. Skating_shoes are a littel more formal.</d>
+	<s>skating_shoes</s><s>running_shoes</s><s>basketball_shoes</s>
+</clothing>
+
+<clothing uid='dressing_shoes'></clothing>
+
+<clothing uid='loafers'>
+	<in>dressing_shoes</in>
+	<d>Low, slip-on shoes. Oxford-likes without laces.</d>
+</clothing>
+
+<clothing uid='Oxfords'>
+	<in>dressing_shoes</in>
+	<b>OxfoShoe201611250723.jpg</b>
+</clothing>
+
+<clothing uid='dressing_shoes'>
+	<in>shoes</in>
+	<r>loafers</r><r>derbies</r><r>Oxfords</r>
+</clothing>
+
+<clothing uid='blazer'>
+	<b>navyblzr20161125.jpg</b>
+	<availability>1 dark blue suit </availability>
+	<combo>grey flannel*, brown dress shoes* </combo>
+</clothing>
+
+<clothing uid='dress_shirt'>
+	<d>Sized by neck size and sleeve length. 100% cotton. A little shiny. Little pattern. </d>
+	<b>dreshirt201611252301.jpg</b>
+	<availability>yellow, white</availability>
+</clothing>
+
+<clothing uid='casual_shirt'>
+	<availability>all patterned shirts</availability>
+	<d>Sized by XL etc. Patterns (+ shaped). Less stiff collars.</d>
+	<b>butndown201611252302.jpg</b>
+</clothing>
+
+<clothing uid='casual_sweater'>
+	<c>Simple solids are formal. Patterned are not to be worn outside. Wear it outmost rarely. </c>
+	<availability>1 striped, barely good for standalone. Others are very casual. Solid needed.</availability>
+</clothing>
+
+<clothing uid='Khakis'>
+	<d>Khakis-colored (typically), 100% cotton</d>
+	<availability>needed</availability>
+	<c>JCrew or Brook Brothers</c>
+	<b>Khakis201611251121.jpg</b>
+</clothing>
+
+<clothing uid='jeans'>
+	<availability>very dark jeans needed</availability>
+	<c>For thin items, 34W*30L or 34W*32L</c>
+</clothing>
+
+<sneakers uid='classic_sneakers'>
+	<d>Not the technical (streamline) ones. [http://apparelillustrated.com/shoes-to-wear-with-jeans/]</d>
+	<availability>1 sports. 1 barely casual. classical dark-colored needed. </availability>
+</sneakers>
+
+<topset uid='people'>
+	<nickname></nickname>
+	<pronunciation></pronunciation>
+	<face><b></b></face>
+	<c></c>
+	<relationship></relationship>
+	<birthday>yy/mm/dd</birthday>
+	<contact></contact>
+</topset>
+
+<people uid='mit_dmse_2016entry'>
+	<c>MIT DMSE graduate class, entering 2016</c>
+</people>
+
+<people uid='Brian_Traynor'>
+	<in>mit_dmse_2016entry</in>
+	<c>Likes to call people by first names. On first-name basis. European, Harry Potter-ish. Quite friendly. </c>
+</people>
+
+<people uid='Akash_Bajaj'>
+	<in>mit_dmse_2016entry</in>
+	<face><b>Akash20161128.jpg</b></face>
+	<pronunciation>'ah - k ah sh </pronunciation>
+	<contact>akash9@mit.edu</contact>
+</people>
+
+<people uid='Hejin_Huang'>
+	<nation>Singapore</nation><nation>China</nation>
+	<in>mit_dmse_2016entry</in>
+	<face><b>hejinhuang101611281610.JPG</b></face>
+	<pronunciation>黄鹤劲（jin）</pronunciation>
+	<contact>hejin@mit.edu</contact>
+</people>
+
+<people uid='HaeYeon_Lee'>
+	<in>mit_dmse_2016entry</in>
+	<nation>Korean</nation>
+	<face><b>HYLK201611281617.jpg</b></face>
+	<pronunciation>Hi-Yawn <u>https://www.howtopronounce.com/haeyeon/</u></pronunciation>
+	<contact>lhaeyeon@mit.edu</contact>
+</people>
+
+<people uid='Leonardo_Zaborowski_Zornberg_Leo'>
+	<nickname>Leo</nickname>
+	<in>mit_dmse_2016entry</in>
+	<face><b>Leoblabla201611281623.jpg</b></face>
+	<contact>lzornber@mit.edu</contact>
+</people>
+
+<people uid='Mary_Elizabeth_Wagner'>
+	<in>mit_dmse_2016entry</in>
+	<face><b>MaryEliz201611281626.jpg.jpg</b></face>
+	<contact>mbwagner@mit.edu</contact>
+</people>
+
+<people uid='Nina_Andrejevic'>
+	<in>mit_dmse_2016entry</in>
+	<face><b>Nina201611281631.jpg</b></face>
+	<contact>nina12@mit.edu</contact>
+</people>
+
+<people uid='Gianluca_Roscioli'>
+	<in>mit_dmse_2016entry</in><nation>Italy</nation>
+	<face><b>Gianluca201611281635.jpg</b></face>
+	<pronunciation>j aa n (zhan) - L EW (lu) - k uh <u>http://www.pronouncenames.com/pronounce/gianluca</u> </pronunciation>
+	<contact>roscioli@mit.edu</contact>
+</people>
+
+<people uid='Skylar_Deckoff-Jones'>
+	<in>mit_gmc</in>
+	<face><b>Skylar201611281639.JPG</b></face>
+	<pronunciation>Sky-ler</pronunciation>
+	<contact>sdeckoff@mit.edu</contact>
+</people>
+
+<people uid='Zhe_Shi'>
+	<in>mit_dmse_2016entry</in>
+	<nation>China</nation><nation>Canada</nation>
+	<face><b>ZheShi201611281642.JPG</b></face>
+	<pronunciation>石哲</pronunciation>
+	<contact>shizhe1@mit.edu</contact>
+	<c>Undergrad abroad, UToronto</c>
+</people>
+
+<people uid='Thomas_Defferriere'>
+	<in>mit_dmse_2016entry</in>
+	<face><b>thomasde201611281644.jpg</b></face>
+	<contact>tdefferr@mit.edu</contact>
+	<c>Morgan Advanced Materials, Imperial College London</c>
+</people>
+
+<people uid='Vrindaa_Somjit'>
+	<in>mit_dmse_2016entry</in>
+	<nation>India</nation>
+	<face><b>Vrindaa201611281647.jpg</b></face>
+	<contact>vrindaa@mit.edu</contact>
+	<pronunciation>v r ih n d ah </pronunciation>
+</people>
+
+<people uid='Yen-Ting_Chi'>
+	<in>mit_dmse_2016entry</in>
+	<nation>Taiwan</nation>
+	<pronunciation>（仅声）纪彦亭</pronunciation>
+	<contact>yenting@mit.edu</contact>
+</people>
+
+<people uid='Yifei_Li'>
+	<in>mit_dmse_2016entry</in>
+	<face><b>yifeil201611281700.JPG</b></face>
+	<pronunciation>李一飞</pronunciation>
+	<contact>yifeil@mit.edu</contact>
+</people>
+
+<people uid='Youngbin_Lee'>
+	<in>mit_dmse_2016entry</in>
+	<nation>Korean</nation>
+	<face><b>Youngbin201611281701.jpg</b></face>
+	<pronunciation>Yung-bin</pronunciation>
+	<contact>youngbin@mit.edu</contact>
+</people>
+
+<people uid='Yifei_Li'>
+	<in>mit_dmse_2016entry</in>
+	<face><b>yifeiz201611281705.JPG</b></face>
+	<pronunciation>章逸飞</pronunciation>
+	<contact>yzhang94@mit.edu</contact>
+</people>
+
+<people uid='Yan_You'>
+	<in>mit_dmse_2016entry</in>
+	<face><b>YouYan201611281706.JPG</b></face>
+	<pronunciation>游彦</pronunciation>
+</people>
+
+<people uid='Katherine_Stone'>
+	<in>mit_dmse_2016entry</in>
+	<face><b>Katherine201611281711.jpg</b></face>
+	<pronunciation>k AE th - r in </pronunciation>
+</people>

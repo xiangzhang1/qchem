@@ -1,0 +1,119 @@
+# topic #
+## paradigm ##
+
+disciplines: three great branches of natural science which stand apart by reason of the variety of far reaching deductions drawn from a small number of primary postulates
+
+blast furnace: furnace used to be used for making iron
+
+thermodynamics: by using the concept of equilibrium, tells tales of limit, but not of process. how ingenious. 
+
+[thermodynamics] is a good [generalization.] it requires less and output [less data]. E.g. negative thermal expansion.
+
+spatially discrete def lines. e.g. material, device; manufacture, input/output
+
+# Fuel cell #
+0. A fuel cell is a device that [convert]s the chemical energy from a fuel into electricity through a chemical reaction of positively charged hydrogen ions with oxygen or another oxidizing agent. Fuel cells are different from batteries in that they require a continuous source of fuel and oxygen or air to sustain the chemical reaction, whereas in a battery the chemicals present in the battery react with each other to generate an electromotive force (emf). Fuel cells can produce electricity continuously for as long as these inputs are supplied. 
+At the anode a catalyst oxidizes the fuel, usually hydrogen, turning the fuel into a positively charged ion and a negatively charged electron. The electrolyte is a substance specifically designed so ions can pass through it, but the electrons cannot. The freed electrons travel through a wire creating the electric current. The ions travel through the electrolyte to the cathode. Once reaching the cathode, the ions are reunited with the electrons and the two react with a third chemical, usually oxygen, to create water or carbon dioxide.
+The electrolyte substance usually defines the type of fuel cell. The fuel that is used. The most common fuel is hydrogen. The anode catalyst breaks down the fuel into electrons and ions. The anode catalyst is usually made up of very fine platinum powder.  The cathode catalyst turns the ions into the waste chemicals like water or carbon dioxide. The cathode catalyst is often made up of nickel but it can also be a nanomaterial-based catalyst.
+1. Fuel cells are used for primary and backup power for commercial, industrial and residential buildings and in remote or inaccessible areas. They are also used to power fuel cell vehicles, including forklifts, automobiles, buses, boats, motorcycles and submarines. 
+
+# Electrochemical cell #
+0. An electrochemical cell is a device capable of either generating electrical energy from chemical reactions or facilitating chemical reactions through the introduction of electrical energy. A common example of an electrochemical cell is a standard 1.5-volt cell meant for consumer use. A battery consists of one or more cells, connected in either parallel or series pattern.
+
+# Reactivity series #
+0.钾钙钠镁铝， 锌铁锡铅氢， 铜汞银铂金
+
+# Single displacement reaction #
+0. A single-displacement reaction, also named single-replacement reaction, is a by which a substance replaces a substance which replaces a substance in an element: A + B-C → B + A-C
+1. Zn + CuSO4 -> Cu + ZnSO4: lead storage batteries in automobiles
+
+# history of thermo. discrete and continuum view #
+two worlds collide in the 1800s:
+- continuum view: mechanics, wave, thermodyanmics
+- discrete view: avogadro, molecular chemistry, mendeleev, Bernoulli ideal gas law, kinetic theory of gases, Maxwell distro, unison
+- Boltzmann introduces entropy
+- Gibbs potential 1905
+
+## dealing with complex systems ##
+Make approximations by approximately assuming interactions and quantities; intuitive non-rigorous derivation; start from simple e.g. kinetic theory of gases
+
+## nouns and definitions ##
+they make answering questions simpler and more elegant
+
+# band gap #
+Like band gaps for phonons, there are materials in which electrons can't propagate (insulator), in which heat can't propagate (heat is phonons), and in which light can't propagate (photonic crystal). 
+
+​
+# How to promote your research #
+What's the objective? No jargon
+What's been done?
+What's your idea, why will it work?
+Who cares?
+How long, how much, costs, payoff?
+Midterm final checks?
+
+​
+# practical materials for electronics #
+SiON: took 5-10 yrs to be adapted for practice
+High-k gate dielectrics took 10-15 yrs
+III-V compounds or 2d materials haven't been adapted yet.
+
+​
+# build an electronic device #
+Design device
+Select material
+Integrate material into device: interface, line edge...
+
+​
+# growing h-bn: issues include #
+substrate
+growth and nucleation: for HgCdTe as well as graphene, MBE is only good for low temperature. Instead, LPE is preferable for most temperature.
+growth technique
+point defect
+
+​
+# short term application of 2dm #
+Large scale growth: wearable electronics
+Large Ion/Ioff
+
+# end of the era of scaling? #
+"Copper interconnection will never work" (laugh)
+"Plasma etched alumnium will never be real" (laugh)
+"Scaling is ending around 2010":?
+
+# 2d materials #
+Incl:
+- graphene/GOx
+- MX2 TMD
+- h-BN
+- Other oxide chalcogenides
+Application present status:
+- Graphene and graphene related materials are ready for a number of applications, but
+  -Scale up of transfer processes needs improvement
+  -Growth on Gr on substrates other than Cu important - either dielectrics or metals with better CTE match with Cu
+- Hexagonal Boron Nitride - still at the exfoliation stage 
+  - Thin fam growth processes yield either small crystals or polycrystaline films 
+  - A better way is needed 
+  - Progress is being made
+- TMDs - Devices still dominated by material quality:
+  - Extended defects 
+  - Point defects 
+  - Surface defects 
+  - Impurities
+
+# photovoltaic structure #
+- semiconductor quantum well: Eg is small in the middle than left and right part, creating a 2DEG. Since e and h are spatially together, efficiency is high.
+- core-shell structure: similar to quantum well. also, bandgap is tunable with size. angular states make transitions intriguing.
+
+# spintronics #
+Magnetoresistance: current flows from spin-up to spin-down. GMR: layers, spacing decides coupling (oscillating). TMR: spin-up tunnels to spin-down.
+No need for power to retain spin.
+No physical moving parts.
+Spin-based logic is similar to conventional electornics. Spin transistor. Spin hall effect. Seeback Effect. 
+No charge movement with spin current, so no dissipation.
+
+# mechanic properties of metals #
+Need combination of strength and ductility. Solution is to use complex structures.
+
+# CO2 carbon dioxide #
+3 materiaal sources of CO2 emission: cement, aluminum, steel

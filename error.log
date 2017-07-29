@@ -1,0 +1,27 @@
+INFO:werkzeug: * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+INFO:werkzeug: * Restarting with stat
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 261-359-403
+INFO:werkzeug:127.0.0.1 - - [29/Jul/2017 12:50:44] "OPTIONS /check_status HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [29/Jul/2017 12:50:44] "GET /check_status HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [29/Jul/2017 12:50:45] "OPTIONS /load_nodes HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [29/Jul/2017 12:50:45] "OPTIONS /load_sigma HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [29/Jul/2017 12:50:45] "GET /load_nodes HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [29/Jul/2017 12:50:45] "GET /load_sigma HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [29/Jul/2017 12:58:36] "GET /cgi/common.cgi HTTP/1.0" 404 -
+INFO:werkzeug:127.0.0.1 - - [29/Jul/2017 12:58:37] "GET /stssys.htm HTTP/1.0" 404 -
+INFO:werkzeug:127.0.0.1 - - [29/Jul/2017 12:58:37] "GET / HTTP/1.0" 200 -
+INFO:werkzeug:127.0.0.1 - - [29/Jul/2017 12:58:37] "POST /command.php HTTP/1.0" 404 -
+INFO:werkzeug:127.0.0.1 - - [29/Jul/2017 13:00:05] "OPTIONS /check_status HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [29/Jul/2017 13:00:05] "GET /check_status HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [29/Jul/2017 13:00:07] "OPTIONS /load_nodes HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [29/Jul/2017 13:00:07] "OPTIONS /load_sigma HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [29/Jul/2017 13:00:07] "GET /load_nodes HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [29/Jul/2017 13:00:07] "GET /load_sigma HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [29/Jul/2017 13:11:53] "OPTIONS /check_status HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [29/Jul/2017 13:11:53] "GET /check_status HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [29/Jul/2017 13:11:55] "OPTIONS /load_nodes HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [29/Jul/2017 13:11:55] "OPTIONS /load_sigma HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [29/Jul/2017 13:11:55] "GET /load_nodes HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [29/Jul/2017 13:11:55] "GET /load_sigma HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [29/Jul/2017 14:35:28] "GET / HTTP/1.0" 200 -

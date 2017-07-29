@@ -17,6 +17,7 @@ import shared
 import logging
 #log = logging.getLogger('werkzeug')
 #log.setLevel(logging.ERROR)
+logging.basicConfig(filename='error.log',level=logging.DEBUG)
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
@@ -48,6 +49,12 @@ def return_through(func):
         except shared.CustomError as e:
             return jsonify( {'error':str(e) } )
     return wrapped
+
+# for testing
+@app.route('/', methods=['GET'])
+def hellowworld():
+    return 'hello, world!'
+
 
 # preliminary login security
 
