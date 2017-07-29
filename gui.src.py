@@ -1,7 +1,5 @@
-from flask import Flask
+from flask import Flask, request, jsonify, session
 from flask_cors import CORS, cross_origin
-from flask import request
-from flask import jsonify
 from functools import wraps
 
 import sys
@@ -21,9 +19,8 @@ log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
 app = Flask(__name__)
-CORS(app)
-
-# qchem.Load()    # startup load. wouldn't hurt.
+CORS(app, supports_credentials=True)
+app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
 
 # the modifier
 def patch_through(func):
@@ -48,6 +45,7 @@ def return_through(func):
             return jsonify( {'error':str(e) } )
     return wrapped
 
+# preliminary login security
 
 # a random id generator
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
