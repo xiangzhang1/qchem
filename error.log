@@ -25,3 +25,36 @@ INFO:werkzeug:127.0.0.1 - - [29/Jul/2017 13:11:55] "OPTIONS /load_sigma HTTP/1.1
 INFO:werkzeug:127.0.0.1 - - [29/Jul/2017 13:11:55] "GET /load_nodes HTTP/1.1" 200 -
 INFO:werkzeug:127.0.0.1 - - [29/Jul/2017 13:11:55] "GET /load_sigma HTTP/1.1" 200 -
 INFO:werkzeug:127.0.0.1 - - [29/Jul/2017 14:35:28] "GET / HTTP/1.0" 200 -
+INFO:werkzeug: * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+INFO:werkzeug: * Restarting with stat
+INFO:werkzeug: * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+INFO:werkzeug: * Restarting with stat
+INFO:werkzeug: * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+INFO:werkzeug: * Restarting with stat
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 261-359-403
+INFO:werkzeug: * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+INFO:werkzeug: * Restarting with stat
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 261-359-403
+INFO:werkzeug:127.0.0.1 - - [30/Jul/2017 09:17:27] "OPTIONS /check_status HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [30/Jul/2017 09:17:28] "GET /check_status HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [30/Jul/2017 09:17:29] "OPTIONS /load_nodes HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [30/Jul/2017 09:17:29] "OPTIONS /load_sigma HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [30/Jul/2017 09:17:29] "GET /load_nodes HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [30/Jul/2017 09:17:29] "GET /load_sigma HTTP/1.1" 200 -
+INFO:werkzeug: * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+INFO:werkzeug: * Restarting with stat
+INFO:werkzeug: * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+INFO:werkzeug: * Restarting with stat
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 215-008-501
+INFO:werkzeug:127.0.0.1 - - [30/Jul/2017 09:18:21] "OPTIONS /check_status HTTP/1.1" 404 -
+INFO:werkzeug:127.0.0.1 - - [30/Jul/2017 09:18:22] "OPTIONS /load_nodes HTTP/1.1" 404 -
+INFO:werkzeug:127.0.0.1 - - [30/Jul/2017 09:18:22] "OPTIONS /load_sigma HTTP/1.1" 404 -
+INFO:werkzeug:127.0.0.1 - - [30/Jul/2017 09:18:23] "OPTIONS /load_nodes HTTP/1.1" 404 -
+INFO:werkzeug:127.0.0.1 - - [30/Jul/2017 09:18:23] "OPTIONS /load_sigma HTTP/1.1" 404 -
+INFO:werkzeug: * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+INFO:werkzeug: * Restarting with stat
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 261-359-403
