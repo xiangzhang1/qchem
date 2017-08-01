@@ -99,7 +99,7 @@ class Node(object):
         elif getattr(self, 'property', None):
             return 0
         else:
-            return 0
+            return -2
     
             
     '''def __str__(self):
