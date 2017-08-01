@@ -19,7 +19,7 @@ def Import(text):
             raise shared.CustomError(' Import: Node name %s is in already in shared.NODES.' %n.name)'''
         shared.NODES[n.name] = n
 
-def Dump():
+'''def Dump():
     with open(os.path.dirname(os.path.realpath(__file__))+'/data/shared.NODES.dump','wb') as dumpfile:
         pickle.dump(shared.NODES, dumpfile, protocol=pickle.HIGHEST_PROTOCOL)
     print 'Dumped' + str(shared.NODES)
@@ -32,7 +32,7 @@ def Load():
         print 'Loaded' + str(shared.NODES)
     else:
         raise shared.CustomError('No shared.NODES.dump file to load')
-
+'''
 
 class Node(object):
 
@@ -51,7 +51,7 @@ class Node(object):
         # node.__dict__
         
         while namevalpairs:
-            namevalpair = namevalpairs.pop(0)
+            '''namevalpair = namevalpairs.pop(0)
             if not namevalpair.rstrip():
                 continue
             name = namevalpair.split('\n')[0].strip(': ')
@@ -59,10 +59,13 @@ class Node(object):
                 continue
             value = namevalpair.split('\n',1)[1] if len(namevalpair.split('\n',1))>1 else ''
             if getattr(engine, name.title(), None):
-                value = getattr(engine, name.title())(value)
+                value = getattr(engine, name.title())(value)'''
             setattr(self, name, value)
 
-
+        '''# test gen
+        if getattr(self,'cell',None) and getattr(self,'phase',None) and getattr(self,'property',None):
+           test_gen = engine.Gen(self.phase + ' ' + self.property, self.cell)'''
+        
 
     def edit(self, text):   
         # Import text, and update self
@@ -73,13 +76,14 @@ class Node(object):
             new_node = shared.NODES[self.name]
         else:
             raise shared.CustomError(self.__class__.__name__ + ': edit: You have not defined a same-name node (aka node with name %s which would have been read)' %(self.name))'''
-        for varname in vars(self):
+        '''for varname in vars(self):
             if not getattr(new_node, varname, None):
                 delattr(self, varname)
-        for varname in vars(new_node):
+        for varname in vars(new_node):'''
             setattr(self, varname, getattr(new_node, varname))
 
-    def reset(self):
+    '''def reset(self):
+        # reset moonphase =1. remove all non-readable attributes.
         for varname in vars(self):
             if varname not in shared.READABLE_ATTR_LIST:
                 delattr(self, varname)
@@ -87,7 +91,7 @@ class Node(object):
     def edit_vars(self,j):
         # only edit text variables. takes a dictionary (aka json)
         for key in j:
-            setattr(self,key,j[key])
+            setattr(self,key,j[key])'''
 
     @shared.moonphase_wrap
     def moonphase(self):
@@ -143,15 +147,14 @@ class Node(object):
         else:
             raise shared.CustomError(self.__class___.__name__ + ': compute: Node %s is not computable.' %self.name)
 
-    
-    def add_node(self,node):
-        for attr in vars(self):
-            if attr in shared.INHERITABLE_ATTR_LIST:
-                setattr(node, attr, getattr(self,attr))
+    def add_node(self, node):
+        for key in vars(self):
+            if key in shared.INHERITABLE_ATTR_LIST and not getattr(node, key, None):
+                setattr(node, key, getattr(self, key))
         self.map.add_node(node)
 
 
-    '''def delete(self):
+    def delete(self):
             engine_name = self.gen.getkw('engine')
             engine_ = getattr(self,self.gen.getkw('engine'),None)
             if getattr(self,self.gen.getkw('engine'),None):
