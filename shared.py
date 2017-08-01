@@ -29,23 +29,22 @@ NODES = {}
 
 # Fragile lists:
 
-# qchem.Node.readable_list: which vars to read *input-able*
+## qchem.Node.readable_list: which vars to read *input-able*
+READABLE_ATTR_LIST = ['name','phase','cell','property','map','comment','path'] # Only phase, cell, property are necessary.
 
-READABLE_ATTR_LIST = ['name','phase','cell','property','map']   # note that path is not here
+## qchem.Node.inheritable_list
+INHERITABLE_ATTR_LIST = ['phase','cell']
 
-# sigma.var = config.{{{tmp}}}: which vars to print *physical* (not sigma) : ['name','phase','cell','property','gen','vasp','electron','map']
+## sigma.var = config.{{{tmp}}}: which vars to print *physical* (not sigma) : ['name','phase','cell','property','gen','vasp','electron','map']
 # EDIT IN PLACE
 
-# gui.traverse_json: [cur, jam, {elsekey:elseval}]: jam recipe *invariable* = [name, phase, property, cell]
+## gui.traverse_json: [cur, jam, {elsekey:elseval}]: jam recipe *invariable* = [name, phase, property, cell]
 
-# gui.*beautify*: name -> id,label. moonphase -> color(bootstrap: gray -> yellow -> green; red)
+## gui.*beautify*: name -> id,label. moonphase -> color(bootstrap: gray -> yellow -> green; red)
 # EDIT IN PLACE
 
-# gui|sigma . palette
-COLOR_PALETTE = {-1: '#a94442', 0: '#000000',  1: '#8a6d3b', 2: '#3c763d'}   # text-*
-# COLOR_PALETTE = {-1: '#d9534f', 0: '#000000',  1: '#f0ad4e', 2: '#5cb85c'} # brand-*
-# sigma null response: #a94442
-
+## gui|sigma . palette
+COLOR_PALETTE = {-1: '#a94442', 0: '#000000',  1: '#8a6d3b', 2: '#3c763d', -2: '#000000'}   # text-*
 
 # Element, ELEMENTS
 # ===========================================================================

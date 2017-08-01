@@ -271,7 +271,7 @@ def request_():  # either merge json, or use shared.NODES['master']
 def add_node():
     j = request.get_json(force=True)
     n = shared.NODES['master'].map.lookup(j['cur'])
-    n.map.add_node(qchem.Node(j['name']))
+    n.add_node(qchem.Node(j['name']))
 
 @app.route('/del_node', methods=['POST'])
 @patch_through

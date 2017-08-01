@@ -99,7 +99,7 @@ class Node(object):
         elif getattr(self, 'property', None):
             return 0
         else:
-            return 0
+            return -2
     
             
     def __str__(self):
@@ -144,7 +144,14 @@ class Node(object):
         else:
             raise shared.CustomError(self.__class___.__name__ + ': compute: Node %s is not computable.' %self.name)
 
-        
+    
+    def add_node(self,node):
+        for attr in vars(self):
+            if attr in shared.INHERITABLE_ATTR_LIST:
+                setattr(node, attr, getattr(self,attr))
+        self.map.add_node(node)
+
+
     def delete(self):
             engine_name = self.gen.getkw('engine')
             engine_ = getattr(self,self.gen.getkw('engine'),None)
