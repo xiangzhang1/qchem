@@ -170,8 +170,8 @@ def combine_json(new_json, old_json=None):
 @login_required
 def get_docs_list():
     j = {'filenames':[]}
-    for fname in os.listdir(os.path.dirname(os.path.realpath(__file__))+'/docs'):
-        if fname.endswith('.md'):
+    for fname in os.listdir(os.path.dirname(os.path.realpath(__file__))):
+        if fname.endswith('.md') or fname.endswith('.conf'):
             j['filenames'].append(fname)
     return jsonify(j)
 
