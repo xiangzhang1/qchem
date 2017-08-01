@@ -31,7 +31,7 @@ NODES = {}
 
 # qchem.Node.readable_list: which vars to read *input-able*
 
-READABLE_ATTR_LIST = ['name','phase','cell','property','map','comment', 'path'] 
+READABLE_ATTR_LIST = ['name','phase','cell','property','map']   # note that path is not here
 
 # sigma.var = config.{{{tmp}}}: which vars to print *physical* (not sigma) : ['name','phase','cell','property','gen','vasp','electron','map']
 # EDIT IN PLACE
