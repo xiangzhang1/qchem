@@ -25,7 +25,7 @@ log = logging.getLogger('werkzeug')
 #logging.basicConfig(filename='error.log',level=logging.DEBUG)
 class NoParsingFilter(logging.Filter):
     def filter(self, record):
-        return not '/make_connection' in record.getMessage()
+        return not '/check_status' in record.getMessage()
 log.addFilter(NoParsingFilter())
 
 app = Flask(__name__)
@@ -98,7 +98,7 @@ def to_json(n):
             new_json['map'] = map_json
     return new_json
 
-def traverse_json(j, cur_prefix=None):      # returns a triplet: [cur,   jam_for_fuzzy_match,   [graphical properties to transfer]    ]
+def traverse_json(j, cur_prefix=None):   
     if cur_prefix:
         cur = cur_prefix + '.' + j['name']
     else:
@@ -107,16 +107,11 @@ def traverse_json(j, cur_prefix=None):      # returns a triplet: [cur,   jam_for
     jam = ''
     other = {}
     for key in j:
-        # cur
-        # jam
         if key in ['name','phase','property']:
             jam += ' ' + j[key]
         elif key == 'cell':
             jam += ' ' + j[key].splitlines()[5] + j[key].splitlines()[6]
-        # graphical properties
-        #wtf#elif key in ['id', 'label'] or ':' in key:
-        #wtf#   pass
-        elif key in shared.ALL_ATTR_LIST:
+        elif key in ['id', 'label'] or ':' in key:
             pass
         else:
             other[key] = j[key]
@@ -210,16 +205,16 @@ def x93d_python_rrho():
         exec(code)
 
 # the real qchem functions
-@app.route('/reset_NODES', methods=['GET'])
+@app.route('/reset_', methods=['GET'])
 @patch_through
 @login_required
-def reset_NODES():
+def reset_():
     shared.NODES = {}
 
-@app.route('/import_markdown', methods=['GET'])
+@app.route('/import_', methods=['GET'])
 @patch_through
 @login_required
-def import_markdown():
+def import_():
     with open('data/markdown') as f:
         qchem.Import(f.read())
 
@@ -263,10 +258,10 @@ def load_sigma():
         old_json = {}
     return jsonify(old_json)
 
-@app.route('/request_', methods=['POST','GET']) 
+@app.route('/request_', methods=['POST','GET'])
 @return_through
 @login_required
-def request_():  # either merge json, or use shared.NODES['master']     # yep, this is the magic function.
+def request_():  # either merge json, or use shared.NODES['master']
     if request.method == 'POST':
         old_json = request.get_json(force=True)
         new_json = to_json(shared.NODES['master'])
@@ -353,15 +348,14 @@ def edit():
     j = request.get_json(force=True)
     shared.NODES['master'].map.lookup(j.pop('cur')).edit(j['text'])
 
-@app.route('/make_connection', methods=['GET'])
+@app.route('/check_status', methods=['GET'])
 @return_through
 @login_required
-def make_connection():
+def check_status():
     if 'master' in shared.NODES and getattr(shared.NODES['master'], 'map', None):
-        statuscolor = shared.COLOR_PALETTE[2]
+        return jsonify({'color':shared.COLOR_PALETTE[2]})
     else:
-        statuscolor = shared.COLOR_PALETTE[-1]
-    return jsonify({'statuscolor':statuscolor, 'ALL_ATTR_LIST': shared.ALL_ATTR_LIST, 'READABLE_ATTR_LIST': shared.READABLE_ATTR_LIST})
+        return jsonify({'color':shared.COLOR_PALETTE[-1]})
 
 @app.route('/paste_ref', methods=['POST'])
 @patch_through

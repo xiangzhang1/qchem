@@ -11,19 +11,19 @@ import shared
 
 def Import(text):
 
-    '''if '#' not in text:
-        raise shared.CustomError('qchem.Import: bad syntax. Your text is {%s}.' %text)'''
+    if '#' not in text:
+        raise shared.CustomError('qchem.Import: bad syntax. Your text is {%s}.' %text)
     l = re.split('^#+\s*', text, flags=re.MULTILINE) ; l.pop(0)
     l = ['# '+x for x in l]
 
     while l:
         # print 'Import: parsing %s' %(l[-1].splitlines()[0] if l[-1].splitlines() else '')
         n = Node(l.pop())
-        '''if n.name in shared.NODES:
-            raise shared.CustomError(' Import: Node name %s is in already in shared.NODES.' %n.name)'''
+        if n.name in shared.NODES:
+            raise shared.CustomError(' Import: Node name %s is in already in shared.NODES.' %n.name)
         shared.NODES[n.name] = n
 
-'''def Dump():
+def Dump():
     with open(shared.SCRIPT_DIR + '/data/shared.NODES.dump','wb') as dumpfile:
         pickle.dump(shared.NODES, dumpfile, protocol=pickle.HIGHEST_PROTOCOL)
     print 'Dumped' + str(shared.NODES)
@@ -36,7 +36,7 @@ def Load():
         print 'Loaded' + str(shared.NODES)
     else:
         raise shared.CustomError('No shared.NODES.dump file to load')
-'''
+
 
 class Node(object):
 
@@ -45,8 +45,8 @@ class Node(object):
         namevalpairs = text.split('\n\n')
 
         # node.name
-        '''if len(namevalpairs[0].splitlines()) != 1 or not namevalpairs[0].startswith('#'):
-            raise shared.CustomError(self.__class__.__name__ +': __init__: Titleline format is #name:opt. Your titleline is: {%s}' %namevalpairs[0])'''
+        if len(namevalpairs[0].splitlines()) != 1 or not namevalpairs[0].startswith('#'):
+            raise shared.CustomError(self.__class__.__name__ +': __init__: Titleline format is #name:opt. Your titleline is: {%s}' %namevalpairs[0])
         titleline = namevalpairs.pop(0).rstrip().lstrip('# ')
         l = [x.strip() for x in titleline.split(':')]
         self.name = l[0]
@@ -55,7 +55,7 @@ class Node(object):
         # node.__dict__
         
         while namevalpairs:
-            '''namevalpair = namevalpairs.pop(0)
+            namevalpair = namevalpairs.pop(0)
             if not namevalpair.rstrip():
                 continue
             name = namevalpair.split('\n')[0].strip(': ')
@@ -63,12 +63,12 @@ class Node(object):
                 continue
             value = namevalpair.split('\n',1)[1] if len(namevalpair.split('\n',1))>1 else ''
             if getattr(engine, name.title(), None):
-                value = getattr(engine, name.title())(value)'''
+                value = getattr(engine, name.title())(value)
             setattr(self, name, value)
 
-        '''# test gen
+        # test gen
         if getattr(self,'cell',None) and getattr(self,'phase',None) and getattr(self,'property',None):
-           test_gen = engine.Gen(self.phase + ' ' + self.property, self.cell)'''
+           test_gen = engine.Gen(self.phase + ' ' + self.property, self.cell)
         
 
     def edit(self, text):   
@@ -77,10 +77,10 @@ class Node(object):
         for x in self.map if getattr(self,'map',None) else []:
             shared.NODES[x.name] = x
         Import(text)
-        '''if self.name in shared.NODES:
+        if self.name in shared.NODES:
             new_node = shared.NODES[self.name]
         else:
-            raise shared.CustomError(self.__class__.__name__ + ': edit: You have not defined a same-name node (aka node with name %s which would have been read)' %(self.name))'''
+            raise shared.CustomError(self.__class__.__name__ + ': edit: You have not defined a same-name node (aka node with name %s which would have been read)' %(self.name))
         for varname in vars(new_node):
             setattr(self, varname, getattr(new_node, varname))
 
@@ -94,13 +94,12 @@ class Node(object):
             setattr(self, name, value)
 
 
-    '''def reset(self):
+    def reset(self):
         # reset moonphase =1. remove all non-readable attributes.
         for varname in vars(self).keys():
             if varname not in shared.READABLE_ATTR_LIST:
                 delattr(self, varname)
-                print self.__class__.__name__ + ' reset: attribute {%s} deleted' %varname
-    '''
+    
 
 
     @shared.moonphase_wrap
@@ -115,14 +114,14 @@ class Node(object):
             return -2
     
             
-    '''def __str__(self):
+    def __str__(self):
         result = '# ' + self.name + '\n\n'
         for varname in vars(self):
             if varname != 'name':
                 result += varname + ':\n' + str(vars(self)[varname]) + '\n\n'
         result += '\n\n'
         return result
-    '''
+    
 
 
     def compute(self, proposed_name=None):
@@ -130,12 +129,12 @@ class Node(object):
         if getattr(self, 'map', None):
 
             l = [x for x in self.map if x.moonphase()==0] + [x for x in self.map if x.moonphase()==0 and (not self.map.prev(x) or self.map.prev(x).moonphase()==2) ]
-            '''if not l:
+            if not l:
                 print self.__class__.__name__ + ': nothing to compute'
                 return
             if any([x.name==proposed_name for x in l]):
                 n = [x for x in l if x.name == proposed_name][0]
-            else:'''
+            else:
                 n = l[0]
 
             for vname in [x for x in vars(self) if x in shared.INHERITABLE_ATTR_LIST and getattr(self,x,None) and not getattr(n,x,None)]:
@@ -164,5 +163,5 @@ class Node(object):
                 getattr(self,self.gen.getkw('engine'),None).delete()
             for node in shared.NODES['master'].map.traverse():
                 node.map.pop(self)
-    '''
+    
 
