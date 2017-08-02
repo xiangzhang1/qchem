@@ -192,33 +192,38 @@ class ElementsDict(object):
             self.add( eval(exp) )
         
     def export_merge(self):
-        # BACKUP CONF FILE!
+        # USAGE:
+        # 1. BACKUP CONF FILE
+        # 2. MANUALLY GENERATE AN IMPORTdatabase FILE. SAME SYNTAX AS CONF FILE. 
+        # 3. EDIT OUTPUT HEADER, DEFAULT FALLBACK, AND OUTPUT FORMATTING
+        # 4. make; python shared.py
+        #
         # header
         outfile = open('shared.element.conf','w')
-        outfile.write('%10s:%10s:%15s:%10s:%10s:%10s:%10s:%16s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%30s:%30s:%180s:%10s:%10s:%170s:%10s:%15s:%150s:%15s:%10s\n' % (
+        outfile.write('%10s:%10s:%15s:%10s:%10s:%10s:%10s:%16s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%30s:%30s:%180s:%10s:%10s:%170s:%10s:%15s:%15s:%10s:%10s\n' % (
                 'number', 'symbol', 'name', 'group', 'period', 'block', 'series', 'mass', 'eleneg', 'eleaffin', 
                 'covrad', 'atmrad', 'vdwrad', 'tboil', 'tmelt', 'density', 'eleconfig', 'oxistates', 'ionenergy', 'ldauu', 'ldauj',
-                'ldaucomment', 'magmom', 'magmomcomment', 'pot', 'pot_extension','pot_zval')) #EDIT HEADER HERE
+                'ldaucomment', 'magmom', 'magmomcomment', 'pot', 'pot_encut', 'pot_zval')) #EDIT HEADER HERE
         # read and write
-        infile = open('ZVALdatabase','r')  #EDIT INFILE HERE
+        infile = open('IMPORTdatabase','r')
         lines = [[field.strip() for field in line.split(':')] for line in infile.read().splitlines()]
         for e in self:
-            matchingline = [line for line in lines if line[0] == e.symbol]
-            if len(matchingline) == 0:
-                pot_zval = None
+            matches = [line for line in lines if line[0] == "'"+e.symbol+"'"]
+            if not matches:
+                m = [e.symbol,'',0,0]
             else:
-                pot_zval = matchingline[0][1] #EDIT TO_OUTPUT VARS HERE
+                m = matches[0]
             # original elements formatting
             ionenergy = []
             for i, j in enumerate(e.ionenergy):
                 ionenergy.append("%s, " % j)
             ionenergy = "".join(ionenergy)
             # write
-            outfile.write('%10i:%10s:%15s:%10s:%10s:%10s:%10i:%16s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%30s:%30s:%180s:%10s:%10s:%170s:%10s:%15s:%150s:%15s:%10s\n' % ( 
+            outfile.write('%10i:%10s:%15s:%10s:%10s:%10s:%10i:%16s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%30s:%30s:%180s:%10s:%10s:%170s:%10s:%15s:%15s:%10s:%10s\n' % ( 
                 e.number, '\''+e.symbol+'\'', '\''+e.name+'\'', e.group, e.period, '\''+e.block+'\'', e.series,
                 e.mass, e.eleneg, e.eleaffin, e.covrad, e.atmrad, e.vdwrad, e.tboil, e.tmelt, e.density,
                 '\''+e.eleconfig+'\'', '\''+e.oxistates+'\'', '('+ionenergy+')', e.ldauu, e.ldauj, '\''+e.ldaucomment+'\'', 
-                e.magmom, '\''+e.magmomcomment + '\'', e.pot, '\''+e.pot_extension+'\'', pot_zval)) 
+                e.magmom, '\''+e.magmomcomment + '\'', '\'' + m[1] + '\'', m[2], m[3])) 
             #EDIT OUTPUT HERE. NOTE: STRING, WHETHER ORIGINAL OR BEING IMPORTED, MUST BE SURROUNDED BY QUOTES! 
         outfile.close()
         infile.close()
@@ -266,8 +271,8 @@ def word_wrap(text, linelen=80, indent=0, joinstr="\n"):
     return joinstr.join(result)
 
 ELEMENTS = ElementsDict()
-#ELEMENTS.import_()
-#ELEMENTS.export_merge()
+ELEMENTS.import_()
+ELEMENTS.export_merge()
 ELEMENTS.import_()
 
 
