@@ -71,29 +71,6 @@ class Node(object):
            test_gen = engine.Gen(self.phase + ' ' + self.property, self.cell)'''
         
 
-    def edit(self, text):   
-        # Import text, and update self
-        # But does not delete anything
-        for x in self.map if getattr(self,'map',None) else []:
-            shared.NODES[x.name] = x
-        Import(text)
-        '''if self.name in shared.NODES:
-            new_node = shared.NODES[self.name]
-        else:
-            raise shared.CustomError(self.__class__.__name__ + ': edit: You have not defined a same-name node (aka node with name %s which would have been read)' %(self.name))'''
-        for varname in vars(new_node):
-            setattr(self, varname, getattr(new_node, varname))
-
-    def edit_vars(self,j):
-        # more like __init__
-        for name,value in j.iteritems():
-            if name not in shared.READABLE_ATTR_LIST: 
-                continue
-            if getattr(engine, name.title(), None):
-                value = getattr(engine, name.title())(value)
-            setattr(self, name, value)
-
-
     '''def reset(self):
         # reset moonphase =1. remove all non-readable attributes.
         for varname in vars(self).keys():

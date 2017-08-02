@@ -330,14 +330,6 @@ def compute_node():
     j = request.get_json(force=True)
     shared.NODES['master'].map.lookup(j['cur']).compute()
 
-@app.route('/edit_vars', methods=['POST'])
-@patch_through
-@login_required
-# shortcut for edit
-def edit_vars():
-    j = request.get_json(force=True)
-    shared.NODES['master'].map.lookup(j.pop('cur')).edit_vars(j)
-
 @app.route('/get_text', methods=['POST'])
 @return_through
 @login_required
@@ -346,12 +338,46 @@ def get_text():
     n = shared.NODES['master'].map.lookup(j['cur'])
     return jsonify({'text':str(n)})
 
+
+@app.route('/edit_vars', methods=['POST'])
+@patch_through
+@login_required
+def edit_vars():    
+    # Node() format input. Less powerful than edit, but more intuitive.
+    # Updates mentioend and readable parts only.
+    j = request.get_json(force=True)
+    n = shared.NODES['master'].map.lookup(j.pop('cur'))
+    for name,value in j.iteritems():
+        if name not in shared.READABLE_ATTR_LIST: 
+            continue
+        if getattr(engine, name.title(), None):
+            value = getattr(engine, name.title())(value)
+        setattr(n, name, value)
+
+
 @app.route('/edit', methods=['POST'])
 @patch_through
 @login_required
 def edit():
+    # Import format input. Not in place.
+    # Update mentioned parts only
     j = request.get_json(force=True)
-    shared.NODES['master'].map.lookup(j.pop('cur')).edit(j['text'])
+    node = shared.NODES['master'].map.lookup(j.pop('cur'))
+    #  map rule
+    if 'map:' in j['text']:
+        for x in node.map if getattr(node,'map',None) else []:
+            if x.name == node.name:
+                raise shared.CustomError('gui edit: edit is not in place and relies on name search. one child node has same name {%s} as parent, which may cause confusion.' %node.name)
+            shared.NODES[x.name] = x
+    qchem.Import(j['text'])
+    #  update
+    if node.name in shared.NODES:
+        new_node = node.map.lookup(node.name)#pop
+    else:
+        raise shared.CustomError(node.__class__.__name__ + ': edit: You have not defined a same-name node (aka node with name %s which would have been read)' %(node.name))
+    for varname in vars(new_node):
+        setattr(node, varname, getattr(new_node, varname))
+
 
 @app.route('/make_connection', methods=['GET'])
 @return_through
