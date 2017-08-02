@@ -6,8 +6,6 @@ meta <--> parent: phase, cell, property wanted ==[ child: phase, cell, property 
 path and label are irrelevant. separate them to second stage. 合式.
 irrelevant (>) vs relevant+ (#)
 
-namespace is path.
-
 save point mechanism.
 
 parent - property_wanted - child - engine - filesystem

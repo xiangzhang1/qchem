@@ -68,8 +68,8 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
                 self.kw[kwname] = result
             if run and not bool(result):
                 raise shared.CustomError( 'error: Require produces empty set, deferred: kwname {%s}, value {%s}, required_value {%s}' %(kwname, self.kw[kwname] if kwname in self.kw else 'null', kwvalset) )
-            '''if not run and not bool(result):
-                print 'warning: Require produces empty set, deferred: kwname {%s}, value {%s}, required_value {%s}' %(kwname, self.kw[kwname] if kwname in self.kw else 'null', kwvalset) '''
+            if not run and not bool(result):
+                print 'warning: Require produces empty set, deferred: kwname {%s}, value {%s}, required_value {%s}' %(kwname, self.kw[kwname] if kwname in self.kw else 'null', kwvalset) 
             if self.moonphase>0:    self.kw_legal_set.add(kwname)
             return bool(result)
         elif 'internal' in expression:      ## parse kwname internal
@@ -171,7 +171,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
 	with open('engine.gen.' + engine_name + '.conf') as conf:
 	    lines = conf.read().splitlines()
             for line in [ [p.strip() for p in l.split(':')] for l in lines if not l.startswith('#') ]:
-                '''if len(line) < 4: raise shared.CustomError('bad conf grammar error: needs 3 colons per line least in {%s}' %line)'''
+                if len(line) < 4: raise shared.CustomError('bad conf grammar error: needs 3 colons per line least in {%s}' %line)
                 if len(line) < 3:
                     raise shared.CustomError( self.__class__.__name__+' error: Bar Grammar. Require line format wrong: {%s}' % line )
                 for part in [p.strip() for p in line[1].split(',') ]:
@@ -361,7 +361,7 @@ class Cell(object):
         self.nion = sum(self.stoichiometry.values())
         self.nelect = sum( [self.stoichiometry[symbol] * shared.ELEMENTS[symbol].pot_zval for symbol in self.stoichiometry] )
 
-    '''def __str__(self):
+    def __str__(self):
         result = self.name+'\n'
         result += '1\n'
         for line in self.base:
@@ -371,7 +371,7 @@ class Cell(object):
         result += 'Direct\n'
         for line in self.coordinates:
             result += ' '.join(map(str,line))+'\n'
-        return result'''
+        return result
             
 
 
@@ -381,7 +381,7 @@ class Cell(object):
 class Map(object):
 
 
-    '''def lookup(self, name):
+    def lookup(self, name):
 
         if name == 'master':
             if name in shared.NODES:   return shared.NODES['master']
@@ -405,19 +405,19 @@ class Map(object):
             return None
 
     def traverse(self):
-        return set([x for x in self]) + set().union( *(x.map.traverse() for x in self if getattr(x,'map',None)) )'''
+        return set([x for x in self]) + set().union( *(x.map.traverse() for x in self if getattr(x,'map',None)) )
         
 
 
     def __init__(self, text):
     
-        '''self._dict, self._dict2 = {}, {}
-        text = text.split('\n')'''
+        self._dict, self._dict2 = {}, {}
+        text = text.split('\n')
 
         # src -> dst
         for line in text:
             if not line.rstrip():   continue
-            '''line = [x.strip() for x in re.split('(->|-->)', line)]'''
+            line = [x.strip() for x in re.split('(->|-->)', line)]
             if len(line) == 1:
                 src = self.lookup(line[0])
                 if src not in self._dict:   self._dict[src] = []
@@ -427,13 +427,13 @@ class Map(object):
                     self._dict[src] = []
                 if dst not in self._dict:   
                     self._dict[dst] = []
-                '''m = self._dict if line[1]=='->' else self._dict2
-                m[src] = [dst] if src not in m else m[src]+[dst]'''
+                m = self._dict if line[1]=='->' else self._dict2
+                m[src] = [dst] if src not in m else m[src]+[dst]
             else:
                 raise shared.CustomError(self.__class__.__name__ + '__init__: src -> dst. 3 parts needed')
 
 
-    '''def add_node(self, node):
+    def add_node(self, node):
         if node in self._dict:
             raise shared.CustomError(self.__class__.__name__+' add_node: node %s already in self._dict' %node.name)
         else:
@@ -446,7 +446,7 @@ class Map(object):
         for m in (self._dict, self._dict2):
             m.pop(node,None)
             for n in m:
-                m[n] = [x for x in m[n] if x != node]'''
+                m[n] = [x for x in m[n] if x != node]
 
     def add_edge(self, src_name, dst_name):
         src = self.lookup(src_name)
@@ -607,11 +607,11 @@ class Vasp(object):
         if os.path.isdir(self.path):
             shutil.rmtree(self.path)
 
-    '''def __str__(self):
+    def __str__(self):
         if getattr(self, 'log', None):
             return self.log
         else:
-            return ''   '''
+            return ''   
 
 
 #=========================================================================== 
@@ -678,12 +678,12 @@ class Electron(object):
     def moonphase(self):
         return 2 if getattr(self, 'log', None) else 0
 
-    '''def __str__(self):
+    def __str__(self):
         result = ''
         for name in ['grepen', 'dos', 'charge', 'bands', 'errors']:
             if getattr(self,name,None) and getattr(getattr(self,name),'log',None):
                 result += str( getattr(getattr(self,name),'log') )
-        return result'''
+        return result
     
 
 # reads poscar, and generates 3*3*3 mirror for all kinds of purposes.

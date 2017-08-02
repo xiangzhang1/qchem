@@ -43,3 +43,8 @@ functions
 			# self.moonphase=0(input_)|1(if)|2(require)|3(ready)
 	唯一结果要求（意义列表）：
 		长度为1则合法，不在合法列表内则应无视，其他则为不唯一并报错
+
+
+Grammar
+-------
+Input grammar is require grammar.

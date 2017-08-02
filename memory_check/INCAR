@@ -1,0 +1,4 @@
+	SIGMA 	= 0.05
+	IBRION 	= 2
+	ALGO 	= fast
+	ISMEAR 	= 0
