@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # This is the end-encapuslation layer. This layer is essentially the SAME as the gui layer.
 #
-from flask import Flask, request, jsonify, session
+from flask import Flask, request, jsonify, session, Response
 from flask_cors import CORS, cross_origin
 from functools import wraps
 

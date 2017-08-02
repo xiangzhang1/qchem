@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # This is the end-encapuslation layer. This layer is essentially the SAME as the gui layer.
 #
-from flask import Flask, request, jsonify, session
+from flask import Flask, request, jsonify, session, Response
 from flask_cors import CORS, cross_origin
 from functools import wraps
 
@@ -25,7 +25,7 @@ log = logging.getLogger('werkzeug')
 #logging.basicConfig(filename='error.log',level=logging.DEBUG)
 class NoParsingFilter(logging.Filter):
     def filter(self, record):
-        return not '/check_status' in record.getMessage()
+        return not '/make_connection' in record.getMessage()
 log.addFilter(NoParsingFilter())
 
 app = Flask(__name__)
@@ -98,7 +98,7 @@ def to_json(n):
             new_json['map'] = map_json
     return new_json
 
-def traverse_json(j, cur_prefix=None):   
+def traverse_json(j, cur_prefix=None):      # returns a triplet: [cur,   jam_for_fuzzy_match,   [graphical properties to transfer]    ]
     if cur_prefix:
         cur = cur_prefix + '.' + j['name']
     else:
@@ -107,11 +107,16 @@ def traverse_json(j, cur_prefix=None):
     jam = ''
     other = {}
     for key in j:
+        # cur
+        # jam
         if key in ['name','phase','property']:
             jam += ' ' + j[key]
         elif key == 'cell':
             jam += ' ' + j[key].splitlines()[5] + j[key].splitlines()[6]
-        elif key in ['id', 'label'] or ':' in key:
+        # graphical properties
+        #wtf#elif key in ['id', 'label'] or ':' in key:
+        #wtf#   pass
+        elif key in shared.ALL_ATTR_LIST:
             pass
         else:
             other[key] = j[key]
@@ -205,16 +210,16 @@ def x93d_python_rrho():
         exec(code)
 
 # the real qchem functions
-@app.route('/reset_', methods=['GET'])
+@app.route('/reset_NODES', methods=['GET'])
 @patch_through
 @login_required
-def reset_():
+def reset_NODES():
     shared.NODES = {}
 
-@app.route('/import_', methods=['GET'])
+@app.route('/import_markdown', methods=['GET'])
 @patch_through
 @login_required
-def import_():
+def import_markdown():
     with open('data/markdown') as f:
         qchem.Import(f.read())
 
@@ -258,10 +263,10 @@ def load_sigma():
         old_json = {}
     return jsonify(old_json)
 
-@app.route('/request_', methods=['POST','GET'])
+@app.route('/request_', methods=['POST','GET']) 
 @return_through
 @login_required
-def request_():  # either merge json, or use shared.NODES['master']
+def request_():  # either merge json, or use shared.NODES['master']     # yep, this is the magic function.
     if request.method == 'POST':
         old_json = request.get_json(force=True)
         new_json = to_json(shared.NODES['master'])
@@ -348,14 +353,15 @@ def edit():
     j = request.get_json(force=True)
     shared.NODES['master'].map.lookup(j.pop('cur')).edit(j['text'])
 
-@app.route('/check_status', methods=['GET'])
+@app.route('/make_connection', methods=['GET'])
 @return_through
 @login_required
-def check_status():
+def make_connection():
     if 'master' in shared.NODES and getattr(shared.NODES['master'], 'map', None):
-        return jsonify({'color':shared.COLOR_PALETTE[2]})
+        statuscolor = shared.COLOR_PALETTE[2]
     else:
-        return jsonify({'color':shared.COLOR_PALETTE[-1]})
+        statuscolor = shared.COLOR_PALETTE[-1]
+    return jsonify({'statuscolor':statuscolor, 'ALL_ATTR_LIST': shared.ALL_ATTR_LIST, 'READABLE_ATTR_LIST': shared.READABLE_ATTR_LIST})
 
 @app.route('/paste_ref', methods=['POST'])
 @patch_through

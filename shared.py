@@ -30,14 +30,19 @@ NODES = {}
 
 # Fragile lists:
 
-## qchem.Node.readable_list: which vars to read. 
-## sigma.READABLE_ATTR_LIST
-READABLE_ATTR_LIST = ['name','phase','cell','property','map','comment','path'] # Only phase, cell, property are necessary.
+#  all non-sigma-bullshit attributes
+#  - gui.combine.json
+#  - sigma.onClickNode
+ALL_ATTR_LIST = ['name','phase','cell','property','gen','vasp','electron','path','map']
 
-## qchem.Node.compute().inheritable_list
+#  input attributes, not gen etc.
+#  - qchem.Node.__init__
+#  - sigma.edit_vars_addfield
+READABLE_ATTR_LIST = ['name','phase','cell','property','map','comment','path']
+
+#  for the inherit feature. 
+#  - qchem.Node.compute
 INHERITABLE_ATTR_LIST = ['phase','cell']
-
-## sigma: ALL_ATTR_LIST
 
 
 

@@ -99,6 +99,7 @@ class Node(object):
         for varname in vars(self).keys():
             if varname not in shared.READABLE_ATTR_LIST:
                 delattr(self, varname)
+                print self.__class__.__name__ + ' reset: attribute {%s} deleted' %varname
     
 
 
