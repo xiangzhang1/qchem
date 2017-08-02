@@ -191,41 +191,6 @@ class ElementsDict(object):
             exp += ')'
             self.add( eval(exp) )
         
-    def export_merge(self):
-        # USAGE:
-        # 1. BACKUP CONF FILE
-        # 2. MANUALLY GENERATE AN IMPORTdatabase FILE. SAME SYNTAX AS CONF FILE. 
-        #    MAKE SURE THAT EACH LINE HAS A MATCH, AND QUOTES ARE USED.
-        # 3. EDIT OUTPUT HEADER, DEFAULT FALLBACK, AND OUTPUT FORMATTING
-        # 4. make; python shared.py
-        #
-        # header
-        outfile = open('shared.element.conf','w')
-        outfile.write('%10s:%10s:%15s:%10s:%10s:%10s:%10s:%16s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%30s:%30s:%180s:%10s:%10s:%170s:%10s:%15s:%15s:%10s:%10s\n' % (
-                'number', 'symbol', 'name', 'group', 'period', 'block', 'series', 'mass', 'eleneg', 'eleaffin', 
-                'covrad', 'atmrad', 'vdwrad', 'tboil', 'tmelt', 'density', 'eleconfig', 'oxistates', 'ionenergy', 'ldauu', 'ldauj',
-                'ldaucomment', 'magmom', 'magmomcomment', 'pot', 'pot_encut', 'pot_zval')) #EDIT HEADER HERE
-        # read and write
-        infile = open('IMPORTdatabase','r')
-        lines = [[field.strip() for field in line.split(':')] for line in infile.read().splitlines()]
-        for e in self:
-            match = [line for line in lines if line[0] == "'"+e.symbol+"'"][0]
-            m = [x.strip() for x in match.split(':')]   # EDIT MATCH BEHAVIOR HERE
-            # original elements formatting
-            ionenergy = []
-            for i, j in enumerate(e.ionenergy):
-                ionenergy.append("%s, " % j)
-            ionenergy = "".join(ionenergy)
-            # write
-            outfile.write('%10i:%10s:%15s:%10s:%10s:%10s:%10i:%16s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%10s:%30s:%30s:%180s:%10s:%10s:%170s:%10s:%15s:%15s:%10s:%10s\n' % ( 
-                e.number, '\''+e.symbol+'\'', '\''+e.name+'\'', e.group, e.period, '\''+e.block+'\'', e.series,
-                e.mass, e.eleneg, e.eleaffin, e.covrad, e.atmrad, e.vdwrad, e.tboil, e.tmelt, e.density,
-                '\''+e.eleconfig+'\'', '\''+e.oxistates+'\'', '('+ionenergy+')', e.ldauu, e.ldauj, '\''+e.ldaucomment+'\'', 
-                e.magmom, '\''+e.magmomcomment + '\'', '\'' + match[1] + '\'', match[2], match[3])) 
-            #EDIT OUTPUT HERE. NOTE: STRING, WHETHER ORIGINAL OR BEING IMPORTED, MUST BE SURROUNDED BY QUOTES! 
-        outfile.close()
-        infile.close()
-        
     def __str__(self):
         return "[%s]" % ", ".join(ele.symbol for ele in self._list)
 
@@ -269,8 +234,6 @@ def word_wrap(text, linelen=80, indent=0, joinstr="\n"):
     return joinstr.join(result)
 
 ELEMENTS = ElementsDict()
-ELEMENTS.import_()
-ELEMENTS.export_merge()
 ELEMENTS.import_()
 
 
