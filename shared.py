@@ -13,7 +13,6 @@ import shutil
 from pprint import pprint
 from functools import wraps
 
-SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__)) 
 
 # INDEX
 # =====
