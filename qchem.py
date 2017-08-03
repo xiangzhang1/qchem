@@ -1,8 +1,9 @@
 import pickle
 import re
 import os
-import engine
+import time
 
+import engine
 import shared
 
 # ==================================================
@@ -23,24 +24,37 @@ def Import(text):
             raise shared.CustomError(' Import: Node name %s is in already in shared.NODES.' %n.name)
         shared.NODES[n.name] = n
 
-def Dump():
-    with open(shared.SCRIPT_DIR + '/data/shared.NODES.dump','wb') as dumpfile:
+def Dump(): 
+    # distinguish data source by prefix: shared.NODES.dump, shared.NODES.markdown, sigma.dump
+    # distinguish datetime by postfix: 20170803094500
+    if 'master' not in shared.NODES:
+        raise shared.CustomError('Dump: NODES is empty. You really should not dump.')
+    with open(shared.SCRIPT_DIR + '/data/shared.NODES.dump.'+time.strftime('%Y%m%d%H%M%S'),'wb') as dumpfile:
         pickle.dump(shared.NODES, dumpfile, protocol=pickle.HIGHEST_PROTOCOL)
     print 'Dumped' + str(shared.NODES)
 
-def Load():
-    filename = shared.SCRIPT_DIR + '/data/shared.NODES.dump'
+
+def Load(datetime=None):
+    if datetime:
+        filename = shared.SCRIPT_DIR + '/data/shared.NODES.dump.' + datetime
+    else:
+        l = [x for x in os.listdir(shared.SCRIPT_DIR + '/data/') if x.startswith('shared.NODES.dump')]
+        if not l:   raise shared.CustomError('Load: no file to load')
+        l.sort()
+        filename = shared.SCRIPT_DIR + '/data/' + l[-1]
     if os.path.isfile(filename):
         with open(filename,'rb') as dumpfile:
             shared.NODES = pickle.load(dumpfile)
         print 'Loaded' + str(shared.NODES)
     else:
-        raise shared.CustomError('No shared.NODES.dump file to load')
+        raise shared.CustomError('File {%s} not found' %filename)
 
 
 class Node(object):
 
-    def __init__(self, text):   # parses 1 node at a time. searches in NODES
+    def __init__(self, text='# newnode'):   
+        # parses 1 node at a time. searches in NODES.
+        # default to a newnode
 
         namevalpairs = text.split('\n\n')
 
@@ -71,33 +85,10 @@ class Node(object):
            test_gen = engine.Gen(self.phase + ' ' + self.property, self.cell)
         
 
-    def edit(self, text):   
-        # Import text, and update self
-        # But does not delete anything
-        for x in self.map if getattr(self,'map',None) else []:
-            shared.NODES[x.name] = x
-        Import(text)
-        if self.name in shared.NODES:
-            new_node = shared.NODES[self.name]
-        else:
-            raise shared.CustomError(self.__class__.__name__ + ': edit: You have not defined a same-name node (aka node with name %s which would have been read)' %(self.name))
-        for varname in vars(new_node):
-            setattr(self, varname, getattr(new_node, varname))
-
-    def edit_vars(self,j):
-        # more like __init__
-        for name,value in j.iteritems():
-            if name not in shared.READABLE_ATTR_LIST: 
-                continue
-            if getattr(engine, name.title(), None):
-                value = getattr(engine, name.title())(value)
-            setattr(self, name, value)
-
-
     def reset(self):
         # reset moonphase =1. remove all non-readable attributes.
         for varname in vars(self).keys():
-            if varname not in shared.READABLE_ATTR_LIST:
+            if varname not in shared.INPUT_ATTR_LIST:
                 delattr(self, varname)
                 print self.__class__.__name__ + ' reset: attribute {%s} deleted' %varname
     
@@ -106,7 +97,15 @@ class Node(object):
     @shared.moonphase_wrap
     def moonphase(self):
         if getattr(self, 'map', None):
-            return min([x.moonphase() for x in self.map])
+            min_moonphase = min([x.moonphase() for x in self.map])
+            max_moonphase = max([x.moonphase() for x in self.map])
+            if min_moonphase > 0 or max_moonphase<1:
+                return min_moonphase
+            else:   # complex scenario. 1->0 counts as 1.
+                if [x for x in self.map if x.moonphase()==0 and (not self.map.prev(x) or self.map.prev(x).moonphase()==2) ]:
+                    return 0
+                else:
+                    return 1
         elif getattr(self, 'gen', None) and getattr(self, self.gen.getkw('engine'), None):
             return getattr(self, self.gen.getkw('engine')).moonphase()
         elif getattr(self, 'property', None):
@@ -129,21 +128,26 @@ class Node(object):
 
         if getattr(self, 'map', None):
 
-            l = [x for x in self.map if x.moonphase()==0] + [x for x in self.map if x.moonphase()==0 and (not self.map.prev(x) or self.map.prev(x).moonphase()==2) ]
+            l = [x for x in self.map if x.moonphase()==0 and (not self.map.prev(x) or self.map.prev(x).moonphase()==2) ]
             if not l:
-                print self.__class__.__name__ + ': nothing to compute'
-                return
-            if any([x.name==proposed_name for x in l]):
-                n = [x for x in l if x.name == proposed_name][0]
+                raise shared.CustomError( self.__class__.__name__ + ': nothing to compute in parent node {%s]' %self.name )
+            if proposed_name:
+                tmp_l = [x for x in l if x.name == proposed_name]
+                if not tmp_l:
+                    raise shared.CustomError( self.__class__.__name__ + ' compute: cannot found proposed_name {%s} in map' %proposed_name)
+                n = tmp_l[0]
             else:
                 n = l[0]
 
-            for vname in [x for x in vars(self) if x in shared.INHERITABLE_ATTR_LIST and getattr(self,x,None) and not getattr(n,x,None)]:
-                setattr(n,x,getattr(self,x))
+            for vname in vars(self):
+                if vname in shared.INHERITABLE_ATTR_LIST and not getattr(n, vname, None):
+                    setattr(n,vname,getattr(self,vname))
             n.prev = self.map.prev(n)
             n.compute()
 
         elif getattr(self, 'property', None):
+            if not getattr(self, 'cell', None) or not getattr(self, 'phase', None):
+                raise shared.CustomError(self.__class__.__name__ + ' compute: cell or phase is missing. Either make sure parent has something you can inherit, or enter them.')
             if not getattr(self, 'path', None):
                 self.path = raw_input('Provide path for this node: \n %s \n >:' %str(self))    # counterpart implemented in sigmajs
             if not getattr(self, 'gen', None):
@@ -162,7 +166,7 @@ class Node(object):
             engine_ = getattr(self,self.gen.getkw('engine'),None)
             if getattr(self,self.gen.getkw('engine'),None):
                 getattr(self,self.gen.getkw('engine'),None).delete()
-            for node in shared.NODES['master'].map.traverse():
+            for node in engine.Map().lookup('master').map.traverse():
                 node.map.pop(self)
     
 

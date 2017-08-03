@@ -13,15 +13,22 @@ import shutil
 from pprint import pprint
 from functools import wraps
 
-SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__)) 
 
 # INDEX
 # =====
+# DEBUG option, SCRIPT_DIR
 # NODES, Fragile lists
 # ELEMENTS
 # CustomError
 # @moonphase_wrap
 
+# 
+# ===========================================================================
+
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__)) 
+
+DEBUG = True
+DEBUG = False
 
 # Nodes
 # ===========================================================================
@@ -30,20 +37,21 @@ NODES = {}
 
 # Fragile lists:
 
-#  all non-sigma-bullshit attributes
+#  all non-sigma-bullshit attributes, in the order printed (sigma.clickNode)
 #  - gui.combine.json
-#  - sigma.onClickNode
-ALL_ATTR_LIST = ['name','phase','cell','property','gen','vasp','electron','path','map']
+#  - sigma.clickNode (catch: map is not printed in sigma)
+ALL_ATTR_LIST = ['property','phase','cell','comment','name','gen','vasp','electron','path','map','prev']
 
 #  input attributes, not gen etc.
 #  - qchem.Node.__init__
 #  - sigma.edit_vars_addfield
 READABLE_ATTR_LIST = ['name','phase','cell','property','map','comment','path']
+#  - qchem.Node.reset()
+INPUT_ATTR_LIST = ['name','phase','cell','property','map','comment','path', 'prev'] # prev is not readable.
 
 #  for the inherit feature. 
 #  - qchem.Node.compute
 INHERITABLE_ATTR_LIST = ['phase','cell']
-
 
 
 # UI-specific behavior
@@ -258,8 +266,8 @@ class CustomError(Exception):
 def moonphase_wrap(func):
     @wraps(func)
     def wrapped(self, *args, **kwargs):
-        if getattr(self,'path',None) and os.path.isfile(self.path + '/moonphase'):
-            with open('moonphase') as f:
+        if getattr(self,'path',None) and os.path.isfile(self.path + '/.moonphase'):
+            with open(self.path + '/.moonphase') as f:
                 l = f.read().splitlines(0)
                 if int(l[0]) > -2 and int(l[0]) < 3:
                     return int(l[0])

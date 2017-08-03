@@ -13,9 +13,11 @@ import string
 from fuzzywuzzy import process
 import pickle
 from cStringIO import StringIO
+import time
 
 import qchem
 import shared
+import engine
 from shared import ELEMENTS
 
 # logging
@@ -36,14 +38,21 @@ app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
 def patch_through(func):
     @wraps(func)
     def wrapped(*args, **kwargs):
-        sys.stdout = mystdout = StringIO()
-        try:
+        if shared.DEBUG:
             func(*args, **kwargs)
-            sys.stdout  = sys.__stdout__
-            return mystdout.getvalue() + '\n' + '-'*30 + '\ngui.py: +' + func.__name__ + '+ success'
-        except shared.CustomError as e:  # or shared.CustomError
-            sys.stdout  = sys.__stdout__
-            return mystdout.getvalue() + '\n' + '-'*30 + '\ngui.py: ' + func.__name__ + ' exception: ' + str(e) 
+            return 'success'
+        else:
+            sep = '\n' + '-' * 30 + '\n'
+            septop = '=' * 30 + '\n'
+            sepbot = '\n' + '=' * 30 
+            sys.stdout = mystdout = StringIO()
+            try:
+                func(*args, **kwargs)
+                sys.stdout  = sys.__stdout__
+                return '%s %s %s gui.py: %s success %s' %( septop, mystdout.getvalue(),  sep,  func.__name__ , sepbot)
+            except shared.CustomError as e:  # or shared.CustomError
+                sys.stdout  = sys.__stdout__
+                return '%s %s %s %s %s gui.py: %s failed %s' %(  septop,  mystdout.getvalue(),  sep,  e,  sep,   func.__name__ , sepbot )
     return wrapped
 
 def return_through(func):
@@ -68,7 +77,7 @@ def login_required(func):
     return wrapped
 
 # for testing
-@app.route('/helloworld', methods=['GET'])
+@app.route('/hello_world', methods=['GET'])
 def hellowworld():
     return 'hello, world!'
 
@@ -227,7 +236,7 @@ def import_markdown():
 @patch_through
 @login_required
 def new_():
-    shared.NODES['master'] = qchem.Node('master\n\nmap:\n\n')
+    shared.NODES['master'] = qchem.Node('# master\n\nmap:\n\n')
 
 @app.route('/dump_nodes', methods=['GET'])
 @patch_through
@@ -240,28 +249,60 @@ def dump_nodes():
 @login_required
 def dump_sigma():
     old_json = request.get_json(force=True)
-    with open(os.path.dirname(os.path.realpath(__file__))+'/data/sigma.dump','wb') as dumpfile:
+    with open(os.path.dirname(os.path.realpath(__file__))+'/data/sigma.dump.'+time.strftime('%Y%m%d%H%M%S'),'wb') as dumpfile:
         pickle.dump(old_json, dumpfile, protocol=pickle.HIGHEST_PROTOCOL)
 
-@app.route('/load_nodes', methods=['GET'])
+
+# either load latest, or load a specific datetime.
+@app.route('/load_nodes', methods=['GET','POST'])   
 @patch_through
 @login_required
 def load_nodes():
-    qchem.Load()
+    if request.method == 'POST': 
+        datetime = request.get_json(force=True)['datetime']
+        qchem.Load(datetime)
+    else:
+        qchem.Load()
 
-@app.route('/load_sigma', methods=['GET'])
+@app.route('/load_sigma', methods=['GET','POST'])
 @return_through
 @login_required
 def load_sigma():
-    filename = os.path.dirname(os.path.realpath(__file__))+'/data/sigma.dump'
+    if request.method == 'POST':  # used in conjunction with load_nodes, so expect small timestamp difference 
+        datetime = int(request.get_json(force=True)['datetime'])
+        l = [int(x.replace('sigma.dump.','')) for x in os.listdir(shared.SCRIPT_DIR + '/data/') if x.startswith('sigma.dump')]
+        if not l:   raise shared.CustomError('Load: no file near {%s} found' %datetime)
+        l.sort()
+        datetime = str( [x for x in l if abs(x-datetime)<2.1][-1] )
+        filename = shared.SCRIPT_DIR + '/data/sigma.dump.' + datetime
+    else:  
+        l = [x for x in os.listdir(shared.SCRIPT_DIR + '/data/') if x.startswith('sigma.dump')]
+        if not l:   raise shared.CustomError('Load: no file to load')
+        l.sort()
+        filename = shared.SCRIPT_DIR + '/data/' + l[-1]
     if os.path.isfile(filename):
         with open(filename,'rb') as dumpfile:
             old_json = pickle.load(dumpfile)
-        print 'Loaded sigma.dump'
+        print 'Loaded {%s}' %filename
     else:
-        print 'No sigma.dump to load'
+        raise shared.CustomError( 'load_sigma: File {%s} not found' %filename )
         old_json = {}
     return jsonify(old_json)
+
+@app.route('/get_dumps_list', methods=['GET'])
+@return_through
+@login_required
+def get_dumps_list():
+    j = {'datetimes':[]}
+    l = []
+    for fname in os.listdir(shared.SCRIPT_DIR+'/data/'):
+        if fname.startswith('shared.NODES.dump.'):
+            l.append(fname.replace('shared.NODES.dump.',''))
+    l.sort(reverse=True)
+    j['datetimes'] = l[:5]
+    return jsonify(j)
+
+
 
 @app.route('/request_', methods=['POST','GET']) 
 @return_through
@@ -284,7 +325,7 @@ def request_():  # either merge json, or use shared.NODES['master']     # yep, t
 def new_node():
     j = request.get_json(force=True)
     n = shared.NODES['master'].map.lookup(j['cur'])
-    n.add_node(qchem.Node('# newnode'))
+    n.map.add_node(qchem.Node())
 
 @app.route('/del_node', methods=['POST'])
 @patch_through
@@ -328,15 +369,7 @@ def duplicate_node():
 @login_required
 def compute_node():
     j = request.get_json(force=True)
-    shared.NODES['master'].map.lookup(j['cur']).compute()
-
-@app.route('/edit_vars', methods=['POST'])
-@patch_through
-@login_required
-# shortcut for edit
-def edit_vars():
-    j = request.get_json(force=True)
-    shared.NODES['master'].map.lookup(j.pop('cur')).edit_vars(j)
+    shared.NODES['master'].map.lookup(j['cur']).compute(proposed_name=j['name'])  #delegate to parent, suggest compute name
 
 @app.route('/get_text', methods=['POST'])
 @return_through
@@ -346,12 +379,48 @@ def get_text():
     n = shared.NODES['master'].map.lookup(j['cur'])
     return jsonify({'text':str(n)})
 
+
+@app.route('/edit_vars', methods=['POST'])
+@patch_through
+@login_required
+def edit_vars():    
+    # Node() format input. Less powerful than edit, but more intuitive.
+    # Updates mentioend and readable parts only.
+    j = request.get_json(force=True)
+    n = shared.NODES['master'].map.lookup(j.pop('cur'))
+    for name,value in j.iteritems():
+        if name == 'name' and '.' in value:
+            raise shared.CustomError('dot . cannot be in name, because it is used in cur. ')
+        if name not in shared.READABLE_ATTR_LIST: 
+            continue
+        if getattr(engine, name.title(), None):
+            value = getattr(engine, name.title())(value)
+        setattr(n, name, value)
+
+
 @app.route('/edit', methods=['POST'])
 @patch_through
 @login_required
 def edit():
+    # Import format input. Not in place.
+    # Update mentioned parts only
     j = request.get_json(force=True)
-    shared.NODES['master'].map.lookup(j.pop('cur')).edit(j['text'])
+    node = shared.NODES['master'].map.lookup(j.pop('cur'))
+    #  map rule
+    if 'map:' in j['text']:
+        for x in node.map if getattr(node,'map',None) else []:
+            if x.name == node.name:
+                raise shared.CustomError('gui edit: edit is not in place and relies on name search. one child node has same name {%s} as parent, which may cause confusion.' %node.name)
+            shared.NODES[x.name] = x
+    qchem.Import(j['text'])
+    #  update
+    if node.name in shared.NODES:
+        new_node = node.map.lookup(node.name)#pop
+    else:
+        raise shared.CustomError(node.__class__.__name__ + ': edit: You have not defined a same-name node (aka node with name %s which would have been read)' %(node.name))
+    for varname in vars(new_node):
+        setattr(node, varname, getattr(new_node, varname))
+
 
 @app.route('/make_connection', methods=['GET'])
 @return_through

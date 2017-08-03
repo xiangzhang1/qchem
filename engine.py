@@ -14,7 +14,7 @@ import shutil
 from pprint import pprint
 import tempfile
 import hashlib
-from subprocess import call
+from subprocess import call, check_output, STDOUT, CalledProcessError
 from filecmp import dircmp
 
 from mpl_toolkits.mplot3d import Axes3D
@@ -36,8 +36,8 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         if kwname not in self.kw:
             return None
 	if len(self.kw[kwname])!=1:
-	    raise shared.CustomError('self.kw[kwname] does not have 1 and only 1 value. wait till that happens and try again.')
-	return next(iter(self.kw[kwname])) if self.kw[kwname] else None
+            raise shared.CustomError(self.__class__.__name__ + ' getkw error: self.kw[kwname] does not have 1 and only 1 value. wait till that happens and try again.')
+	return next(iter(self.kw[kwname])) #if self.kw[kwname] else None
 
     def evaluate(self,expression):                  # Evaluates expression to string: literal or (funcname)
         if expression.startswith('(') and expression.endswith(')'): 
@@ -66,10 +66,11 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
                 result = operation_map[operator](kwvalset,kwvalset)
             if run and bool(result):        
                 self.kw[kwname] = result
+                if shared.DEBUG: print self.__class__.__name__ + ' parse_require: gave kw {%s} value {%s}' %(kwname,result)
             if run and not bool(result):
-                raise shared.CustomError( 'error: Require produces empty set, deferred: kwname {%s}, value {%s}, required_value {%s}' %(kwname, self.kw[kwname] if kwname in self.kw else 'null', kwvalset) )
-            if not run and not bool(result):
-                print 'warning: Require produces empty set, deferred: kwname {%s}, value {%s}, required_value {%s}' %(kwname, self.kw[kwname] if kwname in self.kw else 'null', kwvalset) 
+                raise shared.CustomError( self.__class__.__name__ + ' parse_require run=True error: parse_require results in empty set: kwname {%s}, value {%s}, required value {%s}' %(kwname, self.kw[kwname] if kwname in self.kw else 'null', kwvalset) )
+            if not run and not bool(result) and shared.DEBUG:
+                print self.__class__.__name__ + ' parse_require warning: parse_require results in empty set, deferred: kwname {%s}, value {%s}, required_value {%s}' %(kwname, self.kw[kwname] if kwname in self.kw else 'null', kwvalset) 
             if self.moonphase>0:    self.kw_legal_set.add(kwname)
             return bool(result)
         elif 'internal' in expression:      ## parse kwname internal
@@ -87,9 +88,14 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
             if self.moonphase>0:  self.mod_legal_set.add(modname)
             return bool(result)
         else:                               ## parse if expression
-            return self.parse_if(expression)
+            result = self.parse_if(expression)
+            if not run and not result and shared.DEBUG:
+                    print self.__class__.__name__ + ' parse_require warning: parse_require results in empty set, deferred: expression {%s}' %(expression)
+            return result
 
     def parse_if(self,expression):  # recursively evaluate complex if condition. accepts empty expression.
+        if ',' in expression:
+            raise shared.CustomError( self.__class__.__name__ + ' parse_if error: "," in if expression {%s} in engine.gen.*.conf. Did you mean to use "&"?' %expression)
         operation_map = {
                 '&&'  :  lambda x,y : x and y,
                 '||'  :  lambda x,y : x or y,
@@ -128,7 +134,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         with open('INCAR','w') as outfile:
             for name in self.kw:
                 if name not in self.kw_internal_set:
-    	            outfile.write('\t'+name.upper()+' \t= '+str(self.getkw(name))+'\n')
+    	            outfile.write('    '+name.upper()+' = '+str(self.getkw(name))+'\n')
         with open('KPOINTS','w') as outfile:
             outfile.write('KPOINTS\n')
             outfile.write('0\n')
@@ -142,6 +148,8 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
             if self.parse_if(name):
                 result += name + ', '
         for name in self.kw:
+            if not self.getkw(name):
+                print 'What the literal fuck. name is {%s} and value is {%s} and name in self.kw is {%s}' %(name, self.getkw(name), name in self.kw)
             result += name + '=' + self.getkw(name) + ', '
         return result
     
@@ -172,10 +180,8 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
 	    lines = conf.read().splitlines()
             for line in [ [p.strip() for p in l.split(':')] for l in lines if not l.startswith('#') ]:
                 if len(line) < 4: raise shared.CustomError('bad conf grammar error: needs 3 colons per line least in {%s}' %line)
-                if len(line) < 3:
-                    raise shared.CustomError( self.__class__.__name__+' error: Bar Grammar. Require line format wrong: {%s}' % line )
                 for part in [p.strip() for p in line[1].split(',') ]:
-                    if self.parse_if(line[0]) and self.parse_require(part,False) and line[2]=='optional':
+                    if self.parse_if(line[0]) and self.parse_require(part,False):  
                         self.moonphase=2 ; self.parse_require(part,True) ; self.moonphase=1
                     else:
                         self.require.append([line[0],part,line[2],line[3]])
@@ -192,12 +198,9 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         for line in self.require:
             if self.parse_if(line[0]):
                 if line[2] == 'optional':
-                    print self.__class__.__name__+' warning: conflict. Requirement is { %s : %s }. Explanation: { %s }.' % (line[0],line[1],line[3]) 
+                    print self.__class__.__name__+' __init__ round 2 warning: parse_require result in empty set. optional and aborted. Expression is { %s : %s : %s }.' % (line[0],line[1],line[3]) 
                 else:
-                    raise shared.CustomError( self.__class__.__name__+' error: require produces empty set. Requirement is { %s : %s }. Explanation: { %s }.' % (line[0],line[1],line[3]) )
-                if '=' not in line[1]:  ## cariage return. 
-                    print '\n'
-                self.moonphase=2 ; self.parse_require(line[1],True) ; self.moonphase=1
+                    raise shared.CustomError( self.__class__.__name__+' __init__ round 2 error: parse_require still produces empty set. Expression is { %s : %s :  %s }.' % (line[0],line[1],line[3]) )
         #  检验
         ## Entering the last phase. Data structure of self.mod and self.kw simplifies.
 	for modname in set(self.mod.keys())-self.mod_legal_set:
@@ -216,7 +219,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         # make temporary dir
         path = shared.SCRIPT_DIR + '/check_memory'
         if os.path.exists(path):
-            shutil.rmtree(path)
+            raise shared.CustomError('Folder {%s} already exists. Usually do not delete folder to avoid confusion.' %path)
         os.mkdir(path)
         os.chdir(path)
         # alter and write
@@ -242,7 +245,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         for funcname in wayback:
             funcname(self)
         # calculate and read
-        output = subprocess.check_output([shared.SCRIPT_DIR + '/resource/makeparam']).splitlines()
+        output = check_output([shared.SCRIPT_DIR + '/resource/makeparam']).splitlines()
         try:
             self.memory = {}
             self.memory['arraygrid'] = int( next(l for l in output if 'arrays on large grid' in l).split()[7] )
@@ -294,14 +297,21 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         return str(lmaxmix)
 
     def encut(self):
-        return str( max( [ shared.ELEMENTS[symbol].pot_encut for symbol in self.cell.stoichiometry.keys() ] ) + 30 )
+        result = max( [ shared.ELEMENTS[symbol].pot_encut for symbol in self.cell.stoichiometry.keys() ] ) 
+        if result + 140 < 400:  # totally confusing guess, out of perovskites and quantum dots
+            result = 400
+        elif result < 400:
+            result += 140
+        else:
+            result += 50
+        return str(result)
+
 
     def ismear5check(self):
-	try:
-	    kpoints = self.getkw('kpoints').split(' ')
-	    return np.prod([int(x) for x in kpoints]) > 2
-	except (KeyError, AttributeError, ValueError) as KwError:
-	    return False
+        if 'kpoints' not in self.kw:
+            return False
+	kpoints = self.getkw('kpoints').split(' ')
+        return np.prod([int(x) for x in kpoints[:-2] ]) > 2
 
     def kpointscheck(self):
         kpoints = self.getkw('kpoints')
@@ -310,8 +320,9 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         if len(kpoints.split()) != 4 or not kpoints.split()[3].startswith(('G','g','M','m')):
             raise shared.CustomError( self.__class__.__name__ + ' error: bad kpoints format. kpoints should be "kx ky kz monkhorst|G"' )
             return False
-        else:
-            return True
+        if  not kpoints.split()[3].startswith(('G','g')):
+            print self.__class__.__name__ + ' kpointscheck warning: In general, for low-symmetry cells it is sometimes difficult to symmetrize the k-mesh if it is not centered on Gamma. For hexagonal cell, it becomes indeed impossible.'
+        return True
 
     def nkred_divide(self):
 	try:
@@ -363,12 +374,13 @@ class Cell(object):
             lines = lines.splitlines()
         self.name = lines[0]
         self.base = np.float_([ line.split() for line in lines[2:5] ]) * float(lines[1])
-        self.coordinates = np.float_([ line.split() for line in lines[8:] ])
         self.stoichiometry = dict( zip(lines[5].split(), [int(x) for x in lines[6].split()]) )
         if not lines[7].startswith('D'):
             raise shared.CustomError(self.__class__.__name__+'__init__: unsupported POSCAR5 format. Only direct coordinates are supported.')
-        if len(lines) - 8 != sum(self.stoichiometry.values()):
-            raise shared.CustomError(self.__class__.__name__+'__init__: POSCAR5 verification failed. Line count does not match stoichiometry. Blank lines?')
+        self.coordinates = np.float_([ line.split() for line in lines[8:8+sum(self.stoichiometry.values())] ])
+        for coor in self.coordinates:
+            if len(coor)!=3:
+                raise shared.CustomError(self.__class__.__name__+'__init__: bad format. Coordinate line {%s}' %coor)
         # some computation
         self.nion = sum(self.stoichiometry.values())
         self.nelect = sum( [self.stoichiometry[symbol] * shared.ELEMENTS[symbol].pot_zval for symbol in self.stoichiometry] )
@@ -397,13 +409,32 @@ class Cell(object):
 
 
 class Map(object):
+    
+    def rlookup(self, attr_list={}, node_list=[], parent=False, unique=True):
+        l = self.lookup('master').map.traverse()
+        # find the node specifiied by attr_list OR node_list
+        children = set()
+        for n in l:
+            if node_list and n in node_list:
+                children.add(n)
+            if attr_list and all( [getattr(n,key,None)==attr_list[key] for key in attr_list] ):
+                children.add(n)
+        # find their common parents
+        parents = set()
+        for n in l:
+            if getattr(n,'map',None) and all( [x in n.map for x in children] ):
+                parents.add(n)
+        # post-process
+        result = parents if parent else children
+        if unique and len(result)>1:
+            raise shared.CustomError('RLookup: result is not unique. Criterion is: attr_list:{%s} node_list:{%s}' %(attr_list, [x.name for x in node_list]))
+        return next(iter(result)) if unique else result
 
 
     def lookup(self, name):
-
         if name == 'master':
             if name in shared.NODES:   return shared.NODES['master']
-            else: raise shared.CustomError('找不到master，求喂食')
+            else: raise shared.CustomError('找不到master了，求喂食')
         elif name in shared.NODES:
             return shared.NODES.pop(name)
         elif any([x.name == name for x in self._dict]):
@@ -423,11 +454,13 @@ class Map(object):
             return None
 
     def traverse(self):
-        return set([x for x in self]) + set().union( *(x.map.traverse() for x in self if getattr(x,'map',None)) )
-        
+        result = set([x for x in self]) 
+        for n in [x for x in self._dict if getattr(x,'map',None)]:
+            result = result | set( n.map.traverse() )
+        return result
 
 
-    def __init__(self, text):
+    def __init__(self, text=''):
     
         self._dict, self._dict2 = {}, {}
         text = text.split('\n')
@@ -533,15 +566,20 @@ class Vasp(object):
         self.path = path
         self.prev = prev
         if os.path.exists(self.path):
-            print self.__class__.__name__ + ' __init__ warning: path {%s}, content {%s} exists. deleted.' %(self.path, os.listdir(self.path))
-            os.system('trash '+self.path)
-        os.mkdir(self.path)
+            l = [n for n in Map().lookup('master').map.traverse() if getattr(n,'path',None)==self.path and getattr(n,'vasp',None)!=self]
+            if l:
+                print self.__class__.__name__ + ' __init__ warning: path {%s}, content {%s} exists. deleted.' %(self.path, os.listdir(self.path))
+                os.system('trash '+self.path)
+            else:
+                raise shared.CustomError( self.__class.__name__ + ' __init__: path is already take by another node: {%s}' %str(l[0]) )
+        os.makedirs(self.path)
 
     def compute(self):
+        if not os.path.isdir(self.path):
+            os.mkdirs(self.path)
+        os.chdir(self.path)
 
         if not getattr(self, 'wrapper', None):
-            if not os.path.isdir(self.path):
-                os.mkdirs(self.path)
             if self.gen.parse_if('icharg=1|icharg=11'):
                 shutil.copyfile(self.prev.path+'/CHGCAR', self.path+'/CHGCAR')
             if self.gen.parse_if('icharg=0|icharg=10|istart=1|istart=2'):
@@ -568,7 +606,7 @@ class Vasp(object):
             foldername = self.path.split('/')[-2] + '_' + self.path.split('/')[-1] + '_' + hashlib.md5(self.path).hexdigest()
             # write scripts and instructions
             # subfile actually runs vasp. wrapper submits the subfile to system.
-            self.wrapper = '#!/bin/bash\n' ; self.subfile = '' ; instruction = ''
+            self.wrapper = '#!/bin/bash\n' ; self.subfile = '#!/bin/bash\n'
             if self.gen.getkw('platform') == 'dellpc':
                 self.subfile += 'echo $PWD `date` start; echo '+'-'*75+'\n'
                 self.subfile += 'mpiexec.hydra -n %s /home/xzhang1/src/vasp.5.4.1/bin/vasp_%s </dev/null \n' %(totalnumbercores, flavor)
@@ -588,26 +626,37 @@ class Vasp(object):
             if self.subfile:
                 with open('subfile','w') as of_:
                     of_.write(self.subfile)
+                os.system('chmod +x subfile')
             # print self.__class__.__name__ + ': %s ready to be computed. Run wrapper or press y.'
             # if raw_input() == 'y':
             #    os.system(wrapper)
-            print '-'*50 + '\n' + self.__class__.__name__ + ': wrapper generated, waiting for system. Leave me on, or save/load.'
+            print '-'*50 + '\n' + self.__class__.__name__ + ': wrapper generated at   %s   , waiting for system. Leave me on, or save/load.' %self.path
 
         elif not getattr(self,'log',None):
-            if os.path.isfile('vasprun.xml') and os.path.getmtime('vasprun.xml')>os.path.getmtime('wrapper'):
+            try:
+                subprocess.check_output(['pidof','vasp'])
+                vasp_is_running = True
+            except CalledProcessError:
+                vasp_is_running = False
+            if os.path.isfile('vasprun.xml') and os.path.getmtime('vasprun.xml')>os.path.getmtime('wrapper') and (self.gen.parse_if(platform!=dellpc) or not vasp_is_running) :
                 with open('vasprun.xml','r') as if_:
-                    if if_.read.splitlines()[-1] != '</modeling>' and not os.path.isfile('moonphase'):
-                        print(self.__class__.__name__+'compute FYI: Vasp computation at %s went wrong, status code -1. Use moonphase file to overwrite.' %self.path)
-                        with open('moonphase','w') as f:
+                    if if_.read().splitlines()[-1] != '</modeling>' and not os.path.isfile('.moonphase'):
+                        print(self.__class__.__name__+'compute FYI: Vasp computation at %s went wrong, status code -1. Use .moonphase file to overwrite.' %self.path)
+                        with open('.moonphase','w') as f:
                             f.write('-1')
                     else:
-                        l = os.lsdir(self.path)
+                        # write log
+                        l = os.listdir(self.path)
                         filename = [x for x in l if x.startswith(('slurm-','run.log','OSZICAR'))][0]
                         with open(filename,'r') as if_:
                             self.log = if_.read()
+                        # write parent cell if opt
+                        parent_node = Map().rlookup(attr_list={'vasp':self}, node_list=[self.prev], unique=True, parent=True)
+                        with open('CONTCAR','r') as poscar:
+                            setattr(parent_node, 'cell', Cell(poscar.read()))
 
         else:
-            print self.__class__.__name__ + ': calculation already completed at %s. Why are you here?' %self.path
+            print self.__class__.__name__ + ' compute: calculation already completed at %s. Why are you here?' %self.path
 
     @shared.moonphase_wrap
     def moonphase(self):
