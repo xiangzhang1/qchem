@@ -102,8 +102,7 @@ def to_json(n):
                 for dst in n.map._dict[src]:
                     map_json['edges'].append( {'id': id_generator(), 'source': src.name, 'target': dst.name, 'type' : 'arrow', 'color': shared.COLOR_PALETTE[min(src.moonphase(), dst.moonphase())] } )  # beautify
                 for dst in n.map._dict2[src] if src in n.map._dict2 else []:
-                    map_json['edges'].append( {'id': id_generator(), 'source': src.name, 'target': dst.name, 'type' : 'dashed', 'color': shared.COLOR_PALETTE[min(src.moonphase(), dst.moonphase())] } )
-
+                    map_json['edges'].append( {'id': id_generator(), 'source': src.name, 'target': dst.name, 'type' : 'tapered', 'color': shared.COLOR_PALETTE[min(src.moonphase(), dst.moonphase())] } )
             new_json['map'] = map_json
     return new_json
 
@@ -332,7 +331,8 @@ def new_node():
 @login_required
 def del_node():
     j = request.get_json(force=True)
-    shared.NODES['master'].map.lookup(j['cur']).map.del_node(j['name'])
+    node = engine.Map().lookup(j['cur']+'.'+j['name'])
+    node.delete()
 
 @app.route('/reset_node', methods=['POST'])
 @patch_through

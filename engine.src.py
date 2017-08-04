@@ -37,7 +37,9 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
             return None
 	if len(self.kw[kwname])!=1:
             raise shared.CustomError(self.__class__.__name__ + ' getkw error: self.kw[kwname] does not have 1 and only 1 value. wait till that happens and try again.')
-	return next(iter(self.kw[kwname])) #if self.kw[kwname] else None
+        if not isinstance(next(iter(self.kw[kwname])), basestring):
+            raise shared.CustomError(self.__class__.__name__ + ' getkw error: value {%s} of kw {%s} is not string' %(next(iter(self.kw[kwname])), kwname) )
+        return next(iter(self.kw[kwname]))
 
     def evaluate(self,expression):                  # Evaluates expression to string: literal or (funcname)
         if expression.startswith('(') and expression.endswith(')'): 
@@ -156,10 +158,9 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
 
     # main
     # -------------
-    def __init__(self,input_,cell): 
-        self.cell = cell
-        if '\n' in input_:
-            input_ = input_.splitlines()[0]
+    def __init__(self, node): 
+        self.cell = node.cell
+        input_ = node.phase + ', ' + node.property
 	# 读mod, kw
         self.mod = {}
 	self.kw = {}
@@ -167,7 +168,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         self.kw_internal_set = set()
         self.mod_legal_set = set()
         self.moonphase = 0
-        input_ = [p.strip() for p in input_.split(',') ]
+        input_ = [p.strip() for p in input_.split(',') if p.rstrip()]
         for item in input_:
             self.parse_require(item,True)
 	# 执行require
@@ -219,7 +220,8 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         # make temporary dir
         path = shared.SCRIPT_DIR + '/check_memory'
         if os.path.exists(path):
-            raise shared.CustomError('Folder {%s} already exists. Usually do not delete folder to avoid confusion.' %path)
+            #raise shared.CustomError('Folder {%s} already exists. Usually do not delete folder to avoid confusion.' %path)
+            os.system('trash '+path)
         os.mkdir(path)
         os.chdir(path)
         # alter and write
@@ -289,7 +291,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         if self.parse_if('hse|prehf'):
             npar = int(self.getkw('npar'))
             nbands = (nbands + npar -1 ) / npar * npar 
-        return nbands
+        return str(nbands)
 
     def lmaxmix(self):
         b_l_map = { 's': 2, 'p': 2, 'd': 4, 'f': 6, 'g': 8 }
@@ -344,11 +346,11 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
                 base = shared.ELEMENTS[symbol].magmom
                 l[::2] = base
                 l[1::2] = -1 * base
-                magmom += ' '.join(l)
+                magmom += ' ' + ' '.join(l)
         if self.parse_if('spin=fm'):
             for symbol in self.cell.stoichiometry:
                 base = shared.ELEMENTS[symbol].magmom
-                magmom += str( self.cell.stoichiometry[symbol] ) + '*' + str( base )
+                magmom += ' ' + str( self.cell.stoichiometry[symbol] ) + '*' + str( base )
         return magmom
     def ldauu(self):
         ldauu = ''
@@ -404,7 +406,78 @@ class Cell(object):
     '''
             
 
-
+# ARCHAIC
+# The old, broken Poscar. 
+# reads poscar, and generates 3*3*3 mirror for all kinds of purposes.
+class Poscar(object):
+    def __init__(self):
+        self.log = ''
+        #0.parameters:
+        #exclude_dist, exlude_pair, truncate_dist_at, exclude_ele_pair
+        #1.get system parameters
+        f=open("POSCAR","r")
+        self.lines=f.readlines()
+        self.cell=[self.lines[i].split() for i in range(2,5)]
+        self.base=[self.lines[i].split()[0:3] for i in range(8,len(self.lines))]
+        self.elements = self.lines[5].split()
+        self.nelements = len(self.elements)
+        self.atomcounts = np.int_(self.lines[6].split())
+        self.natoms = sum(self.atomcounts)
+        if len(self.base[-1])==0:
+         print 'poscar.py warning: last line of POSCAR should not be empty, watch it! Removing the last line...'
+         self.base.pop(-1)
+        if len(self.base[-1])==0:
+         print 'poscar.py error: last line of POSCAR still empty! '
+         exit(-1)
+        if any(len(x.strip())==0 for x in self.lines):
+            print  'poscar.py error: no empty lines allowed in POSCAR. that is , second half of poscar is not allowed.'
+            exit(-1)
+        self.cell=np.float64(self.cell)
+        self.base=np.float64(self.base)
+        #2.image to supercell
+        self.pos_imaged=[]
+        self.rpos_imaged=[]
+        for i in [0,1,-1]:
+         for j in [0,1,-1]:
+          for k in [0,1,-1]:
+           tmp_image_shift=np.float64([i,j,k])
+           for id_base in range(0,len(self.base)):
+            ele_pos_imaged=tmp_image_shift+self.base[id_base]
+            self.rpos_imaged.append(ele_pos_imaged)
+            ele_pos_imaged=np.dot(ele_pos_imaged,self.cell)
+            self.pos_imaged.append(ele_pos_imaged)
+        self.pos_imaged=np.float64(self.pos_imaged)
+        self.rpos_imaged=np.float64(self.rpos_imaged)
+        self.pos_original=np.dot(self.base,self.cell)
+        self.pos_original=np.float64(self.pos_original)
+        #3.calculate distances
+        #calculate dist_qui. this is the quintuplet [id1_pos_imaged, id2_pos_imaged, id1_base, id2_base, tmp_dist]
+        self.dist_qui=[]
+        changefromto=[]
+        for id1_base in range(0,len(self.base)):
+         for id2_base in range(0,len(self.base)):
+          for id2_pos_imaged in [id2_base+tmp_image_shift*len(self.base) for tmp_image_shift in range(0,27)]:
+           tmp_dist=np.linalg.norm(self.pos_original[id1_base]-self.pos_imaged[id2_pos_imaged])
+           if abs(tmp_dist)<0.1:
+            continue
+           # add 0.4 to distances when necessary, to separate say Pb from S.
+           # i is the index of first atom, starting from 0. j is that of the second. k is the index of imaged second atom.
+           #if i>1 and j>1:
+            #dist=dis`t+0.4
+           id1_pos_imaged=id1_base
+           self.dist_qui.append([id1_pos_imaged,id2_pos_imaged,id1_base,id2_base,tmp_dist])
+        self.dist_qui=np.float64(self.dist_qui)
+        self.dist_qui=self.dist_qui[np.argsort(self.dist_qui[:,4])]
+        #get the excluded distances using exclude_ele_pair
+        self.exclude_pairs = []
+        self.exclude_dists = []
+        for ele_exclude_pair in self.exclude_pairs:
+            ele_exclude_pair=np.float64(ele_exclude_pair)
+            exclude_quis=[ele_dist_qui for ele_dist_qui in self.dist_qui if ele_dist_qui[2]==ele_exclude_pair[0] and ele_dist_qui[3]==ele_exclude_pair[1]]
+            if exclude_quis != []:
+                self.exclude_dists.append(exclude_quis[0][4])
+        self.exclude_dists = np.float64(self.exclude_dists)
+ 
 # ===========================================================================  
 
 
@@ -493,20 +566,20 @@ class Map(object):
         else:'''
             self._dict[node] = []
 
-    def del_node(self, name):
-        '''if [n for n in self._dict if n.name==name]:
-            node = [n for n in self._dict if n.name==name][0]
-        else:
-            raise shared.CustomError(__self.__class__.__name__ + 'del_node: name %s not in node %s' %(name, self.name))
-        for m in (self._dict, self._dict2):'''
+    def del_node(self, node):
+        #if [n for n in self._dict if n.name==name]:
+        #    node = [n for n in self._dict if n.name==name][0]
+        #else:
+        #    raise shared.CustomError(self.__class__.__name__ + ' del_node error: node {%s} not found in self. Since we are deleting by name, we had better be sure.' %name)
+        for m in (self._dict, self._dict2):
             m.pop(node,None)
-            '''for n in m:
-                m[n] = [x for x in m[n] if x != node]'''
+            for n in m:
+                m[n] = [x for x in m[n] if x != node]
 
     def add_edge(self, src_name, dst_name):
         '''src = self.lookup(src_name)
         dst = self.lookup(dst_name)
-        if src in self._dict[dst] or dst in self._dict2 and src in self._dict2[dst]:
+        if src in self._dict[dst] or (dst in self._dict2 and src in self._dict2[dst]):
             raise shared.CustomError(self.__class__.__name__ + ' add_edge: dst %s -> src %s link exists' %(dst_name, src_name))
         if dst in self._dict[src]:
             self._dict[src].remove(dst)
@@ -515,7 +588,7 @@ class Map(object):
             self._dict2[src].remove(dst)
             self._dict[src] = self._dict[src]+[dst] if src in self._dict else [dst]
         else:'''
-            self._dict[src] = [dst]
+            self._dict[src] += [dst]
 
     def del_edge(self, src_name, dst_name):
         '''src = self.lookup(src_name)
@@ -560,31 +633,26 @@ class Map(object):
 
 class Vasp(object):
 
-    def __init__(self, gen, cell, path, prev):
-        self.gen = gen
-        self.cell = cell
-        self.path = path
-        self.prev = prev
-        if os.path.exists(self.path):
-            l = [n for n in Map().lookup('master').map.traverse() if getattr(n,'path',None)==self.path and getattr(n,'vasp',None)!=self]
-            if l:
-                print self.__class__.__name__ + ' __init__ warning: path {%s}, content {%s} exists. deleted.' %(self.path, os.listdir(self.path))
-                os.system('trash '+self.path)
-            else:
-                raise shared.CustomError( self.__class.__name__ + ' __init__: path is already take by another node: {%s}' %str(l[0]) )
-        os.makedirs(self.path)
+    def __init__(self, node):
+        self.gen = node.gen
+        self.cell = node.cell
+        self.path = node.path
+        self.prev = node.prev
 
     def compute(self):
-        if not os.path.isdir(self.path):
-            os.mkdirs(self.path)
-        os.chdir(self.path)
 
         if not getattr(self, 'wrapper', None):
+            if os.path.exists(self.path):
+                raise shared.CustomError( self.__class__.__name__ + ' __init__: path {%s} already exists. enforcing strictly, you need to remove it manually.' %self.path )
+            os.makedirs(self.path)
+            os.chdir(self.path)
             if self.gen.parse_if('icharg=1|icharg=11'):
                 shutil.copyfile(self.prev.path+'/CHGCAR', self.path+'/CHGCAR')
             if self.gen.parse_if('icharg=0|icharg=10|istart=1|istart=2'):
                 shutil.copyfile(self.prev.path+'/WAVECAR', self.path+'/WAVECAR')
-            # write incar etc
+            if self.prev.gen.parse_if('opt') and os.path.isfile(self.prev.path+'CONTCAR'):
+                shutil.copyfile('CONTCAR','POSCAR')
+            # write incar etc. Relies on inheritance.
             os.chdir(self.path)
             self.gen.write_incar_kpoints()
             with open('POSCAR','w') as f:
@@ -630,30 +698,22 @@ class Vasp(object):
             # print self.__class__.__name__ + ': %s ready to be computed. Run wrapper or press y.'
             # if raw_input() == 'y':
             #    os.system(wrapper)
-            print '-'*50 + '\n' + self.__class__.__name__ + ': wrapper generated at   %s   , waiting for system. Leave me on, or save/load.' %self.path
+            print '-'*50 + '\n' + self.__class__.__name__ + ': wrapper generated at   %s   , waiting for filesystem update. ' %self.path
 
-        elif not getattr(self,'log',None):
-            try:
-                subprocess.check_output(['pidof','vasp'])
-                vasp_is_running = True
-            except CalledProcessError:
-                vasp_is_running = False
-            if os.path.isfile('vasprun.xml') and os.path.getmtime('vasprun.xml')>os.path.getmtime('wrapper') and (self.gen.parse_if(platform!=dellpc) or not vasp_is_running) :
-                with open('vasprun.xml','r') as if_:
-                    if if_.read().splitlines()[-1] != '</modeling>' and not os.path.isfile('.moonphase'):
-                        print(self.__class__.__name__+'compute FYI: Vasp computation at %s went wrong, status code -1. Use .moonphase file to overwrite.' %self.path)
-                        with open('.moonphase','w') as f:
-                            f.write('-1')
-                    else:
-                        # write log
-                        l = os.listdir(self.path)
-                        filename = [x for x in l if x.startswith(('slurm-','run.log','OSZICAR'))][0]
-                        with open(filename,'r') as if_:
-                            self.log = if_.read()
-                        # write parent cell if opt
-                        parent_node = Map().rlookup(attr_list={'vasp':self}, node_list=[self.prev], unique=True, parent=True)
-                        with open('CONTCAR','r') as poscar:
-                            setattr(parent_node, 'cell', Cell(poscar.read()))
+        elif not getattr(self,'log',None):  
+            os.chdir(self.path)
+            # moonphase=1. should not be called unless moonphase() decides to report success and further compute.
+            # write log
+            l = os.listdir(self.path)
+            filename = [x for x in l if x.startswith(('slurm-','run.log','OSZICAR'))][0]
+            with open(filename,'r') as if_:
+                self.log = if_.read()
+            # write parent cell if opt
+            parent_node = Map().rlookup(attr_list={'vasp':self}, node_list=[self.prev], unique=True, parent=True)
+            with open('CONTCAR','r') as infile:
+                text = infile.read()
+                setattr(parent_node, 'cell', Cell(text))
+                setattr(self, 'optimized_cell', Cell(text))
 
         else:
             print self.__class__.__name__ + ' compute: calculation already completed at %s. Why are you here?' %self.path
@@ -662,9 +722,27 @@ class Vasp(object):
     def moonphase(self):
         if not getattr(self, 'wrapper', None):
             return 0
-        elif not getattr(self, 'log', None):
-            self.compute()
-            if not getattr(self, 'log', None):  return 1
+        elif not getattr(self, 'log', None):    
+            # implements the choke mechanism. instead of reporting computable, report choke. unless detects computation complete, then report success/fail
+            if not os.path.exists(self.path):
+                return -1
+                print self.__class__.__name__ + ' moonphase: FYI status is -1 because path doesnt exist'
+            os.chdir(self.path)
+            try:
+                pgrep_output = check_output(['pgrep','vasp'])
+                vasp_is_running = pgrep_output.strip() != ''
+            except CalledProcessError:
+                vasp_is_running = False
+            if os.path.isfile('vasprun.xml') and os.path.getmtime('vasprun.xml')>os.path.getmtime('wrapper') and (self.gen.parse_if('platform!=dellpc') or not vasp_is_running) :
+                with open('vasprun.xml','r') as if_:
+                    if if_.read().splitlines()[-1] != '</modeling>' and not os.path.isfile('.moonphase'):
+                        #print(self.__class__.__name__+'compute FYI: Vasp computation at %s went wrong, status code -1. Use .moonphase file to overwrite.' %self.path)
+                        return -1
+                    else:
+                        self.compute()
+                        return 2
+            else:
+                return 1
         else:
             return 2
 
@@ -682,6 +760,8 @@ class Vasp(object):
             shutil.rmtree(self.path)
 
     '''def __str__(self):
+        if getattr(self, 'optimized_cell', None):
+            return '# optimized_cell:\n' + str(self.optimized_cell) + self.log
         if getattr(self, 'log', None):
             return self.log
         else:
@@ -692,13 +772,9 @@ class Vasp(object):
 
 class Dummy(object):
 
-    def __init__(self, gen, cell, path, prev):
-        self.gen = gen
-        self.cell = cell
-        self.path = path
-        self.prev = prev
+    def __init__(self, node):
+        self.path = node.path
         os.mkdir(self.path)
-
 
     def compute(self):
         
@@ -717,27 +793,34 @@ class Dummy(object):
             return 0
         return 2
 
+    def delete(self):
+        if os.path.isdir(self.path):
+            shutil.rmtree(self.path)
+
 
 #=========================================================================== 
 
 # Electron
 class Electron(object):
-    def __init__(self, gen, path, prev):
-        self.gen = gen
-        self.path = path
-        self.prev = prev
+    def __init__(self, node):
+        self.gen = node.gen
+        self.path = node.path
+        self.prev = node.prev
 
     def compute(self):
         if not getattr(self, 'log', None):
+            is os.path.isdir(self.path):
+                raise shared.CustomError(self.__class__.__name__ + ' compute: self.path {%s} taken' %self.path)
             shutil.copytree(self.prev.path, self.path)
             if self.gen.parse_if('cell'):
-                self.poscar = Poscar()  # obviously can be improved
+                with open('POSCAR','r') as infile:
+                    self.cell = Cell(infile.read())
             if self.gen.parse_if('grepen'):
                 self.grepen = Grepen()
             if self.gen.parse_if('dos'):
                 self.dos = Dos(self.grepen)
             if self.gen.parse_if('charge'):
-                self.charge = Charge(self.poscar, self.grepen, self.dos)
+                self.charge = Charge(self.cell, self.grepen, self.dos)
             if self.gen.parse_if('bands'):
                 self.bands = Bands(self.grepen)
             if self.gen.parse_if('errors'):
@@ -759,77 +842,7 @@ class Electron(object):
                 result += str( getattr(getattr(self,name),'log') )
         return result'''
     
-
-# reads poscar, and generates 3*3*3 mirror for all kinds of purposes.
-class Poscar(object):
-    def __init__(self):
-        self.log = ''
-        #0.parameters:
-        #exclude_dist, exlude_pair, truncate_dist_at, exclude_ele_pair
-        #1.get system parameters
-        f=open("POSCAR","r")
-        self.lines=f.readlines()
-        self.cell=[self.lines[i].split() for i in range(2,5)]
-        self.base=[self.lines[i].split()[0:3] for i in range(8,len(self.lines))]
-        self.elements = self.lines[5].split()
-        self.nelements = len(self.elements)
-        self.atomcounts = np.int_(self.lines[6].split())
-        self.natoms = sum(self.atomcounts)
-        if len(self.base[-1])==0:
-         print 'poscar.py warning: last line of POSCAR should not be empty, watch it! Removing the last line...'
-         self.base.pop(-1)
-        if len(self.base[-1])==0:
-         print 'poscar.py error: last line of POSCAR still empty! '
-         exit(-1)
-        if any(len(x.strip())==0 for x in self.lines):
-            print  'poscar.py error: no empty lines allowed in POSCAR. that is , second half of poscar is not allowed.'
-            exit(-1)
-        self.cell=np.float64(self.cell)
-        self.base=np.float64(self.base)
-        #2.image to supercell
-        self.pos_imaged=[]
-        self.rpos_imaged=[]
-        for i in [0,1,-1]:
-         for j in [0,1,-1]:
-          for k in [0,1,-1]:
-           tmp_image_shift=np.float64([i,j,k])
-           for id_base in range(0,len(self.base)):
-            ele_pos_imaged=tmp_image_shift+self.base[id_base]
-            self.rpos_imaged.append(ele_pos_imaged)
-            ele_pos_imaged=np.dot(ele_pos_imaged,self.cell)
-            self.pos_imaged.append(ele_pos_imaged)
-        self.pos_imaged=np.float64(self.pos_imaged)
-        self.rpos_imaged=np.float64(self.rpos_imaged)
-        self.pos_original=np.dot(self.base,self.cell)
-        self.pos_original=np.float64(self.pos_original)
-        #3.calculate distances
-        #calculate dist_qui. this is the quintuplet [id1_pos_imaged, id2_pos_imaged, id1_base, id2_base, tmp_dist]
-        self.dist_qui=[]
-        changefromto=[]
-        for id1_base in range(0,len(self.base)):
-         for id2_base in range(0,len(self.base)):
-          for id2_pos_imaged in [id2_base+tmp_image_shift*len(self.base) for tmp_image_shift in range(0,27)]:
-           tmp_dist=np.linalg.norm(self.pos_original[id1_base]-self.pos_imaged[id2_pos_imaged])
-           if abs(tmp_dist)<0.1:
-            continue
-           # add 0.4 to distances when necessary, to separate say Pb from S.
-           # i is the index of first atom, starting from 0. j is that of the second. k is the index of imaged second atom.
-           #if i>1 and j>1:
-            #dist=dis`t+0.4
-           id1_pos_imaged=id1_base
-           self.dist_qui.append([id1_pos_imaged,id2_pos_imaged,id1_base,id2_base,tmp_dist])
-        self.dist_qui=np.float64(self.dist_qui)
-        self.dist_qui=self.dist_qui[np.argsort(self.dist_qui[:,4])]
-        #get the excluded distances using exclude_ele_pair
-        self.exclude_pairs = []
-        self.exclude_dists = []
-        for ele_exclude_pair in self.exclude_pairs:
-            ele_exclude_pair=np.float64(ele_exclude_pair)
-            exclude_quis=[ele_dist_qui for ele_dist_qui in self.dist_qui if ele_dist_qui[2]==ele_exclude_pair[0] and ele_dist_qui[3]==ele_exclude_pair[1]]
-            if exclude_quis != []:
-                self.exclude_dists.append(exclude_quis[0][4])
-        self.exclude_dists = np.float64(self.exclude_dists)
-   
+  
 class Grepen(object):
     def __init__(self):
         self.log=''
@@ -1089,21 +1102,19 @@ class Bands(object):
         
 # executes population analysis
 class Charge(object):
-    def __init__(self,poscar,grepen,dos):  
+    def __init__(self, cell, grepen, dos):  
         self.log = ''
         self.log += '*' * 72 + '\n'
         # sanity check
         if len(dos.site_dos) < 2 or len(dos.site_dos[1]) < 10:
-            print 'charge.py error: site-project DOSCAR too short.'
-            sys.exit(1)
+            raise shared.CustomError(self.__class__.__name__ +' __init__: site-project DOSCAR too short.')
         if len(dos.site_dos[1][0]) not in [10,19,37]:
-            print 'charge.py error: we only support up-to-and-only-d compound. fixing is easy. exiting.'
-            sys.exit(1)
+            raise shared.CustomError(self.__class__.__name__ +' __init__: we only support up-to-and-only-d compound. fixing is easy. exiting.')
 
         # let's start!
         # pristine electronic configuration
         self.log += 'GS electron configurations for elements in POSCAR\n'
-        for element in poscar.elements:
+        for element in cell.stoichiometry:
             self.log += element + ': ' + shared.ELEMENTS[element].eleconfig
 
         # integrating site-projected pdos
@@ -1119,8 +1130,7 @@ class Charge(object):
             spins = ['tot']
         orbitals = 's p_y p_z p_x d_xy d_yz d_z2 d_xz d_x^2-y^2'.split()
         
-        for idx_element in range(0,len(poscar.elements)):
-            element=poscar.elements[idx_element]
+        for symbol in cell.stoichiometry:
             for idx_atom in range(sum(poscar.atomcounts[0:idx_element]),sum(poscar.atomcounts[0:idx_element+1])):
                 for idx_spin in range(0,self.nspin):
                     self.log += element+str(idx_atom)+'_'+spins[idx_spin]+'\t'
@@ -1189,7 +1199,7 @@ class Errors(object):
     def __init__(self,Agrepen,Ados,Abands,Bgrepen=None,Bdos=None,Bbands=None):
         
         self.log = '*' * 75 + '\n'
-        ## self.rules in dirA
+        ## self.rules (aka error types) in dirA
         self.rules = []
         self.de = 0
         if Agrepen.ismear == 0:

@@ -87,10 +87,20 @@ class Node(object):
 
     '''def reset(self):
         # reset moonphase =1. remove all non-readable attributes.
+        # remove engine
+        if getattr(self, 'gen', None):
+            engine_name = self.gen.getkw('engine')
+            engine_ = getattr(self,self.gen.getkw('engine'),None)
+            if getattr(self,self.gen.getkw('engine'),None):
+                getattr(self,self.gen.getkw('engine'),None).delete()
+        # remove all
         for varname in vars(self).keys():
             if varname not in shared.INPUT_ATTR_LIST:
                 delattr(self, varname)
                 print self.__class__.__name__ + ' reset: attribute {%s} deleted' %varname
+        filename = self.path + '/.moonphase'
+        if os.path.isfile(filename):
+            os.remove(filename)
     '''
 
 
@@ -151,7 +161,7 @@ class Node(object):
             if not getattr(self, 'path', None):
                 self.path = raw_input('Provide path for this node: \n %s \n >:' %str(self))    # counterpart implemented in sigmajs
             if not getattr(self, 'gen', None):
-                self.gen = engine.Gen(self.phase + ', ' + self.property, self.cell)
+                self.gen = engine.Gen(self)
             if not getattr(self, self.gen.getkw('engine'), None):
                 engine_class = getattr(engine, self.gen.getkw('engine').title())
                 engine_ = engine_class(self)
@@ -162,11 +172,13 @@ class Node(object):
             raise shared.CustomError(self.__class___.__name__ + ': compute: Node %s is not computable.' %self.name)
 
     def delete(self):
+        if getattr(self, 'gen', None):
             engine_name = self.gen.getkw('engine')
             engine_ = getattr(self,self.gen.getkw('engine'),None)
             if getattr(self,self.gen.getkw('engine'),None):
                 getattr(self,self.gen.getkw('engine'),None).delete()
-            for node in engine.Map().lookup('master').map.traverse():
-                node.map.pop(self)
+        for node in engine.Map().lookup('master').map.traverse():
+            if getattr(node,'map',None):
+                node.map.del_node(self)
     '''
 
