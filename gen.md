@@ -46,6 +46,7 @@ functions
 		长度为1则合法，不在合法列表内则应无视，其他则为不唯一并报错
 
 
-Grammar
+Extras
 -------
 Input grammar is require grammar.
+Use npar and kpar, not ncore.

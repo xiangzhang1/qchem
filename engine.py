@@ -68,11 +68,11 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
                 result = operation_map[operator](kwvalset,kwvalset)
             if run and bool(result):        
                 self.kw[kwname] = result
-                '''if shared.DEBUG: print self.__class__.__name__ + ' parse_require: gave kw {%s} value {%s}' %(kwname,result)'''
+                if shared.DEBUG: print self.__class__.__name__ + ' parse_require: gave kw {%s} value {%s}' %(kwname,result)
             if run and not bool(result):
                 raise shared.CustomError( self.__class__.__name__ + ' parse_require run=True error: parse_require results in empty set: kwname {%s}, value {%s}, required value {%s}' %(kwname, self.kw[kwname] if kwname in self.kw else 'null', kwvalset) )
-            '''if not run and not bool(result) and shared.DEBUG:
-                print self.__class__.__name__ + ' parse_require warning: parse_require results in empty set, deferred: kwname {%s}, value {%s}, required_value {%s}' %(kwname, self.kw[kwname] if kwname in self.kw else 'null', kwvalset) '''
+            if not run and not bool(result) and shared.DEBUG:
+                print self.__class__.__name__ + ' parse_require warning: parse_require results in empty set, deferred: kwname {%s}, value {%s}, required_value {%s}' %(kwname, self.kw[kwname] if kwname in self.kw else 'null', kwvalset) 
             if self.moonphase>0:    self.kw_legal_set.add(kwname)
             return bool(result)
         elif 'internal' in expression:      ## parse kwname internal
@@ -91,13 +91,13 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
             return bool(result)
         else:                               ## parse if expression
             result = self.parse_if(expression)
-            '''if not run and not result and shared.DEBUG:
-                    print self.__class__.__name__ + ' parse_require warning: parse_require results in empty set, deferred: expression {%s}' %(expression)'''
+            if not run and not result and shared.DEBUG:
+                    print self.__class__.__name__ + ' parse_require warning: parse_require results in empty set, deferred: expression {%s}' %(expression)
             return result
 
     def parse_if(self,expression):  # recursively evaluate complex if condition. accepts empty expression.
-        '''if ',' in expression:
-            raise shared.CustomError( self.__class__.__name__ + ' parse_if error: "," in if expression {%s} in engine.gen.*.conf. Did you mean to use "&"?' %expression)'''
+        if ',' in expression:
+            raise shared.CustomError( self.__class__.__name__ + ' parse_if error: "," in if expression {%s} in engine.gen.*.conf. Did you mean to use "&"?' %expression)
         operation_map = {
                 '&&'  :  lambda x,y : x and y,
                 '||'  :  lambda x,y : x or y,
@@ -150,8 +150,8 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
             if self.parse_if(name):
                 result += name + ', '
         for name in self.kw:
-            '''if not self.getkw(name):
-                print 'What the literal fuck. name is {%s} and value is {%s} and name in self.kw is {%s}' %(name, self.getkw(name), name in self.kw)'''
+            if not self.getkw(name):
+                print 'What the literal fuck. name is {%s} and value is {%s} and name in self.kw is {%s}' %(name, self.getkw(name), name in self.kw)
             result += name + '=' + self.getkw(name) + ', '
         return result
     
@@ -180,7 +180,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
 	with open(shared.SCRIPT_DIR + '/engine.gen.' + engine_name + '.conf') as conf:
 	    lines = conf.read().splitlines()
             for line in [ [p.strip() for p in l.split(':')] for l in lines if not l.startswith('#') ]:
-                '''if len(line) < 4: raise shared.CustomError('bad conf grammar error: needs 3 colons per line least in {%s}' %line)'''
+                if len(line) < 4: raise shared.CustomError('bad conf grammar error: needs 3 colons per line least in {%s}' %line)
                 for part in [p.strip() for p in line[1].split(',') ]:
                     if self.parse_if(line[0]) and self.parse_require(part,False):  
                         self.moonphase=2 ; self.parse_require(part,True) ; self.moonphase=1
@@ -385,7 +385,7 @@ class Cell(object):
         self.nion = sum(self.stoichiometry.values())
         self.nelect = sum( [self.stoichiometry[symbol] * shared.ELEMENTS[symbol].pot_zval for symbol in self.stoichiometry] )
 
-    '''def __str__(self):
+    def __str__(self):
         result = self.name+'\n'
         result += '1\n'
         for line in self.base:
@@ -401,7 +401,7 @@ class Cell(object):
         result = str(self)
         result = '\n'.join( [x for i,x in enumerate(result.splitlines()) if i!=5] )
         return result
-    '''
+    
             
 
 # ARCHAIC
@@ -503,7 +503,7 @@ class Map(object):
 
 
     def lookup(self, name):
-        '''if name == 'master':
+        if name == 'master':
             if name in shared.NODES:   return shared.NODES['master']
             else: raise shared.CustomError('找不到master了，求喂食')
         elif name in shared.NODES:
@@ -513,16 +513,16 @@ class Map(object):
         elif '.' in name:
             return self.lookup('.'.join(name.split('.')[:-1])).map.lookup(name.split('.')[-1])
         else:
-            raise shared.CustomError(self.__class__.__name__ + ' lookup: Node %s not found' %name)'''
+            raise shared.CustomError(self.__class__.__name__ + ' lookup: Node %s not found' %name)
 
     def prev(self, node):
-        '''l = [x for x in self._dict if node in self._dict[x]]
+        l = [x for x in self._dict if node in self._dict[x]]
         if len(l) > 1: 
             raise shared.CustomError(self.__class__.__name__ + ' prev: %s has more than 1 prev node. (wtf?)' %name)
         elif len(l) == 1:
             return l[0]
         else:
-            return None'''
+            return None
 
     def traverse(self):
         result = set([x for x in self]) 
@@ -533,13 +533,13 @@ class Map(object):
 
     def __init__(self, text=''):
     
-        '''self._dict, self._dict2 = {}, {}
-        text = text.split('\n')'''
+        self._dict, self._dict2 = {}, {}
+        text = text.split('\n')
 
         # src -> dst
         for line in text:
             if not line.rstrip():   continue
-            '''line = [x.strip() for x in re.split('(->|-->)', line)]'''
+            line = [x.strip() for x in re.split('(->|-->)', line)]
             if len(line) == 1:
                 src = self.lookup(line[0])
                 if src not in self._dict:   self._dict[src] = []
@@ -549,8 +549,8 @@ class Map(object):
                     self._dict[src] = []
                 if dst not in self._dict:   
                     self._dict[dst] = []
-                '''m = self._dict if line[1]=='->' else self._dict2
-                m[src] = [dst] if src not in m else m[src]+[dst]'''
+                m = self._dict if line[1]=='->' else self._dict2
+                m[src] = [dst] if src not in m else m[src]+[dst]
             else:
                 raise shared.CustomError(self.__class__.__name__ + '__init__: src -> dst. 3 parts needed')
 
@@ -559,9 +559,9 @@ class Map(object):
         # inherit is done on compute
         # same name / same node exceptions are not allowed.
         # we're moving references around, so renaming is bad. instead, use 'duplicate' command intead.
-        '''if any([x.name==node.name for x in self._dict]):
+        if any([x.name==node.name for x in self._dict]):
             raise shared.CustomError(self.__class__.__name__+' add_node: node with name {%s} already in self._dict. We\'re moving references around, so auto-renaming is bad. Use duplicate if only input is needed.' %node.name)
-        else:'''
+        else:
             self._dict[node] = []
 
     def del_node(self, node):
@@ -575,7 +575,7 @@ class Map(object):
                 m[n] = [x for x in m[n] if x != node]
 
     def add_edge(self, src_name, dst_name):
-        '''src = self.lookup(src_name)
+        src = self.lookup(src_name)
         dst = self.lookup(dst_name)
         if src in self._dict[dst] or (dst in self._dict2 and src in self._dict2[dst]):
             raise shared.CustomError(self.__class__.__name__ + ' add_edge: dst %s -> src %s link exists' %(dst_name, src_name))
@@ -585,11 +585,11 @@ class Map(object):
         elif src in self._dict2 and dst in self._dict2[src]:
             self._dict2[src].remove(dst)
             self._dict[src] = self._dict[src]+[dst] if src in self._dict else [dst]
-        else:'''
+        else:
             self._dict[src] += [dst]
 
     def del_edge(self, src_name, dst_name):
-        '''src = self.lookup(src_name)
+        src = self.lookup(src_name)
         dst = self.lookup(dst_name)
         if src in self._dict[dst] or dst in self._dict2 and src in self._dict2[dst]:
             raise shared.CustomError(self.__class__.__name__ + ' del_edge: dst %s -> src %s link exists' %(dst_name, src_name))
@@ -598,7 +598,7 @@ class Map(object):
         elif dst in self._dict2[src]:
             self._dict2[src].remove(dst)
         else:
-            raise shared.CustomError(self.__class__.__name__ + ' del_edge: no edge to delete')'''
+            raise shared.CustomError(self.__class__.__name__ + ' del_edge: no edge to delete')
 
     def __str__(self):
         result = ''
@@ -757,13 +757,13 @@ class Vasp(object):
         if os.path.isdir(self.path):
             shutil.rmtree(self.path)
 
-    '''def __str__(self):
+    def __str__(self):
         if getattr(self, 'optimized_cell', None):
             return '# optimized_cell:\n' + str(self.optimized_cell) + self.log
         if getattr(self, 'log', None):
             return self.log
         else:
-            return 'moonphase is not 2, nothing here'   '''
+            return 'moonphase is not 2, nothing here'   
 
 
 #=========================================================================== 
@@ -851,12 +851,12 @@ class Electron(object):
     def moonphase(self):
         return 2 if getattr(self, 'log', None) else 0
 
-    '''def __str__(self):
+    def __str__(self):
         if getattr(self, 'log', None):
             return self.log
         else:
             return 'moonphase is not 2, nothing here'
-            '''
+            
             
     
   

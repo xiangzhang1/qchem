@@ -1,0 +1,346 @@
+ * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 261-359-403
+127.0.0.1 - - [09/Aug/2017 15:48:37] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 15:48:38] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 15:48:38] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 15:48:38] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 15:48:38] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 15:48:39] "POST /request_ HTTP/1.1" 200 -
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+ * Serving Flask app "gui"
+ * Forcing debug mode on
+ * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 261-359-403
+ * Serving Flask app "gui"
+ * Forcing debug mode on
+ * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 261-359-403
+127.0.0.1 - - [09/Aug/2017 16:31:16] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 16:31:17] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 16:31:17] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 16:31:17] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 16:31:17] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 16:31:18] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 16:58:17] "OPTIONS /get_docs_list HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 16:58:17] "GET /get_docs_list HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 16:58:18] "OPTIONS /open_docs HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 16:58:18] "POST /open_docs HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 16:58:21] "POST /open_docs HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 16:58:32] "OPTIONS /open_docs HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 16:58:32] "POST /open_docs HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 16:58:41] "OPTIONS /open_docs HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 16:58:41] "POST /open_docs HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 17:09:36] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 17:09:36] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 17:09:36] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 17:09:36] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 17:09:36] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 17:09:37] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 17:12:23] "GET /hello_world HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 17:12:23] "GET /favicon.ico HTTP/1.1" 404 -
+127.0.0.1 - - [09/Aug/2017 17:15:12] "OPTIONS /get_dumps_list HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 17:15:12] "GET /get_dumps_list HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 17:15:22] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 17:15:22] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 17:15:22] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 17:15:22] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 17:15:22] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 17:15:23] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 17:34:26] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 17:34:26] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 17:34:27] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 17:34:27] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 17:34:27] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 17:34:28] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 17:50:23] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 17:50:23] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 17:50:23] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 17:50:23] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 17:50:23] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 17:50:24] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:00:00] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:00:00] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:00:00] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:00:00] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:00:00] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:00:01] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:03:27] "GET / HTTP/1.1" 404 -
+127.0.0.1 - - [09/Aug/2017 18:03:27] "GET /favicon.ico HTTP/1.1" 404 -
+127.0.0.1 - - [09/Aug/2017 18:07:19] "GET /hello_world HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:08:22] "GET / HTTP/1.1" 404 -
+127.0.0.1 - - [09/Aug/2017 18:08:22] "GET /favicon.ico HTTP/1.1" 404 -
+127.0.0.1 - - [09/Aug/2017 18:08:29] "GET /hello_world HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:15:21] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:15:21] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:15:21] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:15:21] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:15:21] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:15:22] "POST /request_ HTTP/1.1" 200 -
+ * Detected change in '/home/xzhang1/src/qchem/qchem/gui.py', reloading
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 261-359-403
+127.0.0.1 - - [09/Aug/2017 18:18:02] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:18:02] "GET /favicon.ico HTTP/1.1" 404 -
+127.0.0.1 - - [09/Aug/2017 18:49:33] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:49:33] "GET /favicon.ico HTTP/1.1" 404 -
+127.0.0.1 - - [09/Aug/2017 18:50:03] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:50:19] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:50:20] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:50:21] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:51:16] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:54:59] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:54:59] "GET /favicon.ico HTTP/1.1" 404 -
+127.0.0.1 - - [09/Aug/2017 18:55:03] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:55:03] "GET /favicon.ico HTTP/1.1" 404 -
+127.0.0.1 - - [09/Aug/2017 18:55:07] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:55:07] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:55:07] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:55:08] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:55:08] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:55:08] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:55:08] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:55:08] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:55:08] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:55:09] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:55:24] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:55:24] "GET /favicon.ico HTTP/1.1" 404 -
+127.0.0.1 - - [09/Aug/2017 18:57:30] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:57:30] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:57:31] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:57:31] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:57:31] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:57:32] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:59:11] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:59:11] "GET /favicon.ico HTTP/1.1" 404 -
+127.0.0.1 - - [09/Aug/2017 18:59:31] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 18:59:31] "GET /favicon.ico HTTP/1.1" 404 -
+127.0.0.1 - - [09/Aug/2017 18:59:31] "GET /favicon.ico HTTP/1.1" 404 -
+127.0.0.1 - - [09/Aug/2017 19:01:35] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:01:35] "OPTIONS /load_sigma HTTP/1.1" 200 -
+ * Detected change in '/home/xzhang1/src/qchem/qchem/gui.py', reloading
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 261-359-403
+127.0.0.1 - - [09/Aug/2017 19:02:56] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:02:56] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:02:56] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:02:56] "GET /load_sigma HTTP/1.1" 403 -
+127.0.0.1 - - [09/Aug/2017 19:02:56] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:02:56] "POST /request_ HTTP/1.1" 403 -
+127.0.0.1 - - [09/Aug/2017 19:04:06] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:04:06] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:04:06] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:04:06] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:04:07] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:04:08] "POST /request_ HTTP/1.1" 200 -
+ * Detected change in '/home/xzhang1/src/qchem/qchem/gui.py', reloading
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 261-359-403
+ * Detected change in '/home/xzhang1/src/qchem/qchem/gui.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 261-359-403
+127.0.0.1 - - [09/Aug/2017 19:06:45] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:06:45] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:06:45] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:06:45] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:06:45] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:06:46] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:21:58] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:21:58] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:21:58] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:21:58] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:21:58] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:21:59] "POST /request_ HTTP/1.1" 200 -
+ * Detected change in '/home/xzhang1/src/qchem/qchem/gui.py', reloading
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 261-359-403
+127.0.0.1 - - [09/Aug/2017 19:33:01] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:33:01] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:33:01] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:33:01] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:33:01] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:33:02] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:38:26] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:38:26] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:38:26] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:38:27] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:38:27] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:38:28] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:38:34] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:38:34] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:38:34] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:38:34] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:38:34] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:38:35] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:39:42] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:39:42] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:39:42] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:39:42] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:39:42] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:39:42] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:39:42] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:39:42] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:39:42] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:39:42] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:39:43] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:39:43] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:39:44] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:39:45] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:39:45] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:39:45] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:39:45] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:39:45] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:42:46] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:42:46] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:42:46] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:42:46] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:42:46] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:43:33] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:43:33] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:43:33] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:43:33] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:43:33] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:43:34] "POST /request_ HTTP/1.1" 200 -
+ * Detected change in '/home/xzhang1/src/qchem/qchem/gui.py', reloading
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 261-359-403
+127.0.0.1 - - [09/Aug/2017 19:46:34] "OPTIONS /dump_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:46:34] "OPTIONS /dump_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:46:34] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:46:34] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:46:34] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:46:34] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:46:34] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:46:34] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:46:34] "POST /dump_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:46:34] "GET /dump_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:46:34] "POST /request_ HTTP/1.1" 403 -
+127.0.0.1 - - [09/Aug/2017 19:46:34] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:46:34] "GET /load_sigma HTTP/1.1" 403 -
+127.0.0.1 - - [09/Aug/2017 19:46:34] "POST /request_ HTTP/1.1" 403 -
+127.0.0.1 - - [09/Aug/2017 19:46:34] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:46:34] "GET /load_sigma HTTP/1.1" 403 -
+127.0.0.1 - - [09/Aug/2017 19:46:38] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:46:38] "POST /request_ HTTP/1.1" 403 -
+127.0.0.1 - - [09/Aug/2017 19:46:38] "GET /load_sigma HTTP/1.1" 403 -
+ * Detected change in '/home/xzhang1/src/qchem/qchem/gui.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 261-359-403
+127.0.0.1 - - [09/Aug/2017 19:47:19] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:47:19] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:47:19] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:47:20] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:47:20] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:47:20] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:47:44] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:47:44] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:47:44] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:47:54] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:47:54] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:47:54] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:47:54] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:47:54] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:48:05] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:48:06] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:48:06] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:48:06] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:48:06] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:48:06] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:48:06] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:48:07] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:48:08] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:48:08] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:48:08] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:48:08] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:48:08] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:48:08] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:48:08] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:48:08] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:48:08] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:48:08] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:48:09] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:48:09] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:48:09] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:48:09] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:48:09] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:51:07] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:51:07] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:51:07] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:51:07] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:51:07] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:51:07] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:51:08] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:51:08] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:51:08] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:51:08] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:51:08] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:51:08] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:52:10] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:52:10] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:52:10] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:52:10] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:52:10] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 19:52:11] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 20:01:24] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 20:01:24] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 20:01:24] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 20:01:24] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 20:01:24] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 20:01:24] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 20:01:25] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 20:01:25] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 20:01:25] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 20:01:25] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 20:01:25] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [09/Aug/2017 20:01:25] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [10/Aug/2017 00:06:00] code 400, message Bad request syntax ('\x16\x03\x01\x01"\x01\x00\x01\x1e\x03\x03\xecb\xba\xf6\xac\xf6\xacB\xb4<*\x9fN\xa6\xd2\x02.v\xad4U\xd3F\xc2\x9b\x84"\xa3I\x81<\xe6\x00\x00\x88\xc00\xc0,\xc0(\xc0$\xc0\x14\xc0')
+127.0.0.1 - - [10/Aug/2017 00:06:00] "" ìbºö¬ö¬B´<*ŸN¦Ò.v­4UÓFÂ›„"£I<æ  ˆÀ0À,À(À$ÀÀ" 400 -
+127.0.0.1 - - [10/Aug/2017 00:06:07] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [10/Aug/2017 00:58:26] "GET http://www.baidu.com/cache/global/img/gs.gif HTTP/1.1" 404 -
+127.0.0.1 - - [10/Aug/2017 04:02:55] "GET http://proxy.httpdaili.com/ip.asp?ip=52.205.255.228&dk=8080 HTTP/1.1" 404 -
+127.0.0.1 - - [10/Aug/2017 06:02:35] "GET / HTTP/1.0" 200 -
+127.0.0.1 - - [10/Aug/2017 06:27:19] "GET /manager/html HTTP/1.1" 404 -
+127.0.0.1 - - [10/Aug/2017 06:48:59] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [10/Aug/2017 07:44:16] "GET /cgi-bin/authLogin.cgi HTTP/1.1" 404 -
+127.0.0.1 - - [10/Aug/2017 09:07:37] "GET /script HTTP/1.1" 404 -
+127.0.0.1 - - [10/Aug/2017 09:08:30] "GET /hndUnblock.cgi HTTP/1.0" 404 -
+127.0.0.1 - - [10/Aug/2017 09:08:31] "GET /tmUnblock.cgi HTTP/1.0" 404 -
+127.0.0.1 - - [10/Aug/2017 09:08:31] "GET /moo HTTP/1.0" 404 -
+127.0.0.1 - - [10/Aug/2017 09:41:28] "GET /manager/html HTTP/1.1" 404 -
+127.0.0.1 - - [10/Aug/2017 10:04:44] "GET http://www.google.com/ HTTP/1.1" 200 -
+127.0.0.1 - - [10/Aug/2017 11:22:01] "GET http://www.server110.com/ HTTP/1.1" 200 -
+127.0.0.1 - - [10/Aug/2017 11:22:04] "CONNECT www.linode.com:443 HTTP/1.1" 404 -
+127.0.0.1 - - [10/Aug/2017 11:22:04] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [10/Aug/2017 11:22:08] "CONNECT www.linode.com:443 HTTP/1.1" 404 -
+127.0.0.1 - - [10/Aug/2017 11:22:09] "CONNECT www.linode.com:443 HTTP/1.1" 404 -
+127.0.0.1 - - [10/Aug/2017 11:53:01] "GET / HTTP/1.1" 200 -
