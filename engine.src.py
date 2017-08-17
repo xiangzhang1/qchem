@@ -16,6 +16,7 @@ import tempfile
 import hashlib
 from subprocess import call, check_output, STDOUT, CalledProcessError
 from filecmp import dircmp
+from collections import OrderedDict
 
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
@@ -214,7 +215,8 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
             if len(self.kw[name]) != 1:
                 raise shared.CustomError( self.__class__.__name__+' error: non-unique output. Kw[%s]={%s} has not been restricted to 1 value.' %(name,self.kw[name]) )
         self.moonphase=3    # parsing and validating of input_ is complete.
-        self.check_memory()
+        if self.parse_if('engine=vasp'):
+            self.check_memory()
 
     def check_memory(self):
         # make temporary dir
@@ -374,7 +376,7 @@ class Cell(object):
             lines = lines.splitlines()
         self.name = lines[0]
         self.base = np.float_([ line.split() for line in lines[2:5] ]) * float(lines[1])
-        self.stoichiometry = dict( zip(lines[5].split(), [int(x) for x in lines[6].split()]) )
+        self.stoichiometry = OrderedDict( zip(lines[5].split(), [int(x) for x in lines[6].split()]) )
         if not lines[7].startswith('D'):
             raise shared.CustomError(self.__class__.__name__+'__init__: unsupported POSCAR5 format. Only direct coordinates are supported.')
         self.coordinates = np.float_([ line.split() for line in lines[8:8+sum(self.stoichiometry.values())] ])
@@ -814,6 +816,7 @@ class Electron(object):
             if os.path.isdir(self.path):
                 raise shared.CustomError(self.__class__.__name__ + ' compute: self.path {%s} taken' %self.path)
             shutil.copytree(self.prev.path, self.path)
+            os.chdir(self.path)
 
             if self.gen.parse_if('cell'):
                 with open('POSCAR','r') as infile:
@@ -874,28 +877,32 @@ class Grepen(object):
         self.sigma = 0 if self.ismear!=0 else float(prev_gen.getkw('ismear'))
 
     
-# dos related utility
-class Dos(object):  # check usability of doscar and kpoints
+class Dos(object):
     def __init__(self,grepen):  
-        # initialization
-        self.log=''
-        self.log += '*' * 72 + '\n'  # print '*' * 35, ' dos of ',os.getcwd(),' ', '*' * 35    #pretty print
-        if not(grepen.doscar_usable):
-            print 'dos.py warning: doscar is not usable (as determined by grepen). dos object is empty.'
-            return
-        ## parameter: min_dos. is dos considered 0 if it's 0.002? 
-        min_dos=1E-3
-        ## initialize dos file. all dos -> np.float64::tdos
-        doscar_file=open("DOSCAR","r")
-        tmplines=doscar_file.readlines()
-        doscar_lines=[tmplines[i].split() for i in range(6,6+grepen.nedos)]
-        self.dos=np.float64(doscar_lines)
-        idx_fermi=abs(self.dos[:,0]-grepen.efermi).argmin()+1
+        
+        '''
+        self.log = '*' * 35 + ' dos of ' + os.getcwd() + ' ' + '*' * 35 + '\n'
+        with open('DOSCAR','r') as doscar_file:
+            l = doscar_file.readlines()
+            if not len(l) >= 7:
+                raise shared.CustomError( 'dos.py warning: doscar is not usable (as determined by grepen).')
+        '''
 
-        # Fork: DOSCAR format: ispin=1? lsorbit=T?
-        if grepen.ispin==1 or grepen.lsorbit!='F': 
-            ##ispin=1 or spin-orbit coupling.
-            if abs(self.dos[idx_fermi][1])>min_dos:
+        ## parameter: min_dos: is dos considered 0 if it's 0.002? 
+        min_dos = 1E-3
+
+        ## self.dos
+        doscar_file = open("DOSCAR","r")
+        doscar_lines = doscar_file.readlines()
+        doscar_lines_split = [doscar_lines[i].split() for i in range(6,6+grepen.nedos)]
+        self.dos = np.float64(doscar_lines_split)
+        idx_fermi = abs(self.dos[:,0] - grepen.efermi).argmin() + 1
+
+        '''if grepen.spin == 'ncl':
+            print self.__class__.__name__ + ' __init__ warning: spin=ncl is not well supported'
+        if grepen.spin == 'para' or grepen.spin == 'ncl': 
+
+            if abs(self.dos[idx_fermi][1]) > min_dos:
                 self.log += 'dos.py: conductor.\n'
             else: 
                 self.VB=self.dos[idx_fermi:0:-1]
@@ -905,11 +912,10 @@ class Dos(object):  # check usability of doscar and kpoints
                 if len(self.VB1)==0 or len(self.CB1)==0:
                     self.log += 'dos.py: weird. len(self.VB1/self.CB1) is 0\n'
                     exit(1)
-                self.VBM1=self.VB1[0]
-                self.CBM1=self.CB1[0]
+                self.VBM1 = self.VB1[0]
+                self.CBM1 = self.CB1[0]
                 self.log += 'dos.py: DOS* type is insulator. DOS bandgap* is: ' + self.CBM1-self.VBM1 + ' eV.\n'
-        elif grepen.ispin==2:
-            ##ispin=2
+        elif grepen.spin=='fm' or grepen.spin=='afm':
             if abs(self.dos[idx_fermi][1])>min_dos and abs(self.dos[idx_fermi][2])>min_dos:
                 self.log += 'dos.py: conductor. quite probably. but check dos anyway.\n'
             elif abs(self.dos[idx_fermi][1])<min_dos and abs(self.dos[idx_fermi][2])<min_dos: 
@@ -920,8 +926,7 @@ class Dos(object):  # check usability of doscar and kpoints
                 self.CB1=[self.CB[x][0] for x in range(0,len(self.CB)) if abs(self.CB[x][1])>min_dos]
                 self.CB2=[self.CB[x][0] for x in range(0,len(self.CB)) if abs(self.CB[x][2])>min_dos]
                 if len(self.VB1)==0 or len(self.VB2)==0 or len(self.CB1)==0 or len(self.CB2)==0:
-                    self.log += 'dos.py: weird. len(self.VB1) is ' + str(len(self.VB1)) + '. len(self.VB2) is ' + str(len(self.VB2)) + '. len(self.CB1) is ' + str(len(self.CB1)) + '. len(self.CB2) is ' + str(len(self.CB2))
-                    exit(1)
+                    raise shared.CustomError( 'dos.py: weird. len(self.VB1) is ' + str(len(self.VB1)) + '. len(self.VB2) is ' + str(len(self.VB2)) + '. len(self.CB1) is ' + str(len(self.CB1)) + '. len(self.CB2) is ' + str(len(self.CB2)))
                 self.VBM1=self.VB1[0] ; self.CBM1=self.CB1[0] ; self.VBM2=self.VB2[0] ; self.CBM2=self.CB2[0]
                 CV_divide=0.45
                 self.VBM1S=self.VBM1*(1-CV_divide)+self.CBM1*CV_divide ; self.CBM1S = self.CBM1*(1-CV_divide) + self.VBM1*CV_divide ; self.VBM2S = self.VBM2*(1-CV_divide) + self.CBM2*CV_divide ; self.CBM2S = self.CBM2*(1-CV_divide) + self.VBM2*CV_divide
@@ -941,17 +946,17 @@ class Dos(object):  # check usability of doscar and kpoints
                 self.VBM1=next(self.VB[x][0] for x in range(0,len(self.VB)) if abs(self.VB[x][2])>min_dos or abs(self.VB[x][1])<min_dos)
                 self.CBM1=next(self.CB[x][0] for x in range(0,len(self.CB)) if abs(self.CB[x][2])>min_dos or abs(self.CB[x][1])<min_dos)
                 self.log += 'HM ' + str(self.CBM1-self.VBM1) + '\n'
-        else:
-                self.log += 'dos.py: ispin is not 1 or 2. data corrupt.\n'
+            '''
 
-        # site-projected dos
-        split_indices = [i for i, x in enumerate(tmplines) if x == tmplines[5]]
-        split_indices.append(len(tmplines))
+        # site-projected dos: split doscar and convert to self.site_dos
+        split_indices = [i for i, x in enumerate(doscar_lines) if x == doscar_lines[5]]
+        split_indices.append(len(doscar_lines))
         self.site_dos = []
         for i in range(0,len(split_indices)-1):
-            tmp = tmplines[split_indices[i]+1:split_indices[i+1]]
-            self.site_dos.append(np.float_([x.split() for x in tmp]))
+            l = doscar_lines[split_indices[i]+1:split_indices[i+1]]
+            self.site_dos.append(np.float_([x.split() for x in l]))
 
+        self.log += '*' * 35 + ' dos of ' + os.getcwd() + ' ' + '*' * 35 + '\n'
         print self.log
 
 # imports bandstructure from EIGENVAL. 
@@ -959,27 +964,36 @@ class Dos(object):  # check usability of doscar and kpoints
 # interpolates.
 # finds all sources of errors in bandstructure.
 class Bands(object):
+
     def __init__(self,grepen):  
-        self.log=''
-        self.log += '*' * 72 + '\n'  # print '*' * 35, ' bands of ',os.getcwd(),' ', '*' * 35    #pretty print
+
         # initialize
-        eigenval_file=open("EIGENVAL","r")
-        tmplines=eigenval_file.readlines()
-        eigenval_lines=[tmplines[i].split() for i in range(6,len(tmplines))]
-        nkpts=len(eigenval_lines)/(grepen.nbands+2)
+        self.log = '*' * 35 + ' bands of ' + os.getcwd() + ' ' + '*' * 35 + '\n'
+        eigenval_file = open("EIGENVAL","r")
+        eigenval_lines = eigenval_file.readlines()
+        if (len(eigenval_lines)<7):
+            raise shared.CustomError(self.__class__.__name__ + ' __init__: EIGENVAL file is not usable')
+        eigenval_lines = [eigenval_lines[i].split() for i in range(6,len(eigenval_lines))]
+        nkpts = len(eigenval_lines)/(grepen.nbands+2)
         list_band_kpte=[]
 
-        # Forking: EIGENVAL format: ispin=1? lsorbit=T?
-        if grepen.ispin==1 or grepen.lsorbit!='F':
+        with open('KPOINTS','r') as kpoints:
+            if (len(kpoints.readlines())>7):
+                raise shared.CustomError(self.__class__.__name__ + ' __init__: KPOINTS does not form a mesh. Module would not work.')
+
+        # Forking: EIGENVAL format depends on spin. 
+        if grepen.spin != 'para':
+            self.log += self.__class__.__name__ + " __init__ warning: only the first spin direction. We are essentially assuming spin=para.\n"
+        if grepen.spin == 'para' or grepen.spin == 'ncl':
             eigenval_e_idx = 1
             eigenval_occ_idx = 2
         else:
             eigenval_e_idx = 1
             eigenval_occ_idx = 3
 
-        # initialise all bands [kx,ky,kz,e,occupancy] -> np.float64::bands
+        # initialise all bands. self.bands[i_band][i_kpt] = [kx,ky,kz,e,occupancy]
         for i_band in range(0,grepen.nbands):
-            band_kpte=[]
+            band_kpte = []
             for i_kpt in range(0,nkpts):
                 kpte = eigenval_lines[i_kpt*(grepen.nbands+2)+1][0:3]
                 energy = float(eigenval_lines[i_kpt*(grepen.nbands+2)+i_band+2][eigenval_e_idx])
@@ -988,9 +1002,9 @@ class Bands(object):
                 kpte.append(occ)
                 band_kpte.append(kpte)
             list_band_kpte.append(band_kpte)
-        self.bands=np.float64(list_band_kpte)
+        self.bands = np.float64(list_band_kpte)
         ## initialise kpoints
-        kpts=[kpte[0:3] for kpte in self.bands[0]]
+        kpts = [kpte[0:3] for kpte in self.bands[0]]
         ### get kpts nearest neighbor list
         min_kpt_dist = np.amin(spatial.distance.pdist(kpts))
         kpts_nn_tree = spatial.cKDTree(kpts)
@@ -1018,12 +1032,11 @@ class Bands(object):
                 self.neargap_bands.append(band)
         self.neargap_bands=np.float_(self.neargap_bands)
         self.log += 'bands.py: number of neargap_bands is %d\n' %(len(self.neargap_bands))
-        self.log += 'bands.py: warning: bands.py has not been adapted for magnetic systems. ispin=2 is fine, but only spin channel 1 is considered.\n'
 
         # precision check 
         ## calculate DeltaE_KPOINTS by grabbing average E diff / average E diff near bandgap from EIGENVAL.
         ### specify ranges to look for
-        range_avg_kpt_de=[0.1,0.15,0.2,0.5]
+        range_avg_kpt_de = [0.1,0.15,0.2,0.5]
         ### pretty print
         widgets = ['precision check bands: ', Percentage(), ' ', Bar(), ' ', ETA()] #pretty print
         pbar = ProgressBar(widgets=widgets, maxval=len(self.neargap_bands)).start()
@@ -1049,48 +1062,47 @@ class Bands(object):
             self.log += '  CBM/VBM +- %.2f eV, difference is %.5f; number of samples is %d.\n' %(val,avg_kpt_de[idx],count_avg_kpt_de[idx])
         self.de_kpoints = max(avg_kpt_de)
         ## fit the band for i) verifying smoothness ii) estimating bandgap
-        if grepen.kpoints_meshable:
-            widgets = ['fitting each band: ', Percentage(), ' ', Bar(), ' ', ETA()] #pretty print
-            pbar = ProgressBar(widgets=widgets, maxval=len(self.neargap_bands)).start()
-            self.fit_neargap_bands = []
-            for i_band,band in enumerate(self.neargap_bands):
-                pbar.update(i_band)
-                fit_neargap_band = Rbf(band[:,0],band[:,1],band[:,2],band[:,3])
-                self.fit_neargap_bands.append(fit_neargap_band)
-            pbar.finish()
+        widgets = ['fitting each band: ', Percentage(), ' ', Bar(), ' ', ETA()] #pretty print
+        pbar = ProgressBar(widgets=widgets, maxval=len(self.neargap_bands)).start()
+        self.fit_neargap_bands = []
+        for i_band,band in enumerate(self.neargap_bands):
+            pbar.update(i_band)
+            fit_neargap_band = Rbf(band[:,0],band[:,1],band[:,2],band[:,3])
+            self.fit_neargap_bands.append(fit_neargap_band)
+        pbar.finish()
         ### ii) estimate bandgap
         #### in each kpoint, get a bandgap (for each fit, get a max/min, then get the band). get the global bandgap. 
-        if grepen.kpoints_meshable:
-            widgets = ['interpolating bandgap: ', Percentage(), ' ', Bar(), ' ', ETA()] #pretty print
-            pbar = ProgressBar(widgets=widgets, maxval=len(kpts)).start()
-            fit_1kpt_bandgaps=[]
-            for i_kpt,kpt in enumerate(kpts):
-                if i_kpt % 100 == 0:
-                    pbar.update(i_kpt)
-                near_kpt_maxmin_bnd=[[x-min_kpt_dist/2,x+min_kpt_dist/2] for x in kpt]
-                near_kpt_maxmin_energies = []
-                for (i_fit_neargap_band,fit_neargap_band) in enumerate(self.fit_neargap_bands):
-                    if fit_neargap_band(kpt[0],kpt[1],kpt[2]) < self.VBM1S:
-                        fun = lambda x: -1*fit_neargap_band(x[0],x[1],x[2]) 
-                        near_kpt_maxmin_energy = -1 * minimize(fun,kpt,bounds=near_kpt_maxmin_bnd).fun
-                        near_kpt_maxmin_energies.append(near_kpt_maxmin_energy)
-                    elif fit_neargap_band(kpt[0],kpt[1],kpt[2]) > self.CBM1S:
-                        fun = lambda x: fit_neargap_band(x[0],x[1],x[2]) 
-                        near_kpt_maxmin_energy = minimize(fun,kpt,bounds=near_kpt_maxmin_bnd).fun
-                        near_kpt_maxmin_energies.append(near_kpt_maxmin_energy)
-                    else: 
-                        print 'bands.py initialisation error: fit_neargap_band ',kpt,' ',fit_neargap_band(kpt[0],kpt[1],kpt[2]),' energy is not above bands.VBM1s or below bands.CBM1S. ignoring.'
-                    if self.VBM1 < near_kpt_maxmin_energy < self.CBM1:
-                        i_energy = min(self.neargap_bands[:,i_kpt,3], key=lambda x:abs(x-near_kpt_maxmin_energy))
-                        o_energy = near_kpt_maxmin_energy
-                        # print 'band.py: interpolated eigenstate found. Energy* is %.4f -> %.4f eV; kpoint* is %s -> %s' %(i_energy,o_energy,kpt,minimize(fun,kpt,bounds=near_kpt_maxmin_bnd).x)
-                near_kpt_maxmin_energies.append(self.VBM1)
-                near_kpt_maxmin_energies.append(self.CBM1)
-                fit_1kpt_bandgap = min([e for e in near_kpt_maxmin_energies if e > self.CBM1S]) - max([e for e in near_kpt_maxmin_energies if e < self.VBM1S])
-                fit_1kpt_bandgaps.append(fit_1kpt_bandgap)
-            self.fit_bandgap = min(fit_1kpt_bandgaps)
-            pbar.finish()
-            self.log += "bands.py: fitted bandgap* is %.5f. Usually bandgap is between fitted and raw bandgap*. For errors see errors.py.\n" %(self.fit_bandgap)
+        widgets = ['interpolating bandgap: ', Percentage(), ' ', Bar(), ' ', ETA()] #pretty print
+        pbar = ProgressBar(widgets=widgets, maxval=len(kpts)).start()
+        fit_1kpt_bandgaps=[]
+        for i_kpt,kpt in enumerate(kpts):
+            if i_kpt % 100 == 0:
+                pbar.update(i_kpt)
+            near_kpt_maxmin_bnd=[[x-min_kpt_dist/2,x+min_kpt_dist/2] for x in kpt]
+            near_kpt_maxmin_energies = []
+            for (i_fit_neargap_band,fit_neargap_band) in enumerate(self.fit_neargap_bands):
+                if fit_neargap_band(kpt[0],kpt[1],kpt[2]) < self.VBM1S:
+                    fun = lambda x: -1*fit_neargap_band(x[0],x[1],x[2]) 
+                    near_kpt_maxmin_energy = -1 * minimize(fun,kpt,bounds=near_kpt_maxmin_bnd).fun
+                    near_kpt_maxmin_energies.append(near_kpt_maxmin_energy)
+                elif fit_neargap_band(kpt[0],kpt[1],kpt[2]) > self.CBM1S:
+                    fun = lambda x: fit_neargap_band(x[0],x[1],x[2]) 
+                    near_kpt_maxmin_energy = minimize(fun,kpt,bounds=near_kpt_maxmin_bnd).fun
+                    near_kpt_maxmin_energies.append(near_kpt_maxmin_energy)
+                else: 
+                    print 'bands.py initialisation error: fit_neargap_band ',kpt,' ',fit_neargap_band(kpt[0],kpt[1],kpt[2]),' energy is not above bands.VBM1s or below bands.CBM1S. ignoring.'
+                if self.VBM1 < near_kpt_maxmin_energy < self.CBM1:
+                    i_energy = min(self.neargap_bands[:,i_kpt,3], key=lambda x:abs(x-near_kpt_maxmin_energy))
+                    o_energy = near_kpt_maxmin_energy
+                    # print 'band.py: interpolated eigenstate found. Energy* is %.4f -> %.4f eV; kpoint* is %s -> %s' %(i_energy,o_energy,kpt,minimize(fun,kpt,bounds=near_kpt_maxmin_bnd).x)
+            near_kpt_maxmin_energies.append(self.VBM1)
+            near_kpt_maxmin_energies.append(self.CBM1)
+            fit_1kpt_bandgap = min([e for e in near_kpt_maxmin_energies if e > self.CBM1S]) - max([e for e in near_kpt_maxmin_energies if e < self.VBM1S])
+            fit_1kpt_bandgaps.append(fit_1kpt_bandgap)
+        self.fit_bandgap = min(fit_1kpt_bandgaps)
+        pbar.finish()
+        self.log += "bands.py: fitted bandgap* is %.5f. Usually bandgap is between fitted and raw bandgap*. For errors see errors.py.\n" %(self.fit_bandgap)
+        self.log += '*' * 35 + ' bands of ' + os.getcwd() + ' ' + '*' * 35 + '\n'
 
         print self.log
     
@@ -1116,8 +1128,7 @@ class Bands(object):
 # executes population analysis
 class Charge(object):
     def __init__(self, cell, grepen, dos):  
-        self.log = ''
-        self.log += '*' * 72 + '\n'
+        self.log = '*' * 72 + '\n'
         # sanity check
         if len(dos.site_dos) < 2 or len(dos.site_dos[1]) < 10:
             raise shared.CustomError(self.__class__.__name__ +' __init__: site-project DOSCAR too short.')
@@ -1128,67 +1139,68 @@ class Charge(object):
         # pristine electronic configuration
         self.log += 'GS electron configurations for elements in POSCAR\n'
         for element in cell.stoichiometry:
-            self.log += element + ': ' + shared.ELEMENTS[element].eleconfig
+            self.log += element + ': ' + shared.ELEMENTS[element].eleconfig + '\n'
 
         # integrating site-projected pdos
-        self.log += '\nIntegrated Projected DOS: integration of DOS of wavefunctions projected onto spherical harmonics within spheres of a radius RWIGS\n'
-        if grepen.lsorbit == 'T':
+        self.log += 'Integrated Projected DOS: integration of DOS of wavefunctions projected onto spherical harmonics within spheres of a radius RWIGS\n'
+        if grepen.spin == 'ncl':
             self.nspin = 4 # used in: i * nspin + j
             spins = 'tot x y z'.split()
-        elif grepen.ispin == 2:
-            self.nspin = grepen.ispin
+        elif grepen.spin == 'fm' or grepen.spin == 'afm':
+            self.nspin = grepen.2
             spins = 'UP DN'.split()
         else:
-            self.nspin = grepen.ispin
+            self.nspin = 1
             spins = ['tot']
         orbitals = 's p_y p_z p_x d_xy d_yz d_z2 d_xz d_x^2-y^2'.split()
         
-        for symbol in cell.stoichiometry:
-            for idx_atom in range(sum(poscar.atomcounts[0:idx_element]),sum(poscar.atomcounts[0:idx_element+1])):
-                for idx_spin in range(0,self.nspin):
-                    self.log += element+str(idx_atom)+'_'+spins[idx_spin]+'\t'
-                    doscurve=dos.site_dos[idx_atom+1]
-                    idx_fermi=(np.abs(doscurve[:,0]-grepen.efermi)).argmin()
-                    idx_top_integral=(np.abs(doscurve[:,0]-grepen.efermi-5)).argmin()
+        for idx_element, element in enumerate(cell.stoichiometry.keys()):
+            for idx_atom in range( sum(cell.stoichiometry.values()[0:idx_element]), sum(cell.stoichiometry.values()[0:idx_element+1]) ):
+                for idx_spin in range(0, self.nspin):
+                    self.log += element + str(idx_atom) + '_' + spins[idx_spin]+'\t'
+                    doscurve = dos.site_dos[idx_atom+1]
+                    idx_fermi = (np.abs(doscurve[:,0]-grepen.efermi)).argmin()
+                    idx_top_integral = (np.abs(doscurve[:,0]-grepen.efermi-5)).argmin()
                     for idx_orbital,orbital in enumerate(orbitals):
                         integral = np.trapz(doscurve[:idx_fermi,self.nspin * idx_orbital + idx_spin + 1],x=doscurve[:idx_fermi,0])
                         integral = abs(integral)
                         maxintegral = np.trapz(doscurve[:idx_top_integral,2*idx_orbital + idx_spin + 1],x=doscurve[:idx_top_integral,0])
-                        self.log += orbital+' '+str('{0:.2f}'.format(integral))
-                    self.log += '\n'
+                        self.log += orbital + ' ' + str('{0:.2f}'.format(integral)) + ' '
+                    self.log += '\n\n'
 
         # Bader charge
-        self.log += "\nBader charge. Boundaries are defined as zero-flux surfaces. Note that certain flags should be set (e.g. LAECHG) for this to be reasonable.\n"
+        self.log += "Bader charge. Boundaries are defined as zero-flux surfaces. Note that certain flags should be set (e.g. LAECHG) for this to be reasonable.\n"
         os.popen('bader CHGCAR').read()
         with open('ACF.dat','r') as f:
             lines = f.readlines()
-        for idx_element in range(0,len(poscar.elements)):
-            element=poscar.elements[idx_element]
+        for idx_element, element in cell.stoichiometry.iteritems():
             self.log += element
-            for idx_atom in range(sum(poscar.atomcounts[0:idx_element]),sum(poscar.atomcounts[0:idx_element+1])):
+            for idx_atom in range(sum(cell.stoichiometry.values()[0:idx_element]),sum(cell.stoichiometry.values()[0:idx_element+1])):
                 nline = idx_atom + 2
                 self.log += lines[nline].split()[4]
-            self.log += '\n'
+            self.log += '\n\n'
 
         # OUTCAR RWIGS [decomposed] charge
-        self.log += "\nTotal charge inside the Wigner-Seitz Radius in OUTCAR\n"
+        self.log += "Total charge inside the Wigner-Seitz Radius in OUTCAR\n"
         with open('OUTCAR','r') as f:
             lines = f.readlines()
             for idx_line,line in enumerate(lines):
                 if '# of ion' in line: # this is only an anchor. that particular line doesn't matter.
                     break
-            for idx2_line in range(idx_line ,idx_line + 4 + poscar.natoms):
+            for idx2_line in range(idx_line ,idx_line + 4 + sum(cell.stoichiometry.values())):
                 self.log += lines[idx2_line]
+        self.log += '\n\n'
 
         # Bader magnetic moment
-        if grepen.ispin == 2:
-            self.log += "\nAn oversimplified version of Bader magnetic moment.\n"
+        if grepen.spin == 'fm' or grepen.spin == 'afm':
+            self.log += "An oversimplified version of Bader magnetic moment.\n"
             os.popen('chgsplit.sh CHGCAR').read()
             os.popen('bader cf2').read()
             for idx_element in range(0,len(poscar.elements)):
                 element=poscar.elements[idx_element]
+            for idx_element, element in enumerate(cell.stoichiometry.keys()):
                 self.log += element
-                for idx_atom in range(sum(poscar.atomcounts[0:idx_element]),sum(poscar.atomcounts[0:idx_element+1])):
+                for idx_atom in range(sum(cell.stoichiometry.values()[0:idx_element]),sum(cell.stoichiometry.values()[0:idx_element+1])):
                     nline = idx_atom + 2
                     with open('ACF.dat','r') as f:
                         lines = f.readlines()
@@ -1202,7 +1214,7 @@ class Charge(object):
             for idx_line,line in enumerate(lines):
                 if 'magnetization (x)' in line: # this is only an anchor. that particular line doesn't matter.
                     break
-            for idx2_line in range(idx_line + 2,idx_line + 6 + poscar.natoms):
+            for idx2_line in range(idx_line + 2,idx_line + 6 + sum(cell.stoichiometry.values())):
                 self.log += lines[idx2_line]
 
         print self.log

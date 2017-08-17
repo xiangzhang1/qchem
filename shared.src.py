@@ -28,7 +28,7 @@ from functools import wraps
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__)) 
 
 DEBUG = True
-DEBUG = False
+#DEBUG = False
 
 # Nodes
 # ===========================================================================

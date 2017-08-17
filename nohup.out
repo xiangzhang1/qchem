@@ -344,3 +344,548 @@ Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
 127.0.0.1 - - [10/Aug/2017 11:22:08] "CONNECT www.linode.com:443 HTTP/1.1" 404 -
 127.0.0.1 - - [10/Aug/2017 11:22:09] "CONNECT www.linode.com:443 HTTP/1.1" 404 -
 127.0.0.1 - - [10/Aug/2017 11:53:01] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [10/Aug/2017 15:56:21] "GET /manager/html HTTP/1.1" 404 -
+127.0.0.1 - - [10/Aug/2017 17:06:33] "GET /script HTTP/1.1" 404 -
+127.0.0.1 - - [10/Aug/2017 19:47:45] "GET http://proxy.httpdaili.com/ip.asp?ip=52.205.255.228&dk=8080 HTTP/1.1" 404 -
+127.0.0.1 - - [10/Aug/2017 22:08:28] "GET /manager/html HTTP/1.1" 404 -
+127.0.0.1 - - [11/Aug/2017 02:33:55] "GET /manager/html HTTP/1.1" 404 -
+127.0.0.1 - - [11/Aug/2017 03:01:03] "GET /manager/html HTTP/1.1" 404 -
+127.0.0.1 - - [11/Aug/2017 03:10:24] "GET /manager/html HTTP/1.1" 404 -
+127.0.0.1 - - [11/Aug/2017 04:50:41] "GET /script HTTP/1.1" 404 -
+127.0.0.1 - - [11/Aug/2017 05:10:43] code 400, message Bad request syntax ('\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01')
+127.0.0.1 - - [11/Aug/2017 05:10:43] "" 400 -
+127.0.0.1 - - [11/Aug/2017 05:38:57] "GET /manager/html HTTP/1.1" 404 -
+127.0.0.1 - - [11/Aug/2017 05:47:07] "GET /manager/html HTTP/1.1" 404 -
+127.0.0.1 - - [11/Aug/2017 06:19:34] code 400, message Bad HTTP/0.9 request type ('\x03\x00\x00*%\xe0\x00\x00\x00\x00\x00Cookie:')
+127.0.0.1 - - [11/Aug/2017 06:19:34] "  *%à     Cookie: mstshash=Test" 400 -
+127.0.0.1 - - [11/Aug/2017 06:19:34] code 400, message Bad HTTP/0.9 request type ('\x03\x00\x00*%\xe0\x00\x00\x00\x00\x00Cookie:')
+127.0.0.1 - - [11/Aug/2017 06:19:34] "  *%à     Cookie: mstshash=Test" 400 -
+127.0.0.1 - - [11/Aug/2017 09:44:33] "GET http://www.google.com/ HTTP/1.1" 200 -
+127.0.0.1 - - [11/Aug/2017 10:07:15] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [11/Aug/2017 14:52:20] "GET http://proxy.httpdaili.com/ip.asp?ip=52.205.255.228&dk=8080 HTTP/1.1" 404 -
+127.0.0.1 - - [11/Aug/2017 15:55:21] "GET /manager/html HTTP/1.1" 404 -
+127.0.0.1 - - [11/Aug/2017 16:16:14] "GET / HTTP/1.0" 200 -
+127.0.0.1 - - [11/Aug/2017 16:16:14] "OPTIONS / HTTP/1.0" 200 -
+127.0.0.1 - - [11/Aug/2017 16:16:14] code 400, message Bad request version ('RTSP/1.0')
+127.0.0.1 - - [11/Aug/2017 16:16:14] "OPTIONS / RTSP/1.0" 400 -
+127.0.0.1 - - [11/Aug/2017 16:16:15] "GET /nice%20ports%2C/Tri%6Eity.txt%2ebak HTTP/1.0" 404 -
+127.0.0.1 - - [11/Aug/2017 16:16:15] code 400, message Bad request syntax ('\x05\x04\x00\x01\x02\x80\x05\x01\x00\x03')
+127.0.0.1 - - [11/Aug/2017 16:16:15] " € " 400 -
+127.0.0.1 - - [11/Aug/2017 16:16:20] code 400, message Bad request syntax ('\x04\x01\x00\x16\x7f\x00\x00\x01root\x00')
+127.0.0.1 - - [11/Aug/2017 16:16:20] "   root " 400 -
+127.0.0.1 - - [11/Aug/2017 16:16:25] code 400, message Bad request syntax ('\x80\x00\x00(r\xfe\x1d\x13\x00\x00\x00\x00\x00\x00\x00\x02\x00\x01\x86\xa0\x00\x01\x97|\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+127.0.0.1 - - [11/Aug/2017 16:16:25] "€  (rþ        †  —|                    " 400 -
+127.0.0.1 - - [11/Aug/2017 16:16:30] code 400, message Bad request syntax ('\x00\x1e\x00\x06\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00\x07version\x04bind\x00\x00\x10\x00\x03')
+127.0.0.1 - - [11/Aug/2017 16:16:30] "          versionbind   " 400 -
+127.0.0.1 - - [11/Aug/2017 16:16:38] code 400, message Bad HTTP/0.9 request type ('\x00')
+127.0.0.1 - - [11/Aug/2017 16:16:38] "            " 400 -
+127.0.0.1 - - [11/Aug/2017 16:16:38] code 400, message Bad request syntax ('HELP')
+127.0.0.1 - - [11/Aug/2017 16:16:38] "HELP" 400 -
+127.0.0.1 - - [11/Aug/2017 16:16:39] code 400, message Bad request syntax ('\x16\x03\x00\x00S\x01\x00\x00O\x03\x00?G\xd7\xf7\xba,\xee\xea\xb2`~\xf3\x00\xfd\x82{\xb9\xd5\x96\xc8w\x9b\xe6\xc4\xdb<=\xdbo\xef\x10n\x00\x00(\x00\x16\x00\x13\x00')
+127.0.0.1 - - [11/Aug/2017 16:16:39] "  S  O ?G×÷º,îê²`~ó ý‚{¹Õ–Èw›æÄÛ<=Ûoïn  (   " 400 -
+127.0.0.1 - - [11/Aug/2017 16:16:44] code 400, message Bad request syntax ('\x00\x00\x00\xa4\xffSMBr\x00\x00\x00\x00\x08\x01@\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00@\x06\x00\x00\x01\x00\x00\x81\x00\x02PC NETWORK PROGRAM 1.0\x00\x02MICROSOFT NETWORKS 1.03\x00\x02MICROSOFT NETWORKS 3.0\x00\x02LANMAN1.0\x00\x02LM1.2X002\x00\x02Samba\x00\x02NT LANMAN 1.0\x00\x02NT LM 0.12\x00')
+127.0.0.1 - - [11/Aug/2017 16:16:44] "   ¤ÿSMBr    @              @     PC NETWORK PROGRAM 1.0 MICROSOFT NETWORKS 1.03 MICROSOFT NETWORKS 3.0 LANMAN1.0 LM1.2X002 Samba NT LANMAN 1.0 NT LM 0.12 " 400 -
+127.0.0.1 - - [11/Aug/2017 16:16:54] code 400, message Bad HTTP/0.9 request type ('l\x00')
+127.0.0.1 - - [11/Aug/2017 16:16:54] "l          " 400 -
+127.0.0.1 - - [11/Aug/2017 16:16:54] code 400, message Bad request syntax ('\x01default')
+127.0.0.1 - - [11/Aug/2017 16:16:54] "default" 400 -
+127.0.0.1 - - [11/Aug/2017 16:17:00] code 400, message Bad HTTP/0.9 request type ('0')
+127.0.0.1 - - [11/Aug/2017 16:17:00] "0` € " 400 -
+127.0.0.1 - - [11/Aug/2017 16:17:00] code 400, message Bad request version ('SIP/2.0')
+127.0.0.1 - - [11/Aug/2017 16:17:00] "OPTIONS sip:nm SIP/2.0" 400 -
+127.0.0.1 - - [11/Aug/2017 16:17:08] code 400, message Bad request syntax ('TNMP\x04\x00\x00\x00TNME\x00\x00\x04\x00')
+127.0.0.1 - - [11/Aug/2017 16:17:08] "TNMP   TNME   " 400 -
+127.0.0.1 - - [11/Aug/2017 16:17:13] code 400, message Bad HTTP/0.9 request type ('\x03\x00\x00')
+127.0.0.1 - - [11/Aug/2017 16:17:13] "  à     " 400 -
+127.0.0.1 - - [11/Aug/2017 16:17:19] code 400, message Bad request syntax ('DmdT\x00\x00\x00\x17\x00\x00\x00\x01\x00\x00\x00\x00\x11\x11\x00\xff\x01\xff\x13')
+127.0.0.1 - - [11/Aug/2017 16:17:19] "DmdT           ÿÿ" 400 -
+127.0.0.1 - - [11/Aug/2017 16:17:26] code 400, message Bad request syntax (':\x00\x00\x00/\x00\x00\x00\x02\x00\x00@\x02\x0f\x00\x01\x00=\x05\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00/\x00\x00\x00\x00\x00\x00\x00\x00\x00@\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+127.0.0.1 - - [11/Aug/2017 16:17:26] ":   /     @  =            /         @                 " 400 -
+127.0.0.1 - - [11/Aug/2017 16:17:35] code 400, message Bad request syntax ('\x01\x00\x00\xfd\xce\xfa\x0b\xb0\xa0\x00\x00\x00MMS\x14\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x12\x00\x00\x00\x01\x00\x03\x00\xf0\xf0\xf0\xf0\x0b\x00\x04\x00\x1c\x00\x03\x00N\x00S\x00P\x00l\x00a\x00y\x00e\x00r\x00/\x009\x00.\x000\x00.\x000\x00.\x002\x009\x008\x000\x00;\x00 \x00{\x000\x000\x000\x000\x00A\x00A\x000\x000\x00-\x000\x00A\x000\x000\x00-\x000\x000\x00a\x000\x00-\x00A\x00A\x000\x00A\x00-\x000\x000\x000\x000\x00A\x000\x00A\x00A\x000\x00A\x00A\x000\x00}\x00\x00\x00\xe0m\xdf_')
+127.0.0.1 - - [11/Aug/2017 16:17:35] "  ýÎú°    MMS                    ðððð    N S P l a y e r / 9 . 0 . 0 . 2 9 8 0 ;   { 0 0 0 0 A A 0 0 - 0 A 0 0 - 0 0 a 0 - A A 0 A - 0 0 0 0 A 0 A A 0 A A 0 }   àmß_" 400 -
+127.0.0.1 - - [11/Aug/2017 16:17:40] code 400, message Bad HTTP/0.9 request type ('\x00Z\x00\x00\x01\x00\x00\x00\x016\x01,\x00\x00\x08\x00\x7f\xff\x7f\x08\x00\x00\x00\x01\x00')
+127.0.0.1 - - [11/Aug/2017 16:17:40] " Z     6,   ÿ      :                4æ           (CONNECT_DATA=(COMMAND=version))" 400 -
+127.0.0.1 - - [11/Aug/2017 16:17:46] code 400, message Bad request syntax ('\x00\x03\x00\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x0f\x00')
+127.0.0.1 - - [11/Aug/2017 16:17:46] "              " 400 -
+127.0.0.1 - - [11/Aug/2017 16:58:08] "GET /manager/html HTTP/1.1" 404 -
+127.0.0.1 - - [11/Aug/2017 23:02:37] "POST /hedwig.cgi HTTP/1.1" 404 -
+127.0.0.1 - - [12/Aug/2017 00:10:06] "GET /script HTTP/1.1" 404 -
+127.0.0.1 - - [12/Aug/2017 04:21:23] "GET /manager/html HTTP/1.1" 404 -
+127.0.0.1 - - [12/Aug/2017 04:47:35] "GET /manager/html HTTP/1.1" 404 -
+127.0.0.1 - - [12/Aug/2017 06:56:08] "GET http://www.google.com/ HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2017 07:50:14] "GET /manager/html HTTP/1.1" 404 -
+127.0.0.1 - - [12/Aug/2017 09:38:27] "GET http://proxy.httpdaili.com/ip.asp?ip=52.205.255.228&dk=8080 HTTP/1.1" 404 -
+127.0.0.1 - - [12/Aug/2017 10:37:38] "GET / HTTP/1.0" 200 -
+127.0.0.1 - - [12/Aug/2017 10:40:24] "GET /manager/html HTTP/1.1" 404 -
+127.0.0.1 - - [12/Aug/2017 13:04:00] "GET /manager/html HTTP/1.1" 404 -
+127.0.0.1 - - [12/Aug/2017 17:20:31] "GET / HTTP/1.0" 200 -
+127.0.0.1 - - [12/Aug/2017 17:21:01] "HEAD /manager/html HTTP/1.0" 404 -
+127.0.0.1 - - [12/Aug/2017 19:47:35] "POST /mainAction.action HTTP/1.1" 404 -
+127.0.0.1 - - [12/Aug/2017 21:40:23] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [12/Aug/2017 23:11:36] "GET / HTTP/1.0" 200 -
+127.0.0.1 - - [12/Aug/2017 23:12:08] "HEAD /manager/html HTTP/1.0" 404 -
+127.0.0.1 - - [13/Aug/2017 00:18:33] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [13/Aug/2017 00:20:57] "GET /script HTTP/1.1" 404 -
+127.0.0.1 - - [13/Aug/2017 00:34:56] "GET /script HTTP/1.1" 404 -
+127.0.0.1 - - [13/Aug/2017 01:35:39] "GET /manager/html HTTP/1.1" 404 -
+127.0.0.1 - - [13/Aug/2017 02:46:17] "GET /manager/html HTTP/1.1" 404 -
+127.0.0.1 - - [13/Aug/2017 05:10:20] "GET /manager/html HTTP/1.1" 404 -
+127.0.0.1 - - [13/Aug/2017 05:15:37] "POST /command.php HTTP/1.1" 404 -
+127.0.0.1 - - [13/Aug/2017 12:06:27] code 400, message Bad HTTP/0.9 request type ('\x16\x03\x01\x01"\x01\x00\x01\x1e\x03\x03!\xa4\xc7W\x1d\x1c\x01\xdev?G\x93\x7f\x8fF8\xe8yQ\xb44\xccJ\x95\x01\xb4p\xabe')
+127.0.0.1 - - [13/Aug/2017 12:06:27] "" !¤ÇWÞv?G“F8èyQ´4ÌJ•´p«e¬  ˆÀ0À,À(À$ÀÀ" 400 -
+127.0.0.1 - - [13/Aug/2017 12:06:33] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [13/Aug/2017 18:09:21] "GET /manager/html HTTP/1.1" 404 -
+127.0.0.1 - - [14/Aug/2017 04:09:39] "GET /manager/html HTTP/1.1" 404 -
+127.0.0.1 - - [14/Aug/2017 05:15:07] "GET /manager/html HTTP/1.1" 404 -
+127.0.0.1 - - [14/Aug/2017 05:34:30] "GET /script HTTP/1.1" 404 -
+127.0.0.1 - - [14/Aug/2017 05:34:33] "GET /script HTTP/1.1" 404 -
+127.0.0.1 - - [14/Aug/2017 06:08:39] code 400, message Bad request syntax ('\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01')
+127.0.0.1 - - [14/Aug/2017 06:08:39] "" 400 -
+127.0.0.1 - - [14/Aug/2017 06:13:35] "GET /manager/html HTTP/1.1" 404 -
+127.0.0.1 - - [14/Aug/2017 07:04:48] "GET / HTTP/1.0" 200 -
+127.0.0.1 - - [14/Aug/2017 07:32:44] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Aug/2017 08:05:38] "GET http://www.baidu.com/favicon.ico HTTP/1.1" 404 -
+127.0.0.1 - - [14/Aug/2017 08:16:54] "GET / HTTP/1.0" 200 -
+127.0.0.1 - - [14/Aug/2017 13:15:27] "HEAD /manager/html HTTP/1.0" 404 -
+127.0.0.1 - - [14/Aug/2017 13:21:29] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Aug/2017 15:05:02] "GET /manager/html HTTP/1.1" 404 -
+127.0.0.1 - - [14/Aug/2017 15:45:23] "GET /manager/html HTTP/1.1" 404 -
+127.0.0.1 - - [14/Aug/2017 16:03:55] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Aug/2017 17:40:42] "GET /manager/html HTTP/1.1" 404 -
+127.0.0.1 - - [14/Aug/2017 19:53:18] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Aug/2017 21:03:23] "GET /manager/html HTTP/1.1" 404 -
+127.0.0.1 - - [14/Aug/2017 21:22:55] "GET / HTTP/1.0" 200 -
+127.0.0.1 - - [14/Aug/2017 21:22:55] "GET / HTTP/1.0" 200 -
+127.0.0.1 - - [14/Aug/2017 21:22:55] "GET / HTTP/1.0" 200 -
+127.0.0.1 - - [14/Aug/2017 21:22:56] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Aug/2017 21:23:16] "GET / HTTP/1.0" 200 -
+127.0.0.1 - - [14/Aug/2017 21:23:26] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Aug/2017 21:23:37] "HEAD /manager/html HTTP/1.0" 404 -
+127.0.0.1 - - [14/Aug/2017 22:24:52] "GET /script HTTP/1.1" 404 -
+127.0.0.1 - - [14/Aug/2017 23:22:19] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Aug/2017 23:40:50] "GET /script HTTP/1.1" 404 -
+127.0.0.1 - - [15/Aug/2017 00:03:19] "GET /manager/html HTTP/1.1" 404 -
+127.0.0.1 - - [15/Aug/2017 07:46:26] "GET /manager/html HTTP/1.1" 404 -
+127.0.0.1 - - [15/Aug/2017 09:24:13] "GET /manager/html HTTP/1.1" 404 -
+127.0.0.1 - - [15/Aug/2017 09:32:19] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2017 09:32:20] "OPTIONS / HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2017 09:32:21] "GET /Robots.txt HTTP/1.1" 404 -
+127.0.0.1 - - [15/Aug/2017 09:32:21] "GET /SiteMap.xml HTTP/1.1" 404 -
+127.0.0.1 - - [15/Aug/2017 09:38:36] "GET / HTTP/1.0" 200 -
+127.0.0.1 - - [15/Aug/2017 11:35:27] code 400, message Bad request syntax ('\x16\x03\x01\x00\x90\x01\x00\x00\x8c\x03\x03\xf8|u?N~\xd0\xa9(^\xa1`\xa6\x96\x1aT\xe9\xc7\xa7\x97\x03\xc7\x1f\xc6\x80\xc5\x01t\xf2\xbc\xbb!\x00\x00.\xc0+\xc0/\x00\x9e\x00\x9c\xc0')
+127.0.0.1 - - [15/Aug/2017 11:35:27] "   Œø|u?N~Ð©(^¡`¦–TéÇ§—ÇÆ€Åtò¼»!  .À+À/ ž œÀ" 400 -
+127.0.0.1 - - [15/Aug/2017 11:35:27] "GET /recordings/ HTTP/1.1" 404 -
+127.0.0.1 - - [15/Aug/2017 11:35:27] code 400, message Bad request syntax ('\x16\x03\x01\x00\x90\x01\x00\x00\x8c\x03\x03\x9f\x1f\xdeC\x84\x11\xf2\xf9@8\xa8')
+127.0.0.1 - - [15/Aug/2017 11:35:27] "   ŒŸÞC„òù@8¨" 400 -
+127.0.0.1 - - [15/Aug/2017 11:35:27] "GET /a2billing/admin/Public/index.php HTTP/1.1" 404 -
+127.0.0.1 - - [15/Aug/2017 12:26:34] code 400, message Bad request version ('\xc0\x14\xc0')
+127.0.0.1 - - [15/Aug/2017 12:26:34] " Œ  ˆ´«n-5\YrÔ³O6T9·¾£Óžî#»(g'Mh  À/À+ÀÀÀÀ	ÀÀ" 400 -
+127.0.0.1 - - [15/Aug/2017 12:26:35] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2017 16:37:38] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2017 17:03:42] "GET /cgi/common.cgi HTTP/1.0" 404 -
+127.0.0.1 - - [15/Aug/2017 17:03:42] "GET /stssys.htm HTTP/1.0" 404 -
+127.0.0.1 - - [15/Aug/2017 17:03:43] "GET / HTTP/1.0" 200 -
+127.0.0.1 - - [15/Aug/2017 17:03:43] "POST /command.php HTTP/1.0" 404 -
+127.0.0.1 - - [15/Aug/2017 20:28:04] "GET /manager/html HTTP/1.1" 404 -
+127.0.0.1 - - [15/Aug/2017 22:29:51] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2017 22:29:51] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2017 22:29:51] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2017 22:29:51] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2017 22:29:52] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2017 22:29:52] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 01:38:11] "GET /script HTTP/1.1" 404 -
+127.0.0.1 - - [16/Aug/2017 07:33:28] "GET http://www.google.com/ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 09:12:06] "GET /script HTTP/1.1" 404 -
+127.0.0.1 - - [16/Aug/2017 10:40:32] "GET /manager/html HTTP/1.1" 404 -
+127.0.0.1 - - [16/Aug/2017 10:56:20] "GET /script HTTP/1.1" 404 -
+127.0.0.1 - - [16/Aug/2017 12:59:13] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 13:36:45] "HEAD http://180.163.113.82/check_proxy HTTP/1.1" 404 -
+127.0.0.1 - - [16/Aug/2017 16:16:46] "GET /manager/html HTTP/1.1" 404 -
+127.0.0.1 - - [16/Aug/2017 16:28:01] code 400, message Bad request syntax ('\x16\x03\x01\x01"\x01\x00\x01\x1e\x03\x03;\x80\x99\xc6\xefk\x9a\xf6\x13\xe7$\'\x1e\xf7')
+127.0.0.1 - - [16/Aug/2017 16:28:01] "" ;€™Æïkšöç$'÷" 400 -
+127.0.0.1 - - [16/Aug/2017 16:28:06] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 18:44:47] "GET / HTTP/1.0" 200 -
+127.0.0.1 - - [16/Aug/2017 21:03:04] "GET /manager/html HTTP/1.1" 404 -
+127.0.0.1 - - [16/Aug/2017 21:10:57] code 400, message Bad request syntax ('\x04\x01\x00P\xb4\xa3qR\x00')
+127.0.0.1 - - [16/Aug/2017 21:10:57] " P´£qR " 400 -
+127.0.0.1 - - [16/Aug/2017 21:40:04] code 400, message Bad request syntax ('\x05\x02\x00\x02')
+127.0.0.1 - - [16/Aug/2017 21:40:04] " " 400 -
+127.0.0.1 - - [16/Aug/2017 22:42:46] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:42:46] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:42:46] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:42:47] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:42:47] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:42:47] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:45:20] "OPTIONS /get_text HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:45:20] "POST /get_text HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:53:08] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:53:08] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:53:08] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:53:09] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:53:09] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:53:09] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:55:27] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:55:27] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:55:27] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:55:27] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:55:27] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:55:28] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:55:45] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:55:45] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:55:45] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:55:46] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:55:46] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:55:46] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:56:08] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:56:08] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:56:08] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:56:08] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:56:08] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:56:09] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:56:25] "OPTIONS /get_dumps_list HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:56:25] "GET /get_dumps_list HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:57:01] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:57:01] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:57:01] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:57:02] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:57:02] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:57:02] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:57:12] "OPTIONS /get_dumps_list HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:57:12] "GET /get_dumps_list HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:57:17] "OPTIONS /dump_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:57:17] "OPTIONS /dump_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:57:17] "GET /dump_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:57:18] "POST /dump_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:57:24] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:57:24] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:57:24] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:57:25] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:57:25] "POST /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:57:25] "POST /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:57:30] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:57:30] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:57:30] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:58:17] "OPTIONS /dump_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:58:17] "OPTIONS /dump_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:58:17] "GET /dump_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:58:17] "POST /dump_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:58:17] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:58:17] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:58:17] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:58:19] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:58:19] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:58:19] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:58:21] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:58:22] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:58:22] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:59:07] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:59:07] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:59:07] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:59:08] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:59:08] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:59:08] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:59:28] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:59:28] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:59:28] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:59:29] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:59:29] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:59:29] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:59:47] "OPTIONS /dump_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:59:47] "OPTIONS /dump_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:59:47] "GET /dump_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 22:59:47] "POST /dump_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:02:57] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:02:57] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:02:57] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:02:57] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:02:57] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:02:58] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:03:35] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:03:35] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:03:35] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:03:36] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:03:36] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:03:36] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:04:33] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:04:33] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:04:33] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:04:33] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:04:34] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:04:34] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:05:09] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:05:09] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:05:09] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:05:09] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:05:09] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:05:10] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:05:22] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:05:22] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:05:22] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:05:22] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:05:22] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:05:23] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:05:35] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:05:35] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:05:35] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:05:35] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:05:35] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:05:36] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:05:45] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:05:45] "OPTIONS /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:05:45] "OPTIONS /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:05:46] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:05:46] "GET /load_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:05:46] "GET /load_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:06:46] "OPTIONS /get_docs_list HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:06:46] "GET /get_docs_list HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:06:49] "OPTIONS /open_docs HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:06:49] "POST /open_docs HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:06:55] "OPTIONS /open_docs HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:06:56] "POST /open_docs HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:16:55] "OPTIONS /dump_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:16:55] "OPTIONS /dump_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:16:55] "GET /dump_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:16:56] "POST /dump_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:16:56] "OPTIONS /get_dumps_list HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:16:56] "GET /get_dumps_list HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:17:59] "OPTIONS /dump_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:17:59] "OPTIONS /dump_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:18:00] "POST /dump_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:18:00] "GET /dump_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:18:56] "OPTIONS /open_docs HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:18:56] "POST /open_docs HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:19:07] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:19:07] "OPTIONS /new_node HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:19:07] "POST /new_node HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:19:09] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:19:10] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:19:10] "POST /new_node HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:19:24] "OPTIONS /edit_vars HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:19:24] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:19:25] "POST /edit_vars HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:19:26] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:19:33] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:19:33] "OPTIONS /add_edge HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:19:35] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:19:35] "POST /add_edge HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:19:39] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:19:39] "OPTIONS /add_edge HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:19:41] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:19:41] "POST /add_edge HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:20:59] "OPTIONS /edit_vars HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:20:59] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:20:59] "POST /edit_vars HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:01] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:13] "OPTIONS /edit_vars HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:13] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:14] "POST /edit_vars HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:15] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:22] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:22] "OPTIONS /add_edge HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:22] "POST /add_edge HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:23] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:26] "OPTIONS /dump_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:26] "OPTIONS /dump_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:27] "POST /dump_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:27] "GET /dump_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:34] "OPTIONS /dump_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:34] "OPTIONS /dump_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:35] "POST /dump_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:35] "GET /dump_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:37] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:38] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:40] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:40] "OPTIONS /edit_vars HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:40] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:41] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:41] "POST /edit_vars HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:46] "OPTIONS /edit_vars HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:46] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:46] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:46] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:46] "POST /edit_vars HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:47] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:48] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:49] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:54] "OPTIONS /compute_node HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:54] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:54] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:55] "POST /compute_node HTTP/1.1" 500 -
+Traceback (most recent call last):
+  File "/usr/local/lib/python2.7/dist-packages/flask/app.py", line 1997, in __call__
+    return self.wsgi_app(environ, start_response)
+  File "/usr/local/lib/python2.7/dist-packages/flask/app.py", line 1985, in wsgi_app
+    response = self.handle_exception(e)
+  File "/usr/local/lib/python2.7/dist-packages/flask_cors/extension.py", line 161, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+  File "/usr/local/lib/python2.7/dist-packages/flask/app.py", line 1540, in handle_exception
+    reraise(exc_type, exc_value, tb)
+  File "/usr/local/lib/python2.7/dist-packages/flask/app.py", line 1982, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/usr/local/lib/python2.7/dist-packages/flask/app.py", line 1614, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/usr/local/lib/python2.7/dist-packages/flask_cors/extension.py", line 161, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+  File "/usr/local/lib/python2.7/dist-packages/flask/app.py", line 1517, in handle_user_exception
+    reraise(exc_type, exc_value, tb)
+  File "/usr/local/lib/python2.7/dist-packages/flask/app.py", line 1612, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/usr/local/lib/python2.7/dist-packages/flask/app.py", line 1598, in dispatch_request
+    return self.view_functions[rule.endpoint](**req.view_args)
+  File "/home/xzhang1/src/qchem/qchem/gui.py", line 50, in wrapped
+    func(*args, **kwargs)
+  File "/home/xzhang1/src/qchem/qchem/gui.py", line 76, in wrapped
+    return func(*args, **kwargs)
+  File "/home/xzhang1/src/qchem/qchem/gui.py", line 372, in compute_node
+    shared.NODES['master'].map.lookup(j['cur']).compute(proposed_name=j['name'])  #delegate to parent, suggest compute name
+  File "/home/xzhang1/src/qchem/qchem/qchem.py", line 156, in compute
+    n.compute()
+  File "/home/xzhang1/src/qchem/qchem/qchem.py", line 164, in compute
+    self.gen = engine.Gen(self)
+  File "/home/xzhang1/src/qchem/qchem/engine.py", line 217, in __init__
+    self.check_memory()
+  File "/home/xzhang1/src/qchem/qchem/engine.py", line 238, in check_memory
+    self.write_incar_kpoints()
+  File "/home/xzhang1/src/qchem/qchem/engine.py", line 143, in write_incar_kpoints
+    outfile.write(self.getkw('kpoints').split()[3] + '\n')
+AttributeError: 'NoneType' object has no attribute 'split'
+127.0.0.1 - - [16/Aug/2017 23:21:56] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:21:57] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:23:54] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:23:54] "OPTIONS /compute_node HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:23:54] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:23:55] "POST /request_ HTTP/1.1" 200 -
+Moving to trash /tmp/trashed.D5t
+127.0.0.1 - - [16/Aug/2017 23:23:55] "POST /compute_node HTTP/1.1" 500 -
+Traceback (most recent call last):
+  File "/usr/local/lib/python2.7/dist-packages/flask/app.py", line 1997, in __call__
+    return self.wsgi_app(environ, start_response)
+  File "/usr/local/lib/python2.7/dist-packages/flask/app.py", line 1985, in wsgi_app
+    response = self.handle_exception(e)
+  File "/usr/local/lib/python2.7/dist-packages/flask_cors/extension.py", line 161, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+  File "/usr/local/lib/python2.7/dist-packages/flask/app.py", line 1540, in handle_exception
+    reraise(exc_type, exc_value, tb)
+  File "/usr/local/lib/python2.7/dist-packages/flask/app.py", line 1982, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/usr/local/lib/python2.7/dist-packages/flask/app.py", line 1614, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/usr/local/lib/python2.7/dist-packages/flask_cors/extension.py", line 161, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+  File "/usr/local/lib/python2.7/dist-packages/flask/app.py", line 1517, in handle_user_exception
+    reraise(exc_type, exc_value, tb)
+  File "/usr/local/lib/python2.7/dist-packages/flask/app.py", line 1612, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/usr/local/lib/python2.7/dist-packages/flask/app.py", line 1598, in dispatch_request
+    return self.view_functions[rule.endpoint](**req.view_args)
+  File "/home/xzhang1/src/qchem/qchem/gui.py", line 50, in wrapped
+    func(*args, **kwargs)
+  File "/home/xzhang1/src/qchem/qchem/gui.py", line 76, in wrapped
+    return func(*args, **kwargs)
+  File "/home/xzhang1/src/qchem/qchem/gui.py", line 372, in compute_node
+    shared.NODES['master'].map.lookup(j['cur']).compute(proposed_name=j['name'])  #delegate to parent, suggest compute name
+  File "/home/xzhang1/src/qchem/qchem/qchem.py", line 156, in compute
+    n.compute()
+  File "/home/xzhang1/src/qchem/qchem/qchem.py", line 164, in compute
+    self.gen = engine.Gen(self)
+  File "/home/xzhang1/src/qchem/qchem/engine.py", line 217, in __init__
+    self.check_memory()
+  File "/home/xzhang1/src/qchem/qchem/engine.py", line 238, in check_memory
+    self.write_incar_kpoints()
+  File "/home/xzhang1/src/qchem/qchem/engine.py", line 143, in write_incar_kpoints
+    outfile.write(self.getkw('kpoints').split()[3] + '\n')
+AttributeError: 'NoneType' object has no attribute 'split'
+127.0.0.1 - - [16/Aug/2017 23:23:56] "POST /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:25:01] "OPTIONS /dump_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:25:01] "OPTIONS /dump_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:25:01] "GET /dump_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:25:02] "POST /dump_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:26:43] "OPTIONS /dump_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:26:43] "OPTIONS /dump_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:26:44] "POST /dump_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:26:44] "GET /dump_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:27:17] "OPTIONS /dump_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:27:17] "OPTIONS /dump_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:27:17] "GET /dump_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:27:17] "POST /dump_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:27:40] "OPTIONS /dump_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:27:40] "OPTIONS /dump_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:27:41] "POST /dump_sigma HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:27:41] "GET /dump_nodes HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:28:02] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:28:02] "OPTIONS /compute_node HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:28:02] "OPTIONS /request_ HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2017 23:28:03] "POST /request_ HTTP/1.1" 200 -
+Moving to trash /tmp/trashed.1uN
+127.0.0.1 - - [16/Aug/2017 23:28:03] "POST /compute_node HTTP/1.1" 500 -
+Traceback (most recent call last):
+  File "/usr/local/lib/python2.7/dist-packages/flask/app.py", line 1997, in __call__
+    return self.wsgi_app(environ, start_response)
+  File "/usr/local/lib/python2.7/dist-packages/flask/app.py", line 1985, in wsgi_app
+    response = self.handle_exception(e)
+  File "/usr/local/lib/python2.7/dist-packages/flask_cors/extension.py", line 161, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+  File "/usr/local/lib/python2.7/dist-packages/flask/app.py", line 1540, in handle_exception
+    reraise(exc_type, exc_value, tb)
+  File "/usr/local/lib/python2.7/dist-packages/flask/app.py", line 1982, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/usr/local/lib/python2.7/dist-packages/flask/app.py", line 1614, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/usr/local/lib/python2.7/dist-packages/flask_cors/extension.py", line 161, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+  File "/usr/local/lib/python2.7/dist-packages/flask/app.py", line 1517, in handle_user_exception
+    reraise(exc_type, exc_value, tb)
+  File "/usr/local/lib/python2.7/dist-packages/flask/app.py", line 1612, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/usr/local/lib/python2.7/dist-packages/flask/app.py", line 1598, in dispatch_request
+    return self.view_functions[rule.endpoint](**req.view_args)
+  File "/home/xzhang1/src/qchem/qchem/gui.py", line 50, in wrapped
+    
+  File "/home/xzhang1/src/qchem/qchem/gui.py", line 76, in wrapped
+    
+  File "/home/xzhang1/src/qchem/qchem/gui.py", line 372, in compute_node
+    
+  File "/home/xzhang1/src/qchem/qchem/qchem.py", line 156, in compute
+    
+  File "/home/xzhang1/src/qchem/qchem/qchem.py", line 164, in compute
+    
+  File "/home/xzhang1/src/qchem/qchem/engine.py", line 217, in __init__
+    
+  File "/home/xzhang1/src/qchem/qchem/engine.py", line 238, in check_memory
+    
+  File "/home/xzhang1/src/qchem/qchem/engine.py", line 143, in write_incar_kpoints
+    
+AttributeError: 'NoneType' object has no attribute 'split'
+127.0.0.1 - - [16/Aug/2017 23:28:04] "POST /request_ HTTP/1.1" 200 -
+ * Detected change in '/home/xzhang1/src/qchem/qchem/gui.py', reloading
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170804115523}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170816225718}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170816225817}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170816225817}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170816225817}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170816225817}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170816225947}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170816225947}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170816225947}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170816225947}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170816225947}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170816225947}
+Loaded {/home/xzhang1/src/qchem/qchem/data/sigma.dump.20170816225947}

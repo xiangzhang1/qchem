@@ -214,7 +214,8 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
             if len(self.kw[name]) != 1:
                 raise shared.CustomError( self.__class__.__name__+' error: non-unique output. Kw[%s]={%s} has not been restricted to 1 value.' %(name,self.kw[name]) )
         self.moonphase=3    # parsing and validating of input_ is complete.
-        self.check_memory()
+        if self.parse_if('engine=vasp'):
+            self.check_memory()
 
     def check_memory(self):
         # make temporary dir
@@ -814,6 +815,7 @@ class Electron(object):
             if os.path.isdir(self.path):
                 raise shared.CustomError(self.__class__.__name__ + ' compute: self.path {%s} taken' %self.path)
             shutil.copytree(self.prev.path, self.path)
+            os.chdir(self.path)
 
             if self.gen.parse_if('cell'):
                 with open('POSCAR','r') as infile:
@@ -874,28 +876,32 @@ class Grepen(object):
         self.sigma = 0 if self.ismear!=0 else float(prev_gen.getkw('ismear'))
 
     
-# dos related utility
-class Dos(object):  # check usability of doscar and kpoints
+class Dos(object):
     def __init__(self,grepen):  
-        # initialization
-        self.log=''
-        self.log += '*' * 72 + '\n'  # print '*' * 35, ' dos of ',os.getcwd(),' ', '*' * 35    #pretty print
-        if not(grepen.doscar_usable):
-            print 'dos.py warning: doscar is not usable (as determined by grepen). dos object is empty.'
-            return
-        ## parameter: min_dos. is dos considered 0 if it's 0.002? 
-        min_dos=1E-3
-        ## initialize dos file. all dos -> np.float64::tdos
-        doscar_file=open("DOSCAR","r")
-        tmplines=doscar_file.readlines()
-        doscar_lines=[tmplines[i].split() for i in range(6,6+grepen.nedos)]
-        self.dos=np.float64(doscar_lines)
-        idx_fermi=abs(self.dos[:,0]-grepen.efermi).argmin()+1
+        
+        
+        self.log = '*' * 35 + ' dos of ' + os.getcwd() + ' ' + '*' * 35 + '\n'
+        with open('DOSCAR','r') as doscar_file:
+            l = doscar_file.readlines()
+            if not len(l) >= 7:
+                raise shared.CustomError( 'dos.py warning: doscar is not usable (as determined by grepen).')
+        
 
-        # Fork: DOSCAR format: ispin=1? lsorbit=T?
-        if grepen.ispin==1 or grepen.lsorbit!='F': 
-            ##ispin=1 or spin-orbit coupling.
-            if abs(self.dos[idx_fermi][1])>min_dos:
+        ## parameter: min_dos: is dos considered 0 if it's 0.002? 
+        min_dos = 1E-3
+
+        ## self.dos
+        doscar_file = open("DOSCAR","r")
+        doscar_lines = doscar_file.readlines()
+        doscar_lines_split = [doscar_lines[i].split() for i in range(6,6+grepen.nedos)]
+        self.dos = np.float64(doscar_lines_split)
+        idx_fermi = abs(self.dos[:,0] - grepen.efermi).argmin() + 1
+
+        if grepen.spin == 'ncl':
+            print self.__class__.__name__ + ' __init__ warning: spin=ncl is not well supported'
+        if grepen.spin == 'para' or grepen.spin == 'ncl': 
+
+            if abs(self.dos[idx_fermi][1]) > min_dos:
                 self.log += 'dos.py: conductor.\n'
             else: 
                 self.VB=self.dos[idx_fermi:0:-1]
@@ -905,11 +911,10 @@ class Dos(object):  # check usability of doscar and kpoints
                 if len(self.VB1)==0 or len(self.CB1)==0:
                     self.log += 'dos.py: weird. len(self.VB1/self.CB1) is 0\n'
                     exit(1)
-                self.VBM1=self.VB1[0]
-                self.CBM1=self.CB1[0]
+                self.VBM1 = self.VB1[0]
+                self.CBM1 = self.CB1[0]
                 self.log += 'dos.py: DOS* type is insulator. DOS bandgap* is: ' + self.CBM1-self.VBM1 + ' eV.\n'
-        elif grepen.ispin==2:
-            ##ispin=2
+        elif grepen.spin=='fm' or grepen.spin=='afm':
             if abs(self.dos[idx_fermi][1])>min_dos and abs(self.dos[idx_fermi][2])>min_dos:
                 self.log += 'dos.py: conductor. quite probably. but check dos anyway.\n'
             elif abs(self.dos[idx_fermi][1])<min_dos and abs(self.dos[idx_fermi][2])<min_dos: 
@@ -920,8 +925,7 @@ class Dos(object):  # check usability of doscar and kpoints
                 self.CB1=[self.CB[x][0] for x in range(0,len(self.CB)) if abs(self.CB[x][1])>min_dos]
                 self.CB2=[self.CB[x][0] for x in range(0,len(self.CB)) if abs(self.CB[x][2])>min_dos]
                 if len(self.VB1)==0 or len(self.VB2)==0 or len(self.CB1)==0 or len(self.CB2)==0:
-                    self.log += 'dos.py: weird. len(self.VB1) is ' + str(len(self.VB1)) + '. len(self.VB2) is ' + str(len(self.VB2)) + '. len(self.CB1) is ' + str(len(self.CB1)) + '. len(self.CB2) is ' + str(len(self.CB2))
-                    exit(1)
+                    raise shared.CustomError( 'dos.py: weird. len(self.VB1) is ' + str(len(self.VB1)) + '. len(self.VB2) is ' + str(len(self.VB2)) + '. len(self.CB1) is ' + str(len(self.CB1)) + '. len(self.CB2) is ' + str(len(self.CB2)))
                 self.VBM1=self.VB1[0] ; self.CBM1=self.CB1[0] ; self.VBM2=self.VB2[0] ; self.CBM2=self.CB2[0]
                 CV_divide=0.45
                 self.VBM1S=self.VBM1*(1-CV_divide)+self.CBM1*CV_divide ; self.CBM1S = self.CBM1*(1-CV_divide) + self.VBM1*CV_divide ; self.VBM2S = self.VBM2*(1-CV_divide) + self.CBM2*CV_divide ; self.CBM2S = self.CBM2*(1-CV_divide) + self.VBM2*CV_divide
@@ -941,17 +945,17 @@ class Dos(object):  # check usability of doscar and kpoints
                 self.VBM1=next(self.VB[x][0] for x in range(0,len(self.VB)) if abs(self.VB[x][2])>min_dos or abs(self.VB[x][1])<min_dos)
                 self.CBM1=next(self.CB[x][0] for x in range(0,len(self.CB)) if abs(self.CB[x][2])>min_dos or abs(self.CB[x][1])<min_dos)
                 self.log += 'HM ' + str(self.CBM1-self.VBM1) + '\n'
-        else:
-                self.log += 'dos.py: ispin is not 1 or 2. data corrupt.\n'
+            
 
-        # site-projected dos
-        split_indices = [i for i, x in enumerate(tmplines) if x == tmplines[5]]
-        split_indices.append(len(tmplines))
+        # site-projected dos: split doscar and convert to self.site_dos
+        split_indices = [i for i, x in enumerate(doscar_lines) if x == doscar_lines[5]]
+        split_indices.append(len(doscar_lines))
         self.site_dos = []
         for i in range(0,len(split_indices)-1):
-            tmp = tmplines[split_indices[i]+1:split_indices[i+1]]
-            self.site_dos.append(np.float_([x.split() for x in tmp]))
+            l = doscar_lines[split_indices[i]+1:split_indices[i+1]]
+            self.site_dos.append(np.float_([x.split() for x in l]))
 
+        self.log += '*' * 35 + ' dos of ' + os.getcwd() + ' ' + '*' * 35 + '\n'
         print self.log
 
 # imports bandstructure from EIGENVAL. 
@@ -959,27 +963,36 @@ class Dos(object):  # check usability of doscar and kpoints
 # interpolates.
 # finds all sources of errors in bandstructure.
 class Bands(object):
+
     def __init__(self,grepen):  
-        self.log=''
-        self.log += '*' * 72 + '\n'  # print '*' * 35, ' bands of ',os.getcwd(),' ', '*' * 35    #pretty print
+
         # initialize
-        eigenval_file=open("EIGENVAL","r")
-        tmplines=eigenval_file.readlines()
-        eigenval_lines=[tmplines[i].split() for i in range(6,len(tmplines))]
-        nkpts=len(eigenval_lines)/(grepen.nbands+2)
+        self.log = '*' * 35 + ' bands of ' + os.getcwd() + ' ' + '*' * 35 + '\n'
+        eigenval_file = open("EIGENVAL","r")
+        eigenval_lines = eigenval_file.readlines()
+        if (len(eigenval_lines)<7):
+            raise shared.CustomError(self.__class__.__name__ + ' __init__: EIGENVAL file is not usable')
+        eigenval_lines = [eigenval_lines[i].split() for i in range(6,len(eigenval_lines))]
+        nkpts = len(eigenval_lines)/(grepen.nbands+2)
         list_band_kpte=[]
 
-        # Forking: EIGENVAL format: ispin=1? lsorbit=T?
-        if grepen.ispin==1 or grepen.lsorbit!='F':
+        with open('KPOINTS','r') as kpoints:
+            if (len(kpoints.readlines())>7):
+                raise shared.CustomError(self.__class__.__name__ + ' __init__: KPOINTS does not form a mesh. Module would not work.')
+
+        # Forking: EIGENVAL format depends on spin. 
+        if grepen.spin != 'para':
+            self.log += self.__class__.__name__ + " __init__ warning: only the first spin direction. We are essentially assuming spin=para.\n"
+        if grepen.spin == 'para' or grepen.spin == 'ncl':
             eigenval_e_idx = 1
             eigenval_occ_idx = 2
         else:
             eigenval_e_idx = 1
             eigenval_occ_idx = 3
 
-        # initialise all bands [kx,ky,kz,e,occupancy] -> np.float64::bands
+        # initialise all bands. self.bands[i_band][i_kpt] = [kx,ky,kz,e,occupancy]
         for i_band in range(0,grepen.nbands):
-            band_kpte=[]
+            band_kpte = []
             for i_kpt in range(0,nkpts):
                 kpte = eigenval_lines[i_kpt*(grepen.nbands+2)+1][0:3]
                 energy = float(eigenval_lines[i_kpt*(grepen.nbands+2)+i_band+2][eigenval_e_idx])
@@ -988,9 +1001,9 @@ class Bands(object):
                 kpte.append(occ)
                 band_kpte.append(kpte)
             list_band_kpte.append(band_kpte)
-        self.bands=np.float64(list_band_kpte)
+        self.bands = np.float64(list_band_kpte)
         ## initialise kpoints
-        kpts=[kpte[0:3] for kpte in self.bands[0]]
+        kpts = [kpte[0:3] for kpte in self.bands[0]]
         ### get kpts nearest neighbor list
         min_kpt_dist = np.amin(spatial.distance.pdist(kpts))
         kpts_nn_tree = spatial.cKDTree(kpts)
@@ -1018,12 +1031,11 @@ class Bands(object):
                 self.neargap_bands.append(band)
         self.neargap_bands=np.float_(self.neargap_bands)
         self.log += 'bands.py: number of neargap_bands is %d\n' %(len(self.neargap_bands))
-        self.log += 'bands.py: warning: bands.py has not been adapted for magnetic systems. ispin=2 is fine, but only spin channel 1 is considered.\n'
 
         # precision check 
         ## calculate DeltaE_KPOINTS by grabbing average E diff / average E diff near bandgap from EIGENVAL.
         ### specify ranges to look for
-        range_avg_kpt_de=[0.1,0.15,0.2,0.5]
+        range_avg_kpt_de = [0.1,0.15,0.2,0.5]
         ### pretty print
         widgets = ['precision check bands: ', Percentage(), ' ', Bar(), ' ', ETA()] #pretty print
         pbar = ProgressBar(widgets=widgets, maxval=len(self.neargap_bands)).start()
@@ -1049,48 +1061,47 @@ class Bands(object):
             self.log += '  CBM/VBM +- %.2f eV, difference is %.5f; number of samples is %d.\n' %(val,avg_kpt_de[idx],count_avg_kpt_de[idx])
         self.de_kpoints = max(avg_kpt_de)
         ## fit the band for i) verifying smoothness ii) estimating bandgap
-        if grepen.kpoints_meshable:
-            widgets = ['fitting each band: ', Percentage(), ' ', Bar(), ' ', ETA()] #pretty print
-            pbar = ProgressBar(widgets=widgets, maxval=len(self.neargap_bands)).start()
-            self.fit_neargap_bands = []
-            for i_band,band in enumerate(self.neargap_bands):
-                pbar.update(i_band)
-                fit_neargap_band = Rbf(band[:,0],band[:,1],band[:,2],band[:,3])
-                self.fit_neargap_bands.append(fit_neargap_band)
-            pbar.finish()
+        widgets = ['fitting each band: ', Percentage(), ' ', Bar(), ' ', ETA()] #pretty print
+        pbar = ProgressBar(widgets=widgets, maxval=len(self.neargap_bands)).start()
+        self.fit_neargap_bands = []
+        for i_band,band in enumerate(self.neargap_bands):
+            pbar.update(i_band)
+            fit_neargap_band = Rbf(band[:,0],band[:,1],band[:,2],band[:,3])
+            self.fit_neargap_bands.append(fit_neargap_band)
+        pbar.finish()
         ### ii) estimate bandgap
         #### in each kpoint, get a bandgap (for each fit, get a max/min, then get the band). get the global bandgap. 
-        if grepen.kpoints_meshable:
-            widgets = ['interpolating bandgap: ', Percentage(), ' ', Bar(), ' ', ETA()] #pretty print
-            pbar = ProgressBar(widgets=widgets, maxval=len(kpts)).start()
-            fit_1kpt_bandgaps=[]
-            for i_kpt,kpt in enumerate(kpts):
-                if i_kpt % 100 == 0:
-                    pbar.update(i_kpt)
-                near_kpt_maxmin_bnd=[[x-min_kpt_dist/2,x+min_kpt_dist/2] for x in kpt]
-                near_kpt_maxmin_energies = []
-                for (i_fit_neargap_band,fit_neargap_band) in enumerate(self.fit_neargap_bands):
-                    if fit_neargap_band(kpt[0],kpt[1],kpt[2]) < self.VBM1S:
-                        fun = lambda x: -1*fit_neargap_band(x[0],x[1],x[2]) 
-                        near_kpt_maxmin_energy = -1 * minimize(fun,kpt,bounds=near_kpt_maxmin_bnd).fun
-                        near_kpt_maxmin_energies.append(near_kpt_maxmin_energy)
-                    elif fit_neargap_band(kpt[0],kpt[1],kpt[2]) > self.CBM1S:
-                        fun = lambda x: fit_neargap_band(x[0],x[1],x[2]) 
-                        near_kpt_maxmin_energy = minimize(fun,kpt,bounds=near_kpt_maxmin_bnd).fun
-                        near_kpt_maxmin_energies.append(near_kpt_maxmin_energy)
-                    else: 
-                        print 'bands.py initialisation error: fit_neargap_band ',kpt,' ',fit_neargap_band(kpt[0],kpt[1],kpt[2]),' energy is not above bands.VBM1s or below bands.CBM1S. ignoring.'
-                    if self.VBM1 < near_kpt_maxmin_energy < self.CBM1:
-                        i_energy = min(self.neargap_bands[:,i_kpt,3], key=lambda x:abs(x-near_kpt_maxmin_energy))
-                        o_energy = near_kpt_maxmin_energy
-                        # print 'band.py: interpolated eigenstate found. Energy* is %.4f -> %.4f eV; kpoint* is %s -> %s' %(i_energy,o_energy,kpt,minimize(fun,kpt,bounds=near_kpt_maxmin_bnd).x)
-                near_kpt_maxmin_energies.append(self.VBM1)
-                near_kpt_maxmin_energies.append(self.CBM1)
-                fit_1kpt_bandgap = min([e for e in near_kpt_maxmin_energies if e > self.CBM1S]) - max([e for e in near_kpt_maxmin_energies if e < self.VBM1S])
-                fit_1kpt_bandgaps.append(fit_1kpt_bandgap)
-            self.fit_bandgap = min(fit_1kpt_bandgaps)
-            pbar.finish()
-            self.log += "bands.py: fitted bandgap* is %.5f. Usually bandgap is between fitted and raw bandgap*. For errors see errors.py.\n" %(self.fit_bandgap)
+        widgets = ['interpolating bandgap: ', Percentage(), ' ', Bar(), ' ', ETA()] #pretty print
+        pbar = ProgressBar(widgets=widgets, maxval=len(kpts)).start()
+        fit_1kpt_bandgaps=[]
+        for i_kpt,kpt in enumerate(kpts):
+            if i_kpt % 100 == 0:
+                pbar.update(i_kpt)
+            near_kpt_maxmin_bnd=[[x-min_kpt_dist/2,x+min_kpt_dist/2] for x in kpt]
+            near_kpt_maxmin_energies = []
+            for (i_fit_neargap_band,fit_neargap_band) in enumerate(self.fit_neargap_bands):
+                if fit_neargap_band(kpt[0],kpt[1],kpt[2]) < self.VBM1S:
+                    fun = lambda x: -1*fit_neargap_band(x[0],x[1],x[2]) 
+                    near_kpt_maxmin_energy = -1 * minimize(fun,kpt,bounds=near_kpt_maxmin_bnd).fun
+                    near_kpt_maxmin_energies.append(near_kpt_maxmin_energy)
+                elif fit_neargap_band(kpt[0],kpt[1],kpt[2]) > self.CBM1S:
+                    fun = lambda x: fit_neargap_band(x[0],x[1],x[2]) 
+                    near_kpt_maxmin_energy = minimize(fun,kpt,bounds=near_kpt_maxmin_bnd).fun
+                    near_kpt_maxmin_energies.append(near_kpt_maxmin_energy)
+                else: 
+                    print 'bands.py initialisation error: fit_neargap_band ',kpt,' ',fit_neargap_band(kpt[0],kpt[1],kpt[2]),' energy is not above bands.VBM1s or below bands.CBM1S. ignoring.'
+                if self.VBM1 < near_kpt_maxmin_energy < self.CBM1:
+                    i_energy = min(self.neargap_bands[:,i_kpt,3], key=lambda x:abs(x-near_kpt_maxmin_energy))
+                    o_energy = near_kpt_maxmin_energy
+                    # print 'band.py: interpolated eigenstate found. Energy* is %.4f -> %.4f eV; kpoint* is %s -> %s' %(i_energy,o_energy,kpt,minimize(fun,kpt,bounds=near_kpt_maxmin_bnd).x)
+            near_kpt_maxmin_energies.append(self.VBM1)
+            near_kpt_maxmin_energies.append(self.CBM1)
+            fit_1kpt_bandgap = min([e for e in near_kpt_maxmin_energies if e > self.CBM1S]) - max([e for e in near_kpt_maxmin_energies if e < self.VBM1S])
+            fit_1kpt_bandgaps.append(fit_1kpt_bandgap)
+        self.fit_bandgap = min(fit_1kpt_bandgaps)
+        pbar.finish()
+        self.log += "bands.py: fitted bandgap* is %.5f. Usually bandgap is between fitted and raw bandgap*. For errors see errors.py.\n" %(self.fit_bandgap)
+        self.log += '*' * 35 + ' bands of ' + os.getcwd() + ' ' + '*' * 35 + '\n'
 
         print self.log
     
