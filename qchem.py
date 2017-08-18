@@ -30,7 +30,7 @@ def Dump():
     if 'master' not in shared.NODES:
         raise shared.CustomError('Dump: NODES is empty. You really should not dump.')
     with open(shared.SCRIPT_DIR + '/data/shared.NODES.dump.'+time.strftime('%Y%m%d%H%M%S'),'wb') as dumpfile:
-        pickle.dump(shared.NODES, dumpfile, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(shared.NODES, dumpfile) #, protocol=pickle.HIGHEST_PROTOCOL)
     print 'Dumped' + str(shared.NODES)
 
 
