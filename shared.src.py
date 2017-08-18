@@ -13,6 +13,7 @@ import shutil
 from pprint import pprint
 from functools import wraps
 import paramiko
+import time
 
 
 # INDEX
@@ -21,16 +22,17 @@ import paramiko
 # NODES, Fragile lists
 # ELEMENTS
 # CustomError
-# @moonphase_wrap
 # MySFTPClient
+# @memoize
+# @moonphase_wrap
 
 # 
 # ===========================================================================
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__)) 
 
-DEBUG = True
-#DEBUG = False
+DEBUG = 1   
+#DEBUG = 0    
 
 # Nodes
 # ===========================================================================
@@ -42,7 +44,7 @@ NODES = {}
 #  all non-sigma-bullshit attributes, in the order printed (sigma.clickNode)
 #  - gui.combine.json
 #  - sigma.clickNode (catch: map is not printed in sigma)
-ALL_ATTR_LIST = ['property','phase','cell','comment','path','name','gen','vasp','electron','map','prev']
+ALL_ATTR_LIST = ['property','phase','cell','comment','path','name','gen','vasp','electron','map']   #important as it is, we shall not print 'prev'
 
 #  input attributes, not gen etc.
 #  - qchem.Node.__init__
@@ -261,28 +263,6 @@ class CustomError(Exception):
 
 # ===========================================================================
 
-# @moonphase_wrap
-
-def moonphase_wrap(func):
-    @wraps(func)
-    def wrapped(self, *args, **kwargs):
-        if getattr(self,'path',None) and os.path.isfile(self.path + '/.moonphase'):
-            with open(self.path + '/.moonphase') as f:
-                l = f.read().splitlines(0)
-                if int(l[0]) > -2 and int(l[0]) < 3:
-                    return int(l[0])
-        else:
-            return func(self, *args, **kwargs)
-    return wrapped
-
-import paramiko
-import socket
-import os
-from stat import S_ISDIR
-
-
-# ===========================================================================
-
 # MySFTPClient: A wrapper for paramiko
 
 import paramiko
@@ -309,3 +289,29 @@ class MySFTPClient(paramiko.SFTPClient):
                 pass
             else:
                 raise
+
+
+# ===========================================================================
+
+# @moonphase_wrap
+
+def moonphase_wrap(func):
+    moonphases = {}     # moonphases[self] = [timestamp, result]
+    @wraps(func)
+    def wrapped(self, *args, **kwargs):
+        if self in moonphases and time.time()-moonphases[self][0] < 20:
+            if DEBUG == 2:  print 'moonphase: used cached value'
+            return moonphases[self][1]
+        elif getattr(self,'path',None) and os.path.isfile(self.path + '/.moonphase'):
+            with open(self.path + '/.moonphase') as f:
+                l = f.read().splitlines(0)
+                if int(l[0]) > -2 and int(l[0]) < 3:
+                    return int(l[0])
+        else:
+            result = func(self, *args, **kwargs)
+            moonphases[self] = [time.time(), result]
+            return result
+    return wrapped
+
+
+

@@ -312,9 +312,9 @@ def get_dumps_list():
 def request_():  # either merge json, or use shared.NODES['master']     # yep, this is the magic function.
     if request.method == 'POST':
         old_json = request.get_json(force=True)
-        print 'before to_json' + '*'*70
+        if shared.DEBUG==2: print 'before to_json' + '*'*70
         new_json = to_json(shared.NODES['master'])
-        print 'after to_json' + '*'*70
+        if shared.DEBUG==2: print 'after to_json' + '*'*70
         new_json = combine_json(new_json, old_json)
         return jsonify( new_json )
     else:

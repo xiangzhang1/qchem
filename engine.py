@@ -765,16 +765,14 @@ class Vasp(object):
                 except CalledProcessError:
                     vasp_is_running = False
             elif self.gen.parse_if('platform=nanaimo|irmik|hodduk'):
-                if shared.DEBUG: print self.__class__.__name__ + '.moonphase: asking %s for status of {%s}' %(self.gen.getkw('platform'), self.path)
-                #ssh = paramiko.SSHClient()
-                #ssh.load_system_host_keys()
-                #ssh.connect('nanaimo', username='xzhang1')
-                #ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command("squeue -n %s" %self.remote_folder_name)
-                #squeue_result = ssh_stdout.read().strip()
-                #ssh.close()
-                #time.sleep(0.1)
-                #vasp_is_running = ( len(squeue_result.splitlines()) > 1 )
-                vasp_is_running = True
+                if shared.DEBUG==2: print self.__class__.__name__ + '.moonphase: asking %s for status of {%s}' %(self.gen.getkw('platform'), self.path)
+                ssh = paramiko.SSHClient()
+                ssh.load_system_host_keys()
+                ssh.connect('nanaimo', username='xzhang1')
+                ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command("squeue -n %s" %self.remote_folder_name)
+                squeue_result = ssh_stdout.read().strip()
+                ssh.close()
+                vasp_is_running = ( len(squeue_result.splitlines()) > 1 )
             else:
                 raise shared.CustomError(self.__class__.__name__ + '.moonphase: i don\'t know what to do')
 
