@@ -160,7 +160,7 @@ class Node(object):
             if not getattr(self, 'cell', None) or not getattr(self, 'phase', None):
                 raise shared.CustomError(self.__class__.__name__ + '.compute: cell or phase is missing. Either make sure parent has something you can inherit, or enter them.')
             if not getattr(self, 'path', None):
-                self.path = raw_input('Provide path for this node: \n %s \n >:' %str(self))    # counterpart implemented in sigmajs
+                self.path = raw_input('Provide path for node {%s} >:' %self.name)    # counterpart implemented in sigmajs
             if not getattr(self, 'gen', None):
                 self.gen = engine.Gen(self)
             if not getattr(self, self.gen.getkw('engine'), None):

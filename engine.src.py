@@ -17,6 +17,7 @@ import hashlib
 from subprocess import call, check_output, STDOUT, CalledProcessError
 from filecmp import dircmp
 from collections import OrderedDict
+import paramiko
 
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
@@ -690,7 +691,7 @@ class Vasp(object):
                 print self.__class__.__name__ + ': vasp_gpu'
             else:
                 flavor = 'std'
-            self.foldername = self.path.split('/')[-2] + '_' + self.path.split('/')[-1] + '_' + hashlib.md5(self.path).hexdigest()
+            self.remote_folder_name = self.path.split('/')[-2] + '_' + self.path.split('/')[-1] + '_' + hashlib.md5(self.path).hexdigest()
             # write scripts and instructions
             # subfile actually runs vasp. wrapper submits the subfile to system.
             self.wrapper = '#!/bin/bash\n' ; self.subfile = '#!/bin/bash\n'
@@ -701,10 +702,10 @@ class Vasp(object):
                 self.subfile += 'echo $PWD `date` end  ; echo '+'-'*75+'\n'
                 self.wrapper += 'nohup ./subfile 2>&1 >> run.log &'
             if self.gen.getkw('platform') == 'nanaimo':
-                self.wrapper += 'rsync -a . nanaimo:~/%s\n' %self.foldername
+                self.wrapper += 'rsync -a . nanaimo:~/%s\n' %self.remote_folder_name
                 self.wrapper += 'ssh nanaimo <<EOF\n'
-                self.wrapper += ' cd %s\n' %self.foldername
-                self.wrapper += ' sbatch --nodes=%s --ntasks=%s --job-name=%s -t 12:00:00 --export=ALL subfile\n' %(self.gen.getkw('nnode'), ncore_total, self.foldername)
+                self.wrapper += ' cd %s\n' %self.remote_folder_name
+                self.wrapper += ' sbatch --nodes=%s --ntasks=%s --job-name=%s -t 12:00:00 --export=ALL subfile\n' %(self.gen.getkw('nnode'), ncore_total, self.remote_folder_name)
                 self.wrapper += 'EOF\n'
                 self.subfile += '#!/bin/bash\n. /usr/share/Modules/init/bash\nmodule purge\nmodule load intel\nmodule load impi\nmpirun -np %s /opt/vasp.5.4.4/bin/vasp_%s' %(ncore_total, flavor)
             with open('wrapper','w') as of_:
@@ -729,10 +730,11 @@ class Vasp(object):
                 self.log = if_.read()
             # write parent cell if opt
             parent_node = Map().rlookup(attr_list={'vasp':self}, node_list=[self.prev], unique=True, parent=True)
-            with open('CONTCAR','r') as infile:
-                text = infile.read()
-                setattr(parent_node, 'cell', Cell(text))
-                setattr(self, 'optimized_cell', Cell(text))
+            if self.prev.parse_if('opt'):
+                with open('CONTCAR','r') as infile:
+                    text = infile.read()
+                    setattr(parent_node, 'cell', Cell(text))
+                    setattr(self, 'optimized_cell', Cell(text))
 
         else:
             print self.__class__.__name__ + ' compute: calculation already completed at %s. Why are you here?' %self.path
@@ -743,42 +745,78 @@ class Vasp(object):
             return 0
         elif not getattr(self, 'log', None):    
             # implements the choke mechanism. instead of reporting computable, report choke. unless detects computation complete, then report success/fail
+            # use sshfs.
+            if not os.path.exists('/home/xzhang1/nanaimo/trash'):
+                raise shared.CustomError(self.__class__.__name__+'.moonphase: is sshfs mounted propertly?')
             if not os.path.exists(self.path):
                 return -1
-            print self.__class__.__name__ + ' moonphase: FYI: status is -1 because path doesnt exist'
-            os.chdir(self.path)
-            # dellpc: check for vasp running, check vasprun.xml
+                print self.__class__.__name__ + ' moonphase: could not locate path {%s}' %(self.path)
+
+            # vasp is not running
             if (self.gen.parse_if('platform=dellpc')):
                 try:
                     pgrep_output = check_output(['pgrep','vasp'])
                     vasp_is_running = pgrep_output.strip() != ''
                 except CalledProcessError:
                     vasp_is_running = False
-                if os.path.isfile('vasprun.xml') and os.path.getmtime('vasprun.xml')>os.path.getmtime('wrapper') and not vasp_is_running) : # vasprun.xml is ready for inspection
-                    with open('vasprun.xml','r') as if_:
-                        if if_.read().splitlines()[-1] != '</modeling>' and not os.path.isfile('.moonphase'):
-                            print(self.__class__.__name__+'compute FYI: Vasp computation at %s went wrong, status code -1. Use .moonphase file to overwrite.' %self.path)
-                            return -1
-                        else:
-                            self.compute()
-                            return 2
-                else:   # vasprun.xml is not ready at all
-                    return 1
-            # nanaimo: check for job running, check vapsrun.xml
-            elif (self.gen.parse_if('platform=nanaimo'):
-                if not getattr(self, 'foldername', None):
-                    raise shared.CustomError(self.__class__.__name__ + '.moonphase(): while checking moonphase of nanaimo, I found no foldername. ')
-                import paramiko
+            elif self.gen.parse_if('platform=nanaimo|irmik|hodduk'):
                 ssh = paramiko.SSHClient()
                 ssh.load_system_host_keys()
                 ssh.connect('nanaimo', username='xzhang1')
-                ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command("squeue -n %s" %self.foldername)
-                result = ssh_stdout.readlines().strip()
-                result2 = ssh_stderr.readlines().strip()
-                if result2 != '':
-                    raise shared.CustomError(self.__class__.__name__ + '.moonphase(): while checking nanaimo status, stderr is not empty. Content of stderr is {%s}.' %result2)
-                if len(result.splitlines()) > 1:
-                    
+                ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command("squeue -n %s" %self.remote_folder_name)
+                squeue_result = ssh_stdout.read().strip()
+                vasp_is_running = ( len(squeue_result.splitlines()) > 1 )
+            else:
+                raise shared.CustomError(self.__class__.__name__ + '.moonphase: i don\'t know what to do')
+
+            # change to vasprun.xml directory
+            if self.gen.parse_if('platform=dellpc'):
+                os.chdir(self.path)
+            elif self.gen.parse_if('platform=nanaimo|irmik|hodduk'):
+                if not getattr(self, 'remote_folder_name', None):
+                    self.remote_folder_name = self.path.split('/')[-2] + '_' + self.path.split('/')[-1] + '_' + hashlib.md5(self.path).hexdigest()
+                    print self.__class__.__name__ + '.moonphase: repaired self.remote_folder_name'
+                os.chdir('/home/xzhang1/'+self.gen.getkw('platform')+'/'+self.remote_folder_name)
+            else:
+                pass
+
+            # inspect vasprun.xml
+            if os.path.isfile('vasprun.xml') and os.path.getmtime('vasprun.xml')>os.path.getmtime('wrapper') and not vasp_is_running :
+                with open('vasprun.xml','r') as if_:
+                    if if_.read().splitlines()[-1] != '</modeling>' and not os.path.isfile('.moonphase'):
+                        print(self.__class__.__name__+'compute FYI: Vasp computation at %s went wrong. vasprun.xml is incomplete. Use .moonphase file to overwrite.' %self.path)
+                        return -1
+                    else:
+                        # copy to the respective directory
+                        if self.gen.parse_if('platform=nanaimo|irmik|hodduk'):
+                            print self.__class__.__name__ + '.moonphase: copying nanaimo folder {%s} back to self.path {%s}' %(self.remote_folder_name, self.path)
+                            p = subprocess.Popen(['rsync','-avz','nanaimo:%s/','%s'], stdout=subprocess.PIPE, bufsize=1) %(self.remote_folder_name, self.path)
+                            for line in iter(p.stdout.readline, b''):
+                                print line,
+                            p.stdout.close()
+                            p.wait()
+                            print self.__class__.__name__ + '.moonphase: copy complete.'
+                        self.compute()
+                        return 2
+            else:
+                return 1
+
+            # dellpc: check for vasp running, check vasprun.xml
+            # nanaimo: check for job running, check vapsrun.xml
+
+                    if os.path.isfile('vasprun.xml') and os.path.getmtime('vasprun.xml')>os.path.getmtime('wrapper') : 
+                        with open('vasprun.xml','r') as if_:
+                            if if_.read().splitlines()[-1] != '</modeling>' and not os.path.isfile('.moonphase'):
+                                print(self.__class__.__name__+'compute FYI: Vasp computation at %s went wrong, status code -1. Use .moonphase file to overwrite.' %self.path)
+                                return -1
+                            else:
+                                self.compute()
+                                return 2
+                    else:
+                        print(self.__class__.__name__+'compute WARNING: no vasprun.xml found in nanaimo:%s . Have you submitted job yet?' %self.remote_folder_name) 
+                        return 1
+                else:   # vasprun.xml is not ready at all
+                    return 1
             else:   # I don't know, so I keep waiting
                 return 1
                 
@@ -937,13 +975,10 @@ class Dos(object):
         doscar_file = open("DOSCAR","r")
         doscar_lines = doscar_file.readlines()
         doscar_lines_split = [doscar_lines[i].split() for i in range(6,6+grepen.nedos)]
-        self.dos = np.float64(doscar_lines_split)   # self.dos
+        self.dos = np.float64(doscar_lines_split)   # self.does: total dos. for para and ncl, energy dos idos. for fm and afm, energy updos iupdos downdos idowndos.
         idx_fermi = abs(self.dos[:,0] - grepen.efermi).argmin() + 1
 
-        if grepen.spin == 'ncl':
-            print self.__class__.__name__ + ' __init__ warning: spin=ncl is not well supported'
         if grepen.spin == 'para' or grepen.spin == 'ncl': 
-
             if abs(self.dos[idx_fermi][1]) > min_dos:
                 self.log += 'dos.py: conductor.\n'
             else: 
@@ -952,8 +987,7 @@ class Dos(object):
                 self.VB1=[self.VB[x][0] for x in range(0,len(self.VB)) if abs(self.VB[x][1])>min_dos]
                 self.CB1=[self.CB[x][0] for x in range(0,len(self.CB)) if abs(self.CB[x][1])>min_dos]
                 if len(self.VB1)==0 or len(self.CB1)==0:
-                    self.log += 'dos.py: weird. len(self.VB1/self.CB1) is 0\n'
-                    exit(1)
+                    raise shared.CustomError(self.__class__.__name__+'.__init__: weird. len(self.VB1/self.CB1) is 0\n')
                 self.VBM1 = self.VB1[0]
                 self.CBM1 = self.CB1[0]
                 self.log += 'dos.py: DOS* type is insulator. DOS bandgap* is: ' + str(self.CBM1-self.VBM1) + ' eV.\n'
@@ -990,12 +1024,12 @@ class Dos(object):
                 self.log += 'HM ' + str(self.CBM1-self.VBM1) + '\n'
 
         # site-projected dos: split doscar and convert to self.site_dos
-        split_indices = [i for i, x in enumerate(doscar_lines) if x == doscar_lines[5]]
+        split_indices = [i for i, x in enumerate(doscar_lines) if x == doscar_lines[5]] # splitter line numbers
         split_indices.append(len(doscar_lines))
         self.site_dos = []
         for i in range(0,len(split_indices)-1):
             l = doscar_lines[split_indices[i]+1:split_indices[i+1]]
-            self.site_dos.append(np.float_([x.split() for x in l]))
+            self.site_dos.append(np.float_([x.split() for x in l])) # self.site_dos[i+1]: pdos of i-th atom.
 
         self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
         print self.log

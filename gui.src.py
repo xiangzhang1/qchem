@@ -21,14 +21,14 @@ import engine
 from shared import ELEMENTS
 
 # logging
-import logging
-log = logging.getLogger('werkzeug')
+#import logging
+#log = logging.getLogger('werkzeug')
 #log.setLevel(logging.ERROR)
 #logging.basicConfig(filename='error.log',level=logging.DEBUG)
-class NoParsingFilter(logging.Filter):
-    def filter(self, record):
-        return not '/make_connection' in record.getMessage()
-log.addFilter(NoParsingFilter())
+#class NoParsingFilter(logging.Filter):
+#    def filter(self, record):
+#        return not '/make_connection' in record.getMessage()
+#log.addFilter(NoParsingFilter())
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
