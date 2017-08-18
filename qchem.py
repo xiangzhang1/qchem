@@ -95,7 +95,7 @@ class Node(object):
                 getattr(self,self.gen.getkw('engine'),None).delete()
         # remove all
         for varname in vars(self).keys():
-            if varname not in shared.INPUT_ATTR_LIST:
+            if varname not in shared.READABLE_ATTR_LIST:
                 delattr(self, varname)
                 print self.__class__.__name__ + '.reset: attribute {%s} deleted' %varname
         foldername = self.path + '/.moonphase'

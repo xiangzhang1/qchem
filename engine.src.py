@@ -131,7 +131,11 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
             return result
         else:                                   ## parse modname
             if self.moonphase>0:    self.mod_legal_set.add(expression)
-            return (expression in self.mod and self.mod[expression]==set([True]))        
+            if expression in self.mod and self.mod[expression]==set([True]):
+                return True
+            else:  #not defined means not written, which means no
+                return False
+
 
     def write_incar_kpoints(self):
         with open('INCAR','w') as outfile:
@@ -191,10 +195,13 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
             for line in [ [p.strip() for p in l.split(':')] for l in lines if not l.startswith('#') ]:
                 '''if len(line) < 4: raise shared.CustomError('bad conf grammar error: needs 3 colons per line least in {%s}' %line)'''
                 for part in [p.strip() for p in line[1].split(',') ]:
-                    if self.parse_if(line[0]) and self.parse_require(part,False):  
-                        self.moonphase=2 ; self.parse_require(part,True) ; self.moonphase=1
-                    else:
-                        self.require.append([line[0],part,line[2],line[3]])
+                    try:
+                        if self.parse_if(line[0]) and self.parse_require(part,False):  
+                            self.moonphase=2 ; self.parse_require(part,True) ; self.moonphase=1
+                        else:
+                            self.require.append([line[0],part,line[2],line[3]])
+                    except shared.CustomError:
+                            self.require.append([line[0],part,line[2],line[3]])
         ## round 2+: got a 'no' in first round
         continue_flag = True
         while continue_flag:
@@ -319,7 +326,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
 
     def ismear5check(self):
         if 'kpoints' not in self.kw:
-            return False
+            raise shared.CustomError(self.__class__.__name__ + '.ismear5check: kpoints is undefined. Refer to execution order rules.')
 	kpoints = self.getkw('kpoints').split(' ')
         return np.prod([int(x) for x in kpoints[:-2] ]) > 2
 
@@ -683,7 +690,7 @@ class Vasp(object):
                 print self.__class__.__name__ + ': vasp_gpu'
             else:
                 flavor = 'std'
-            foldername = self.path.split('/')[-2] + '_' + self.path.split('/')[-1] + '_' + hashlib.md5(self.path).hexdigest()
+            self.foldername = self.path.split('/')[-2] + '_' + self.path.split('/')[-1] + '_' + hashlib.md5(self.path).hexdigest()
             # write scripts and instructions
             # subfile actually runs vasp. wrapper submits the subfile to system.
             self.wrapper = '#!/bin/bash\n' ; self.subfile = '#!/bin/bash\n'
@@ -694,10 +701,10 @@ class Vasp(object):
                 self.subfile += 'echo $PWD `date` end  ; echo '+'-'*75+'\n'
                 self.wrapper += 'nohup ./subfile 2>&1 >> run.log &'
             if self.gen.getkw('platform') == 'nanaimo':
-                self.wrapper += 'rsync -a . nanaimo:~/%s\n' %foldername
+                self.wrapper += 'rsync -a . nanaimo:~/%s\n' %self.foldername
                 self.wrapper += 'ssh nanaimo <<EOF\n'
-                self.wrapper += ' cd %s\n' %foldername
-                self.wrapper += ' sbatch --nodes=%s --ntasks=%s --job-name=%s -t 12:00:00 --export=ALL subfile\n' %(self.gen.getkw('nnode'), ncore_total, self.path)
+                self.wrapper += ' cd %s\n' %self.foldername
+                self.wrapper += ' sbatch --nodes=%s --ntasks=%s --job-name=%s -t 12:00:00 --export=ALL subfile\n' %(self.gen.getkw('nnode'), ncore_total, self.foldername)
                 self.wrapper += 'EOF\n'
                 self.subfile += '#!/bin/bash\n. /usr/share/Modules/init/bash\nmodule purge\nmodule load intel\nmodule load impi\nmpirun -np %s /opt/vasp.5.4.4/bin/vasp_%s' %(ncore_total, flavor)
             with open('wrapper','w') as of_:
@@ -738,24 +745,44 @@ class Vasp(object):
             # implements the choke mechanism. instead of reporting computable, report choke. unless detects computation complete, then report success/fail
             if not os.path.exists(self.path):
                 return -1
-                print self.__class__.__name__ + ' moonphase: FYI status is -1 because path doesnt exist'
+            print self.__class__.__name__ + ' moonphase: FYI: status is -1 because path doesnt exist'
             os.chdir(self.path)
-            try:
-                pgrep_output = check_output(['pgrep','vasp'])
-                vasp_is_running = pgrep_output.strip() != ''
-            except CalledProcessError:
-                vasp_is_running = False
-            if os.path.isfile('vasprun.xml') and os.path.getmtime('vasprun.xml')>os.path.getmtime('wrapper') and (self.gen.parse_if('platform!=dellpc') or not vasp_is_running) :
-                with open('vasprun.xml','r') as if_:
-                    if if_.read().splitlines()[-1] != '</modeling>' and not os.path.isfile('.moonphase'):
-                        #print(self.__class__.__name__+'compute FYI: Vasp computation at %s went wrong, status code -1. Use .moonphase file to overwrite.' %self.path)
-                        return -1
-                    else:
-                        self.compute()
-                        return 2
-            else:
+            # dellpc: check for vasp running, check vasprun.xml
+            if (self.gen.parse_if('platform=dellpc')):
+                try:
+                    pgrep_output = check_output(['pgrep','vasp'])
+                    vasp_is_running = pgrep_output.strip() != ''
+                except CalledProcessError:
+                    vasp_is_running = False
+                if os.path.isfile('vasprun.xml') and os.path.getmtime('vasprun.xml')>os.path.getmtime('wrapper') and not vasp_is_running) : # vasprun.xml is ready for inspection
+                    with open('vasprun.xml','r') as if_:
+                        if if_.read().splitlines()[-1] != '</modeling>' and not os.path.isfile('.moonphase'):
+                            print(self.__class__.__name__+'compute FYI: Vasp computation at %s went wrong, status code -1. Use .moonphase file to overwrite.' %self.path)
+                            return -1
+                        else:
+                            self.compute()
+                            return 2
+                else:   # vasprun.xml is not ready at all
+                    return 1
+            # nanaimo: check for job running, check vapsrun.xml
+            elif (self.gen.parse_if('platform=nanaimo'):
+                if not getattr(self, 'foldername', None):
+                    raise shared.CustomError(self.__class__.__name__ + '.moonphase(): while checking moonphase of nanaimo, I found no foldername. ')
+                import paramiko
+                ssh = paramiko.SSHClient()
+                ssh.load_system_host_keys()
+                ssh.connect('nanaimo', username='xzhang1')
+                ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command("squeue -n %s" %self.foldername)
+                result = ssh_stdout.readlines().strip()
+                result2 = ssh_stderr.readlines().strip()
+                if result2 != '':
+                    raise shared.CustomError(self.__class__.__name__ + '.moonphase(): while checking nanaimo status, stderr is not empty. Content of stderr is {%s}.' %result2)
+                if len(result.splitlines()) > 1:
+                    
+            else:   # I don't know, so I keep waiting
                 return 1
-        else:
+                
+        else:   # you got log already
             return 2
 
     def delete(self):

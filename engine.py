@@ -131,7 +131,11 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
             return result
         else:                                   ## parse modname
             if self.moonphase>0:    self.mod_legal_set.add(expression)
-            return (expression in self.mod and self.mod[expression]==set([True]))        
+            if expression in self.mod and self.mod[expression]==set([True]):
+                return True
+            else:  #not defined means not written, which means no
+                return False
+
 
     def write_incar_kpoints(self):
         with open('INCAR','w') as outfile:
@@ -191,10 +195,13 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
             for line in [ [p.strip() for p in l.split(':')] for l in lines if not l.startswith('#') ]:
                 if len(line) < 4: raise shared.CustomError('bad conf grammar error: needs 3 colons per line least in {%s}' %line)
                 for part in [p.strip() for p in line[1].split(',') ]:
-                    if self.parse_if(line[0]) and self.parse_require(part,False):  
-                        self.moonphase=2 ; self.parse_require(part,True) ; self.moonphase=1
-                    else:
-                        self.require.append([line[0],part,line[2],line[3]])
+                    try:
+                        if self.parse_if(line[0]) and self.parse_require(part,False):  
+                            self.moonphase=2 ; self.parse_require(part,True) ; self.moonphase=1
+                        else:
+                            self.require.append([line[0],part,line[2],line[3]])
+                    except shared.CustomError:
+                            self.require.append([line[0],part,line[2],line[3]])
         ## round 2+: got a 'no' in first round
         continue_flag = True
         while continue_flag:
@@ -319,7 +326,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
 
     def ismear5check(self):
         if 'kpoints' not in self.kw:
-            return False
+            raise shared.CustomError(self.__class__.__name__ + '.ismear5check: kpoints is undefined. Refer to execution order rules.')
 	kpoints = self.getkw('kpoints').split(' ')
         return np.prod([int(x) for x in kpoints[:-2] ]) > 2
 

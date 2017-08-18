@@ -46,8 +46,6 @@ ALL_ATTR_LIST = ['property','phase','cell','comment','name','gen','vasp','electr
 #  - qchem.Node.__init__
 #  - sigma.edit_vars_addfield
 READABLE_ATTR_LIST = ['name','phase','cell','property','map','comment','path']
-#  - qchem.Node.reset()
-INPUT_ATTR_LIST = ['name','phase','cell','property','map','comment','path', 'prev'] # prev is not readable.
 
 #  for the inherit feature. 
 #  - qchem.Node.compute
