@@ -659,7 +659,10 @@ class Vasp(object):
         self.path = node.path
         self.prev = node.prev
 
+
     def compute(self):
+        
+        if shared.DEBUG==2:    print 'calling %s(%s).compute' %(self.__class__.__name__, getattr(self,'path','')) 
 
         if not getattr(self, 'wrapper', None):
             if os.path.exists(self.path):
@@ -722,15 +725,14 @@ class Vasp(object):
 
         elif not getattr(self,'log',None):  
             os.chdir(self.path)
-            # moonphase=1. should not be called unless moonphase() decides to report success and further compute.
-            # write log
+            # log
             l = os.listdir(self.path)
             filename = [x for x in l if x.startswith(('slurm-','run.log','OSZICAR'))][0]
             with open(filename,'r') as if_:
                 self.log = if_.read()
             # write parent cell if opt
             parent_node = Map().rlookup(attr_list={'vasp':self}, node_list=[self.prev], unique=True, parent=True)
-            if self.prev.parse_if('opt'):
+            if self.prev.gen.parse_if('opt'):
                 with open('CONTCAR','r') as infile:
                     text = infile.read()
                     setattr(parent_node, 'cell', Cell(text))
@@ -741,71 +743,74 @@ class Vasp(object):
 
     @shared.moonphase_wrap
     def moonphase(self):
+
+        if shared.DEBUG==2:    print 'calling %s(%s).moonphase' %(self.__class__.__name__, getattr(self,'path','')) 
+
         if not getattr(self, 'wrapper', None):
             return 0
-        elif not getattr(self, 'log', None):    
+        elif not getattr(self, 'log', None): 
             # implements the choke mechanism. instead of reporting computable, report choke. unless detects computation complete, then report success/fail
+            # use sshfs.
+            if not os.path.exists('/home/xzhang1/Shared/nanaimo/trash'):
+                raise shared.CustomError(self.__class__.__name__+'.moonphase: is sshfs mounted propertly?')
             if not os.path.exists(self.path):
                 return -1
-                print self.__class__.__name__ + ' moonphase: status is -1 because path {%s} does not exist' %(self.path)
-            os.chdir(self.path)
-            # dellpc: check for vasp running, check vasprun.xml
+                print self.__class__.__name__ + ' moonphase: could not locate the original path {%s}' %(self.path)
+
+            # vasp is not running
             if (self.gen.parse_if('platform=dellpc')):
                 try:
                     pgrep_output = check_output(['pgrep','vasp'])
                     vasp_is_running = pgrep_output.strip() != ''
                 except CalledProcessError:
                     vasp_is_running = False
-                if os.path.isfile('vasprun.xml') and os.path.getmtime('vasprun.xml')>os.path.getmtime('wrapper') and not vasp_is_running : # vasprun.xml is ready for inspection
-                    with open('vasprun.xml','r') as if_:
-                        if if_.read().splitlines()[-1] != '</modeling>' and not os.path.isfile('.moonphase'):
-                            print(self.__class__.__name__+'compute FYI: Vasp computation at %s went wrong, status code -1. Use .moonphase file to overwrite.' %self.path)
-                            return -1
-                        else:
-                            self.compute()
-                            return 2
-                else:   # vasprun.xml is not ready at all
-                    return 1
-            # nanaimo: check for job running, check vapsrun.xml
-            elif self.gen.parse_if('platform=nanaimo'):
+            elif self.gen.parse_if('platform=nanaimo|irmik|hodduk'):
+                if shared.DEBUG: print self.__class__.__name__ + '.moonphase: asking %s for status of {%s}' %(self.gen.getkw('platform'), self.path)
+                #ssh = paramiko.SSHClient()
+                #ssh.load_system_host_keys()
+                #ssh.connect('nanaimo', username='xzhang1')
+                #ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command("squeue -n %s" %self.remote_folder_name)
+                #squeue_result = ssh_stdout.read().strip()
+                #ssh.close()
+                #time.sleep(0.1)
+                #vasp_is_running = ( len(squeue_result.splitlines()) > 1 )
+                vasp_is_running = True
+            else:
+                raise shared.CustomError(self.__class__.__name__ + '.moonphase: i don\'t know what to do')
+
+            # change to vasprun.xml directory
+            if self.gen.parse_if('platform=dellpc'):
+                os.chdir(self.path)
+            elif self.gen.parse_if('platform=nanaimo|irmik|hodduk'):
                 if not getattr(self, 'remote_folder_name', None):
-                    self.remote_folder_name = self.path.split('/')[-2] + '_' + self.path.split('/')[-1] + '_' + hashlib.md5(self.path).hexdigest()
+                    self.remote_folder_name = self.path.split('/')[-2] + '_' + self.path.split('/')[-1] + '_' + hashlib.md5(self.path).hexdigest()[:5] + '_' + str(time.time()) 
                     print self.__class__.__name__ + '.moonphase: repaired self.remote_folder_name'
-                ssh = paramiko.SSHClient()
-                ssh.load_system_host_keys()
-                ssh.connect('nanaimo', username='xzhang1')
-                ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command("squeue -n %s" %self.remote_folder_name)
-                result = ssh_stdout.read().strip()
-                result2 = ssh_stderr.read().strip()
-                if result2 != '':
-                    raise shared.CustomError(self.__class__.__name__ + '.moonphase(): while checking nanaimo status, stderr is not empty. Content of stderr is {%s}.' %result2)
-                if len(result.splitlines()) == 1:   # not running anymore
-                    print self.__class__.__name__ + '.moonphase: copying nanaimo folder {%s} back to self.path {%s}' %(self.remote_folder_name, self.path)
-
-                    p = subprocess.Popen(['rsync','-avz','nanaimo:%s/','%s'], stdout=subprocess.PIPE, bufsize=1) %(self.remote_folder_name, self.path)
-                    for line in iter(p.stdout.readline, b''):
-                        print line,
-                    p.stdout.close()
-                    p.wait()
-
-                    print self.__class__.__name__ + '.moonphase: copy complete.'
-                    if os.path.isfile('vasprun.xml') and os.path.getmtime('vasprun.xml')>os.path.getmtime('wrapper') : 
-                        with open('vasprun.xml','r') as if_:
-                            if if_.read().splitlines()[-1] != '</modeling>' and not os.path.isfile('.moonphase'):
-                                print(self.__class__.__name__+'compute FYI: Vasp computation at %s went wrong, status code -1. Use .moonphase file to overwrite.' %self.path)
-                                return -1
-                            else:
-                                self.compute()
-                                return 2
-                    else:
-                        print(self.__class__.__name__+'compute WARNING: no vasprun.xml found in nanaimo:%s . Have you submitted job yet?' %self.remote_folder_name) 
-                        return 1
-                else:   # vasprun.xml is not ready at all
+                remote_path = '/home/xzhang1/Shared/'+self.gen.getkw('platform')+'/'+self.remote_folder_name
+                if not os.path.exists(remote_path):
                     return 1
-            else:   # I don't know, so I keep waiting
+                os.chdir(remote_path)
+            else:
+                pass
+
+            # inspect vasprun.xml
+            if os.path.isfile('vasprun.xml') and os.path.getmtime('vasprun.xml')>os.path.getmtime('wrapper') and not vasp_is_running :
+                with open('vasprun.xml','r') as if_:
+                    if if_.read().splitlines()[-1] != '</modeling>' and not os.path.isfile('.moonphase'):
+                        print(self.__class__.__name__+'compute FYI: Vasp computation at %s went wrong. vasprun.xml is incomplete. Use .moonphase file to overwrite.' %self.path)
+                        return -1
+                    else:
+                        # download folder
+                        if self.gen.parse_if('platform=nanaimo|irmik|hodduk'):
+                            print self.__class__.__name__ + '.moonphase: copying nanaimo folder {%s} back to self.path {%s}' %(self.remote_folder_name, self.path)
+                            subprocess.Popen(['rsync', '-a', '-h', '--info=progress2', '/home/xzhang1/Shared/%s/%s/' %(self.gen.getkw('platform'),self.remote_folder_name), '%s'%self.path], stdout=sys.stdout, stderr=sys.stderr).wait()
+                            #os.system('scp -r /home/xzhang1/Shared/%s/%s/ %s' %(self.gen.getkw('platform'), self.remote_folder_name, self.path))
+                            print self.__class__.__name__ + '.moonphase: copy complete.'
+                        self.compute()
+                        return 2
+            else:
                 return 1
-                
-        else:   # you got log already
+
+        else:   # getattr(self,'log',None)!=None
             return 2
 
     def delete(self):

@@ -1,4 +1,6 @@
 import shared
+import sys
+import paramiko
 import qchem
 import engine
 import subprocess
@@ -19,9 +21,9 @@ import subprocess
 
 #qchem.Dump()
 
-
-p = subprocess.Popen(['/home/xzhang1/src/qchem/qchem/test2.sh'], stdout=subprocess.PIPE, bufsize=1) 
-for line in iter(p.stdout.readline, b''):
-    print line,
-p.stdout.close()
-p.wait()
+ssh = paramiko.SSHClient()
+ssh.load_system_host_keys()
+ssh.connect('nanaimo', username='xzhang1')
+ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command("squeue -n ssr")
+squeue_result = ssh_stdout.read().strip()
+vasp_is_running = ( len(squeue_result.splitlines()) > 1 )

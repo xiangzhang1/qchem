@@ -1,0 +1,108 @@
+\documentclass{book}
+\usepackage{XeCJK}
+\setCJKmainfont{SimSun}
+\include{header.tex}
+\begin{document}
+
+概率论：称以下函数为概率。
+称以下为随机变量：若P为概率？
+
+概率力学：这样的操作重复A_i频率靠近blablala。
+
+
+随机过程：若P为概率，称以下为随机过程：X(w)is a funtion.
+
+
+%
+
+对这样系统，所有物理量都：f_i重复频率靠近概率值如下。
+
+宏观量等于期待值如下。%等于物理量重复极限如下。%%等于长时间重复靠近者如下。
+
+系统参数这样。
+
+%满足特定条件的 随机过程。
+
+称系统${***,\textit{cadlog-process }\hat{\ket{\psi}}(t)}$为统计量子系统\ldots，称随机变量$\hat{\psi}|_t$为（实在系统在$t$时刻对应的）混合态。若
+一二三四五
+
+
+%%
+对这样系统，物理量(t)重复频率靠近概率值如下。
+
+宏观量等于长时间重复靠近者如下。
+
+系统参数这样。
+
+称系统${***,\ket{\psi}(t)$为量子系统\ldots，称随机变量$\hat{\psi}|_t$为（实在系统在$t$时刻对应的）混合态。若
+一二三四五
+
+
+
+\section{公理集论}
+
+以下进行朴素三段论的讨论。
+
+\begin{dfn}[公式]
+由以下字母表中的若干有限个符号按照一定的规律形成的符号串叫公式。字母表为：
+\[\lnot,\land,\exists,\leftrightarrow,),(,=,\in,x,y,z,\cdots\]%\leftrightarrow为了避免“缩写”的说法
+规则为\\
+\begin{enumerate}%Something else!
+\item $x\in y,x=y$是公式，其中$x,y$可换成其他变元。
+\item $若$\phi,\psi$是公式，则
+\[\lnot(\phi),(\psi)\land(\phi),\exists x(\phi)\]
+是公式，其中$x$可换成其他变元。
+\end{enumerate}
+\end{dfn}
+
+\begin{dfn}[一阶$\mathcal{L}$语言]
+由公式组成的语言叫一阶L语言。
+\end{dfn}
+
+\begin{dfn}[L的扩张]
+设原来的公理集为$\Gamma$，语言为$\mathcal{L}$，则称$\bar{\mathcal{L}}$为$\mathcal{L}$的一个扩张，若满足以下之一：
+\begin{enumerate}
+\item $\mathcal{L}$中增加一个$n$元谓词符号$S$形成$\bar{\mathcal{L}}$，且$\Gamma$中增加一个新公理形成$\bar{\Gamma}$
+\[\forall x_1\cdots x_n(S(x_1,\cdots,x_n) \to \phi(x_1,\cdots,x_n))\]
+\item 公式$\phi(x_1,\cdots,x_n,y)$（其中列出了所有的可能的自由变元）满足
+\[\Gamma\vdash\forall x_1\cdots x_\exists ! y\\phi(x_1,\cdots,x_n,y)\]
+且$\mathcal{L}$中增加一个$n$元函数词$f$形成$\bar{\mathcal{L}}$，且且$\Gamma$中增加一个新公理形成$\bar{\Gamma}$
+\[\forall x_1\cdotsx_n\forall y(y=f(x_1,\cdots,x_n) \leftrightarrow \phi(x_1,\cdots,x_n,y))\]
+\end{enumerate}
+\end{dfn}
+
+\begin{dfn}[$\vdash$]
+定义$\vdash$：设$\Gamma$是由一些公式组成的集，$\phi$是某个公式，称
+\[\Gamma\vdash\phi\]
+若存在着按一定规则写出的有限$\bar{\mathcal{L}}$语言公式序列$\phi_1,\cdots,\phi_n$，使$\phi_n$就是公式$\phi$。规则为：
+\begin{enumerate}
+\item 在序列中若已有$\phi_i$，则可写出$\forall x\phi_i$，$x$为任一变元。
+\item 在序列中若已有$\phi_i$和$\phi_i\to\phi_j$，则后面可写出$\phi_j$。
+\item $\Gamma$的任—成员可在序列中任何地方写出。
+\item 序列中可随时写出以下形式的公式(叫做逻辑公理)：
+\[\phi \to (\psi \to \phi)\]
+\[(\phi \to (\psi \to \chi)) \to ((\phi \to \psi) \to (\phi \to \chi))\]
+\[(\lnot\phi \to \lnot\psi) \to (\psi \to \phi)\]
+\[\forall x\phi(x) \to \phi(t), \textit{这里要求$t$可以自由代换$\phi(x)$中的$x$。}\]
+\[\forall x(\phi \to \psi) \to \(\phi \to \forall x\psi),\textit{这里要求$x$不在$\phi$中自由出现}\]
+序列中还可随时写出以下形式的公式(叫做等词公理)：
+\[x=x\]
+\[x=y \to y=x\]
+\[( x=y \land y=z ) \to x=z\]
+\[x=y \to (\phi(x) \to \phi(y)), \textit{其中$\phi(y)$是用$y$替换$\phi(x)$一处或多处的$x$所得结果。}\]
+\end{itemize}
+\end{dfn}
+
+\begin{thm}[逻辑定理]
+若$\bar{\Gamma}\vdash\phi$，则$\Gamma\vdash\phi$。
+\end{thm}
+
+三段论讨论结束。在讨论中，我们常对于如下$\bar{\mathcal{L}}$和$\bar{Gamma}$进行三段论的讨论和语言的扩张：\\
+引进谓词$\forall,\land,\to,\leftrightarrow$；\\
+引进基本公理
+\[(\phi \to \psi) \land (\psi \to \phi) \leftrightarrow (\phi\leftrightarrow\psi\)]
+\[\lnot((\lnot((\lnot(\phi))))\land(\lnot(\psi)))\leftrightarrow(\phi)\to(\psi)\]
+\[\lnot((\lnot(\phi))\land(\lnot(\psi)))\leftrightarrow(\phi)\land(\psi)\]
+\[\lnot(\exists x(\lnot(\phi)))\]\leftrightarrow\forall x(\phi)\]
+
+对于各种专业的讨论，常常省略语言和公理体系。

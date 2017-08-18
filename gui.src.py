@@ -40,7 +40,7 @@ def patch_through(func):
     def wrapped(*args, **kwargs):
         if shared.DEBUG:
             func(*args, **kwargs)
-            return 'success'
+            return jsonify( {'status':'debug'} )
         else:
             sep = '\n' + '-' * 30 + '\n'
             septop = '=' * 30 + '\n'
@@ -58,10 +58,13 @@ def patch_through(func):
 def return_through(func):
     @wraps(func)
     def wrapped(*args, **kwargs):
-        try:
+        if shared.DEBUG:
             return func(*args, **kwargs)
-        except shared.CustomError as e:
-            return jsonify( {'error':str(e) } )
+        else:
+            try:
+                return func(*args, **kwargs)
+            except shared.CustomError as e:
+                return jsonify( {'error':str(e) } )
     return wrapped
 
 # login security
@@ -309,7 +312,9 @@ def get_dumps_list():
 def request_():  # either merge json, or use shared.NODES['master']     # yep, this is the magic function.
     if request.method == 'POST':
         old_json = request.get_json(force=True)
+        print 'before to_json' + '*'*70
         new_json = to_json(shared.NODES['master'])
+        print 'after to_json' + '*'*70
         new_json = combine_json(new_json, old_json)
         return jsonify( new_json )
     else:

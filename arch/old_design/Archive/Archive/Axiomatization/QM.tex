@@ -1,0 +1,242 @@
+﻿\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{paralist}
+
+%Partial Differential Symbols:\d{}{},\dd{}{},\pd{}{}
+\let\underdot=\d % rename builtin command \d{} to \underdot{}
+\renewcommand{\d}[2]{\frac{d #1}{d #2}} % for derivatives
+\newcommand{\dd}[2]{\frac{d^2 #1}{d #2^2}} % for double derivatives
+\newcommand{\pd}[2]{\frac{\partial #1}{\partial #2}}% for partial derivatives
+
+%Quantum Mechanical Symbols:\ket{},\bra{},\braket{}{}
+\newcommand{\ket}[1]{\left| #1 \right>} % for Dirac bras
+\newcommand{\bra}[1]{\left< #1 \right|} % for Dirac kets
+\newcommand{\braket}[2]{\left< #1 \vphantom{#2} \right|
+ \left. #2 \vphantom{#1} \right>} % for Dirac brackets
+
+%Normal Math:\abs{},\vec,\hf
+\newcommand{\abs}[1]{\left| #1 \right|} % for absolute value
+\newcommand{\hf}{\frac{1}{2}}
+
+%Environments: prop,thm,lem,dfn & rmk
+\newtheorem{prop}{命题}
+\newtheorem{thm}{定理}[section]
+\newtheorem{lem}[thm]{引理}
+\theoremstyle{definition}
+\newtheorem{dfn}{定义}
+\theoremstyle{remark}
+\newtheorem*{rmk}{注}
+
+\usepackage{XeCJK}
+\setCJKmainfont{SimSun}
+
+\title{Axiomatization of Quantum Mechanics}
+\author{Newcomer to QM}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{数学基础}
+
+\begin{dfn}[希尔伯特空间]
+  称完全的内积空间为\textbf{希尔伯特空间}。
+\end{dfn}
+
+\begin{dfn}[扩充希尔伯特空间]
+  称内积空间$H$为扩充希尔伯特空间，若满足
+  \begin{enumerate}[i)]
+    \item 数域包括$\infty$
+    \item 厄米算符本征矢完备正交（完全）
+    \item 厄米算符完备组存在
+  \end{enumerate}
+\end{dfn}
+
+\begin{dfn}[左右矢空间]
+  称$L,R$为\textbf{左右矢空间}，若
+  \begin{enumerate}[i)]
+    \item $R$为扩充希尔伯特空间
+    \item $L,R$一一对应，以$\bra{\psi}\to\ket{\psi}$记之。
+    \item $L,R$之间内积$\braket{\phi}{\psi}$满足共轭对称性、双线性性、正定性。
+  \end{enumerate}
+\end{dfn}
+
+\begin{dfn}[算符]
+  称$A$为\textbf{左右矢空间中的算符}，若$A$满足性质
+  \begin{enumerate}[i)]
+    \item 右线性性
+    \item $(\bra{\psi}A)\ket{\phi}=\bra{\psi}(A\ket{\phi})$
+  \end{enumerate}
+\end{dfn}
+
+\begin{dfn}[伴算符]
+  称$A^\dagger$为$A$的\textbf{伴算符}，若
+  \[\ket{\phi}=A\ket{\psi} \to \bra{\psi}=\bra{\psi}A^\dagger\]
+\end{dfn}
+
+\begin{dfn}[概率]
+  称$P:\Omega\to\mathbb{R}$为概率，若：
+  \begin{enumerate}
+    \item $\forall A\subseteq\Omega,0\leq P(A)\leq 1$
+    \item $A\bigcap B=\emptyset \to P(A\bigcup B)=P(A)+P(B)$
+  \end{enumerate}
+\end{dfn}
+
+\begin{dfn}[随机变量]
+  称$X:\Omega\to\mathbb{R}$为随机变量，并令$P(X\in A)=P(X^{-1}A)$。
+\end{dfn}
+
+\begin{dfn}[对易运算]
+  定义对易运算
+    \[[A,B]\triangleq AB-BA\]
+\end{dfn}
+
+\begin{rmk}
+  有关对易运算的有关性质，参照\textrm{Wikipedia/Commutator/Ring}
+\end{rmk}
+
+
+\newpage
+\section{物理模型}
+\begin{dfn}
+  称集合$\{H,\ket{\psi}(t),\{A\}\supseteq\{A_i\},\{r.v.(t) \hat{A}\}\}$为量子体系，若
+  \begin{enumerate}
+    \item[原理1] $H$为右矢空间，$\ket{\psi(t)}:H\to\mathbb{R}$，$\{A\}$为算符集，$\{\hat{A}\}$为随机变量集。存在以“粒子编号”$n$分组的位置算符$X_{ni}$，自旋角动量算符$S_{ni}$，以经典方式定义的正则动量算符$P_{ni},i=1,2,3$，以经典方式定义的哈密顿算符$H$，各算符列$A_n$。
+    \item[原理2] 令$A\ket{a_i}=a_i\ket{a_i}$，$\ket{\psi}=\sum\ket{a_i}\braket{a_i}{\psi}$：
+    \[\exists \{A\}\times H\to\{\hat{A}\}: P(\hat{A}=a_i)=\abs{\braket{a_i}{\psi}}^2\]
+    \item[原理3] 位置算符$X_{ni}$，正则动量算符$P_{ni}$与自旋角动量算符满足
+       \[[X_{ni},X_{nj}]=0,\qquad [P_{ni},P_{nj}]=0,\qquad [X_{ni},P_{nj}]=i\hbar\delta_{ij}\]
+       \[\qquad [S_{ni},S_{nj}]=i\hbar\sum_{k}\epsilon_{ijk}S_{nk},\qquad [\vec{S_n},\vec{X_m}]=[\vec{S_n},\vec{P_m}]=0\]
+    \item[原理4] 除测量时间以外，成立薛定谔方程
+        \[i\hbar\frac{\partial}{\partial t}\ket{\psi(t)}=H\ket{\psi(t)}\]
+    \item[原理5] 若$A_n=A_m$，则对$P_n\leftrightarrow P_m$，$\ket{\psi}\to\pm\ket{\psi}$
+  \end{enumerate}
+\end{dfn}
+\vspace{\parskip}
+\begin{dfn}
+物理解释如下：
+\begin{itemize}
+  \item 概率是频率的极限，实验为测量该态下的物理量。
+  \item 量子哈密顿量与经典哈密顿量以Bohm或Weyl或其他规则联系。以Bohm或Weyl或其他规则联系的量子物理量与经典物理量，测量方式相同。
+\end{itemize}
+
+\end{dfn}
+
+\newpage
+\section{基本定理}
+\begin{thm}[不确定性关系]
+  对算符$A,B$\footnote{不确定性关系是否只对量子力学成立？如果是，量子力学的概率结构与普通概率有何不同？}
+  \[\triangle A\triangle B\geq\frac{1}{2}\abs{\overline{[A,B]}}\]
+\end{thm}
+
+\begin{thm}
+位置与动量算符具有连续的本征值谱。
+\end{thm}
+
+\begin{dfn}[表象的函数形式]
+  设位置算符$X$的本征矢量是完全的，单一算符构成完备组。定义矢量$\ket{\psi}$在表象下的函数形式$\psi_x$为如下函数：
+  \[\psi_x\triangleq\braket{x}{\psi}\]
+  定义算符$A$在表象下的函数形式$\hat{A}$为如下泛函：
+  \[\ket{\phi}=A\ket{\psi}\to\phi_x=\hat{A}\psi_x\]
+\end{dfn}
+
+\begin{dfn}[表象的矩阵形式]
+  设同上。将普通矩阵连续化得连续矩阵定义。定义矢量$\ket{\psi}$在表象下的矩阵形式$\psi_x$为如下连续矩阵：
+  \[\psi_x\triangleq\braket{x}{\psi}\]
+  定义算符$A$在表象下的矩阵形式$\hat{A}$为如下连续矩阵：
+  \[\ket{\phi}=A\ket{\psi}\to\phi_x=\hat{A}\psi_x\]
+\end{dfn}
+\begin{rmk}
+  以上定义合法。
+\end{rmk}
+
+\begin{prop}[球坐标可交换性]
+  算符$R,\vec{N}$可交换。
+\end{prop}
+
+\begin{thm}[角动量算符本征值]
+对任何角动量算符$J$，$[J^2,\vec{J}]=0$，记其一个共同本征矢组为$\ket{jm}$，则
+\[J^2\ket{jm}=j(j+1)\hbar^2\ket{jm}\]
+\[J_z\ket{jm}=m\hbar\ket{jm}\]
+其中：$2j\in\mathbb{N}$，$m=-j.-j+1,\ldots,j$.
+\end{thm}
+
+\begin{thm}[$xyz$表象与$r\theta\phi$表象]
+  当$X,Y,Z$与$R,\vec{N}$构成厄米算符完备组时，可直接分离定义$xyz$表象与$r\theta\phi$表象。此时$r\theta\phi$并非归一的。
+\end{thm}
+
+\begin{thm}[$rlm$表象与自旋表象]
+当$R,L^2,L_z$构成厄米算符完备组时，$rlm$构成表象。自旋算符与位置算符共同构成厄米算符完备组，直积空间分别称为位置空间和自旋空间。
+\end{thm}
+
+\begin{thm}[单电子自旋空间]
+  取$\ket{\hf,-\hf},\ket{\hf,\hf}$为自旋空间厄米算符完备组的公共本征矢。态矢量及算符在该表象下的矩阵形式为离散矩阵。令
+  \[\vec{S}=\hf\hbar\vec{\sigma}\]
+  $\vec{\sigma}$三分量在表象下的矩阵形式称为泡利矩阵。\\
+  单电子希尔伯特空间同构于如下形式：
+  \[\ket{\psi}=\ket{\psi_+}\ket{s_z+}+\ket{\psi_-}\ket{s_z-}\triangleq\binom{\ket{\psi_+}}{\ket{\psi_-}}\]
+  最后哪一种是新的记法。
+\end{thm}
+
+\begin{thm}[一维谐振子]
+  设$H$构成厄米算符完备组。通过基本的下降算符的技巧或在位置表象中计算可得其定态解$\ket{n},n=0,1,2,\ldots$
+\end{thm}
+
+\begin{thm}[氢原子与氢分子]
+  采用位置表象与奥本海默近似，可计算出氢原子位置空间的定态解\footnote{为什么可以加上可分离变量的条件？}与氢分子的近似解。
+\end{thm}
+
+\begin{thm}[定态微扰法]
+对于能量简并与不简并的情况，存在不同精度的定态解的近似。
+\end{thm}
+
+
+\begin{dfn}[海森伯绘景]
+  对不含时的哈密顿$H^S$，定义海森伯绘景中的态矢量和算符
+  \[\ket{\psi}^H=U^{-1}(t,0)\ket{\psi(t)}^S,\qquad A^H(t)=U^{-1}(t,0)A^SU(t,0)\]
+  其中上标$S$表示薛定谔绘景即原态矢量，上标$H$表示海森伯绘景。$U(t_1,t_2)$为演化算符：
+  \[U(t,t_0)\ket{\psi(t_0)}=\ket{\psi(t)}\]
+  此时
+  \[^H\bra{\psi}A^H\ket{\psi}^H=^S\bra{\psi}A^S\ket{\psi}^S\]
+\end{dfn}
+
+\begin{thm}
+  薛定谔绘景中态矢量/算符的动K表象等于海森伯绘景中态矢量/算符的K表象.
+\end{thm}
+
+\begin{thm}[演化算符]
+  在薛定谔绘景下，演化算符可以表示为级数解
+  \[U(t,t_0)=1+\sum_{n=1}^{\infty}(-\frac{i}{\hbar})^n\int_{t_0}^t dt_1\int_{t_0}^{t_1} dt_2\cdots\int_{t_0}^{t_{n-1}} dt _n H(t_1)H(t_2)\cdots H(t_n)\]
+  特别地，对于不含时哈密顿，演化算符为
+  \[U(0,t)=e^{\frac{i}{\hbar}tH^S}\]
+\end{thm}
+
+\begin{thm}[海森伯绘景中的运动规律]
+\[i\hbar\pd{}{t}\ket{\psi}^H=0\]
+\[i\hbar\pd{}{t}A^H(t)=-[H,A^H(t)]\]
+\end{thm}
+\begin{thm}
+  \[\frac{d}{dt}X^H_i(t)=\pd{H}{P^H_i(t)}\]
+  \[\frac{d}{dt}P^H_i(t)=-\pd{H}{X^H_i(t)}\quad\footnote{对多项式$f(X)$，$[X,f(P)]=i\hbar\pd{}{P}f(P)$}\]
+\end{thm}
+\begin{rmk}
+  这样一来，海森伯绘景倒是非常适用于量子化--参照经典系统运动规律写出其量子运动规律。
+\end{rmk}
+
+\begin{thm}[守恒量]
+  若汇景中的算符不随时间变化，则称为守恒量。守恒量取各值的概率不随时间变化。
+\end{thm}
+
+\begin{thm}[相互作用绘景]
+  若$H^S(t)=H_0^S+H_1^S(t)$，定义相互作用绘景下的态矢量$\ket{\psi(t)}^I$和算符$A^I(t)$：
+  \[\ket{\psi(t)}^I=e^{\frac{i}{\hbar}tH_0^S}\ket{\psi(t)}^S\]
+  \[A^I(t)=e^{\frac{i}{\hbar}tH_0^S}A_S(t)e^{-\frac{i}{\hbar}tH_0^S}\]
+  则
+  \[i\hbar\pd{}{t}\ket{\psi(t)}^I=H_1^I(t)\ket{\psi(t)}^I\]
+  \[i\hbar\pd{}{t}A^I(t)=-[H_0^I,A^I(t)]\]
+\end{thm}
+
+\end{document}

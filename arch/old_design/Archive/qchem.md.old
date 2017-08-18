@@ -1,0 +1,319 @@
+前言
+====
+
+Can't automate everything. It's a tool. Do not go too far and add complexity for yourself.
+
+
+外模式
+=====
+
+research example:
+phase 'has' [explanation: ] [subtype (subsubtype perovskite)]
+perovskite 'has' [explanation] [distortion factor]
+actual material 'has' [phase]
+paradigms, disciplines
+fuel cells
+
+using the data:
+for La2MnRhO4, r(La) > r(Mn), so the material is not stable
+meet with advisor -> shows concepts related to meeting, etiquette
+tags make the data structure multi-dimentional. for example, 'vasp' and 'accurate' tags go for wavefunction and dos [attributes]
+
+模式
+===
+axiomatic math gives us:
+objects (bottom level set),
+kinds (set)
+properties (of objects. have reusable values. what properties an object have is completely defined by its kind)
+logical properties (of objects and kinds: uid, name, comments, in)
+relationships (of kind's properties)
+
+
+
+Purpose
+-------
+set --map--> property
+property <--relation--> property
+
+
+
+Formulation
+-----------
+class: a function that maps requirements to name-val objects.
+
+for example, pre.Input is a class, data.Element is a class
+
+object instances contain each other. thus, class definitions intertwine.
+
+
+
+the world is wf=phi(x) object instances;
+
+wf object instances, driven by minimization into asymptotic, classify into sets, vague or specific; with the classification of sets come definitions;
+
+the sets and definitions, which wf objects are classified into, are called classes and attributes, or phases and properties
+
+
+
+an wf object instance, because it is classfied into sets (primarily the wf set), has properties. a wf instance only has a property if it is classified into the appropriate type
+
+interestingly, its properties are not only logic, but also numeric
+
+
+
+it so happens that there is an extra-celestial guy (me) watching this universe. i'm adding a lower layer to wf object instances;
+
+there are 2 flavors of the wf object, vasp and qe. the definition of sets base on wf, thus there are 2 flavors of the world;
+mathematically the definitions and relations are still the same, but by the programmer's complication they rootly differ, the weight a programmer, or an ACGer must bear.
+
+we shall only study the vasp world, while leaving a math backbone, in case of warping. thus the world stays as if this paragraph never happened.
+
+
+
+by programmer's complication, a wf does not have a true self, but a lot of approximate selves.
+
+we can just call the 'original' the phantom wf, its physical location being the same as all impostors.
+
+every time the wf.__getattribute__ is called, if it's phantom, it assumes an impostor by asking for a flavor, thus retrieving all info. (Ref: https://stackoverflow.com/questions/26037533/python-do-something-for-any-method-of-a-class)
+
+now, the implementation.
+we can stuff everything into into the impostors, with only a dict as a phantom. now they are not equal.
+fine, but we'd now like to edit the nodemap. oh shit. we've got a new nodemap, and 'our' nodemap. what, the, fuck? 
+I'm confused.
+thus it's a better idea to keep the nodemap as a target. and then there are real nodes.
+	
+
+
+what do i store in the wf instance, and how do I compute it? 
+consider the wf as the reality, the sole GUI.
+we define or retrieve a wf. we inquire as to its properties.
+good. except that we need it later, and that things update and get corrupted, and that we need to change nodemap.
+
+we need it later:
+keep the python code running (误
+we define pause() and resume() by:
+	store all wf's in a dictionary, pickle that dictionary, and define convert(old_classes_dict, new_class_dict)
+
+need to change nodemap:
+nodemap.export()
+nodemap.import()
+edit nodemap: 
+allowed: delete, add
+
+consolidate all types and change folder:
+somehow specify which consolidate to do -- and validate before doing.
+
+
+
+nodemap, impostors, folders
+-------------------------- 
+info:
+all procedural burden are with phantom, including corruption. all physical info in impostors
+
+out of sync or currpted:
+nodemap is in sync from filesystem every second the program runs. 
+impostors should always be in sync from filesystem, because everything is done from them. 
+
+
+
+nodemap.sync(wavefunction)
+------
+purpose: make everything in sync, check corruption
+only works with phantom
+
+exists nodemap
+	nodemap := node{system, input, comment, moonphase}, map
+	moonphase := dict_to_number( moondict={'system', 'input', 'output', 'elecstruct'=True/False} ) 
+		# ordered dict. inverse map to numbers, 0 is corrupt. use number so that printing and acting is useful.
+
+make sure impostors are in sync
+	get flavor list
+	get impostors.flavor list by system
+	compare, and throw error
+		
+sync nodemap from filesystem:
+	get node and moonphases()
+	get nodemap
+	compare
+		if moonphase advances from 2 to 3, fine, update
+		if list changes, error. 
+
+		
+
+
+consolidate()
+-------------
+purpose: make phantom usable (vasp everything)
+method: advance the nodemap
+only works with phantom
+
+get nodemap
+
+nodemap.sync()
+	
+nodemap.parse() and return the node name for next move
+
+executes the calculation:
+  it changes self to the respective variable
+	using a method from compute module, it computes self (pass self to accept Gen)
+	it changes itself back
+	
+
+
+qchem 
+ |
+  - *entities*
+ |    |
+ |     - Wavefunction, WAVEFUNCTIONS
+ |		|			|
+ |		|			 - sname, flavor, gen, nodemap
+ 							 output
+ 							 grepen, dos, etc
+ |    |    	|
+ |    |      - __init__()
+ |    |    	|
+ |    |      - assume(), sync(), moonphase()
+ |    |    	|
+ |    |      - consolidate()
+ |    |
+ |     - Element, ELEMENTS
+ |    			|
+ |					 - name, symbol, number, electrons, protons
+ |    
+ |
+  - *engines*
+      |
+       - Gen		# engine object instances that stores, parses, and executes 'generic opt'
+      |    	|
+      |      - parse(), execute()
+			|
+			 - Nodemap	# engine object instances that stores, parses, and executes 'node1 node2'. it carries the programmer's burden.
+			|			|
+			|			 - export(), import()
+			|			|
+			|			 - sync(), parse(), execute()		# always sync
+			|
+			 - Elecstruct
+			|			|
+			|
+			|		
+			 - 
+
+
+
+
+
+			 			
+
+
+
+
+
+
+
+
+
+
+
+-----------------------------------------------------------------------------------------------------------------------------------
+below is dump
+
+example:
+dress codes -> [subtype: causal]
+casual -> [comment: casual is about doing shit. ] [occasion is: meet boss] [subsets: american casual] [definition: socks, sandals]
+sandals -> [comment: ] [blob: ]
+book -> [name: ] [topic: ]
+menu (dish [name:])
+
+
+objects in objects is allowed in case of i) components; ii) coarse-graining
+
+extend this to life.
+all actual and abstract things are also objects/kinds, which one can tell by count words: a piece of clothing, a person, a dress code, a kind of appointment, an appointment
+
+# 内模式
+
+feature: multi-level data structure, defined-on-the-go
+data file: xml.
+programming language: python.
+
+thoughts:
+In XML, a file often refers to an object. I'll have it refer to a kind.
+In XML, there are elements, with either sub-elements or a value, a tag, and many attributes.
+There are no rules about when to use attributes, and when to use child elements. My experience is that  in XML you should try to avoid attributes.
+In XML, the tag refers to a type. e.g. all 'book' in 'bookstore'. I have versatile kinds, so tags are 'object', 'kind' or "$attribute_name".
+
+design, leaving out relationship
+## mappy
+lowest-level object: element. properties: child elements. logical properties: attributes
+high-level object, kind: element. logical properties: attributes.
+lower-levels are child elements of higher-levels
+## mappy, use child elements instead of attributes
+## individual-ish
+use child elements instead of attributes
+relation is expressed by 'in'
+
+further:
+what about multi-parent? is that present? no
+weak tree? person is a student and also a computational guy etc. no, we must distinguish 'kind' and 'affiliation'
+use attributes at all? syntactically much easier to keep attributes away from children.
+-------------------------------------------
+paradigms? 'how to do it' is a level above 'what it is'
+another databse for 'how to do things'.
+how structure affects property: theorems, search relationships from properties
+paradigms A01? (are , like dress code; tricks and theorems can be affiliated to these)
+approach complex problems: general tricks: notes for self
+materials/properties/applications, fuel cells, lithim batteries (how?)
+
+individual-ish?
+
+
+
+
+
+
+
+
+
+
+
+
+
+# archive
+objects, kinds -> individual nodes.: template, uid, attributes (template-based. e.g. in, multi-val, relation)
+
+
+<topset uid='topset_name'>
+  <in>If no 'in', assume in topset.</in>
+  <d>For topsets, include template for subsets for query. </d>
+  <c>c for comment. d for definition. b for blob. u for url. s for subset. r for related uid's./c>
+  <c>单复数：用Google词条最多形式</c>
+  <s>subsets. bad practice.</s>
+  <r></r>
+</topset>
+
+<dress_code name=' '>
+  <occasion></occasion>
+  <definition></definition>
+  <blob></blob>
+</casual>
+
+<clothing_type name='naval blue'>
+  <blob></blob>
+</clothing_type>
+
+<occasion culture='mit'>
+  <dress_code></dress_code>
+</occasion>
+
+1. add a template GUI (pass)
+2. view an item GUI (pass)
+
+url: name
+output: webpage; each clickable word clickable
+
+xml
+-compile->
+array list
+php file
+html files

@@ -42,7 +42,7 @@ NODES = {}
 #  all non-sigma-bullshit attributes, in the order printed (sigma.clickNode)
 #  - gui.combine.json
 #  - sigma.clickNode (catch: map is not printed in sigma)
-ALL_ATTR_LIST = ['property','phase','cell','comment','name','gen','vasp','electron','path','map','prev']
+ALL_ATTR_LIST = ['property','phase','cell','comment','path','name','gen','vasp','electron','map','prev']
 
 #  input attributes, not gen etc.
 #  - qchem.Node.__init__
