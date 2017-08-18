@@ -145,6 +145,14 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
             outfile.write( ' '.join(self.getkw('kpoints').split()[0:3]) + '\n' )
             outfile.write('0 0 0')
 
+    def pot(self, symbol):
+        if len(shared.ELEMENTS[symbol].pot) == 0:
+            raise shared.CustomError(' pot: POTCAR for '+symbol+' not found.')
+        path = shared.SCRIPT_DIR + '/resource/paw_pbe/'+shared.ELEMENTS[symbol].pot + '/POTCAR'
+        if_ = open(path,'r')
+        of_ = open('./POTCAR','a')
+        of_.write( if_.read() )
+
     def __str__(self):
         result = ''
         for name in self.mod:
@@ -241,7 +249,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         with open('POSCAR','w') as f:
             f.write(self.cell.poscar4())
         for symbol in self.cell.stoichiometry.keys():
-            Vasp.pot(symbol)
+            self.pot(symbol)
         if 'isym=-1' in wayback:
             self.kw['isym'] = ['-1']
         if 'lsorbit=.TRUE.' in wayback:
@@ -605,10 +613,10 @@ class Map(object):
     def __str__(self):
         result = ''
         for src in self._dict:
+            if not self._dict[src]:
+                result += src.name + '\n'
             for dst in self._dict[src]:
                 result += src.name + '->' + dst.name + '\n'
-                if not self._dict[src]:
-                    result += src.name + '\n'
         for src in self._dict2:
             for dst in self._dict2[src]:
                 result += src.name + '-->' + dst.name + '\n'
@@ -629,7 +637,11 @@ class Map(object):
 
 
 
+# Vasp
 # =========================================================================== 
+
+
+
 
 class Vasp(object):
 
@@ -650,7 +662,7 @@ class Vasp(object):
                 shutil.copyfile(self.prev.path+'/CHGCAR', self.path+'/CHGCAR')
             if self.gen.parse_if('icharg=0|icharg=10|istart=1|istart=2'):
                 shutil.copyfile(self.prev.path+'/WAVECAR', self.path+'/WAVECAR')
-            if self.prev.gen.parse_if('opt') and os.path.isfile(self.prev.path+'CONTCAR'):
+            if getattr(self, 'prev', None) and getattr(self.prev, 'gen', None) and self.prev.gen.parse_if('opt') and os.path.isfile(self.prev.path+'CONTCAR'):
                 shutil.copyfile('CONTCAR','POSCAR')
             # write incar etc. Relies on inheritance.
             os.chdir(self.path)
@@ -746,15 +758,6 @@ class Vasp(object):
         else:
             return 2
 
-    @staticmethod
-    def pot(symbol):
-        if len(shared.ELEMENTS[symbol].pot) == 0:
-            raise shared.CustomError(self.__class__.__name__+' pot: POTCAR for '+symbol+' not found.')
-        path = shared.SCRIPT_DIR + '/resource/paw_pbe/'+shared.ELEMENTS[symbol].pot + '/POTCAR'
-        if_ = open(path,'r')
-        of_ = open('./POTCAR','a')
-        of_.write( if_.read() )
-
     def delete(self):
         if os.path.isdir(self.path):
             shutil.rmtree(self.path)
@@ -766,6 +769,16 @@ class Vasp(object):
             return self.log
         else:
             return 'moonphase is not 2, nothing here'   '''
+
+
+    def pot(self, symbol):
+        if len(shared.ELEMENTS[symbol].pot) == 0:
+            raise shared.CustomError(' pot: POTCAR for '+symbol+' not found.')
+        path = shared.SCRIPT_DIR + '/resource/paw_pbe/'+shared.ELEMENTS[symbol].pot + '/POTCAR'
+        if_ = open(path,'r')
+        of_ = open('./POTCAR','a')
+        of_.write( if_.read() )
+    
 
 
 #=========================================================================== 
@@ -859,9 +872,12 @@ class Electron(object):
             return self.log
         else:
             return 'moonphase is not 2, nothing here'
-            '''
             
-    
+    def delete(self):
+        if os.path.isdir(self.path):
+            shutil.rmtree(self.path)
+    '''
+
   
 class Grepen(object):
     def __init__(self, prev_gen):
@@ -880,13 +896,12 @@ class Grepen(object):
 class Dos(object):
     def __init__(self,grepen):  
         
-        '''
-        self.log = '*' * 35 + ' dos of ' + os.getcwd() + ' ' + '*' * 35 + '\n'
+        self.log = '\n\n\n'
+        self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
         with open('DOSCAR','r') as doscar_file:
             l = doscar_file.readlines()
             if not len(l) >= 7:
                 raise shared.CustomError( 'dos.py warning: doscar is not usable (as determined by grepen).')
-        '''
 
         ## parameter: min_dos: is dos considered 0 if it's 0.002? 
         min_dos = 1E-3
@@ -895,10 +910,10 @@ class Dos(object):
         doscar_file = open("DOSCAR","r")
         doscar_lines = doscar_file.readlines()
         doscar_lines_split = [doscar_lines[i].split() for i in range(6,6+grepen.nedos)]
-        self.dos = np.float64(doscar_lines_split)
+        self.dos = np.float64(doscar_lines_split)   # self.dos
         idx_fermi = abs(self.dos[:,0] - grepen.efermi).argmin() + 1
 
-        '''if grepen.spin == 'ncl':
+        if grepen.spin == 'ncl':
             print self.__class__.__name__ + ' __init__ warning: spin=ncl is not well supported'
         if grepen.spin == 'para' or grepen.spin == 'ncl': 
 
@@ -914,7 +929,7 @@ class Dos(object):
                     exit(1)
                 self.VBM1 = self.VB1[0]
                 self.CBM1 = self.CB1[0]
-                self.log += 'dos.py: DOS* type is insulator. DOS bandgap* is: ' + self.CBM1-self.VBM1 + ' eV.\n'
+                self.log += 'dos.py: DOS* type is insulator. DOS bandgap* is: ' + str(self.CBM1-self.VBM1) + ' eV.\n'
         elif grepen.spin=='fm' or grepen.spin=='afm':
             if abs(self.dos[idx_fermi][1])>min_dos and abs(self.dos[idx_fermi][2])>min_dos:
                 self.log += 'dos.py: conductor. quite probably. but check dos anyway.\n'
@@ -946,7 +961,6 @@ class Dos(object):
                 self.VBM1=next(self.VB[x][0] for x in range(0,len(self.VB)) if abs(self.VB[x][2])>min_dos or abs(self.VB[x][1])<min_dos)
                 self.CBM1=next(self.CB[x][0] for x in range(0,len(self.CB)) if abs(self.CB[x][2])>min_dos or abs(self.CB[x][1])<min_dos)
                 self.log += 'HM ' + str(self.CBM1-self.VBM1) + '\n'
-            '''
 
         # site-projected dos: split doscar and convert to self.site_dos
         split_indices = [i for i, x in enumerate(doscar_lines) if x == doscar_lines[5]]
@@ -956,7 +970,7 @@ class Dos(object):
             l = doscar_lines[split_indices[i]+1:split_indices[i+1]]
             self.site_dos.append(np.float_([x.split() for x in l]))
 
-        self.log += '*' * 35 + ' dos of ' + os.getcwd() + ' ' + '*' * 35 + '\n'
+        self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
         print self.log
 
 # imports bandstructure from EIGENVAL. 
@@ -968,7 +982,8 @@ class Bands(object):
     def __init__(self,grepen):  
 
         # initialize
-        self.log = '*' * 35 + ' bands of ' + os.getcwd() + ' ' + '*' * 35 + '\n'
+        self.log = '\n\n\n'
+        self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
         eigenval_file = open("EIGENVAL","r")
         eigenval_lines = eigenval_file.readlines()
         if (len(eigenval_lines)<7):
@@ -1102,7 +1117,7 @@ class Bands(object):
         self.fit_bandgap = min(fit_1kpt_bandgaps)
         pbar.finish()
         self.log += "bands.py: fitted bandgap* is %.5f. Usually bandgap is between fitted and raw bandgap*. For errors see errors.py.\n" %(self.fit_bandgap)
-        self.log += '*' * 35 + ' bands of ' + os.getcwd() + ' ' + '*' * 35 + '\n'
+        self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
 
         print self.log
     
@@ -1128,7 +1143,8 @@ class Bands(object):
 # executes population analysis
 class Charge(object):
     def __init__(self, cell, grepen, dos):  
-        self.log = '*' * 72 + '\n'
+        self.log = '\n\n\n'
+        self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
         # sanity check
         if len(dos.site_dos) < 2 or len(dos.site_dos[1]) < 10:
             raise shared.CustomError(self.__class__.__name__ +' __init__: site-project DOSCAR too short.')
@@ -1137,17 +1153,17 @@ class Charge(object):
 
         # let's start!
         # pristine electronic configuration
-        self.log += 'GS electron configurations for elements in POSCAR\n'
+        self.log += '\n\nGS electron configurations for elements in POSCAR\n'   # a good idea is to indent within header
         for element in cell.stoichiometry:
             self.log += element + ': ' + shared.ELEMENTS[element].eleconfig + '\n'
 
         # integrating site-projected pdos
-        self.log += 'Integrated Projected DOS: integration of DOS of wavefunctions projected onto spherical harmonics within spheres of a radius RWIGS\n'
+        self.log += '\n\nIntegrated Projected DOS: integration of DOS of wavefunctions projected onto spherical harmonics within spheres of a radius RWIGS\n'
         if grepen.spin == 'ncl':
             self.nspin = 4 # used in: i * nspin + j
             spins = 'tot x y z'.split()
         elif grepen.spin == 'fm' or grepen.spin == 'afm':
-            self.nspin = grepen.2
+            self.nspin = 2
             spins = 'UP DN'.split()
         else:
             self.nspin = 1
@@ -1158,30 +1174,29 @@ class Charge(object):
             for idx_atom in range( sum(cell.stoichiometry.values()[0:idx_element]), sum(cell.stoichiometry.values()[0:idx_element+1]) ):
                 for idx_spin in range(0, self.nspin):
                     self.log += element + str(idx_atom) + '_' + spins[idx_spin]+'\t'
-                    doscurve = dos.site_dos[idx_atom+1]
-                    idx_fermi = (np.abs(doscurve[:,0]-grepen.efermi)).argmin()
-                    idx_top_integral = (np.abs(doscurve[:,0]-grepen.efermi-5)).argmin()
+                    pdos = dos.site_dos[idx_atom+1]
+                    idx_fermi = (np.abs(pdos[:,0]-grepen.efermi)).argmin()
+                    idx_top_integral = (np.abs(pdos[:,0]-grepen.efermi-5)).argmin()
                     for idx_orbital,orbital in enumerate(orbitals):
-                        integral = np.trapz(doscurve[:idx_fermi,self.nspin * idx_orbital + idx_spin + 1],x=doscurve[:idx_fermi,0])
+                        integral = np.trapz(pdos[:idx_fermi,self.nspin * idx_orbital + idx_spin + 1],x=pdos[:idx_fermi,0])
                         integral = abs(integral)
-                        maxintegral = np.trapz(doscurve[:idx_top_integral,2*idx_orbital + idx_spin + 1],x=doscurve[:idx_top_integral,0])
+                        maxintegral = np.trapz( pdos[:idx_top_integral, self.nspin * idx_orbital + idx_spin + 1], x = pdos[:idx_top_integral, 0])
                         self.log += orbital + ' ' + str('{0:.2f}'.format(integral)) + ' '
-                    self.log += '\n\n'
+                    self.log += '\n'
 
         # Bader charge
-        self.log += "Bader charge. Boundaries are defined as zero-flux surfaces. Note that certain flags should be set (e.g. LAECHG) for this to be reasonable.\n"
+        self.log += "\n\nBader charge. Boundaries are defined as zero-flux surfaces. Note that certain flags should be set (e.g. LAECHG) for this to be reasonable.\n"
         os.popen('bader CHGCAR').read()
         with open('ACF.dat','r') as f:
             lines = f.readlines()
-        for idx_element, element in cell.stoichiometry.iteritems():
-            self.log += element
+        for idx_element, element in enumerate(cell.stoichiometry.keys()):
+            self.log += element + ' '
             for idx_atom in range(sum(cell.stoichiometry.values()[0:idx_element]),sum(cell.stoichiometry.values()[0:idx_element+1])):
                 nline = idx_atom + 2
-                self.log += lines[nline].split()[4]
-            self.log += '\n\n'
+                self.log += lines[nline].split()[4] + ' '
 
         # OUTCAR RWIGS [decomposed] charge
-        self.log += "Total charge inside the Wigner-Seitz Radius in OUTCAR\n"
+        self.log += "\n\nTotal charge inside the Wigner-Seitz Radius in OUTCAR\n"
         with open('OUTCAR','r') as f:
             lines = f.readlines()
             for idx_line,line in enumerate(lines):
@@ -1193,13 +1208,11 @@ class Charge(object):
 
         # Bader magnetic moment
         if grepen.spin == 'fm' or grepen.spin == 'afm':
-            self.log += "An oversimplified version of Bader magnetic moment.\n"
+            self.log += "\n\nAn oversimplified version of Bader magnetic moment.\n"
             os.popen('chgsplit.sh CHGCAR').read()
             os.popen('bader cf2').read()
-            for idx_element in range(0,len(poscar.elements)):
-                element=poscar.elements[idx_element]
             for idx_element, element in enumerate(cell.stoichiometry.keys()):
-                self.log += element
+                self.log += element + ' '
                 for idx_atom in range(sum(cell.stoichiometry.values()[0:idx_element]),sum(cell.stoichiometry.values()[0:idx_element+1])):
                     nline = idx_atom + 2
                     with open('ACF.dat','r') as f:
@@ -1208,22 +1221,26 @@ class Charge(object):
                 self.log += '\n'
 
         # OUTCAR RWIGS magnetic moment
-        self.log += "\nMagnetization (x) [total magnetic moment inside the Wigner-Seitz Radius] in OUTCAR\n"
-        with open('OUTCAR','r') as f:
-            lines = f.readlines()
-            for idx_line,line in enumerate(lines):
-                if 'magnetization (x)' in line: # this is only an anchor. that particular line doesn't matter.
-                    break
-            for idx2_line in range(idx_line + 2,idx_line + 6 + sum(cell.stoichiometry.values())):
-                self.log += lines[idx2_line]
-
+        if grepen.spin == 'fm' or grepen.spin == 'afm':
+            self.log += "\n\nMagnetization (x) [total magnetic moment inside the Wigner-Seitz Radius] in OUTCAR\n"
+            with open('OUTCAR','r') as f:
+                lines = f.readlines()
+                for idx_line,line in enumerate(lines):
+                    if 'magnetization (x)' in line: # this is only an anchor. that particular line doesn't matter.
+                        break
+                for idx2_line in range(idx_line + 2,idx_line + 6 + sum(cell.stoichiometry.values())):
+                    self.log += lines[idx2_line]
+            
+            self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
+    
         print self.log
 
 
 class Errors(object):
     def __init__(self,Agrepen,Ados,Abands,Bgrepen=None,Bdos=None,Bbands=None):
         
-        self.log = '*' * 75 + '\n'
+        self.log = '\n\n\n'
+        self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
         ## self.rules (aka error types) in dirA
         self.rules = []
         self.de = 0
@@ -1255,7 +1272,7 @@ class Errors(object):
 
         # comparing against dirB
         if not Bgrepen:
-            print 'errors.py: skipping E(k) numerical error (interpolated) check. this is usually okay since such errors should be smaller than 0.01 eV. '
+            self.log += 'errors.py: skipping E(k) numerical error (interpolated) comparison check. this is usually okay since such errors should be smaller than 0.01 eV. '
         else: 
             self.de_interpd = 0
             for i_band,band in enumerate(Bbands.neargap_bands):
@@ -1281,5 +1298,7 @@ class Errors(object):
         self.log += 'errors.py: you should expect an error around %.4f eV in dirA. see details below.\n' %(self.de)
         for rule in self.rules:
             self.log += ' '*4 + rule + '\n'
+
+        self.log += '*' * 35 + ' charge of ' + os.getcwd() + ' ' + '*' * 35 
 
         print self.log

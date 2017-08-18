@@ -1,4 +1,4 @@
-import pickle
+import dill as pickle   # dill requires citation
 import re
 import os
 import time
@@ -86,7 +86,7 @@ class Node(object):
         
 
     '''def reset(self):
-        # reset moonphase =1. remove all non-readable attributes.
+        # reset moonphase = 1. remove all non-readable attributes.
         # remove engine
         if getattr(self, 'gen', None):
             engine_name = self.gen.getkw('engine')
@@ -95,12 +95,13 @@ class Node(object):
                 getattr(self,self.gen.getkw('engine'),None).delete()
         # remove all
         for varname in vars(self).keys():
-            if varname not in shared.INPUT_ATTR_LIST:
+            if varname not in shared.READABLE_ATTR_LIST:
                 delattr(self, varname)
-                print self.__class__.__name__ + ' reset: attribute {%s} deleted' %varname
-        filename = self.path + '/.moonphase'
-        if os.path.isfile(filename):
-            os.remove(filename)
+                print self.__class__.__name__ + '.reset: attribute {%s} deleted' %varname
+        foldername = self.path + '/.moonphase'
+        if os.path.isdir(foldername):
+            shutil.rmtree(foldername)
+            print self.__class__.__name__ + '.reset: removed directory {%s}' %foldername
     '''
 
 
@@ -144,7 +145,7 @@ class Node(object):
             if proposed_name:
                 tmp_l = [x for x in l if x.name == proposed_name]
                 if not tmp_l:
-                    raise shared.CustomError( self.__class__.__name__ + ' compute: cannot found proposed_name {%s} in map' %proposed_name)
+                    raise shared.CustomError( self.__class__.__name__ + '.compute: cannot found proposed_name {%s} in map' %proposed_name)
                 n = tmp_l[0]
             else:'''
                 n = l[0]
@@ -157,7 +158,7 @@ class Node(object):
 
         elif getattr(self, 'property', None):
             if not getattr(self, 'cell', None) or not getattr(self, 'phase', None):
-                raise shared.CustomError(self.__class__.__name__ + ' compute: cell or phase is missing. Either make sure parent has something you can inherit, or enter them.')
+                raise shared.CustomError(self.__class__.__name__ + '.compute: cell or phase is missing. Either make sure parent has something you can inherit, or enter them.')
             if not getattr(self, 'path', None):
                 self.path = raw_input('Provide path for this node: \n %s \n >:' %str(self))    # counterpart implemented in sigmajs
             if not getattr(self, 'gen', None):

@@ -11,7 +11,7 @@ from pprint import pprint
 import random
 import string
 from fuzzywuzzy import process
-import pickle
+import dill as pickle
 from cStringIO import StringIO
 import time
 
