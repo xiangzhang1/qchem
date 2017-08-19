@@ -948,10 +948,27 @@ class Grepen(object):
 
 class Dos(object):
 
-    def __init__(self,grepen):
+    @shared.MWT()
+    def dos_interp(self):
+        dos_interp = []
+        for spin_idx in range(0, self.nspin):
+            dos_interp[spin_idx] = scipy.interpolate.interp1d( self.dos[0], self.dos[spin_idx*2+1], kind='cubic' )
+        return dos_interp
+
+    @shared.MWT()
+    def idos_interp(self):
+        idos_interp = []
+        for spin_idx in range(0, self.nspin):
+            idos_interp[spin_idx] = scipy.interpolate.interp1d( self.dos[0], self.dos[spin_idx*2+2], kind='cubic' )
+        return idos_interp
+
+
+    def __init__(self, grepen):
 
         self.log = '\n\n\n'
         self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
+        self.nspin = {'para':1, 'fm':2, 'ncl':1}[grepen.spin]
+        self.efermi = grepen.efermi
         with open('DOSCAR','r') as doscar_file:
             l = doscar_file.readlines()
             if not len(l) >= 7:
@@ -962,9 +979,10 @@ class Dos(object):
         doscar_lines = doscar_file.readlines()
         doscar_lines_split = [doscar_lines[i].split() for i in range(6,6+grepen.nedos)]
         self.dos = np.float64(doscar_lines_split)   # self.does: total dos. for para and ncl, energy dos idos. for fm and afm, energy updos iupdos downdos idowndos.
-        self.idx_fermi = abs(self.dos[:,0] - grepen.efermi).argmin() + 1
+        self.idx_fermi = abs(self.dos[:,0] - self.efermi).argmin() + 1
 
         if grepen.spin == 'para' or grepen.spin == 'ncl':
+            if self.dos()
             if abs(self.dos[self.idx_fermi][1]) >  shared.MIN_DOS :
                 self.log += 'dos.py: conductor.\n'
             else:
@@ -1031,13 +1049,13 @@ class Bands(object):
         ## fit the band for i) verifying smoothness ii) estimating bandgap
         widgets = ['fitting each band: ', Percentage(), ' ', Bar(), ' ', ETA()] #pretty print
         pbar = ProgressBar(widgets=widgets, maxval=len(self.neargap_bands)).start()
-        result = []
+        fit_neargap_bands = []
         for i_band,band in enumerate(self.neargap_bands):
             pbar.update(i_band)
             fit_neargap_band = Rbf(band[:,0],band[:,1],band[:,2],band[:,3])
-            result.append(fit_neargap_band)
+            fit_neargap_bands.append(fit_neargap_band)
         pbar.finish()
-        return result
+        return fit_neargap_bands
 
     def __init__(self,grepen):
 
