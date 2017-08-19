@@ -1,27 +1,28 @@
-# Electron(), Cell(), Grepen(), Charge(), Dos(), Bands(), Errors()
+Electron
+========
 
-- log
+__log__
 
-# Grepen: common OUTCAR properties
 
-- energy, efermi
-- (outcar) nbands, nedos
-- (prev) spin, sigma, ismear
+# Grepen
+
+__energy__ __efermi__
+outcar __nbands__  __nedos__
+prev __spin__ __sigma__ __ismear__
 
 
 # Dos
 
-- (dict) raw
-    - idx_fermi: Fermi level index for dos and pdos
-    - dos: 
-    - pdos
+__log__
 
-self.dos
-para, ncl: E N(E)[0]
-fm, afm: E up_dos up_idos down_dos down_idos
-
-self.site_dos
+__idx_fermi__  dos[idx_fermi][0] = efermi
+__dos__        raw dos.
+               para or ncl `dos[idx_fermi] = [e dos[0](e) idos[0](e)]`
+               fm or afm:  `dos[idx_fermi] = [e dos[0](e) idos[0](e) dos[1](e) idos[1](e)]`
+__pdos__       raw pdos.
 
 
-local:
-- min-dos
+- __idx_fermi__ Fermi level index for dos and pdos
+- __dos__. para, ncl: e dos[0] integrated_dos[0]
+                 fm, afm: e dos[0] integrated_dos[0] dos[1] integrated_dos[1]
+- __pdos__.

@@ -23,7 +23,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import time
 import progressbar
-from progressbar import Bar, Counter, ETA,FormatLabel, Percentage,ProgressBar 
+from progressbar import Bar, Counter, ETA,FormatLabel, Percentage,ProgressBar
 from scipy.interpolate import Rbf
 from scipy.optimize import minimize
 from scipy import spatial
@@ -44,7 +44,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         return next(iter(self.kw[kwname]))
 
     def evaluate(self,expression):                  # Evaluates expression to string: literal or (funcname)
-        if expression.startswith('(') and expression.endswith(')'): 
+        if expression.startswith('(') and expression.endswith(')'):
             func = getattr(self, re.sub('\(|\)','',expression).strip())
             if not func:
                 raise shared.CustomError( self.__class__.__name__+' error: bad conf file error. Unable to find function {%s}' % re.sub('\(|\)','',expression) )
@@ -68,7 +68,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
                 result = operation_map[operator](self.kw[kwname],kwvalset)
             else:
                 result = operation_map[operator](kwvalset,kwvalset)
-            if run and bool(result):        
+            if run and bool(result):
                 self.kw[kwname] = result
                 '''if shared.DEBUG: print self.__class__.__name__ + ' parse_require: gave kw {%s} value {%s}' %(kwname,result)'''
             if run and not bool(result):
@@ -168,11 +168,11 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
                 print 'What the literal fuck. name is {%s} and value is {%s} and name in self.kw is {%s}' %(name, self.getkw(name), name in self.kw)'''
             result += name + '=' + self.getkw(name) + ', '
         return result
-    
+
 
     # main
     # -------------
-    def __init__(self, node): 
+    def __init__(self, node):
         self.cell = node.cell
         input_ = node.phase + ', ' + node.property
 	# 读mod, kw
@@ -197,7 +197,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
                 '''if len(line) < 4: raise shared.CustomError('bad conf grammar error: needs 3 colons per line least in {%s}' %line)'''
                 for part in [p.strip() for p in line[1].split(',') ]:
                     try:
-                        if self.parse_if(line[0]) and self.parse_require(part,False):  
+                        if self.parse_if(line[0]) and self.parse_require(part,False):
                             self.moonphase=2 ; self.parse_require(part,True) ; self.moonphase=1
                         else:
                             self.require.append([line[0],part,line[2],line[3]])
@@ -216,7 +216,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         for line in self.require:
             if self.parse_if(line[0]):
                 if line[2] == 'optional':
-                    print self.__class__.__name__+' __init__ round 2 warning: parse_require result in empty set. optional and aborted. Expression is { %s : %s : %s }.' % (line[0],line[1],line[3]) 
+                    print self.__class__.__name__+' __init__ round 2 warning: parse_require result in empty set. optional and aborted. Expression is { %s : %s : %s }.' % (line[0],line[1],line[3])
                 else:
                     raise shared.CustomError( self.__class__.__name__+' __init__ round 2 error: parse_require still produces empty set. Expression is { %s : %s :  %s }.' % (line[0],line[1],line[3]) )
         #  检验
@@ -281,9 +281,9 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         memory_required *= multiplier
         memory_available = int(self.getkw('nnode')) * int(self.getkw('mem_node'))
         if memory_required > memory_available:
-            print self.__class__.__name__ + ' check_memory warning: insufficient memory. Mem required is {' + str(memory_required) + '} GB. Available mem is {' + str(memory_available) + '} GB.' 
+            print self.__class__.__name__ + ' check_memory warning: insufficient memory. Mem required is {' + str(memory_required) + '} GB. Available mem is {' + str(memory_available) + '} GB.'
         else:
-            print self.__class__.__name__ + ' check_memory report: Mem required is {' + str(memory_required) + '} GB. Available mem is {' + str(memory_available) + '} GB.' 
+            print self.__class__.__name__ + ' check_memory report: Mem required is {' + str(memory_required) + '} GB. Available mem is {' + str(memory_available) + '} GB.'
         # cleanup
         os.chdir('..')
         shutil.rmtree('check_memory')
@@ -306,7 +306,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         # hse case when hse mod is not even defined. for ref, i think. hiya, later self.
         if self.parse_if('hse|prehf'):
             npar = int(self.getkw('npar'))
-            nbands = (nbands + npar -1 ) / npar * npar 
+            nbands = (nbands + npar -1 ) / npar * npar
         return str(nbands)
 
     def lmaxmix(self):
@@ -315,7 +315,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         return str(lmaxmix)
 
     def encut(self):
-        result = max( [ shared.ELEMENTS[symbol].pot_encut for symbol in self.cell.stoichiometry.keys() ] ) 
+        result = max( [ shared.ELEMENTS[symbol].pot_encut for symbol in self.cell.stoichiometry.keys() ] )
         if result + 140 < 400:  # totally confusing guess, out of perovskites and quantum dots
             result = 400
         elif result < 400:
@@ -379,14 +379,14 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
             ldauj += str( shared.ELEMENTS[symbol].ldauj )
         return ldauj
 
-# =========================================================================== 
+# ===========================================================================
 
 
 # Cell: stores and parses atomic configuration file.
 
 class Cell(object):
 
-    def __init__(self,lines): 
+    def __init__(self,lines):
         # basics
         if '\n' in lines:
             lines = lines.splitlines()
@@ -420,10 +420,10 @@ class Cell(object):
         result = '\n'.join( [x for i,x in enumerate(result.splitlines()) if i!=5] )
         return result
     '''
-            
+
 
 # ARCHAIC
-# The old, broken Poscar. 
+# The old, broken Poscar.
 # reads poscar, and generates 3*3*3 mirror for all kinds of purposes.
 class Poscar(object):
     def __init__(self):
@@ -493,12 +493,12 @@ class Poscar(object):
             if exclude_quis != []:
                 self.exclude_dists.append(exclude_quis[0][4])
         self.exclude_dists = np.float64(self.exclude_dists)
- 
-# ===========================================================================  
+
+# ===========================================================================
 
 
 class Map(object):
-    
+
     def rlookup(self, attr_list={}, node_list=[], parent=False, unique=True):
         l = self.lookup('master').map.traverse()
         # find the node specifiied by attr_list OR node_list
@@ -535,7 +535,7 @@ class Map(object):
 
     def prev(self, node):
         '''l = [x for x in self._dict if node in self._dict[x]]
-        if len(l) > 1: 
+        if len(l) > 1:
             raise shared.CustomError(self.__class__.__name__ + ' prev: %s has more than 1 prev node. (wtf?)' %name)
         elif len(l) == 1:
             return l[0]
@@ -543,14 +543,14 @@ class Map(object):
             return None'''
 
     def traverse(self):
-        result = set([x for x in self]) 
+        result = set([x for x in self])
         for n in [x for x in self._dict if getattr(x,'map',None)]:
             result = result | set( n.map.traverse() )
         return result
 
 
     def __init__(self, text=''):
-    
+
         '''self._dict, self._dict2 = {}, {}
         text = text.split('\n')'''
 
@@ -563,9 +563,9 @@ class Map(object):
                 if src not in self._dict:   self._dict[src] = []
             elif len(line) == 3:
                 src, dst = self.lookup(line[0]), self.lookup(line[2])
-                if src not in self._dict:   
+                if src not in self._dict:
                     self._dict[src] = []
-                if dst not in self._dict:   
+                if dst not in self._dict:
                     self._dict[dst] = []
                 '''m = self._dict if line[1]=='->' else self._dict2
                 m[src] = [dst] if src not in m else m[src]+[dst]'''
@@ -573,7 +573,7 @@ class Map(object):
                 raise shared.CustomError(self.__class__.__name__ + '__init__: src -> dst. 3 parts needed')
 
 
-    def add_node(self, node):    
+    def add_node(self, node):
         # inherit is done on compute
         # same name / same node exceptions are not allowed.
         # we're moving references around, so renaming is bad. instead, use 'duplicate' command intead.
@@ -646,7 +646,7 @@ class Map(object):
 
 
 # Vasp
-# =========================================================================== 
+# ===========================================================================
 
 
 
@@ -661,7 +661,7 @@ class Vasp(object):
 
 
     def compute(self):
-        
+
         '''if shared.DEBUG==2:    print 'calling %s(%s).compute' %(self.__class__.__name__, getattr(self,'path','')) '''
 
         if not getattr(self, 'wrapper', None):
@@ -723,7 +723,7 @@ class Vasp(object):
             #    os.system(wrapper)
             print '-'*50 + '\n' + self.__class__.__name__ + ': wrapper generated at   %s   , waiting for filesystem update. ' %self.path
 
-        elif not getattr(self,'log',None):  
+        elif not getattr(self,'log',None):
             os.chdir(self.path)
             # log
             l = os.listdir(self.path)
@@ -748,7 +748,7 @@ class Vasp(object):
 
         if not getattr(self, 'wrapper', None):
             return 0
-        elif not getattr(self, 'log', None): 
+        elif not getattr(self, 'log', None):
             # implements the choke mechanism. instead of reporting computable, report choke. unless detects computation complete, then report success/fail
             # use sshfs.
             if not os.path.exists('/home/xzhang1/Shared/nanaimo/trash'):
@@ -781,7 +781,7 @@ class Vasp(object):
                 os.chdir(self.path)
             elif self.gen.parse_if('platform=nanaimo|irmik|hodduk'):
                 if not getattr(self, 'remote_folder_name', None):
-                    self.remote_folder_name = self.path.split('/')[-2] + '_' + self.path.split('/')[-1] + '_' + hashlib.md5(self.path).hexdigest()[:5] + '_' + str(time.time()) 
+                    self.remote_folder_name = self.path.split('/')[-2] + '_' + self.path.split('/')[-1] + '_' + hashlib.md5(self.path).hexdigest()[:5] + '_' + str(time.time())
                     print self.__class__.__name__ + '.moonphase: repaired self.remote_folder_name'
                 remote_path = '/home/xzhang1/Shared/'+self.gen.getkw('platform')+'/'+self.remote_folder_name
                 if not os.path.exists(remote_path):
@@ -831,10 +831,10 @@ class Vasp(object):
         if_ = open(path,'r')
         of_ = open('./POTCAR','a')
         of_.write( if_.read() )
-    
 
 
-#=========================================================================== 
+
+#===========================================================================
 
 class Dummy(object):
 
@@ -843,7 +843,7 @@ class Dummy(object):
         os.mkdir(self.path)
 
     def compute(self):
-        
+
         if not os.path.isdir(self.path):
             os.mkdirs(self.path)
         dcmp = dircmp(self.prev.path, self.path)
@@ -864,7 +864,7 @@ class Dummy(object):
             shutil.rmtree(self.path)
 
 
-#=========================================================================== 
+#===========================================================================
 
 # Electron
 class Electron(object):
@@ -887,7 +887,7 @@ class Electron(object):
             if self.gen.parse_if('cell'):
                 with open('POSCAR','r') as infile:
                     self.cell = Cell(infile.read())
-                    
+
             if self.gen.parse_if('grepen'):
                 self.grepen = Grepen(self.prev.gen)
 
@@ -907,7 +907,7 @@ class Electron(object):
                 else:
                     self.errors = Errors(self.grepen, self.dos, self.bands)
 
-            self.log = '' 
+            self.log = ''
             for name in ['cell', 'grepen', 'dos', 'bands','charge', 'errors']:
                 if getattr(self, name, None) and getattr(getattr(self, name),'log', None):
                     self.log += str( getattr(getattr(self, name), 'log') )
@@ -925,13 +925,13 @@ class Electron(object):
             return self.log
         else:
             return 'moonphase is not 2, nothing here'
-            
+
     def delete(self):
         if os.path.isdir(self.path):
             shutil.rmtree(self.path)
     '''
 
-  
+
 class Grepen(object):
     def __init__(self, prev_gen):
         self.log=''
@@ -945,20 +945,17 @@ class Grepen(object):
         self.ismear = int(prev_gen.getkw('ismear'))
         self.sigma = 0 if self.ismear!=0 else float(prev_gen.getkw('ismear'))
 
-    
+
 class Dos(object):
 
-    def __init__(self,grepen):  
-        
+    def __init__(self,grepen):
+
         self.log = '\n\n\n'
         self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
         with open('DOSCAR','r') as doscar_file:
             l = doscar_file.readlines()
             if not len(l) >= 7:
                 raise shared.CustomError( 'dos.py warning: doscar is not usable (as determined by grepen).')
-
-        ## parameter: min_dos: is dos considered 0 if it's 0.002? 
-        min_dos = 1E-3
 
         ## self.dos
         doscar_file = open("DOSCAR","r")
@@ -967,49 +964,49 @@ class Dos(object):
         self.dos = np.float64(doscar_lines_split)   # self.does: total dos. for para and ncl, energy dos idos. for fm and afm, energy updos iupdos downdos idowndos.
         self.idx_fermi = abs(self.dos[:,0] - grepen.efermi).argmin() + 1
 
-        if grepen.spin == 'para' or grepen.spin == 'ncl': 
-            if abs(self.dos[self.idx_fermi][1]) > min_dos:
+        if grepen.spin == 'para' or grepen.spin == 'ncl':
+            if abs(self.dos[self.idx_fermi][1]) >  shared.MIN_DOS :
                 self.log += 'dos.py: conductor.\n'
-            else: 
+            else:
                 VB=self.dos[self.idx_fermi:0:-1]
                 CB=self.dos[self.idx_fermi:len(self.dos)]
-                VB1=[VB[x][0] for x in range(0,len(VB)) if abs(VB[x][1])>min_dos]
-                CB1=[CB[x][0] for x in range(0,len(CB)) if abs(CB[x][1])>min_dos]
+                VB1=[VB[x][0] for x in range(0,len(VB)) if abs(VB[x][1])> shared.MIN_DOS ]
+                CB1=[CB[x][0] for x in range(0,len(CB)) if abs(CB[x][1])> shared.MIN_DOS ]
                 if len(VB1)==0 or len(CB1)==0:
                     raise shared.CustomError(self.__class__.__name__+'.__init__: weird. len(VB1/CB1) is 0\n')
                 VBM1 = VB1[0]
                 CBM1 = CB1[0]
                 self.log += 'dos.py: DOS* type is insulator. DOS bandgap* is: ' + str(CBM1-VBM1) + ' eV.\n'
         elif grepen.spin=='fm' or grepen.spin=='afm':
-            if abs(self.dos[self.idx_fermi][1])>min_dos and abs(self.dos[self.idx_fermi][2])>min_dos:
+            if abs(self.dos[self.idx_fermi][1])> shared.MIN_DOS  and abs(self.dos[self.idx_fermi][2])> shared.MIN_DOS :
                 self.log += 'dos.py: conductor. quite probably. but check dos anyway.\n'
-            elif abs(self.dos[self.idx_fermi][1])<min_dos and abs(self.dos[self.idx_fermi][2])<min_dos: 
+            elif abs(self.dos[self.idx_fermi][1])< shared.MIN_DOS  and abs(self.dos[self.idx_fermi][2])< shared.MIN_DOS :
                 VB=self.dos[self.idx_fermi:0:-1]
                 CB=self.dos[self.idx_fermi:len(self.dos)]
-                VB1=[VB[x][0] for x in range(0,len(VB)) if abs(VB[x][1])>min_dos]
-                VB2=[VB[x][0] for x in range(0,len(VB)) if abs(VB[x][2])>min_dos]
-                CB1=[CB[x][0] for x in range(0,len(CB)) if abs(CB[x][1])>min_dos]
-                CB2=[CB[x][0] for x in range(0,len(CB)) if abs(CB[x][2])>min_dos]
+                VB1=[VB[x][0] for x in range(0,len(VB)) if abs(VB[x][1])> shared.MIN_DOS ]
+                VB2=[VB[x][0] for x in range(0,len(VB)) if abs(VB[x][2])> shared.MIN_DOS ]
+                CB1=[CB[x][0] for x in range(0,len(CB)) if abs(CB[x][1])> shared.MIN_DOS ]
+                CB2=[CB[x][0] for x in range(0,len(CB)) if abs(CB[x][2])> shared.MIN_DOS ]
                 if len(VB1)==0 or len(VB2)==0 or len(CB1)==0 or len(CB2)==0:
                     raise shared.CustomError( 'dos.py: weird. len(VB1) is ' + str(len(VB1)) + '. len(VB2) is ' + str(len(VB2)) + '. len(CB1) is ' + str(len(CB1)) + '. len(CB2) is ' + str(len(CB2)))
                 VBM1=VB1[0] ; CBM1=CB1[0] ; VBM2=VB2[0] ; CBM2=CB2[0]
                 CV_divide=0.45
                 VBM1S=VBM1*(1-CV_divide)+CBM1*CV_divide ; CBM1S = CBM1*(1-CV_divide) + VBM1*CV_divide ; VBM2S = VBM2*(1-CV_divide) + CBM2*CV_divide ; CBM2S = CBM2*(1-CV_divide) + VBM2*CV_divide
-                if abs(VBM1-VBM2)<min_dos or abs(CBM1-CBM2)<min_dos:
+                if abs(VBM1-VBM2)< shared.MIN_DOS  or abs(CBM1-CBM2)< shared.MIN_DOS :
                     self.log += 'dos.py: DOS* type is nonmagnetic insulator. Bandgap* is: ' + str(CBM1-VBM1) + ' eV.\n'
                 else:
                     self.log += 'BMS ' + str(min(abs(VBM1-VBM2)) + str(min(VBM1,VBM2)-max(CBM1,CBM2)) + str(abs(CBM1-CBM2))) + '\n'
-            elif abs(self.dos[self.idx_fermi][1])<min_dos and abs(self.dos[self.idx_fermi][2])>min_dos:
+            elif abs(self.dos[self.idx_fermi][1])< shared.MIN_DOS  and abs(self.dos[self.idx_fermi][2])> shared.MIN_DOS :
                 VB=self.dos[self.idx_fermi:0:-1]
                 CB=self.dos[self.idx_fermi:len(self.dos)]
-                VBM1=next(VB[x][0] for x in range(0,len(VB)) if abs(VB[x][1])>min_dos or abs(VB[x][2])<min_dos)
-                CBM1=next(CB[x][0] for x in range(0,len(CB)) if abs(CB[x][1])>min_dos or abs(CB[x][2])<min_dos)
+                VBM1=next(VB[x][0] for x in range(0,len(VB)) if abs(VB[x][1])> shared.MIN_DOS  or abs(VB[x][2])< shared.MIN_DOS )
+                CBM1=next(CB[x][0] for x in range(0,len(CB)) if abs(CB[x][1])> shared.MIN_DOS  or abs(CB[x][2])< shared.MIN_DOS )
                 self.log += 'HM ' + str(CBM1-VBM1) + '\n'
-            elif abs(self.dos[self.idx_fermi][1])>min_dos and abs(self.dos[self.idx_fermi][2])<min_dos:
+            elif abs(self.dos[self.idx_fermi][1])> shared.MIN_DOS  and abs(self.dos[self.idx_fermi][2])< shared.MIN_DOS :
                 VB=dos[self.idx_fermi:0:-1]
                 CB=dos[self.idx_fermi:len(self.dos)]
-                VBM1=next(VB[x][0] for x in range(0,len(VB)) if abs(VB[x][2])>min_dos or abs(VB[x][1])<min_dos)
-                CBM1=next(CB[x][0] for x in range(0,len(CB)) if abs(CB[x][2])>min_dos or abs(CB[x][1])<min_dos)
+                VBM1=next(VB[x][0] for x in range(0,len(VB)) if abs(VB[x][2])> shared.MIN_DOS  or abs(VB[x][1])< shared.MIN_DOS )
+                CBM1=next(CB[x][0] for x in range(0,len(CB)) if abs(CB[x][2])> shared.MIN_DOS  or abs(CB[x][1])< shared.MIN_DOS )
                 self.log += 'HM ' + str(CBM1-VBM1) + '\n'
 
         # site-projected dos: split doscar and convert to self.site_dos
@@ -1023,13 +1020,12 @@ class Dos(object):
         self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
         print self.log
 
-# imports bandstructure from EIGENVAL. 
+# imports bandstructure from EIGENVAL.
 # imports kpoints list.
 # interpolates.
 # finds all sources of errors in bandstructure.
 class Bands(object):
 
-    @property
     @shared.MWT()
     def fit_neargap_bands(self):
         ## fit the band for i) verifying smoothness ii) estimating bandgap
@@ -1042,8 +1038,8 @@ class Bands(object):
             result.append(fit_neargap_band)
         pbar.finish()
         return result
-    
-    def __init__(self,grepen):  
+
+    def __init__(self,grepen):
 
         # initialize
         self.log = '\n\n\n'
@@ -1060,7 +1056,7 @@ class Bands(object):
             if (len(kpoints.readlines())>7):
                 raise shared.CustomError(self.__class__.__name__ + ' __init__: KPOINTS does not form a mesh. Module would not work.')
 
-        # Forking: EIGENVAL format depends on spin. 
+        # Forking: EIGENVAL format depends on spin.
         if grepen.spin != 'para':
             self.log += self.__class__.__name__ + " __init__ warning: only the first spin direction. We are essentially assuming spin=para.\n"
         if grepen.spin == 'para' or grepen.spin == 'ncl':
@@ -1102,17 +1098,17 @@ class Bands(object):
         CBM1=CBM1_kpte[3]
         VBM1=VBM1_kpte[3]
         CV_divide=0.5
-        VBM1S=VBM1*(1-CV_divide)+CBM1*CV_divide ; CBM1S = CBM1*(1-CV_divide) + VBM1*CV_divide 
+        VBM1S=VBM1*(1-CV_divide)+CBM1*CV_divide ; CBM1S = CBM1*(1-CV_divide) + VBM1*CV_divide
         self.log += "bands.py: bandstructure bandgap* is %.5f, CBM1* is %s, VBM1* is %s\n" %(CBM1-VBM1,CBM1_kpte[0:4],VBM1_kpte[0:4])
         ## compute neargap bands
         self.neargap_bands=[]
         for band in self.bands:
-            if any([(kpte[3]<VBM1S and kpte[3]>VBM1-0.5) for kpte in band]) or any([(kpte[3]>CBM1S and kpte[3]<CBM1+0.5) for kpte in band]):   
+            if any([(kpte[3]<VBM1S and kpte[3]>VBM1-0.5) for kpte in band]) or any([(kpte[3]>CBM1S and kpte[3]<CBM1+0.5) for kpte in band]):
                 self.neargap_bands.append(band)
         self.neargap_bands=np.float_(self.neargap_bands)
         self.log += 'bands.py: number of neargap_bands is %d\n' %(len(self.neargap_bands))
 
-        # precision check 
+        # precision check
         ## calculate DeltaE_KPOINTS by grabbing average E diff / average E diff near bandgap from EIGENVAL.
         ### specify ranges to look for
         range_avg_kpt_de = [0.1,0.15,0.2,0.5]
@@ -1127,21 +1123,21 @@ class Bands(object):
             for nn_pair in kpts_nn_list:
                 ee_pair = band[nn_pair][:,3]
                 for idx,val in enumerate(range_avg_kpt_de):
-                    if all([VBM1-val<i<VBM1S for i in ee_pair]) or all([CBM1S<i<CBM1+val for i in ee_pair]): 
+                    if all([VBM1-val<i<VBM1S for i in ee_pair]) or all([CBM1S<i<CBM1+val for i in ee_pair]):
                         avg_kpt_de[idx] += abs(ee_pair[0]-ee_pair[1])
                         count_avg_kpt_de[idx] += 1
             pbar.update(i_band+1) #pretty print
         pbar.finish() #pretty print
         for idx,val in enumerate(count_avg_kpt_de):
             if val==0:
-                count_avg_kpt_de[idx]=1E-8  
+                count_avg_kpt_de[idx]=1E-8
         avg_kpt_de=np.divide(avg_kpt_de,count_avg_kpt_de)
         self.log += 'bands.py: NN kpoints energy delta_E = E_j\'-E_j is:\n'
         for idx,val in enumerate(range_avg_kpt_de):
             self.log += '  CBM/VBM +- %.2f eV, difference is %.5f; number of samples is %d.\n' %(val,avg_kpt_de[idx],count_avg_kpt_de[idx])
         self.de_kpoints = max(avg_kpt_de)
         ### ii) estimate bandgap
-        #### in each kpoint, get a bandgap (for each fit, get a max/min, then get the band). get the global bandgap. 
+        #### in each kpoint, get a bandgap (for each fit, get a max/min, then get the band). get the global bandgap.
         widgets = ['interpolating bandgap: ', Percentage(), ' ', Bar(), ' ', ETA()] #pretty print
         pbar = ProgressBar(widgets=widgets, maxval=len(kpts)).start()
         fit_1kpt_bandgaps=[]
@@ -1150,16 +1146,16 @@ class Bands(object):
                 pbar.update(i_kpt)
             near_kpt_maxmin_bnd=[[x-min_kpt_dist/2,x+min_kpt_dist/2] for x in kpt]
             near_kpt_maxmin_energies = []
-            for (i_fit_neargap_band,fit_neargap_band) in enumerate(self.fit_neargap_bands):
+            for (i_fit_neargap_band,fit_neargap_band) in enumerate(self.fit_neargap_bands()):
                 if fit_neargap_band(kpt[0],kpt[1],kpt[2]) < VBM1S:
-                    fun = lambda x: -1*fit_neargap_band(x[0],x[1],x[2]) 
+                    fun = lambda x: -1*fit_neargap_band(x[0],x[1],x[2])
                     near_kpt_maxmin_energy = -1 * minimize(fun,kpt,bounds=near_kpt_maxmin_bnd).fun
                     near_kpt_maxmin_energies.append(near_kpt_maxmin_energy)
                 elif fit_neargap_band(kpt[0],kpt[1],kpt[2]) > CBM1S:
-                    fun = lambda x: fit_neargap_band(x[0],x[1],x[2]) 
+                    fun = lambda x: fit_neargap_band(x[0],x[1],x[2])
                     near_kpt_maxmin_energy = minimize(fun,kpt,bounds=near_kpt_maxmin_bnd).fun
                     near_kpt_maxmin_energies.append(near_kpt_maxmin_energy)
-                else: 
+                else:
                     print 'bands.py initialisation error: fit_neargap_band ',kpt,' ',fit_neargap_band(kpt[0],kpt[1],kpt[2]),' energy is not above bands.VBM1s or below bands.CBM1S. ignoring.'
                 if VBM1 < near_kpt_maxmin_energy < CBM1:
                     i_energy = min(self.neargap_bands[:,i_kpt,3], key=lambda x:abs(x-near_kpt_maxmin_energy))
@@ -1175,7 +1171,7 @@ class Bands(object):
         self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
 
         print self.log
-    
+
     # plot E(KPOINT)
     def plot(self,i):
         fig = plt.figure()
@@ -1194,10 +1190,10 @@ class Bands(object):
         #
         plt.show()
         return
-        
+
 # executes population analysis
 class Charge(object):
-    def __init__(self, cell, grepen, dos):  
+    def __init__(self, cell, grepen, dos):
         self.log = '\n\n\n'
         self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
         # sanity check
@@ -1224,7 +1220,7 @@ class Charge(object):
             self.nspin = 1
             spins = ['tot']
         orbitals = 's p_y p_z p_x d_xy d_yz d_z2 d_xz d_x^2-y^2'.split()
-        
+
         for idx_element, element in enumerate(cell.stoichiometry.keys()):
             for idx_atom in range( sum(cell.stoichiometry.values()[0:idx_element]), sum(cell.stoichiometry.values()[0:idx_element+1]) ):
                 for idx_spin in range(0, self.nspin):
@@ -1285,15 +1281,15 @@ class Charge(object):
                         break
                 for idx2_line in range(idx_line + 2,idx_line + 6 + sum(cell.stoichiometry.values())):
                     self.log += lines[idx2_line]
-            
+
             self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
-    
+
         print self.log
 
 
 class Errors(object):
     def __init__(self,Agrepen,Ados,Abands,Bgrepen=None,Bdos=None,Bbands=None):
-        
+
         self.log = '\n\n\n'
         self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
         ## self.rules (aka error types) in dirA
@@ -1301,7 +1297,7 @@ class Errors(object):
         self.de = 0
         if Agrepen.ismear == 0:
             self.de_sigma = Agrepen.sigma * 2
-            if self.de_sigma > self.de: 
+            if self.de_sigma > self.de:
                 self.de = self.de_sigma
             rule='gaussian smearing smoothes out irregularities with size sigma: sigma[%.4f] < DE[%.4f]/2' %(Agrepen.sigma,self.de)
             self.rules.append(rule)
@@ -1328,12 +1324,12 @@ class Errors(object):
         # comparing against dirB
         if not Bgrepen:
             self.log += 'errors.py: skipping E(k) numerical error (interpolated) comparison check. this is usually okay since such errors should be smaller than 0.01 eV. '
-        else: 
+        else:
             self.de_interpd = 0
             for i_band,band in enumerate(Bbands.neargap_bands):
-                fitband=[[kpt_e[0],kpt_e[1],kpt_e[2],float(Abands.fit_neargap_bands[i_band](kpt_e[0],kpt_e[1],kpt_e[2])),kpt_e[4]] for kpt_e in band]
+                fitband=[[kpt_e[0],kpt_e[1],kpt_e[2],float(Abands.fit_neargap_bands()[i_band](kpt_e[0],kpt_e[1],kpt_e[2])),kpt_e[4]] for kpt_e in band]
                 for kpt_e in band:
-                    self.log += str(kpt_e[0]) + str(kpt_e[1]) + str(kpt_e[2]) + str(kpt_e[3]) + str(float(Abands.fit_neargap_bands[i_band](kpt_e[0],kpt_e[1],kpt_e[2]))) + '\n'
+                    self.log += str(kpt_e[0]) + str(kpt_e[1]) + str(kpt_e[2]) + str(kpt_e[3]) + str(float(Abands.fit_neargap_bands()[i_band](kpt_e[0],kpt_e[1],kpt_e[2]))) + '\n'
                 fitband = np.float_(fitband)
                 band = np.float_(band)
                 band_deviation = abs((band - sum(band)/len(band)) - (fitband - sum(fitband)/len(fitband)))
@@ -1354,6 +1350,6 @@ class Errors(object):
         for rule in self.rules:
             self.log += ' '*4 + rule + '\n'
 
-        self.log += '*' * 35 + ' charge of ' + os.getcwd() + ' ' + '*' * 35 
+        self.log += '*' * 35 + ' charge of ' + os.getcwd() + ' ' + '*' * 35
 
         print self.log
