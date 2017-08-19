@@ -22,8 +22,11 @@ import paramiko
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import time
-import progressbar
-from progressbar import Bar, Counter, ETA,FormatLabel, Percentage,ProgressBar
+
+# import progressbar
+# from progressbar import Bar, Counter, ETA,FormatLabel, Percentage,ProgressBar
+from tqdm import tqdm
+
 from scipy.interpolate import Rbf
 from scipy.optimize import minimize
 from scipy import spatial
@@ -951,14 +954,14 @@ class Dos(object):
     @shared.MWT()
     def dos_interp(self):
         dos_interp = []
-        for spin_idx in range(0, self.nspin):
+        for spin_idx in tqdm(range(0, self.nspin)):
             dos_interp[spin_idx] = scipy.interpolate.interp1d( self.dos[0], self.dos[spin_idx*2+1], kind='cubic' )
         return dos_interp
 
     @shared.MWT()
     def idos_interp(self):
         idos_interp = []
-        for spin_idx in range(0, self.nspin):
+        for spin_idx in tqdm(range(0, self.nspin)):
             idos_interp[spin_idx] = scipy.interpolate.interp1d( self.dos[0], self.dos[spin_idx*2+2], kind='cubic' )
         return idos_interp
 
@@ -969,17 +972,35 @@ class Dos(object):
         self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
         self.nspin = {'para':1, 'fm':2, 'ncl':1}[grepen.spin]
         self.efermi = grepen.efermi
+        self.log += 'Fermi level = %s\n\n' %(self.efermi)
         with open('DOSCAR','r') as doscar_file:
             l = doscar_file.readlines()
             if not len(l) >= 7:
                 raise shared.CustomError( 'dos.py warning: doscar is not usable (as determined by grepen).')
 
-        ## self.dos
+        # self.dos
         doscar_file = open("DOSCAR","r")
         doscar_lines = doscar_file.readlines()
         doscar_lines_split = [doscar_lines[i].split() for i in range(6,6+grepen.nedos)]
+
         self.dos = np.float64(doscar_lines_split)   # self.does: total dos. for para and ncl, energy dos idos. for fm and afm, energy updos iupdos downdos idowndos.
         self.idx_fermi = abs(self.dos[:,0] - self.efermi).argmin() + 1
+
+        # self.bandgap
+        for idx_spin in range(0, self.nspin):
+            i = idx_fermi
+            while self.dos[i] < shared.MIN_DOS:
+                i -= 1
+            j = idx_fermi
+            while self.dos[j] < shared.MIN_DOS:
+                j += 1
+            if i == j :
+                self.bandgap[idx_spin] = []
+            else:
+                self.bandgap[idx_spin] = [self.dos[i], self.dos[j]]
+            if
+
+
 
         if grepen.spin == 'para' or grepen.spin == 'ncl':
             if self.dos()
@@ -1046,15 +1067,10 @@ class Bands(object):
 
     @shared.MWT()
     def fit_neargap_bands(self):
-        ## fit the band for i) verifying smoothness ii) estimating bandgap
-        widgets = ['fitting each band: ', Percentage(), ' ', Bar(), ' ', ETA()] #pretty print
-        pbar = ProgressBar(widgets=widgets, maxval=len(self.neargap_bands)).start()
+        ## fit the band for i) verifying smoothness ii) estimating
         fit_neargap_bands = []
-        for i_band,band in enumerate(self.neargap_bands):
-            pbar.update(i_band)
-            fit_neargap_band = Rbf(band[:,0],band[:,1],band[:,2],band[:,3])
-            fit_neargap_bands.append(fit_neargap_band)
-        pbar.finish()
+        for i_band,band in tqdm(enumerate(self.neargap_bands)):
+            fit_neargap_bands.append( Rbf(band[:,0],band[:,1],band[:,2],band[:,3]) )
         return fit_neargap_bands
 
     def __init__(self,grepen):
@@ -1130,13 +1146,10 @@ class Bands(object):
         ## calculate DeltaE_KPOINTS by grabbing average E diff / average E diff near bandgap from EIGENVAL.
         ### specify ranges to look for
         range_avg_kpt_de = [0.1,0.15,0.2,0.5]
-        ### pretty print
-        widgets = ['precision check bands: ', Percentage(), ' ', Bar(), ' ', ETA()] #pretty print
-        pbar = ProgressBar(widgets=widgets, maxval=len(self.neargap_bands)).start()
         ### loop over each band (otherwise mixing is undesirable)
         avg_kpt_de=np.float_([0]*len(range_avg_kpt_de))
         count_avg_kpt_de=np.float_([0]*len(range_avg_kpt_de))
-        for i_band,band in enumerate(self.neargap_bands):
+        for i_band,band in tqdm(enumerate(self.neargap_bands)):
             #### for each NN pair, compute |delta_e| if energy is within bound
             for nn_pair in kpts_nn_list:
                 ee_pair = band[nn_pair][:,3]
@@ -1144,9 +1157,7 @@ class Bands(object):
                     if all([VBM1-val<i<VBM1S for i in ee_pair]) or all([CBM1S<i<CBM1+val for i in ee_pair]):
                         avg_kpt_de[idx] += abs(ee_pair[0]-ee_pair[1])
                         count_avg_kpt_de[idx] += 1
-            pbar.update(i_band+1) #pretty print
-        pbar.finish() #pretty print
-        for idx,val in enumerate(count_avg_kpt_de):
+        for idx,val in tqdm(enumerate(count_avg_kpt_de)):
             if val==0:
                 count_avg_kpt_de[idx]=1E-8
         avg_kpt_de=np.divide(avg_kpt_de,count_avg_kpt_de)
@@ -1156,12 +1167,9 @@ class Bands(object):
         self.de_kpoints = max(avg_kpt_de)
         ### ii) estimate bandgap
         #### in each kpoint, get a bandgap (for each fit, get a max/min, then get the band). get the global bandgap.
-        widgets = ['interpolating bandgap: ', Percentage(), ' ', Bar(), ' ', ETA()] #pretty print
-        pbar = ProgressBar(widgets=widgets, maxval=len(kpts)).start()
         fit_1kpt_bandgaps=[]
-        for i_kpt,kpt in enumerate(kpts):
+        for i_kpt,kpt in tqdm(enumerate(kpts)):
             if i_kpt % 100 == 0:
-                pbar.update(i_kpt)
             near_kpt_maxmin_bnd=[[x-min_kpt_dist/2,x+min_kpt_dist/2] for x in kpt]
             near_kpt_maxmin_energies = []
             for (i_fit_neargap_band,fit_neargap_band) in enumerate(self.fit_neargap_bands()):
@@ -1184,7 +1192,6 @@ class Bands(object):
             fit_1kpt_bandgap = min([e for e in near_kpt_maxmin_energies if e > CBM1S]) - max([e for e in near_kpt_maxmin_energies if e < VBM1S])
             fit_1kpt_bandgaps.append(fit_1kpt_bandgap)
         self.fit_bandgap = min(fit_1kpt_bandgaps)
-        pbar.finish()
         self.log += "bands.py: fitted bandgap* is %.5f. Usually bandgap is between fitted and raw bandgap*. For errors see errors.py.\n" %(self.fit_bandgap)
         self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
 

@@ -33,6 +33,9 @@ from scipy import spatial
 
 import shared
 
+'''
+shit
+'''
 
 
 #with open('data/markdown') as f:

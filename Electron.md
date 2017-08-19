@@ -16,11 +16,13 @@ prev __spin__ __sigma__ __ismear__
 __log__
 
 __nspin__       max of _idx_spin_ in dos
-__idx_fermi__   __dos__[__idx_fermi__][0] = __efermi__
+__idx_fermi__   dos[idx_fermi][0] = __efermi__
 
 __dos__         raw dos.
                 dos[] = [e __dos_interp()__[_idx_spin_](_e_) __idos_interp()__[_idx_spin_](_e_) ...]
 __pdos__        raw pdos.
+
+__bandgap__     bandgap[_idx_spin_] = [] or [vbm, cbm]
 
 
 - __idx_fermi__ Fermi level index for dos and pdos
