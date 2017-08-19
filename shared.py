@@ -23,7 +23,7 @@ import time
 # ELEMENTS
 # CustomError
 # MySFTPClient
-# @memoize
+# @MWT
 # @moonphase_wrap
 
 # 
@@ -290,26 +290,63 @@ class MySFTPClient(paramiko.SFTPClient):
             else:
                 raise
 
+# ===========================================================================
+
+# MWT: Memorize With Timeout
+
+class MWT(object):
+    """Memoize With Timeout"""
+    _caches = {}
+    _timeouts = {}
+    
+    def __init__(self,timeout=86400):
+        self.timeout = timeout
+        
+    def collect(self):
+        """Clear cache of results which have timed out"""
+        for func in self._caches:
+            cache = {}
+            for key in self._caches[func]:
+                if (time.time() - self._caches[func][key][1]) < self._timeouts[func]:
+                    cache[key] = self._caches[func][key]
+            self._caches[func] = cache
+    
+    def __call__(self, f):
+        self.cache = self._caches[f] = {}
+        self._timeouts[f] = self.timeout
+        
+        def func(*args, **kwargs):
+            kw = kwargs.items()
+            kw.sort()
+            key = (args, tuple(kw))
+            try:
+                v = self.cache[key]
+                print "cache"
+                if (time.time() - v[1]) > self.timeout:
+                    raise KeyError
+            except KeyError:
+                print "new"
+                v = self.cache[key] = f(*args,**kwargs),time.time()
+            return v[0]
+        func.func_name = f.func_name
+        
+        return func
 
 # ===========================================================================
 
 # @moonphase_wrap
 
 def moonphase_wrap(func):
-    moonphases = {}     # moonphases[self] = [timestamp, result]
+    @MWT(timeout=10)
     @wraps(func)
     def wrapped(self, *args, **kwargs):
-        if self in moonphases and time.time()-moonphases[self][0] < 20:
-            if DEBUG == 2:  print 'moonphase: used cached value'
-            return moonphases[self][1]
-        elif getattr(self,'path',None) and os.path.isfile(self.path + '/.moonphase'):
+        if getattr(self,'path',None) and os.path.isfile(self.path + '/.moonphase'):
             with open(self.path + '/.moonphase') as f:
                 l = f.read().splitlines(0)
                 if int(l[0]) > -2 and int(l[0]) < 3:
                     return int(l[0])
         else:
             result = func(self, *args, **kwargs)
-            moonphases[self] = [time.time(), result]
             return result
     return wrapped
 

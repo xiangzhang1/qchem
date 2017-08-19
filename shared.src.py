@@ -347,7 +347,6 @@ def moonphase_wrap(func):
                     return int(l[0])
         else:
             result = func(self, *args, **kwargs)
-            moonphases[self] = [time.time(), result]
             return result
     return wrapped
 
