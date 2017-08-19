@@ -1028,6 +1028,19 @@ class Dos(object):
 # finds all sources of errors in bandstructure.
 class Bands(object):
 
+    @shared.MWT()
+    def fit_neargap_bands(self):
+        ## fit the band for i) verifying smoothness ii) estimating bandgap
+        widgets = ['fitting each band: ', Percentage(), ' ', Bar(), ' ', ETA()] #pretty print
+        pbar = ProgressBar(widgets=widgets, maxval=len(self.neargap_bands)).start()
+        result = []
+        for i_band,band in enumerate(self.neargap_bands):
+            pbar.update(i_band)
+            fit_neargap_band = Rbf(band[:,0],band[:,1],band[:,2],band[:,3])
+            result.append(fit_neargap_band)
+        pbar.finish()
+        return result
+    
     def __init__(self,grepen):  
 
         # initialize
@@ -1125,15 +1138,6 @@ class Bands(object):
         for idx,val in enumerate(range_avg_kpt_de):
             self.log += '  CBM/VBM +- %.2f eV, difference is %.5f; number of samples is %d.\n' %(val,avg_kpt_de[idx],count_avg_kpt_de[idx])
         self.de_kpoints = max(avg_kpt_de)
-        ## fit the band for i) verifying smoothness ii) estimating bandgap
-        widgets = ['fitting each band: ', Percentage(), ' ', Bar(), ' ', ETA()] #pretty print
-        pbar = ProgressBar(widgets=widgets, maxval=len(self.neargap_bands)).start()
-        self.fit_neargap_bands = []
-        for i_band,band in enumerate(self.neargap_bands):
-            pbar.update(i_band)
-            fit_neargap_band = Rbf(band[:,0],band[:,1],band[:,2],band[:,3])
-            self.fit_neargap_bands.append(fit_neargap_band)
-        pbar.finish()
         ### ii) estimate bandgap
         #### in each kpoint, get a bandgap (for each fit, get a max/min, then get the band). get the global bandgap. 
         widgets = ['interpolating bandgap: ', Percentage(), ' ', Bar(), ' ', ETA()] #pretty print
@@ -1144,7 +1148,7 @@ class Bands(object):
                 pbar.update(i_kpt)
             near_kpt_maxmin_bnd=[[x-min_kpt_dist/2,x+min_kpt_dist/2] for x in kpt]
             near_kpt_maxmin_energies = []
-            for (i_fit_neargap_band,fit_neargap_band) in enumerate(self.fit_neargap_bands):
+            for (i_fit_neargap_band,fit_neargap_band) in enumerate(self.fit_neargap_bands()):
                 if fit_neargap_band(kpt[0],kpt[1],kpt[2]) < self.VBM1S:
                     fun = lambda x: -1*fit_neargap_band(x[0],x[1],x[2]) 
                     near_kpt_maxmin_energy = -1 * minimize(fun,kpt,bounds=near_kpt_maxmin_bnd).fun
@@ -1325,9 +1329,9 @@ class Errors(object):
         else: 
             self.de_interpd = 0
             for i_band,band in enumerate(Bbands.neargap_bands):
-                fitband=[[kpt_e[0],kpt_e[1],kpt_e[2],float(Abands.fit_neargap_bands[i_band](kpt_e[0],kpt_e[1],kpt_e[2])),kpt_e[4]] for kpt_e in band]
+                fitband=[[kpt_e[0],kpt_e[1],kpt_e[2],float(Abands.fit_neargap_bands()[i_band](kpt_e[0],kpt_e[1],kpt_e[2])),kpt_e[4]] for kpt_e in band]
                 for kpt_e in band:
-                    self.log += str(kpt_e[0]) + str(kpt_e[1]) + str(kpt_e[2]) + str(kpt_e[3]) + str(float(Abands.fit_neargap_bands[i_band](kpt_e[0],kpt_e[1],kpt_e[2]))) + '\n'
+                    self.log += str(kpt_e[0]) + str(kpt_e[1]) + str(kpt_e[2]) + str(kpt_e[3]) + str(float(Abands.fit_neargap_bands()[i_band](kpt_e[0],kpt_e[1],kpt_e[2]))) + '\n'
                 fitband = np.float_(fitband)
                 band = np.float_(band)
                 band_deviation = abs((band - sum(band)/len(band)) - (fitband - sum(fitband)/len(fitband)))

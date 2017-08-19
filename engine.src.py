@@ -947,6 +947,7 @@ class Grepen(object):
 
     
 class Dos(object):
+
     def __init__(self,grepen):  
         
         self.log = '\n\n\n'
@@ -964,52 +965,52 @@ class Dos(object):
         doscar_lines = doscar_file.readlines()
         doscar_lines_split = [doscar_lines[i].split() for i in range(6,6+grepen.nedos)]
         self.dos = np.float64(doscar_lines_split)   # self.does: total dos. for para and ncl, energy dos idos. for fm and afm, energy updos iupdos downdos idowndos.
-        idx_fermi = abs(self.dos[:,0] - grepen.efermi).argmin() + 1
+        self.idx_fermi = abs(self.dos[:,0] - grepen.efermi).argmin() + 1
 
         if grepen.spin == 'para' or grepen.spin == 'ncl': 
-            if abs(self.dos[idx_fermi][1]) > min_dos:
+            if abs(self.dos[self.idx_fermi][1]) > min_dos:
                 self.log += 'dos.py: conductor.\n'
             else: 
-                self.VB=self.dos[idx_fermi:0:-1]
-                self.CB=self.dos[idx_fermi:len(self.dos)]
-                self.VB1=[self.VB[x][0] for x in range(0,len(self.VB)) if abs(self.VB[x][1])>min_dos]
-                self.CB1=[self.CB[x][0] for x in range(0,len(self.CB)) if abs(self.CB[x][1])>min_dos]
-                if len(self.VB1)==0 or len(self.CB1)==0:
-                    raise shared.CustomError(self.__class__.__name__+'.__init__: weird. len(self.VB1/self.CB1) is 0\n')
-                self.VBM1 = self.VB1[0]
-                self.CBM1 = self.CB1[0]
-                self.log += 'dos.py: DOS* type is insulator. DOS bandgap* is: ' + str(self.CBM1-self.VBM1) + ' eV.\n'
+                VB=self.dos[self.idx_fermi:0:-1]
+                CB=self.dos[self.idx_fermi:len(self.dos)]
+                VB1=[VB[x][0] for x in range(0,len(VB)) if abs(VB[x][1])>min_dos]
+                CB1=[CB[x][0] for x in range(0,len(CB)) if abs(CB[x][1])>min_dos]
+                if len(VB1)==0 or len(CB1)==0:
+                    raise shared.CustomError(self.__class__.__name__+'.__init__: weird. len(VB1/CB1) is 0\n')
+                VBM1 = VB1[0]
+                CBM1 = CB1[0]
+                self.log += 'dos.py: DOS* type is insulator. DOS bandgap* is: ' + str(CBM1-VBM1) + ' eV.\n'
         elif grepen.spin=='fm' or grepen.spin=='afm':
-            if abs(self.dos[idx_fermi][1])>min_dos and abs(self.dos[idx_fermi][2])>min_dos:
+            if abs(self.dos[self.idx_fermi][1])>min_dos and abs(self.dos[self.idx_fermi][2])>min_dos:
                 self.log += 'dos.py: conductor. quite probably. but check dos anyway.\n'
-            elif abs(self.dos[idx_fermi][1])<min_dos and abs(self.dos[idx_fermi][2])<min_dos: 
-                self.VB=self.dos[idx_fermi:0:-1]
-                self.CB=self.dos[idx_fermi:len(self.dos)]
-                self.VB1=[self.VB[x][0] for x in range(0,len(self.VB)) if abs(self.VB[x][1])>min_dos]
-                self.VB2=[self.VB[x][0] for x in range(0,len(self.VB)) if abs(self.VB[x][2])>min_dos]
-                self.CB1=[self.CB[x][0] for x in range(0,len(self.CB)) if abs(self.CB[x][1])>min_dos]
-                self.CB2=[self.CB[x][0] for x in range(0,len(self.CB)) if abs(self.CB[x][2])>min_dos]
-                if len(self.VB1)==0 or len(self.VB2)==0 or len(self.CB1)==0 or len(self.CB2)==0:
-                    raise shared.CustomError( 'dos.py: weird. len(self.VB1) is ' + str(len(self.VB1)) + '. len(self.VB2) is ' + str(len(self.VB2)) + '. len(self.CB1) is ' + str(len(self.CB1)) + '. len(self.CB2) is ' + str(len(self.CB2)))
-                self.VBM1=self.VB1[0] ; self.CBM1=self.CB1[0] ; self.VBM2=self.VB2[0] ; self.CBM2=self.CB2[0]
+            elif abs(self.dos[self.idx_fermi][1])<min_dos and abs(self.dos[self.idx_fermi][2])<min_dos: 
+                VB=self.dos[self.idx_fermi:0:-1]
+                CB=self.dos[self.idx_fermi:len(self.dos)]
+                VB1=[VB[x][0] for x in range(0,len(VB)) if abs(VB[x][1])>min_dos]
+                VB2=[VB[x][0] for x in range(0,len(VB)) if abs(VB[x][2])>min_dos]
+                CB1=[CB[x][0] for x in range(0,len(CB)) if abs(CB[x][1])>min_dos]
+                CB2=[CB[x][0] for x in range(0,len(CB)) if abs(CB[x][2])>min_dos]
+                if len(VB1)==0 or len(VB2)==0 or len(CB1)==0 or len(CB2)==0:
+                    raise shared.CustomError( 'dos.py: weird. len(VB1) is ' + str(len(VB1)) + '. len(VB2) is ' + str(len(VB2)) + '. len(CB1) is ' + str(len(CB1)) + '. len(CB2) is ' + str(len(CB2)))
+                VBM1=VB1[0] ; CBM1=CB1[0] ; VBM2=VB2[0] ; CBM2=CB2[0]
                 CV_divide=0.45
-                self.VBM1S=self.VBM1*(1-CV_divide)+self.CBM1*CV_divide ; self.CBM1S = self.CBM1*(1-CV_divide) + self.VBM1*CV_divide ; self.VBM2S = self.VBM2*(1-CV_divide) + self.CBM2*CV_divide ; self.CBM2S = self.CBM2*(1-CV_divide) + self.VBM2*CV_divide
-                if abs(self.VBM1-self.VBM2)<min_dos or abs(self.CBM1-self.CBM2)<min_dos:
-                    self.log += 'dos.py: DOS* type is nonmagnetic insulator. Bandgap* is: ' + str(self.CBM1-self.VBM1) + ' eV.\n'
+                VBM1S=VBM1*(1-CV_divide)+CBM1*CV_divide ; CBM1S = CBM1*(1-CV_divide) + VBM1*CV_divide ; VBM2S = VBM2*(1-CV_divide) + CBM2*CV_divide ; CBM2S = CBM2*(1-CV_divide) + VBM2*CV_divide
+                if abs(VBM1-VBM2)<min_dos or abs(CBM1-CBM2)<min_dos:
+                    self.log += 'dos.py: DOS* type is nonmagnetic insulator. Bandgap* is: ' + str(CBM1-VBM1) + ' eV.\n'
                 else:
-                    self.log += 'BMS ' + str(min(abs(self.VBM1-self.VBM2)) + str(min(self.VBM1,self.VBM2)-max(self.CBM1,self.CBM2)) + str(abs(self.CBM1-self.CBM2))) + '\n'
-            elif abs(self.dos[idx_fermi][1])<min_dos and abs(self.dos[idx_fermi][2])>min_dos:
-                self.VB=self.dos[idx_fermi:0:-1]
-                self.CB=self.dos[idx_fermi:len(self.dos)]
-                self.VBM1=next(self.VB[x][0] for x in range(0,len(self.VB)) if abs(self.VB[x][1])>min_dos or abs(self.VB[x][2])<min_dos)
-                self.CBM1=next(self.CB[x][0] for x in range(0,len(self.CB)) if abs(self.CB[x][1])>min_dos or abs(self.CB[x][2])<min_dos)
-                self.log += 'HM ' + str(self.CBM1-self.VBM1) + '\n'
-            elif abs(self.dos[idx_fermi][1])>min_dos and abs(self.dos[idx_fermi][2])<min_dos:
-                self.VB=dos[idx_fermi:0:-1]
-                self.CB=dos[idx_fermi:len(self.dos)]
-                self.VBM1=next(self.VB[x][0] for x in range(0,len(self.VB)) if abs(self.VB[x][2])>min_dos or abs(self.VB[x][1])<min_dos)
-                self.CBM1=next(self.CB[x][0] for x in range(0,len(self.CB)) if abs(self.CB[x][2])>min_dos or abs(self.CB[x][1])<min_dos)
-                self.log += 'HM ' + str(self.CBM1-self.VBM1) + '\n'
+                    self.log += 'BMS ' + str(min(abs(VBM1-VBM2)) + str(min(VBM1,VBM2)-max(CBM1,CBM2)) + str(abs(CBM1-CBM2))) + '\n'
+            elif abs(self.dos[self.idx_fermi][1])<min_dos and abs(self.dos[self.idx_fermi][2])>min_dos:
+                VB=self.dos[self.idx_fermi:0:-1]
+                CB=self.dos[self.idx_fermi:len(self.dos)]
+                VBM1=next(VB[x][0] for x in range(0,len(VB)) if abs(VB[x][1])>min_dos or abs(VB[x][2])<min_dos)
+                CBM1=next(CB[x][0] for x in range(0,len(CB)) if abs(CB[x][1])>min_dos or abs(CB[x][2])<min_dos)
+                self.log += 'HM ' + str(CBM1-VBM1) + '\n'
+            elif abs(self.dos[self.idx_fermi][1])>min_dos and abs(self.dos[self.idx_fermi][2])<min_dos:
+                VB=dos[self.idx_fermi:0:-1]
+                CB=dos[self.idx_fermi:len(self.dos)]
+                VBM1=next(VB[x][0] for x in range(0,len(VB)) if abs(VB[x][2])>min_dos or abs(VB[x][1])<min_dos)
+                CBM1=next(CB[x][0] for x in range(0,len(CB)) if abs(CB[x][2])>min_dos or abs(CB[x][1])<min_dos)
+                self.log += 'HM ' + str(CBM1-VBM1) + '\n'
 
         # site-projected dos: split doscar and convert to self.site_dos
         split_indices = [i for i, x in enumerate(doscar_lines) if x == doscar_lines[5]] # splitter line numbers
@@ -1028,6 +1029,20 @@ class Dos(object):
 # finds all sources of errors in bandstructure.
 class Bands(object):
 
+    @property
+    @shared.MWT()
+    def fit_neargap_bands(self):
+        ## fit the band for i) verifying smoothness ii) estimating bandgap
+        widgets = ['fitting each band: ', Percentage(), ' ', Bar(), ' ', ETA()] #pretty print
+        pbar = ProgressBar(widgets=widgets, maxval=len(self.neargap_bands)).start()
+        result = []
+        for i_band,band in enumerate(self.neargap_bands):
+            pbar.update(i_band)
+            fit_neargap_band = Rbf(band[:,0],band[:,1],band[:,2],band[:,3])
+            result.append(fit_neargap_band)
+        pbar.finish()
+        return result
+    
     def __init__(self,grepen):  
 
         # initialize
@@ -1082,17 +1097,17 @@ class Bands(object):
         self.flat_bands=np.float64(self.flat_bands)
         CBM1_kpte_idx=np.argmin([kpte[3] for kpte in self.flat_bands if kpte[4]==0])
         VBM1_kpte_idx=np.argmax([kpte[3] for kpte in self.flat_bands if kpte[4]==1])
-        self.CBM1_kpte=[kpte for kpte in self.flat_bands if kpte[4]==0][CBM1_kpte_idx]
-        self.VBM1_kpte=[kpte for kpte in self.flat_bands if kpte[4]==1][VBM1_kpte_idx]
-        self.CBM1=self.CBM1_kpte[3]
-        self.VBM1=self.VBM1_kpte[3]
+        CBM1_kpte=[kpte for kpte in self.flat_bands if kpte[4]==0][CBM1_kpte_idx]
+        VBM1_kpte=[kpte for kpte in self.flat_bands if kpte[4]==1][VBM1_kpte_idx]
+        CBM1=CBM1_kpte[3]
+        VBM1=VBM1_kpte[3]
         CV_divide=0.5
-        self.VBM1S=self.VBM1*(1-CV_divide)+self.CBM1*CV_divide ; self.CBM1S = self.CBM1*(1-CV_divide) + self.VBM1*CV_divide 
-        self.log += "bands.py: bandstructure bandgap* is %.5f, CBM1* is %s, VBM1* is %s\n" %(self.CBM1-self.VBM1,self.CBM1_kpte[0:4],self.VBM1_kpte[0:4])
+        VBM1S=VBM1*(1-CV_divide)+CBM1*CV_divide ; CBM1S = CBM1*(1-CV_divide) + VBM1*CV_divide 
+        self.log += "bands.py: bandstructure bandgap* is %.5f, CBM1* is %s, VBM1* is %s\n" %(CBM1-VBM1,CBM1_kpte[0:4],VBM1_kpte[0:4])
         ## compute neargap bands
         self.neargap_bands=[]
         for band in self.bands:
-            if any([(kpte[3]<self.VBM1S and kpte[3]>self.VBM1-0.5) for kpte in band]) or any([(kpte[3]>self.CBM1S and kpte[3]<self.CBM1+0.5) for kpte in band]):   
+            if any([(kpte[3]<VBM1S and kpte[3]>VBM1-0.5) for kpte in band]) or any([(kpte[3]>CBM1S and kpte[3]<CBM1+0.5) for kpte in band]):   
                 self.neargap_bands.append(band)
         self.neargap_bands=np.float_(self.neargap_bands)
         self.log += 'bands.py: number of neargap_bands is %d\n' %(len(self.neargap_bands))
@@ -1112,7 +1127,7 @@ class Bands(object):
             for nn_pair in kpts_nn_list:
                 ee_pair = band[nn_pair][:,3]
                 for idx,val in enumerate(range_avg_kpt_de):
-                    if all([self.VBM1-val<i<self.VBM1S for i in ee_pair]) or all([self.CBM1S<i<self.CBM1+val for i in ee_pair]): 
+                    if all([VBM1-val<i<VBM1S for i in ee_pair]) or all([CBM1S<i<CBM1+val for i in ee_pair]): 
                         avg_kpt_de[idx] += abs(ee_pair[0]-ee_pair[1])
                         count_avg_kpt_de[idx] += 1
             pbar.update(i_band+1) #pretty print
@@ -1125,15 +1140,6 @@ class Bands(object):
         for idx,val in enumerate(range_avg_kpt_de):
             self.log += '  CBM/VBM +- %.2f eV, difference is %.5f; number of samples is %d.\n' %(val,avg_kpt_de[idx],count_avg_kpt_de[idx])
         self.de_kpoints = max(avg_kpt_de)
-        ## fit the band for i) verifying smoothness ii) estimating bandgap
-        widgets = ['fitting each band: ', Percentage(), ' ', Bar(), ' ', ETA()] #pretty print
-        pbar = ProgressBar(widgets=widgets, maxval=len(self.neargap_bands)).start()
-        self.fit_neargap_bands = []
-        for i_band,band in enumerate(self.neargap_bands):
-            pbar.update(i_band)
-            fit_neargap_band = Rbf(band[:,0],band[:,1],band[:,2],band[:,3])
-            self.fit_neargap_bands.append(fit_neargap_band)
-        pbar.finish()
         ### ii) estimate bandgap
         #### in each kpoint, get a bandgap (for each fit, get a max/min, then get the band). get the global bandgap. 
         widgets = ['interpolating bandgap: ', Percentage(), ' ', Bar(), ' ', ETA()] #pretty print
@@ -1145,23 +1151,23 @@ class Bands(object):
             near_kpt_maxmin_bnd=[[x-min_kpt_dist/2,x+min_kpt_dist/2] for x in kpt]
             near_kpt_maxmin_energies = []
             for (i_fit_neargap_band,fit_neargap_band) in enumerate(self.fit_neargap_bands):
-                if fit_neargap_band(kpt[0],kpt[1],kpt[2]) < self.VBM1S:
+                if fit_neargap_band(kpt[0],kpt[1],kpt[2]) < VBM1S:
                     fun = lambda x: -1*fit_neargap_band(x[0],x[1],x[2]) 
                     near_kpt_maxmin_energy = -1 * minimize(fun,kpt,bounds=near_kpt_maxmin_bnd).fun
                     near_kpt_maxmin_energies.append(near_kpt_maxmin_energy)
-                elif fit_neargap_band(kpt[0],kpt[1],kpt[2]) > self.CBM1S:
+                elif fit_neargap_band(kpt[0],kpt[1],kpt[2]) > CBM1S:
                     fun = lambda x: fit_neargap_band(x[0],x[1],x[2]) 
                     near_kpt_maxmin_energy = minimize(fun,kpt,bounds=near_kpt_maxmin_bnd).fun
                     near_kpt_maxmin_energies.append(near_kpt_maxmin_energy)
                 else: 
                     print 'bands.py initialisation error: fit_neargap_band ',kpt,' ',fit_neargap_band(kpt[0],kpt[1],kpt[2]),' energy is not above bands.VBM1s or below bands.CBM1S. ignoring.'
-                if self.VBM1 < near_kpt_maxmin_energy < self.CBM1:
+                if VBM1 < near_kpt_maxmin_energy < CBM1:
                     i_energy = min(self.neargap_bands[:,i_kpt,3], key=lambda x:abs(x-near_kpt_maxmin_energy))
                     o_energy = near_kpt_maxmin_energy
                     # print 'band.py: interpolated eigenstate found. Energy* is %.4f -> %.4f eV; kpoint* is %s -> %s' %(i_energy,o_energy,kpt,minimize(fun,kpt,bounds=near_kpt_maxmin_bnd).x)
-            near_kpt_maxmin_energies.append(self.VBM1)
-            near_kpt_maxmin_energies.append(self.CBM1)
-            fit_1kpt_bandgap = min([e for e in near_kpt_maxmin_energies if e > self.CBM1S]) - max([e for e in near_kpt_maxmin_energies if e < self.VBM1S])
+            near_kpt_maxmin_energies.append(VBM1)
+            near_kpt_maxmin_energies.append(CBM1)
+            fit_1kpt_bandgap = min([e for e in near_kpt_maxmin_energies if e > CBM1S]) - max([e for e in near_kpt_maxmin_energies if e < VBM1S])
             fit_1kpt_bandgaps.append(fit_1kpt_bandgap)
         self.fit_bandgap = min(fit_1kpt_bandgaps)
         pbar.finish()
@@ -1224,10 +1230,10 @@ class Charge(object):
                 for idx_spin in range(0, self.nspin):
                     self.log += element + str(idx_atom) + '_' + spins[idx_spin]+'\t'
                     pdos = dos.site_dos[idx_atom+1]
-                    idx_fermi = (np.abs(pdos[:,0]-grepen.efermi)).argmin()
+                    self.idx_fermi = (np.abs(pdos[:,0]-grepen.efermi)).argmin()
                     idx_top_integral = (np.abs(pdos[:,0]-grepen.efermi-5)).argmin()
                     for idx_orbital,orbital in enumerate(orbitals):
-                        integral = np.trapz(pdos[:idx_fermi,self.nspin * idx_orbital + idx_spin + 1],x=pdos[:idx_fermi,0])
+                        integral = np.trapz(pdos[:self.idx_fermi,self.nspin * idx_orbital + idx_spin + 1],x=pdos[:self.idx_fermi,0])
                         integral = abs(integral)
                         maxintegral = np.trapz( pdos[:idx_top_integral, self.nspin * idx_orbital + idx_spin + 1], x = pdos[:idx_top_integral, 0])
                         self.log += orbital + ' ' + str('{0:.2f}'.format(integral)) + ' '
