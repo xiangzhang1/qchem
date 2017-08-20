@@ -28,6 +28,7 @@ import time
 from tqdm import tqdm
 
 from scipy.interpolate import Rbf
+from scipy.interpolate import interp1d
 from scipy.optimize import minimize
 from scipy import spatial
 
@@ -199,10 +200,12 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         if not [x for x in input_ if x.startswith('engine')]:
             raise shared.CustomError(self.__class__.__name__+': __init__: no engine=x found. Input_: {%s}' %input_)
         engine_name = [x for x in input_ if x.startswith('engine')][0].split('=')[1].strip()
-    with open(shared.SCRIPT_DIR + '/engine.gen.' + engine_name + '.conf') as conf:
-        lines = conf.read().splitlines()
-        for line in [ [p.strip() for p in l.split(':')] for l in lines if not l.startswith('#') ]:
-                '''if len(line) < 4: raise shared.CustomError('bad conf grammar error: needs 3 colons per line least in {%s}' %line)'''
+        with open(shared.SCRIPT_DIR + '/engine.gen.' + engine_name + '.conf') as conf:
+            lines = conf.read().splitlines()
+            for line in [ [p.strip() for p in l.split(':')] for l in lines if not l.startswith('#') ]:
+                #```
+                if len(line) < 4: raise shared.CustomError('bad conf grammar error: needs 3 colons per line least in {%s}' %line)
+                #'''
                 for part in [p.strip() for p in line[1].split(',') ]:
                     try:
                         if self.parse_if(line[0]) and self.parse_require(part,False):
@@ -229,18 +232,18 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
                     raise shared.CustomError( self.__class__.__name__+' __init__ round 2 error: parse_require still produces empty set. Expression is { %s : %s :  %s }.' % (line[0],line[1],line[3]) )
         #  检验
         ## Entering the last phase. Data structure of self.mod and self.kw simplifies.
-    for modname in set(self.mod.keys())-self.mod_legal_set:
+        for modname in set(self.mod.keys())-self.mod_legal_set:
             print self.__class__.__name__+' warning: illegal name. Mod {%s} is not in mod_legal_set and has been ignored. Mod_legal_set={%s}' %(modname,self.mod_legal_set)
-        del self.mod[modname]
-    for kwname in set(self.kw.keys())-self.kw_legal_set:
-        print self.__class__.__name__+' warning: illegal name. Kw {%s} is not required and has been ignored.' % kwname
-        del self.kw[kwname]
-        for name in self.kw:
-            if len(self.kw[name]) != 1:
-                raise shared.CustomError( self.__class__.__name__+' error: non-unique output. Kw[%s]={%s} has not been restricted to 1 value.' %(name,self.kw[name]) )
-        self.moonphase=3    # parsing and validating of input_ is complete.
-        if self.parse_if('engine=vasp'):
-            self.check_memory()
+            del self.mod[modname]
+        for kwname in set(self.kw.keys())-self.kw_legal_set:
+            print self.__class__.__name__+' warning: illegal name. Kw {%s} is not required and has been ignored.' % kwname
+            del self.kw[kwname]
+            for name in self.kw:
+                if len(self.kw[name]) != 1:
+                    raise shared.CustomError( self.__class__.__name__+' error: non-unique output. Kw[%s]={%s} has not been restricted to 1 value.' %(name,self.kw[name]) )
+            self.moonphase=3    # parsing and validating of input_ is complete.
+            if self.parse_if('engine=vasp'):
+                self.check_memory()
 
     def check_memory(self):
         # make temporary dir
@@ -336,30 +339,30 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
     def ismear5check(self):
         if 'kpoints' not in self.kw:
             raise shared.CustomError(self.__class__.__name__ + '.ismear5check: kpoints is undefined. Refer to execution order rules.')
-    kpoints = self.getkw('kpoints').split(' ')
+        kpoints = self.getkw('kpoints').split(' ')
         return np.prod([int(x) for x in kpoints[:-2] ]) > 2
 
     def kpointscheck(self):
         kpoints = self.getkw('kpoints')
         if not kpoints:
             return False
-        if len(kpoints.split()) != 4 or not kpoints.split()[3].startswith(('G','g','M','m')):
-            raise shared.CustomError( self.__class__.__name__ + ' error: bad kpoints format. kpoints should be "kx ky kz monkhorst|G"' )
+        if len(kpoints.split()) != 4 or not kpoints.split()[3].startswith(('G', 'g', 'M', 'm')):
+            raise shared.CustomError(self.__class__.__name__ + ' error: bad kpoints format. kpoints should be "kx ky kz monkhorst|G"')
             return False
-        if  not kpoints.split()[3].startswith(('G','g')):
+        if  not kpoints.split()[3].startswith(('G', 'g')):
             print self.__class__.__name__ + ' kpointscheck warning: In general, for low-symmetry cells it is sometimes difficult to symmetrize the k-mesh if it is not centered on Gamma. For hexagonal cell, it becomes indeed impossible.'
         return True
 
     def nkred_divide(self):
-    try:
-        kpoints = [int(x) for x in self.getkw('kpoints').split(' ')]
-        nkredx = int(self.getkw('nkredx'))
-        nkredy = int(self.getkw('nkredy'))
-        nkredz = int(self.getkw('nkredz'))
-        return kpoints[0]%nkredx==0 and kpoints[1]%nkredy==0 and kpoints[2]%nkredz==0
-    except (KeyError, AttributeError, ValueError) as KwError:
-            raise shared.CustomError( self.__class__.__name__ + ' error: kx should be divisible by nkredx, etc.' )
-        return False
+        try:
+            kpoints = [int(x) for x in self.getkw('kpoints').split(' ')]
+            nkredx = int(self.getkw('nkredx'))
+            nkredy = int(self.getkw('nkredy'))
+            nkredz = int(self.getkw('nkredz'))
+            return kpoints[0] % nkredx == 0 and kpoints[1] % nkredy == 0 and kpoints[2] % nkredz == 0
+        except (KeyError, AttributeError, ValueError) as KwError:
+            raise shared.CustomError(self.__class__.__name__ + ' error: kx should be divisible by nkredx, etc.')
+            return False
 
     def magmom(self):
         magmom = ''
@@ -904,7 +907,7 @@ class Electron(object):
                 self.grepen = Grepen(self.prev.gen)
 
             if self.gen.parse_if('dos'):
-                self.dos = Dos(self.grepen)
+                self.dos = Dos(self.grepen, self.cell)
 
             if self.gen.parse_if('bands'):
                 self.bands = Bands(self.grepen)
@@ -962,114 +965,59 @@ class Dos(object):
 
     @shared.MWT()
     def dos_interp(self):
-        dos_interp = []
-        for spin_idx in tqdm(range(0, self.nspin)):
-            dos_interp[spin_idx] = scipy.interpolate.interp1d( self.dos[0], self.dos[spin_idx*2+1], kind='cubic' )
-        return dos_interp
+        return [ interp1d(self.dos[:,0], self.dos[:,idx_spin+1], kind='cubic') for idx_spin in tqdm(range(0, self.nspin_dos)) ]
 
     @shared.MWT()
-    def idos_interp(self):
-        idos_interp = []
-        for spin_idx in tqdm(range(0, self.nspin)):
-            idos_interp[spin_idx] = scipy.interpolate.interp1d( self.dos[0], self.dos[spin_idx*2+2], kind='cubic' )
-        return idos_interp
+    def pdos_interp(self):
+        pdos_interp = []
+        return [ [ [ interp1d(self.pdos[idx_atom+1,:,0], self.pdos[idx_atom+1,:,idx_orbital*self.nspin_pdos+idx_spin], kind='cubic') for idx_spin in range(0, sself.nspin_pdos) ] for idx_orbital in range(0, self.norbital_pdos) ] for idx_atom in tqdm(range(0, sum(cell.stoichiometry.values()))) ]
 
 
-    def __init__(self, grepen):
+    def __init__(self, grepen, cell):
 
-        #```
         self.log = '\n\n\n'
         self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
-        # '''
-        self.nspin = {'para':1, 'fm':2, 'ncl':1}[grepen.spin]
+        self.nspin_dos = {'para':1, 'fm':2, 'ncl':1}[grepen.spin]
+        self.nspin_pdos = {'para':1, 'fm':2, 'ncl':3}[grepen.spin]
         self.efermi = grepen.efermi
-        self.log += 'Fermi level = %s\n\n' %(self.efermi)
-        #```
+        self.log += 'Fermi level = %s\n\n' % (self.efermi)
+
         with open('DOSCAR','r') as doscar_file:
             l = doscar_file.readlines()
             if not len(l) >= 7:
-                raise shared.CustomError( 'dos.py warning: doscar is not usable (as determined by grepen).')
-        #'''
+                raise shared.CustomError('dos.py warning: doscar is not usable (as determined by grepen).')
 
         # self.dos
         doscar_file = open("DOSCAR","r")
-        #```
         doscar_lines = doscar_file.readlines()
-        doscar_lines_split = [doscar_lines[i].split() for i in range(6,6+grepen.nedos)]
-        #'''
+        doscar_lines_split = [ doscar_lines[i].split() for i in range(6, 6+grepen.nedos) ]
         self.dos = np.float64(doscar_lines_split)   # self.does: total dos. for para and ncl, energy dos idos. for fm and afm, energy updos iupdos downdos idowndos.
         self.idx_fermi = abs(self.dos[:,0] - self.efermi).argmin() + 1
 
         # self.bandgap
-        for idx_spin in range(0, self.nspin):
-            #```
+        for idx_spin in range(0, self.nspin_dos):
             i = idx_fermi
             while self.dos[i] < shared.MIN_DOS:
                 i -= 1
             j = idx_fermi
             while self.dos[j] < shared.MIN_DOS:
                 j += 1
-            #'''
-            self.bandgap[idx_spin] = [] if i == j else [self.dos[i], self.dos[j]];
+            self.bandgap[idx_spin] = [] if i == j else [self.dos[i], self.dos[j]]
+            print "spin %s: VBM %s, CBM %s, bandgap %s eV" % (idx_spin, self.dos[i], self.dos[j], self.dos[j]-self.dos[i]) if i!=j else "spin %s: no bandgap" % (idx_spin)
 
-
-
-        if grepen.spin == 'para' or grepen.spin == 'ncl':
-            if self.dos()
-            if abs(self.dos[self.idx_fermi][1]) >  shared.MIN_DOS :
-                self.log += 'dos.py: conductor.\n'
-            else:
-                VB=self.dos[self.idx_fermi:0:-1]
-                CB=self.dos[self.idx_fermi:len(self.dos)]
-                VB1=[VB[x][0] for x in range(0,len(VB)) if abs(VB[x][1])> shared.MIN_DOS ]
-                CB1=[CB[x][0] for x in range(0,len(CB)) if abs(CB[x][1])> shared.MIN_DOS ]
-                if len(VB1)==0 or len(CB1)==0:
-                    raise shared.CustomError(self.__class__.__name__+'.__init__: weird. len(VB1/CB1) is 0\n')
-                VBM1 = VB1[0]
-                CBM1 = CB1[0]
-                self.log += 'dos.py: DOS* type is insulator. DOS bandgap* is: ' + str(CBM1-VBM1) + ' eV.\n'
-        elif grepen.spin=='fm' or grepen.spin=='afm':
-            if abs(self.dos[self.idx_fermi][1])> shared.MIN_DOS  and abs(self.dos[self.idx_fermi][2])> shared.MIN_DOS :
-                self.log += 'dos.py: conductor. quite probably. but check dos anyway.\n'
-            elif abs(self.dos[self.idx_fermi][1])< shared.MIN_DOS  and abs(self.dos[self.idx_fermi][2])< shared.MIN_DOS :
-                VB=self.dos[self.idx_fermi:0:-1]
-                CB=self.dos[self.idx_fermi:len(self.dos)]
-                VB1=[VB[x][0] for x in range(0,len(VB)) if abs(VB[x][1])> shared.MIN_DOS ]
-                VB2=[VB[x][0] for x in range(0,len(VB)) if abs(VB[x][2])> shared.MIN_DOS ]
-                CB1=[CB[x][0] for x in range(0,len(CB)) if abs(CB[x][1])> shared.MIN_DOS ]
-                CB2=[CB[x][0] for x in range(0,len(CB)) if abs(CB[x][2])> shared.MIN_DOS ]
-                if len(VB1)==0 or len(VB2)==0 or len(CB1)==0 or len(CB2)==0:
-                    raise shared.CustomError( 'dos.py: weird. len(VB1) is ' + str(len(VB1)) + '. len(VB2) is ' + str(len(VB2)) + '. len(CB1) is ' + str(len(CB1)) + '. len(CB2) is ' + str(len(CB2)))
-                VBM1=VB1[0] ; CBM1=CB1[0] ; VBM2=VB2[0] ; CBM2=CB2[0]
-                CV_divide=0.45
-                VBM1S=VBM1*(1-CV_divide)+CBM1*CV_divide ; CBM1S = CBM1*(1-CV_divide) + VBM1*CV_divide ; VBM2S = VBM2*(1-CV_divide) + CBM2*CV_divide ; CBM2S = CBM2*(1-CV_divide) + VBM2*CV_divide
-                if abs(VBM1-VBM2)< shared.MIN_DOS  or abs(CBM1-CBM2)< shared.MIN_DOS :
-                    self.log += 'dos.py: DOS* type is nonmagnetic insulator. Bandgap* is: ' + str(CBM1-VBM1) + ' eV.\n'
-                else:
-                    self.log += 'BMS ' + str(min(abs(VBM1-VBM2)) + str(min(VBM1,VBM2)-max(CBM1,CBM2)) + str(abs(CBM1-CBM2))) + '\n'
-            elif abs(self.dos[self.idx_fermi][1])< shared.MIN_DOS  and abs(self.dos[self.idx_fermi][2])> shared.MIN_DOS :
-                VB=self.dos[self.idx_fermi:0:-1]
-                CB=self.dos[self.idx_fermi:len(self.dos)]
-                VBM1=next(VB[x][0] for x in range(0,len(VB)) if abs(VB[x][1])> shared.MIN_DOS  or abs(VB[x][2])< shared.MIN_DOS )
-                CBM1=next(CB[x][0] for x in range(0,len(CB)) if abs(CB[x][1])> shared.MIN_DOS  or abs(CB[x][2])< shared.MIN_DOS )
-                self.log += 'HM ' + str(CBM1-VBM1) + '\n'
-            elif abs(self.dos[self.idx_fermi][1])> shared.MIN_DOS  and abs(self.dos[self.idx_fermi][2])< shared.MIN_DOS :
-                VB=dos[self.idx_fermi:0:-1]
-                CB=dos[self.idx_fermi:len(self.dos)]
-                VBM1=next(VB[x][0] for x in range(0,len(VB)) if abs(VB[x][2])> shared.MIN_DOS  or abs(VB[x][1])< shared.MIN_DOS )
-                CBM1=next(CB[x][0] for x in range(0,len(CB)) if abs(CB[x][2])> shared.MIN_DOS  or abs(CB[x][1])< shared.MIN_DOS )
-                self.log += 'HM ' + str(CBM1-VBM1) + '\n'
-
-        # site-projected dos: split doscar and convert to self.site_dos
-        split_indices = [i for i, x in enumerate(doscar_lines) if x == doscar_lines[5]] # splitter line numbers
-        split_indices.append(len(doscar_lines))
-        self.site_dos = []
-        for i in range(0,len(split_indices)-1):
-            l = doscar_lines[split_indices[i]+1:split_indices[i+1]]
-            self.site_dos.append(np.float_([x.split() for x in l])) # self.site_dos[i+1]: pdos of i-th atom.
+        # site-projected dos: split doscar and convert to self.pdos
+        idx_splitline_doscar = [idx for idx, line in enumerate(doscar_lines) if line == doscar_lines[5]]
+        idx_splitline_doscar.append(len(doscar_lines))
+        self.pdos = []
+        for i in range(0, len(idx_splitline_doscar) - 1):
+            atom_chunk = doscar_lines[idx_splitline_doscar[i]+1 : idx_splitline_doscar[i+1]]
+            self.pdos.append( [line.split() for line in atom_chunk] )
+        self.pdos = np.float_(self.pdos)
+        self.norbital_pdos = len(self.pdos[0]-1) / self.nspin_pdos
 
         self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
         print self.log
+
 
 # imports bandstructure from EIGENVAL.
 # imports kpoints list.
@@ -1095,7 +1043,8 @@ class Bands(object):
         if (len(eigenval_lines)<7):
             raise shared.CustomError(self.__class__.__name__ + ' __init__: EIGENVAL file is not usable')
         eigenval_lines = [eigenval_lines[i].split() for i in range(6,len(eigenval_lines))]
-        nkpts = len(eigenval_lines)/(grepen.nbands+2)
+        self.nkpt = len(eigenval_lines) / (grepen.nbands+2)
+        
         list_band_kpte=[]
 
         with open('KPOINTS','r') as kpoints:
@@ -1115,7 +1064,7 @@ class Bands(object):
         # initialise all bands. self.bands[i_band][i_kpt] = [kx,ky,kz,e,occupancy]
         for i_band in range(0,grepen.nbands):
             band_kpte = []
-            for i_kpt in range(0,nkpts):
+            for i_kpt in range(0,self.nkpt):
                 kpte = eigenval_lines[i_kpt*(grepen.nbands+2)+1][0:3]
                 energy = float(eigenval_lines[i_kpt*(grepen.nbands+2)+i_band+2][eigenval_e_idx])
                 occ = 1 if energy < grepen.efermi else 0
@@ -1234,9 +1183,9 @@ class Charge(object):
         self.log = '\n\n\n'
         self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
         # sanity check
-        if len(dos.site_dos) < 2 or len(dos.site_dos[1]) < 10:
+        if len(dos.pdos) < 2 or len(dos.pdos[1]) < 10:
             raise shared.CustomError(self.__class__.__name__ +' __init__: site-project DOSCAR too short.')
-        if len(dos.site_dos[1][0]) not in [10,19,37]:
+        if len(dos.pdos[1][0]) not in [10,19,37]:
             raise shared.CustomError(self.__class__.__name__ +' __init__: we only support up-to-and-only-d compound. fixing is easy. exiting.')
 
         # let's start!
@@ -1262,7 +1211,7 @@ class Charge(object):
             for idx_atom in range( sum(cell.stoichiometry.values()[0:idx_element]), sum(cell.stoichiometry.values()[0:idx_element+1]) ):
                 for idx_spin in range(0, self.nspin):
                     self.log += element + str(idx_atom) + '_' + spins[idx_spin]+'\t'
-                    pdos = dos.site_dos[idx_atom+1]
+                    pdos = dos.pdos[idx_atom+1]
                     self.idx_fermi = (np.abs(pdos[:,0]-grepen.efermi)).argmin()
                     idx_top_integral = (np.abs(pdos[:,0]-grepen.efermi-5)).argmin()
                     for idx_orbital,orbital in enumerate(orbitals):
