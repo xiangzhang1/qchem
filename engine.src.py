@@ -33,66 +33,71 @@ from scipy import spatial
 
 import shared
 
-class Gen(object):   # Stores the logical structure of keywords and modules. A unique construct deserving a name.
+
+class Gen(object):  # Stores the logical structure of keywords and modules. A unique construct deserving a name.
 
     # Utilities
     # ---------
-    def getkw(self,kwname):
+    def getkw(self, kwname):
         if kwname not in self.kw:
             return None
-	if len(self.kw[kwname])!=1:
-            raise shared.CustomError(self.__class__.__name__ + ' getkw error: self.kw[kwname] does not have 1 and only 1 value. wait till that happens and try again.')
+        if len(self.kw[kwname]) != 1:
+            raise shared.CustomError(self.__class__.__name__ + ' getkw error:  self.kw[kwname] does not have 1 unique value.  wait till that happens and try again.')
         if not isinstance(next(iter(self.kw[kwname])), basestring):
-            raise shared.CustomError(self.__class__.__name__ + ' getkw error: value {%s} of kw {%s} is not string' %(next(iter(self.kw[kwname])), kwname) )
+            raise shared.CustomError(self.__class__.__name__ + ' getkw error:  value {%s} of kw {%s} is not string' % (next(iter(self.kw[kwname])), kwname))
         return next(iter(self.kw[kwname]))
 
-    def evaluate(self,expression):                  # Evaluates expression to string: literal or (funcname)
+    def evaluate(self, expression):
+        # Evaluates expression to string: literal or (funcname)
         if expression.startswith('(') and expression.endswith(')'):
-            func = getattr(self, re.sub('\(|\)','',expression).strip())
+            func = getattr(self, re.sub('\(|\)', '', expression).strip())
             if not func:
-                raise shared.CustomError( self.__class__.__name__+' error: bad conf file error. Unable to find function {%s}' % re.sub('\(|\)','',expression) )
+                raise shared.CustomError(self.__class__.__name__+' error:  bad conf file error. Unable to find function {%s}' % re.sub('\(|\)', '', expression))
             return func()
         else:   # literal
             return expression
 
-    def parse_require(self,expression,run=False):   # Executes single require expression. Accepts empty expression as True.
+    def parse_require(self, expression, run=False):  # Executes single require expression. Accepts empty expression as True.
         operation_map = {
-                '='  : lambda x,y : x & y,
-                '!=' : lambda x,y : x - y,
+                '=': lambda x, y: x & y,
+                '!=': lambda x, y: x - y,
                 }
         expression = expression.strip()
-        if re.search('=',expression):           # evaluation        ## parse kwname!=kwval|(funcname)
-            l = [ p.strip() for p in re.split('(!=|=)',expression) ] ; kwname = l[0] ; operator = l[1] ; kwval_expression = l[2]
+        if re.search('=', expression):           # evaluation        ## parse kwname!=kwval|(funcname)
+            l = [ p.strip() for p in re.split('(!=|=)', expression)]; kwname = l[0] ; operator = l[1] ; kwval_expression = l[2]
             kwvalset = set()
             for kwval_part in kwval_expression.split('|'):
                 kwval_part = kwval_part.strip()
                 kwvalset.add(self.evaluate(kwval_part))
             if kwname in self.kw and bool(self.kw[kwname]):
-                result = operation_map[operator](self.kw[kwname],kwvalset)
+                result = operation_map[operator](self.kw[kwname], kwvalset)
             else:
-                result = operation_map[operator](kwvalset,kwvalset)
+                result = operation_map[operator](kwvalset, kwvalset)
             if run and bool(result):
                 self.kw[kwname] = result
-                '''if shared.DEBUG: print self.__class__.__name__ + ' parse_require: gave kw {%s} value {%s}' %(kwname,result)'''
+                # ```
+                if shared.DEBUG:
+                    print self.__class__.__name__ + ' parse_require: gave kw {%s} value {%s}' % (kwname, result)
+                # '''
             if run and not bool(result):
-                raise shared.CustomError( self.__class__.__name__ + ' parse_require run=True error: parse_require results in empty set: kwname {%s}, value {%s}, required value {%s}' %(kwname, self.kw[kwname] if kwname in self.kw else 'null', kwvalset) )
-            '''if not run and not bool(result) and shared.DEBUG:
-                print self.__class__.__name__ + ' parse_require warning: parse_require results in empty set, deferred: kwname {%s}, value {%s}, required_value {%s}' %(kwname, self.kw[kwname] if kwname in self.kw else 'null', kwvalset) '''
-            if self.moonphase>0:    self.kw_legal_set.add(kwname)
+                raise shared.CustomError(self.__class__.__name__ + ' parse_require run=True error: parse_require results in empty set: kwname {%s}, value {%s}, required value {%s}' % (kwname, self.kw[kwname] if kwname in self.kw else 'null', kwvalset))
+            if not run and not bool(result) and shared.DEBUG:
+                print self.__class__.__name__ + ' parse_require warning: parse_require results in empty set, deferred: kwname {%s}, value {%s}, required_value {%s}' %(kwname, self.kw[kwname] if kwname in self.kw else 'null', kwvalset)
+            if self.moonphase > 0:  self.kw_legal_set.add(kwname)
             return bool(result)
         elif 'internal' in expression:      ## parse kwname internal
-            kwname = re.sub('internal','',expression).strip()
-            if self.moonphase>0:  self.kw_internal_set.add(kwname)
+            kwname = re.sub('internal', '', expression).strip()
+            if self.moonphase > 0:  self.kw_internal_set.add(kwname)
             return True
         elif not '(' in expression and not 'null' in expression:    ## parse !modname
-            modname = re.sub('!','',expression).strip()
+            modname = re.sub('!', '', expression).strip()
             if '!' in expression:
-                result = ( self.mod[modname] if modname in self.mod else set() ) - set([True])
+                result = (self.mod[modname] if modname in self.mod else set()) - set([True])
             else:
-                result = ( self.mod[modname] if modname in self.mod else set() ) | set([True])
+                result = (self.mod[modname] if modname in self.mod else set()) | set([True])
             if run and bool(result):        ### output
                 self.mod[modname] = result
-            if self.moonphase>0:  self.mod_legal_set.add(modname)
+            if self.moonphase > 0:  self.mod_legal_set.add(modname)
             return bool(result)
         else:                               ## parse if expression
             result = self.parse_if(expression)
@@ -104,21 +109,21 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         '''if ',' in expression:
             raise shared.CustomError( self.__class__.__name__ + ' parse_if error: "," in if expression {%s} in engine.gen.*.conf. Did you mean to use "&"?' %expression)'''
         operation_map = {
-                '&&'  :  lambda x,y : x and y,
-                '||'  :  lambda x,y : x or y,
-                '&'    :  lambda x,y : x and y,
-                '|'    :  lambda x,y : x or y
+                '&&': lambda x, y: x and y,
+                '||': lambda x, y: x or y,
+                '&': lambda x, y: x and y,
+                '|': lambda x, y: x or y
                 }
         expression = expression.strip()
-        if re.search('&&|\|\|',expression):
-            l = [ x.strip() for x in re.split('(&&|\|\|)',expression,maxsplit=1) ]
-            return operation_map[l[1]](self.parse_if(l[0]),self.parse_if(l[2]))
-        elif re.search('&|\|',expression):
-            l = [ x.strip() for x in re.split('(&|\|)',expression,maxsplit=1) ]
-            return operation_map[l[1]](self.parse_if(l[0]),self.parse_if(l[2]))
+        if re.search('&&|\|\|', expression):
+            l = [ x.strip() for x in re.split('(&&|\|\|)', expression,maxsplit=1) ]
+            return operation_map[l[1]](self.parse_if(l[0]), self.parse_if(l[2]))
+        elif re.search('&|\|', expression):
+            l = [ x.strip() for x in re.split('(&|\|)', expression, maxsplit=1) ]
+            return operation_map[l[1]](self.parse_if(l[0]), self.parse_if(l[2]))
         elif '!' in expression:
-            return not self.parse_if(expression.replace('!',''))
-        elif '=' in expression: # evaluation    ## parse kwname=kwval
+            return not self.parse_if(expression.replace('!', ''))
+        elif '=' in expression:  # evaluation    ## parse kwname=kwval
             name = expression.split('=')[0].strip()
             val = expression.split('=')[1].strip()
             result = (name in self.kw and self.kw[name]==set([val]))
@@ -129,8 +134,8 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         elif expression == '':                  ## parse empty expression
             return True
         elif 'null' in expression:              ## parse kwname null
-            kwname = re.sub('null','',expression).strip()
-            result = not ( kwname in self.kw and bool(self.kw[kwname]) )
+            kwname = re.sub('null', '', expression).strip()
+            result = not (kwname in self.kw and bool(self.kw[kwname]) )
             if self.moonphase==2 or (self.moonphase==1 and result):  self.kw_legal_set.add(kwname)
             return result
         else:                                   ## parse modname
@@ -145,7 +150,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         with open('INCAR','w') as outfile:
             for name in self.kw:
                 if name not in self.kw_internal_set:
-    	            outfile.write('    '+name.upper()+' = '+str(self.getkw(name))+'\n')
+                    outfile.write('    '+name.upper()+' = '+str(self.getkw(name))+'\n')
         with open('KPOINTS','w') as outfile:
             outfile.write('KPOINTS\n')
             outfile.write('0\n')
@@ -178,9 +183,9 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
     def __init__(self, node):
         self.cell = node.cell
         input_ = node.phase + ', ' + node.property
-	# 读mod, kw
+    # 读mod, kw
         self.mod = {}
-	self.kw = {}
+        self.kw = {}
         self.kw_legal_set = set()
         self.kw_internal_set = set()
         self.mod_legal_set = set()
@@ -188,15 +193,15 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         input_ = [p.strip() for p in input_.split(',') if p.rstrip()]
         for item in input_:
             self.parse_require(item,True)
-	# 执行require
+    # 执行require
         self.require = []
         self.moonphase = 1
         if not [x for x in input_ if x.startswith('engine')]:
             raise shared.CustomError(self.__class__.__name__+': __init__: no engine=x found. Input_: {%s}' %input_)
         engine_name = [x for x in input_ if x.startswith('engine')][0].split('=')[1].strip()
-	with open(shared.SCRIPT_DIR + '/engine.gen.' + engine_name + '.conf') as conf:
-	    lines = conf.read().splitlines()
-            for line in [ [p.strip() for p in l.split(':')] for l in lines if not l.startswith('#') ]:
+    with open(shared.SCRIPT_DIR + '/engine.gen.' + engine_name + '.conf') as conf:
+        lines = conf.read().splitlines()
+        for line in [ [p.strip() for p in l.split(':')] for l in lines if not l.startswith('#') ]:
                 '''if len(line) < 4: raise shared.CustomError('bad conf grammar error: needs 3 colons per line least in {%s}' %line)'''
                 for part in [p.strip() for p in line[1].split(',') ]:
                     try:
@@ -224,12 +229,12 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
                     raise shared.CustomError( self.__class__.__name__+' __init__ round 2 error: parse_require still produces empty set. Expression is { %s : %s :  %s }.' % (line[0],line[1],line[3]) )
         #  检验
         ## Entering the last phase. Data structure of self.mod and self.kw simplifies.
-	for modname in set(self.mod.keys())-self.mod_legal_set:
+    for modname in set(self.mod.keys())-self.mod_legal_set:
             print self.__class__.__name__+' warning: illegal name. Mod {%s} is not in mod_legal_set and has been ignored. Mod_legal_set={%s}' %(modname,self.mod_legal_set)
-	    del self.mod[modname]
-	for kwname in set(self.kw.keys())-self.kw_legal_set:
-	    print self.__class__.__name__+' warning: illegal name. Kw {%s} is not required and has been ignored.' % kwname
-	    del self.kw[kwname]
+        del self.mod[modname]
+    for kwname in set(self.kw.keys())-self.kw_legal_set:
+        print self.__class__.__name__+' warning: illegal name. Kw {%s} is not required and has been ignored.' % kwname
+        del self.kw[kwname]
         for name in self.kw:
             if len(self.kw[name]) != 1:
                 raise shared.CustomError( self.__class__.__name__+' error: non-unique output. Kw[%s]={%s} has not been restricted to 1 value.' %(name,self.kw[name]) )
@@ -331,7 +336,7 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
     def ismear5check(self):
         if 'kpoints' not in self.kw:
             raise shared.CustomError(self.__class__.__name__ + '.ismear5check: kpoints is undefined. Refer to execution order rules.')
-	kpoints = self.getkw('kpoints').split(' ')
+    kpoints = self.getkw('kpoints').split(' ')
         return np.prod([int(x) for x in kpoints[:-2] ]) > 2
 
     def kpointscheck(self):
@@ -346,15 +351,15 @@ class Gen(object):   # Stores the logical structure of keywords and modules. A u
         return True
 
     def nkred_divide(self):
-	try:
-	    kpoints = [int(x) for x in self.getkw('kpoints').split(' ')]
-	    nkredx = int(self.getkw('nkredx'))
-	    nkredy = int(self.getkw('nkredy'))
-	    nkredz = int(self.getkw('nkredz'))
-	    return kpoints[0]%nkredx==0 and kpoints[1]%nkredy==0 and kpoints[2]%nkredz==0
-	except (KeyError, AttributeError, ValueError) as KwError:
+    try:
+        kpoints = [int(x) for x in self.getkw('kpoints').split(' ')]
+        nkredx = int(self.getkw('nkredx'))
+        nkredy = int(self.getkw('nkredy'))
+        nkredz = int(self.getkw('nkredz'))
+        return kpoints[0]%nkredx==0 and kpoints[1]%nkredy==0 and kpoints[2]%nkredz==0
+    except (KeyError, AttributeError, ValueError) as KwError:
             raise shared.CustomError( self.__class__.__name__ + ' error: kx should be divisible by nkredx, etc.' )
-	    return False
+        return False
 
     def magmom(self):
         magmom = ''
@@ -580,9 +585,11 @@ class Map(object):
         # inherit is done on compute
         # same name / same node exceptions are not allowed.
         # we're moving references around, so renaming is bad. instead, use 'duplicate' command intead.
-        '''if any([x.name==node.name for x in self._dict]):
+        #```
+        if any([x.name==node.name for x in self._dict]):
             raise shared.CustomError(self.__class__.__name__+' add_node: node with name {%s} already in self._dict. We\'re moving references around, so auto-renaming is bad. Use duplicate if only input is needed.' %node.name)
-        else:'''
+        else:
+        #'''
             self._dict[node] = []
 
     def del_node(self, node):
@@ -596,7 +603,8 @@ class Map(object):
                 m[n] = [x for x in m[n] if x != node]
 
     def add_edge(self, src_name, dst_name):
-        '''src = self.lookup(src_name)
+        #```
+        src = self.lookup(src_name)
         dst = self.lookup(dst_name)
         if src in self._dict[dst] or (dst in self._dict2 and src in self._dict2[dst]):
             raise shared.CustomError(self.__class__.__name__ + ' add_edge: dst %s -> src %s link exists' %(dst_name, src_name))
@@ -606,20 +614,23 @@ class Map(object):
         elif src in self._dict2 and dst in self._dict2[src]:
             self._dict2[src].remove(dst)
             self._dict[src] = self._dict[src]+[dst] if src in self._dict else [dst]
-        else:'''
+        else:
+            #'''
             self._dict[src] += [dst]
 
     def del_edge(self, src_name, dst_name):
-        '''src = self.lookup(src_name)
+        #```
+        src = self.lookup(src_name)
         dst = self.lookup(dst_name)
         if src in self._dict[dst] or dst in self._dict2 and src in self._dict2[dst]:
             raise shared.CustomError(self.__class__.__name__ + ' del_edge: dst %s -> src %s link exists' %(dst_name, src_name))
+        #'''
         if dst in self._dict[src]:
             self._dict[src].remove(dst)
         elif dst in self._dict2[src]:
             self._dict2[src].remove(dst)
         else:
-            raise shared.CustomError(self.__class__.__name__ + ' del_edge: no edge to delete')'''
+            raise shared.CustomError(self.__class__.__name__ + ' del_edge: no edge to delete')
 
     def __str__(self):
         result = ''
@@ -966,37 +977,40 @@ class Dos(object):
 
     def __init__(self, grepen):
 
+        #```
         self.log = '\n\n\n'
         self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
+        # '''
         self.nspin = {'para':1, 'fm':2, 'ncl':1}[grepen.spin]
         self.efermi = grepen.efermi
         self.log += 'Fermi level = %s\n\n' %(self.efermi)
+        #```
         with open('DOSCAR','r') as doscar_file:
             l = doscar_file.readlines()
             if not len(l) >= 7:
                 raise shared.CustomError( 'dos.py warning: doscar is not usable (as determined by grepen).')
+        #'''
 
         # self.dos
         doscar_file = open("DOSCAR","r")
+        #```
         doscar_lines = doscar_file.readlines()
         doscar_lines_split = [doscar_lines[i].split() for i in range(6,6+grepen.nedos)]
-
+        #'''
         self.dos = np.float64(doscar_lines_split)   # self.does: total dos. for para and ncl, energy dos idos. for fm and afm, energy updos iupdos downdos idowndos.
         self.idx_fermi = abs(self.dos[:,0] - self.efermi).argmin() + 1
 
         # self.bandgap
         for idx_spin in range(0, self.nspin):
+            #```
             i = idx_fermi
             while self.dos[i] < shared.MIN_DOS:
                 i -= 1
             j = idx_fermi
             while self.dos[j] < shared.MIN_DOS:
                 j += 1
-            if i == j :
-                self.bandgap[idx_spin] = []
-            else:
-                self.bandgap[idx_spin] = [self.dos[i], self.dos[j]]
-            if
+            #'''
+            self.bandgap[idx_spin] = [] if i == j else [self.dos[i], self.dos[j]];
 
 
 
