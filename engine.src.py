@@ -19,6 +19,8 @@ from filecmp import dircmp
 from collections import OrderedDict
 import paramiko
 
+from itertools import groupby
+
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import time
@@ -413,7 +415,7 @@ class Cell(object):
         # some computation
         self.nelectrons = sum( [self.stoichiometry[symbol] * shared.ELEMENTS[symbol].pot_zval for symbol in self.stoichiometry] )
 
-    '''def __str__(self):
+    def __str__(self):
         result = self.name+'\n'
         result += '1\n'
         for line in self.base:
@@ -429,13 +431,12 @@ class Cell(object):
         result = str(self)
         result = '\n'.join( [x for i,x in enumerate(result.splitlines()) if i!=5] )
         return result
-    '''
 
 
 # ARCHAIC
-# The old, broken Poscar.
-# reads poscar, and generates 3*3*3 mirror for all kinds of purposes.
 class Poscar(object):
+    # The old, broken Poscar.
+    # reads poscar, and generates 3*3*3 mirror for all kinds of purposes.
     def __init__(self):
         self.log = ''
         #0.parameters:
@@ -467,7 +468,7 @@ class Poscar(object):
          for j in [0,1,-1]:
           for k in [0,1,-1]:
            tmp_image_shift=np.float64([i,j,k])
-           for id_base in range(0,len(self.base)):
+           for id_base in range(len(self.base)):
             ele_pos_imaged=tmp_image_shift+self.base[id_base]
             self.rpos_imaged.append(ele_pos_imaged)
             ele_pos_imaged=np.dot(ele_pos_imaged,self.cell)
@@ -480,9 +481,9 @@ class Poscar(object):
         #calculate dist_qui. this is the quintuplet [id1_pos_imaged, id2_pos_imaged, id1_base, id2_base, tmp_dist]
         self.dist_qui=[]
         changefromto=[]
-        for id1_base in range(0,len(self.base)):
-         for id2_base in range(0,len(self.base)):
-          for id2_pos_imaged in [id2_base+tmp_image_shift*len(self.base) for tmp_image_shift in range(0,27)]:
+        for id1_base in range(len(self.base)):
+         for id2_base in range(len(self.base)):
+          for id2_pos_imaged in [id2_base+tmp_image_shift*len(self.base) for tmp_image_shift in range(27)]:
            tmp_dist=np.linalg.norm(self.pos_original[id1_base]-self.pos_imaged[id2_pos_imaged])
            if abs(tmp_dist)<0.1:
             continue
@@ -531,7 +532,7 @@ class Map(object):
 
 
     def lookup(self, name):
-        '''if name == 'master':
+        if name == 'master':
             if name in shared.NODES:   return shared.NODES['master']
             else: raise shared.CustomError('找不到master了，求喂食')
         elif name in shared.NODES:
@@ -541,23 +542,22 @@ class Map(object):
         elif '.' in name:
             return self.lookup('.'.join(name.split('.')[:-1])).map.lookup(name.split('.')[-1])
         else:
-            raise shared.CustomError(self.__class__.__name__ + ' lookup: Node %s not found' %name)'''
+            raise shared.CustomError(self.__class__.__name__ + ' lookup: Node %s not found' %name)
 
     def prev(self, node):
-        '''l = [x for x in self._dict if node in self._dict[x]]
+        l = [x for x in self._dict if node in self._dict[x]]
         if len(l) > 1:
             raise shared.CustomError(self.__class__.__name__ + ' prev: %s has more than 1 prev node. (wtf?)' %name)
         elif len(l) == 1:
             return l[0]
         else:
-            return None'''
+            return None
 
     def traverse(self):
         result = set([x for x in self])
         for n in [x for x in self._dict if getattr(x,'map',None)]:
             result = result | set( n.map.traverse() )
         return result
-
 
     def __init__(self, text=''):
 
@@ -587,11 +587,9 @@ class Map(object):
         # inherit is done on compute
         # same name / same node exceptions are not allowed.
         # we're moving references around, so renaming is bad. instead, use 'duplicate' command intead.
-        #```
         if any([x.name==node.name for x in self._dict]):
             raise shared.CustomError(self.__class__.__name__+' add_node: node with name {%s} already in self._dict. We\'re moving references around, so auto-renaming is bad. Use duplicate if only input is needed.' %node.name)
         else:
-        #'''
             self._dict[node] = []
 
     def del_node(self, node):
@@ -605,7 +603,6 @@ class Map(object):
                 m[n] = [x for x in m[n] if x != node]
 
     def add_edge(self, src_name, dst_name):
-        #```
         src = self.lookup(src_name)
         dst = self.lookup(dst_name)
         if src in self._dict[dst] or (dst in self._dict2 and src in self._dict2[dst]):
@@ -617,16 +614,13 @@ class Map(object):
             self._dict2[src].remove(dst)
             self._dict[src] = self._dict[src]+[dst] if src in self._dict else [dst]
         else:
-            #'''
             self._dict[src] += [dst]
 
     def del_edge(self, src_name, dst_name):
-        #```
         src = self.lookup(src_name)
         dst = self.lookup(dst_name)
         if src in self._dict[dst] or dst in self._dict2 and src in self._dict2[dst]:
             raise shared.CustomError(self.__class__.__name__ + ' del_edge: dst %s -> src %s link exists' %(dst_name, src_name))
-        #'''
         if dst in self._dict[src]:
             self._dict[src].remove(dst)
         elif dst in self._dict2[src]:
@@ -970,15 +964,19 @@ class Grepen(object):
 
 class Dos(object):
 
-    @shared.MWT()
+    @shared.MWT(timeout=2592000)
     def dos_interp(self):
-        return [ interp1d(self.dos[:,0], self.dos[:,idx_spin+1], kind='cubic') for idx_spin in tqdm(range(0, self.nspins_dos)) ]
+        energy = 0 ; DOS = 1    # dict-like indexing: a = [3eV, 0.28]; print a[energy]
+        return [ interp1d( self.dos[idx_spin, :, energy], self.dos[idx_spin, :, DOS] ) \
+                 for idx_spin in tqdm(range(self.nspins_dos)) ]
 
-    @shared.MWT()
+    @shared.MWT(timeout=2592000)
     def pdos_interp(self):
-        pdos_interp = []
-        return [ [ [ interp1d(self.pdos[idx_atom+1,:,0], self.pdos[idx_atom+1,:,idx_orbital*self.nspins_pdos+idx_spin], kind='cubic') for idx_spin in range(0, sself.nspins_pdos) ] for idx_orbital in range(0, self.norbitals_pdos) ] for idx_atom in tqdm(range(0, sum(cell.stoichiometry.values()))) ]
-
+        energy = 0 ; PDOS = 1
+        return [ [ [ interp1d(self.pdos[idx_spin, idx_atom, idx_orbital, :, energy], self.pdos[idx_spin, idx_atom, idx_orbital, :, PDOS], kind='cubic') \
+                     for idx_orbital in range(self.norbitals_pdos) ] \
+                        for idx_atom in range(sum(self.cell.stoichiometry.values())) ] \
+                            for idx_spin in range(self.nspins_pdos) ]
 
     def __init__(self, grepen, cell):
 
@@ -986,41 +984,56 @@ class Dos(object):
         self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
         self.nspins_dos = {'para':1, 'fm':2, 'ncl':1}[grepen.spin]
         self.nspins_pdos = {'para':1, 'fm':2, 'ncl':3}[grepen.spin]
-        self.efermi = grepen.efermi
-        self.log += 'Fermi level = %s\n\n' % (self.efermi)
+        self.grepen = grepen
+        self.cell = cell
+        self.log += 'Fermi level = %s\n\n' % (self.grepen.efermi)
 
         with open('DOSCAR','r') as doscar_file:
             l = doscar_file.readlines()
             if not len(l) >= 7:
                 raise shared.CustomError('dos.py warning: doscar is not usable (as determined by grepen).')
 
-        # self.dos
-        doscar_file = open("DOSCAR","r")
-        doscar_lines = doscar_file.readlines()
-        doscar_lines_split = [ doscar_lines[i].split() for i in range(6, 6+grepen.nedos) ]
-        self.dos = np.float64(doscar_lines_split)   # self.does: total dos. for para and ncl, energy dos idos. for fm and afm, energy updos iupdos downdos idowndos.
-        self.idx_fermi = abs(self.dos[:,0] - self.efermi).argmin() + 1
+        # all DOSCAR lines, including dos and pdos
+        with open("DOSCAR","r") as f:
+            doscar = [ line.split() for line in f.readlines() ]
+            doscar_ifs = doscar[5]
+            doscar_parts = [list(doscar_part) for b, doscar_part in groupby(doscar, lambda x,doscar_ifs=doscar_ifs: x==doscar_ifs or not x) if not b]
+            doscar_tot = doscar_parts[1]
+            doscar_site = doscar_parts[3:]  # doscar_site[idx_atom=0]
 
-        # self.bandgap
-        for idx_spin in range(0, self.nspins_dos):
-            i = idx_fermi
-            while self.dos[i] < shared.MIN_DOS:
+        # dos
+        self.dos = np.zeros([self.nspins_dos, len(doscar_tot)])
+        for idx, doscar_tot_ in enumerate(doscar_tot):
+            #
+            self.dos[:, idx, 0] = doscar_tot_.pop(0)
+            #
+            for idx_spin in range(self.nspins_dos):
+                self.dos[idx_spin, idx, 1] = doscar_tot_.pop(0)
+        self.idx_fermi = abs(self.dos[0, :, 0] - self.grepen.efermi).argmin() + 1
+        # bandgap
+        self.bandgap = np.zeros(self.nspins_dos)
+        for idx_spin in range(self.nspins_dos):
+            i = self.idx_fermi
+            while self.dos[idx_spin, i, 1] < shared.MIN_DOS:
                 i -= 1
-            j = idx_fermi
-            while self.dos[j] < shared.MIN_DOS:
+            j = self.idx_fermi
+            while self.dos[idx_spin, j, 1] < shared.MIN_DOS:
                 j += 1
-            self.bandgap[idx_spin] = [] if i == j else [self.dos[i], self.dos[j]]
-            print "spin %s: VBM %s, CBM %s, bandgap %s eV" % (idx_spin, self.dos[i], self.dos[j], self.dos[j]-self.dos[i]) if i!=j else "spin %s: no bandgap" % (idx_spin)
+            self.bandgap[idx_spin] = [] if i == j else [self.dos[idx_spin, i, 0], self.dos[idx_spin, j, 0]]
+            print "spin %s: VBM %s, CBM %s, bandgap %s eV" % (idx_spin, self.bandgap[idx_spin][0], self.bandgap[idx_spin][1], self.bandgap[idx_spin][1]-self.bandgap[idx_spin][0]) \
+                  if i != j else "spin %s: no bandgap" % (idx_spin)
 
-        # site-projected dos: split doscar and convert to self.pdos
-        idx_splitline_doscar = [idx for idx, line in enumerate(doscar_lines) if line == doscar_lines[5]]
-        idx_splitline_doscar.append(len(doscar_lines))
-        self.pdos = []
-        for i in range(0, len(idx_splitline_doscar) - 1):
-            atom_chunk = doscar_lines[idx_splitline_doscar[i]+1 : idx_splitline_doscar[i+1]]
-            self.pdos.append( [line.split() for line in atom_chunk] )
-        self.pdos = np.float_(self.pdos)
-        self.norbitals_pdos = len(self.pdos[0]-1) / self.nspins_pdos
+        # pdos
+        self.norbitals_pdos = ( len(doscar_site[0][0]) - 1 ) / self.nspins_pdos
+        self.pdos = np.zeros([self.nspins_pdos, sum(self.cell.stoichiometry.values()), self.norbitals_pdos, len(doscar_site[0])])
+        for idx_atom, doscar_site_atom in doscar_site:
+            for idx, doscar_site_atom_ in enumerate(doscar_site_atom):
+                #
+                self.pdos[:, idx_atom, :, idx, 0] = doscar_site_atom_.pop(0)
+                #
+                for idx_orbital in range(self.norbitals_pdos):
+                    for idx_spin in range(self.nspins_pdos):
+                        self.pdos[idx_spin, idx_atom, idx_orbital, idx, 1] = doscar_site_atom_.pop(0)
 
         self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
         print self.log
@@ -1032,11 +1045,12 @@ class Dos(object):
 # finds all sources of errors in bandstructure.
 class Bands(object):
 
-    @shared.MWT()
-    def fit_neargap_bands(self):
+    @shared.MWT(timeout=2592000)
+    def bands_interp(self):
         ## fit the band for i) verifying smoothness ii) estimating
-        fit_neargap_bands = []
-        for i_band,band in tqdm(enumerate(self.neargap_bands)):
+        bands_interp = []
+        for idx_spin in
+        for idx_band, band in enumerate(self.bands):
             fit_neargap_bands.append( Rbf(band[:,0],band[:,1],band[:,2],band[:,3]) )
         return fit_neargap_bands
 
@@ -1065,9 +1079,9 @@ class Bands(object):
             eigenval_occ_idx = 3
 
         # initialise all bands. self.bands[i_band][i_kpt] = [kx,ky,kz,e,occupancy]
-        for i_band in range(0,grepen.nbands):
+        for i_band in range(grepen.nbands):
             band_kpte = []
-            for i_kpt in range(0,grepen.nkpts):
+            for i_kpt in range(grepen.nkpts):
                 kpte = eigenval_lines[i_kpt*(grepen.nbands+2)+1][0:3]
                 energy = float(eigenval_lines[i_kpt*(grepen.nbands+2)+i_band+2][eigenval_e_idx])
                 occ = 1 if energy < grepen.efermi else 0
@@ -1212,7 +1226,7 @@ class Charge(object):
 
         for idx_element, element in enumerate(cell.stoichiometry.keys()):
             for idx_atom in range( sum(cell.stoichiometry.values()[0:idx_element]), sum(cell.stoichiometry.values()[0:idx_element+1]) ):
-                for idx_spin in range(0, self.nspins):
+                for idx_spin in range(self.nspins):
                     self.log += element + str(idx_atom) + '_' + spins[idx_spin]+'\t'
                     pdos = dos.pdos[idx_atom+1]
                     self.idx_fermi = (np.abs(pdos[:,0]-grepen.efermi)).argmin()

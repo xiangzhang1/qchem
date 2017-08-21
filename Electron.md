@@ -26,39 +26,61 @@ __nkpts__ # of reduced kpoints
 # Dos
 
 __log__
-__idx_fermi__   dos [idx_fermi] = [ __efermi__ ... ]
+__idx_fermi__   dos[][idx_fermi] = [ grepen.efermi ... ]
 
-_DOSCAR_  =  [ energy    DOS                  IDOS                ]   spin=para
-             [ energy    DOS(up) DOS(down)    IDOS(up) IDOS(down) ]   spin=fm|afm
-             [ energy    DOS                  IDOS                ]   spin=ncl
+_DOSCAR_ =
+len(cell.stoichiometry)             ..                                                  # of loops                  ispin
+volume(cell.base)                   norm(cell.base[:])                                  ?
+grepen.temperature
+'CAR'
+cell.name
+min energy              max energy          nedos           grepen.efermi               1
+_DOSCAR_TOT_
+min energy              max energy          nedos           grepen.efermi               1
+_DOSCAR_SITE_TOT_
+min energy              max energy          nedos           grepen.efermi               1
+_DOSCAR_SITE_[_idx_atom_=0]
+min energy              max energy          nedos           grepen.efermi               1
+...
 
-__dos__ [_idx_spin_] [idx] = [ energy DOS ]
-__nspins_dos__                                            
-__dos_interp__() [_idx_spin_] (energy) = DOS
-__bandgap__ [_idx_spin_] = [vbm, cbm] or []
+_DOSCAR_TOT_  = [ energy    DOS                  IDOS                ]   spin=para
+                [ energy    DOS(up) DOS(down)    IDOS(up) IDOS(down) ]   spin=fm|afm
+                [ energy    DOS                  IDOS                ]   spin=ncl
+              =  dos[][idx=0][energy]     dos[_idx_spin_==0][idx][DOS]   ...     idos    ...             
 
-_DOSCAR_ATOM_ =  [ energy    s-DOS                           p-DOS         ... ]   spin=para
-                 [ energy    s-DOS(up) s-DOS(down)           p-DOS(up)     ... ]   spin=fm|afm
-                 [ energy    s-DOS(x) s-DOS(y) s-DOS(z)      p-DOS(x)      ... ]   spin=fm|afm
+__dos__[_idx_spin_][idx] = [ energy DOS ]
+__nspins_dos__ spin=para: 1, spin=fm|afm: 2, spin=ncl: 1                                           
+__dos_interp__()[_idx_spin_](energy) = DOS
+__bandgap__[_idx_spin_] = [vbm, cbm] or []
 
-__pdos__ [_idx_spin_] [_idx_atom_] [_idx_orbital_] [idx] = PDOS
-__nspins_pdos__   __norbitals_pdos__
-__pdos_interp__() [_idx_spin_] [_idx_atom_] [_idx_orbital_] (energy) = DOS
+_doscar_site_[_idx_atom_=0] =  [ energy    s-DOS                           p-DOS         ... ]   spin=para
+                               [ energy    s-DOS(up) s-DOS(down)           p-DOS(up)     ... ]   spin=fm|afm
+                               [ energy    s-DOS(x) s-DOS(y) s-DOS(z)      p-DOS(x)      ... ]   spin=fm|afm
+                            =  pdos[][_idx_atom_][][idx==0][energy]  pdos[_idx_spin_====0][_idx_atom_][_idx_orbital_===0][idx][PDOS]     ...     ...
+                ...
+                ...
+
+__pdos__[_idx_spin_][_idx_atom_][_idx_orbital_][idx] = [ energy PDOS ]
+__nspins_pdos__ spin=para: 1, spin=fm|afm: 2, spin=ncl: 3   __norbitals_pdos__
+__pdos_interp__()[_idx_spin_][_idx_atom_][_idx_orbital_](energy) = DOS
 
 
 # Bands
 
 _EIGENVAL_ =
-len(cell.stoichiometry)                   ..                                # of loops                  ispin
-volume(cell.base)                         norm(cell.base[:])          ?
+len(cell.stoichiometry)             ..                                                  # of loops                  ispin
+volume(cell.base)                   norm(cell.base[:])                                  ?
 grepen.temperature
 'CAR'
 cell.name
-grepen.nelectrons                         grepen.nkpts                      grepen.nbands
+grepen.nelectrons                   grepen.nkpts                                        grepen.nbands
 [empty line]
-kpts [_idx_kpt_] [:]
-bands [_idx_band_] [_idx_kpt_] [:]
+bands[][][idx=0][ kx, ky, kz ]      weight
+_idx_band_==0                       bands[_idx_spin_===0][_idx_band_][idx][E]  ...   occupancy    ...
+...     
 
-__kpts__ [_idx_kpt_] = [ kx   ky   kz  weight ]   
-__bands__ [_idx_band_] [_idx_kpt_] [_idx_spin_] = [  ]
-__fit_neargap_bands__() [_idx_band_] = [ kx    ky    kz    E ]
+__bands__[_idx_spin_][_idx_band_][idx] = [ kx    ky    kz    E ]
+
+__bands_interp__[_idx_spin_][_idx_band_](kx,ky,kz) = E
+
+__idxs_band_neargap__ = []
