@@ -307,11 +307,11 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
     def nbands(self):
         print self.__class__.__name__ + ' warning: nbands may not be that reliable'
         if self.parse_if('spin=ncl'):
-            nbands = ( self.cell.nelect * 3 / 5 + self.cell.nion * 3 / 2 ) * 2
+            nbands = ( self.cell.nelectrons * 3 / 5 + sum(self.cell.stoichiometry.values()) * 3 / 2 ) * 2
         elif self.parse_if('spin=para'):
-            nbands = self.cell.nelect * 3 / 5 + self.cell.nion * 1 / 2
+            nbands = self.cell.nelectrons * 3 / 5 + sum(self.cell.stoichiometry.values()) * 1 / 2
         elif self.parse_if('spin=afm|spin=fm'):
-            nbands = self.cell.nelect / 2 + self.cell.nion / 2
+            nbands = self.cell.nelectrons / 2 + sum(self.cell.stoichiometry.values()) / 2
         else:
             raise shared.CustomError(self.__class__.__name__+'spin variable is not fm, afm or para, cannot compute nbands')
         # hse case when hse mod is not even defined. for ref, i think. hiya, later self.
@@ -411,8 +411,7 @@ class Cell(object):
             if len(coor)!=3:
                 raise shared.CustomError(self.__class__.__name__+'__init__: bad format. Coordinate line {%s}' %coor)
         # some computation
-        self.nion = sum(self.stoichiometry.values())
-        self.nelect = sum( [self.stoichiometry[symbol] * shared.ELEMENTS[symbol].pot_zval for symbol in self.stoichiometry] )
+        self.nelectrons = sum( [self.stoichiometry[symbol] * shared.ELEMENTS[symbol].pot_zval for symbol in self.stoichiometry] )
 
     '''def __str__(self):
         result = self.name+'\n'
@@ -960,25 +959,33 @@ class Grepen(object):
         self.ismear = int(prev_gen.getkw('ismear'))
         self.sigma = 0 if self.ismear!=0 else float(prev_gen.getkw('ismear'))
 
+        with open("EIGENVAL","r") as eigenval_file:
+            eigenval = [ x.split() for x in eigenval_file.readlines() ]
+            self.temperature = float( eigenval[2][0] )
+            self.nelectrons = int( eigenval[5][0] )
+            self.nkpts = int( eigenval[5][1] )
+            if (self.nkpts != len(eigenval) / (self.nbands+2)):
+                raise shared.CustomError(self.__class__.__name__ + '__init__: EIGENVAL file length not matching nkpts.')
+
 
 class Dos(object):
 
     @shared.MWT()
     def dos_interp(self):
-        return [ interp1d(self.dos[:,0], self.dos[:,idx_spin+1], kind='cubic') for idx_spin in tqdm(range(0, self.nspin_dos)) ]
+        return [ interp1d(self.dos[:,0], self.dos[:,idx_spin+1], kind='cubic') for idx_spin in tqdm(range(0, self.nspins_dos)) ]
 
     @shared.MWT()
     def pdos_interp(self):
         pdos_interp = []
-        return [ [ [ interp1d(self.pdos[idx_atom+1,:,0], self.pdos[idx_atom+1,:,idx_orbital*self.nspin_pdos+idx_spin], kind='cubic') for idx_spin in range(0, sself.nspin_pdos) ] for idx_orbital in range(0, self.norbital_pdos) ] for idx_atom in tqdm(range(0, sum(cell.stoichiometry.values()))) ]
+        return [ [ [ interp1d(self.pdos[idx_atom+1,:,0], self.pdos[idx_atom+1,:,idx_orbital*self.nspins_pdos+idx_spin], kind='cubic') for idx_spin in range(0, sself.nspins_pdos) ] for idx_orbital in range(0, self.norbitals_pdos) ] for idx_atom in tqdm(range(0, sum(cell.stoichiometry.values()))) ]
 
 
     def __init__(self, grepen, cell):
 
         self.log = '\n\n\n'
         self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
-        self.nspin_dos = {'para':1, 'fm':2, 'ncl':1}[grepen.spin]
-        self.nspin_pdos = {'para':1, 'fm':2, 'ncl':3}[grepen.spin]
+        self.nspins_dos = {'para':1, 'fm':2, 'ncl':1}[grepen.spin]
+        self.nspins_pdos = {'para':1, 'fm':2, 'ncl':3}[grepen.spin]
         self.efermi = grepen.efermi
         self.log += 'Fermi level = %s\n\n' % (self.efermi)
 
@@ -995,7 +1002,7 @@ class Dos(object):
         self.idx_fermi = abs(self.dos[:,0] - self.efermi).argmin() + 1
 
         # self.bandgap
-        for idx_spin in range(0, self.nspin_dos):
+        for idx_spin in range(0, self.nspins_dos):
             i = idx_fermi
             while self.dos[i] < shared.MIN_DOS:
                 i -= 1
@@ -1013,7 +1020,7 @@ class Dos(object):
             atom_chunk = doscar_lines[idx_splitline_doscar[i]+1 : idx_splitline_doscar[i+1]]
             self.pdos.append( [line.split() for line in atom_chunk] )
         self.pdos = np.float_(self.pdos)
-        self.norbital_pdos = len(self.pdos[0]-1) / self.nspin_pdos
+        self.norbitals_pdos = len(self.pdos[0]-1) / self.nspins_pdos
 
         self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
         print self.log
@@ -1033,18 +1040,14 @@ class Bands(object):
             fit_neargap_bands.append( Rbf(band[:,0],band[:,1],band[:,2],band[:,3]) )
         return fit_neargap_bands
 
-    def __init__(self,grepen):
+    def __init__(self, grepen):
 
         # initialize
         self.log = '\n\n\n'
         self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
-        eigenval_file = open("EIGENVAL","r")
-        eigenval_lines = eigenval_file.readlines()
-        if (len(eigenval_lines)<7):
-            raise shared.CustomError(self.__class__.__name__ + ' __init__: EIGENVAL file is not usable')
-        eigenval_lines = [eigenval_lines[i].split() for i in range(6,len(eigenval_lines))]
-        self.nkpt = len(eigenval_lines) / (grepen.nbands+2)
-        
+        with open("EIGENVAL","r") as f:
+            eigenval = [ x.split() for x in f.readlines() ]
+
         list_band_kpte=[]
 
         with open('KPOINTS','r') as kpoints:
@@ -1064,7 +1067,7 @@ class Bands(object):
         # initialise all bands. self.bands[i_band][i_kpt] = [kx,ky,kz,e,occupancy]
         for i_band in range(0,grepen.nbands):
             band_kpte = []
-            for i_kpt in range(0,self.nkpt):
+            for i_kpt in range(0,grepen.nkpts):
                 kpte = eigenval_lines[i_kpt*(grepen.nbands+2)+1][0:3]
                 energy = float(eigenval_lines[i_kpt*(grepen.nbands+2)+i_band+2][eigenval_e_idx])
                 occ = 1 if energy < grepen.efermi else 0
@@ -1197,27 +1200,27 @@ class Charge(object):
         # integrating site-projected pdos
         self.log += '\n\nIntegrated Projected DOS: integration of DOS of wavefunctions projected onto spherical harmonics within spheres of a radius RWIGS\n'
         if grepen.spin == 'ncl':
-            self.nspin = 4 # used in: i * nspin + j
+            self.nspins = 4 # used in: i * nspins + j
             spins = 'tot x y z'.split()
         elif grepen.spin == 'fm' or grepen.spin == 'afm':
-            self.nspin = 2
+            self.nspins = 2
             spins = 'UP DN'.split()
         else:
-            self.nspin = 1
+            self.nspins = 1
             spins = ['tot']
         orbitals = 's p_y p_z p_x d_xy d_yz d_z2 d_xz d_x^2-y^2'.split()
 
         for idx_element, element in enumerate(cell.stoichiometry.keys()):
             for idx_atom in range( sum(cell.stoichiometry.values()[0:idx_element]), sum(cell.stoichiometry.values()[0:idx_element+1]) ):
-                for idx_spin in range(0, self.nspin):
+                for idx_spin in range(0, self.nspins):
                     self.log += element + str(idx_atom) + '_' + spins[idx_spin]+'\t'
                     pdos = dos.pdos[idx_atom+1]
                     self.idx_fermi = (np.abs(pdos[:,0]-grepen.efermi)).argmin()
                     idx_top_integral = (np.abs(pdos[:,0]-grepen.efermi-5)).argmin()
                     for idx_orbital,orbital in enumerate(orbitals):
-                        integral = np.trapz(pdos[:self.idx_fermi,self.nspin * idx_orbital + idx_spin + 1],x=pdos[:self.idx_fermi,0])
+                        integral = np.trapz(pdos[:self.idx_fermi,self.nspins * idx_orbital + idx_spin + 1],x=pdos[:self.idx_fermi,0])
                         integral = abs(integral)
-                        maxintegral = np.trapz( pdos[:idx_top_integral, self.nspin * idx_orbital + idx_spin + 1], x = pdos[:idx_top_integral, 0])
+                        maxintegral = np.trapz( pdos[:idx_top_integral, self.nspins * idx_orbital + idx_spin + 1], x = pdos[:idx_top_integral, 0])
                         self.log += orbital + ' ' + str('{0:.2f}'.format(integral)) + ' '
                     self.log += '\n'
 
