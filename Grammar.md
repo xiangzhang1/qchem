@@ -4,12 +4,11 @@ Grammar
 import PEP8
 
 text __var__
-
 - __key__ in __var__
 
-_idx_spin_  __dos_interp__  __bands__[_idx_band_]  __nbands__ __idxs_band_neargap__
+__dos_interp__  __bands__[_idx_band_]  __nbands__  __idxs_band_neargap__
 
-bands [_idx_spin_=0] [_idx_atom_==0] [_idx_orbital_===0] [idx] ...,   band_spin_atom,   nspins_band,   band_spin_atom_orbital_
+bands [_idx_spin_=0] [_idx_atom_==0] [_idx_orbital_===0] [idx] ...,   band_spin_atom_orbital_
 parse ↑ loop by pre-allocation and popping
 
 curve = [ x1    x2    y ],   curve[0],   curve[x1]

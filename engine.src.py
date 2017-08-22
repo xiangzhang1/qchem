@@ -953,6 +953,12 @@ class Grepen(object):
         self.ismear = int(prev_gen.getkw('ismear'))
         self.sigma = 0 if self.ismear!=0 else float(prev_gen.getkw('ismear'))
 
+        with open('DOSCAR','r') as doscar_file:
+            self.is_doscar_usable = len(doscar_file.readlines()) > 7
+
+        with open('KPOINTS','r') as kpoints_file:
+            self.is_kpoints_mesh = len(kpoints_file.readlines()) < 7
+
         with open("EIGENVAL","r") as eigenval_file:
             eigenval = [ x.split() for x in eigenval_file.readlines() ]
             self.temperature = float( eigenval[2][0] )
@@ -987,11 +993,8 @@ class Dos(object):
         self.grepen = grepen
         self.cell = cell
         self.log += 'Fermi level = %s\n\n' % (self.grepen.efermi)
-
-        with open('DOSCAR','r') as doscar_file:
-            l = doscar_file.readlines()
-            if not len(l) >= 7:
-                raise shared.CustomError('dos.py warning: doscar is not usable (as determined by grepen).')
+        if not grepen.is_doscar_usable:
+            raise shared.CustomError(self.__class__.__name__ + '.__init__: DOSCAR is not usable.')
 
         # all DOSCAR lines, including dos and pdos
         with open("DOSCAR","r") as f:
@@ -1039,6 +1042,7 @@ class Dos(object):
         print self.log
 
 
+
 # imports bandstructure from EIGENVAL.
 # imports kpoints list.
 # interpolates.
@@ -1047,49 +1051,30 @@ class Bands(object):
 
     @shared.MWT(timeout=2592000)
     def bands_interp(self):
-        ## fit the band for i) verifying smoothness ii) estimating
-        bands_interp = []
-        for idx_spin in
-        for idx_band, band in enumerate(self.bands):
-            fit_neargap_bands.append( Rbf(band[:,0],band[:,1],band[:,2],band[:,3]) )
-        return fit_neargap_bands
+        return = [ [ Rbf(self.bands[idx_spin, idx_band, :,0], self.bands[idx_spin, idx_band, :,1], self.bands[idx_spin, idx_band, :,2], self.bands[idx_spin, idx_band, :,3]) \
+                           for idx_band in range(self.grepen.nbands) ] for idx_spin in range(self.nspins_bands) ]
 
     def __init__(self, grepen):
 
-        # initialize
         self.log = '\n\n\n'
         self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
+        self.grepen = grepen
+        self.nspins_bands = {'para':1, 'fm':2, 'ncl':1}[grepen.spin]
+
+        # bands
         with open("EIGENVAL","r") as f:
-            eigenval = [ x.split() for x in f.readlines() ]
+            eigenval = [x.split() for x in f.readlines()][7:]
+        self.bands = np.zeros([self.nspins_bands, grepen.nbands, grepen.nkpts, 4])
+        for idx_kpt in range(grepen.nkpts):
+            #
+            eigenval_ = eigenval.pop(0)
+            self.bands[:, :, idx_kpt, :3] = eigenval_[:3]
+            #
+            for idx_band in range(grepen.nbands):
+                eigenval_ = eigenval.pop(0) ; eigenval_.pop(0)
+                for idx_spin in range(grepen.nspins):
+                    self.bands[idx_spin, idx_band, idx_kpt, 4] = eigenval_.pop(0)
 
-        list_band_kpte=[]
-
-        with open('KPOINTS','r') as kpoints:
-            if (len(kpoints.readlines())>7):
-                raise shared.CustomError(self.__class__.__name__ + ' __init__: KPOINTS does not form a mesh. Module would not work.')
-
-        # Forking: EIGENVAL format depends on spin.
-        if grepen.spin != 'para':
-            self.log += self.__class__.__name__ + " __init__ warning: only the first spin direction. We are essentially assuming spin=para.\n"
-        if grepen.spin == 'para' or grepen.spin == 'ncl':
-            eigenval_e_idx = 1
-            eigenval_occ_idx = 2
-        else:
-            eigenval_e_idx = 1
-            eigenval_occ_idx = 3
-
-        # initialise all bands. self.bands[i_band][i_kpt] = [kx,ky,kz,e,occupancy]
-        for i_band in range(grepen.nbands):
-            band_kpte = []
-            for i_kpt in range(grepen.nkpts):
-                kpte = eigenval_lines[i_kpt*(grepen.nbands+2)+1][0:3]
-                energy = float(eigenval_lines[i_kpt*(grepen.nbands+2)+i_band+2][eigenval_e_idx])
-                occ = 1 if energy < grepen.efermi else 0
-                kpte.append(energy)
-                kpte.append(occ)
-                band_kpte.append(kpte)
-            list_band_kpte.append(band_kpte)
-        self.bands = np.float64(list_band_kpte)
         ## initialise kpoints
         kpts = [kpte[0:3] for kpte in self.bands[0]]
         ### get kpts nearest neighbor list
@@ -1143,6 +1128,7 @@ class Bands(object):
         for idx,val in enumerate(range_avg_kpt_de):
             self.log += '  CBM/VBM +- %.2f eV, difference is %.5f; number of samples is %d.\n' %(val,avg_kpt_de[idx],count_avg_kpt_de[idx])
         self.de_kpoints = max(avg_kpt_de)
+        ## fit the band for i) verifying smoothness ii) estimating
         ### ii) estimate bandgap
         #### in each kpoint, get a bandgap (for each fit, get a max/min, then get the band). get the global bandgap.
         fit_1kpt_bandgaps=[]

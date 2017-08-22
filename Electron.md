@@ -20,7 +20,10 @@ __ismear__
 eigenval
 __temperature__
 __nelectrons__
-__nkpts__ # of reduced kpoints
+__nkpts__ # of reduced kpoints in eigenval
+
+__is_doscar_usable__
+__is_kpoints_mesh__
 
 
 # Dos
@@ -75,12 +78,14 @@ grepen.temperature
 cell.name
 grepen.nelectrons                   grepen.nkpts                                        grepen.nbands
 [empty line]
-bands[][][idx=0][ kx, ky, kz ]      weight
-_idx_band_==0                       bands[_idx_spin_===0][_idx_band_][idx][E]  ...   occupancy    ...
-...     
+bands[][][_idx_kpt_=0][ kx, ky, kz ]      weight
+_idx_band_==0                       bands[_idx_spin_===0][_idx_band_][_idx_kpt_][E]  ...   occupancy    ...
+...
+[empty line]
+...
 
 __bands__[_idx_spin_][_idx_band_][idx] = [ kx    ky    kz    E ]
-
+__nspin_bands__ spin=para: 1, spin=fm|afm: 2, spin=ncl: 1
 __bands_interp__[_idx_spin_][_idx_band_](kx,ky,kz) = E
 
 __idxs_band_neargap__ = []
