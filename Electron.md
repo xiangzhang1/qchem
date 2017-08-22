@@ -78,14 +78,18 @@ grepen.temperature
 cell.name
 grepen.nelectrons                   grepen.nkpts                                        grepen.nbands
 [empty line]
-bands[][][_idx_kpt_=0][ kx, ky, kz ]      weight
-_idx_band_==0                       bands[_idx_spin_===0][_idx_band_][_idx_kpt_][E]  ...   occupancy    ...
+kpts[_idx_kpt_][0]   kpts[_idx_kpt_][1]   kpts[_idx_kpt_][2]                            weight
+_idx_band_==0                       bands[_idx_spin_===0][_idx_band_][_idx_kpt_]  ...   occupancy    ...
 ...
 [empty line]
 ...
 
-__bands__[_idx_spin_][_idx_band_][idx] = [ kx    ky    kz    E ]
+__kpts__[_idx_kpt_] = [ kx ky kz ]      <!-- separate to save space -->
+__bands__[_idx_spin_][_idx_band_][_idx_kpt_] = E
 __nspin_bands__ spin=para: 1, spin=fm|afm: 2, spin=ncl: 1
 __bands_interp__[_idx_spin_][_idx_band_](kx,ky,kz) = E
+__bandgap__[_idx_spin_] = [vbm, cbm] or []
 
-__idxs_band_neargap__ = []
+_min_kpt_dist_      smallest |k1-k2|
+_kpts_nn_           KDTree object storing nearest-neighbor information about __kpts__ array.
+_kpts_nn_list_[]    = [idx1_kpt, idx2_kpt] where |k1-k2|~min_kpt_dist

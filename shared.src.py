@@ -26,14 +26,15 @@ import time
 # @MWT
 # @moonphase_wrap
 # MIN_DOS
+# @log
 
-# 
+#
 # ===========================================================================
 
-SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__)) 
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 
-DEBUG = 1   
-#DEBUG = 0    
+DEBUG = 1
+#DEBUG = 0
 
 # Nodes
 # ===========================================================================
@@ -52,7 +53,7 @@ ALL_ATTR_LIST = ['property','phase','cell','comment','path','name','gen','vasp',
 #  - sigma.edit_vars_addfield
 READABLE_ATTR_LIST = ['name','phase','cell','property','map','comment','path']
 
-#  for the inherit feature. 
+#  for the inherit feature.
 #  - qchem.Node.compute
 INHERITABLE_ATTR_LIST = ['phase','cell']
 
@@ -192,7 +193,7 @@ class ElementsDict(object):
             self._dict[element.number] = element
             self._dict[element.symbol] = element
             self._dict[element.name] = element
-    
+
     def import_(self):
         infile = open('shared.element.conf','r')
         lines = [[field.strip() for field in line.split(':')] for line in infile.read().splitlines()]
@@ -207,7 +208,7 @@ class ElementsDict(object):
                     exp += ','
             exp += ')'
             self.add( eval(exp) )
-        
+
     def __str__(self):
         return "[%s]" % ", ".join(ele.symbol for ele in self._list)
 
@@ -272,7 +273,7 @@ import os
 class MySFTPClient(paramiko.SFTPClient):
     def put_dir(self, source, target):
         # Uploads the contents of the source directory to the target path. The
-        #    target directory needs to exists. All subdirectories in source are 
+        #    target directory needs to exists. All subdirectories in source are
         #    created under target.
         for item in os.listdir(source):
             if os.path.isfile(os.path.join(source, item)):
@@ -299,10 +300,10 @@ class MWT(object):
     """Memoize With Timeout"""
     _caches = {}
     _timeouts = {}
-    
+
     def __init__(self,timeout=86400):
         self.timeout = timeout
-        
+
     def collect(self):
         """Clear cache of results which have timed out"""
         for func in self._caches:
@@ -311,11 +312,11 @@ class MWT(object):
                 if (time.time() - self._caches[func][key][1]) < self._timeouts[func]:
                     cache[key] = self._caches[func][key]
             self._caches[func] = cache
-    
+
     def __call__(self, f):
         self.cache = self._caches[f] = {}
         self._timeouts[f] = self.timeout
-        
+
         def func(*args, **kwargs):
             kw = kwargs.items()
             kw.sort()
@@ -330,7 +331,7 @@ class MWT(object):
                 v = self.cache[key] = f(*args,**kwargs),time.time()
             return v[0]
         func.func_name = f.func_name
-        
+
         return func
 
 # ===========================================================================
@@ -358,3 +359,18 @@ def moonphase_wrap(func):
 # MIN_DOS
 
 MIN_DOS = 1E-3
+
+
+# ===========================================================================
+
+# @log_wrap
+
+def log_wrap(func):
+    @wraps(func)
+    def wrapped(self, *args, **kwargs):
+        self.log = '\n\n\n'
+        self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
+        result = func(self, *args, **kwargs)    # the important part
+        self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
+        print self.log
+        return result

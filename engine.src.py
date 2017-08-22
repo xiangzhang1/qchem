@@ -941,8 +941,10 @@ class Electron(object):
 
 
 class Grepen(object):
+
+    @log_wrap
     def __init__(self, prev_gen):
-        self.log=''
+
         self.energy=float(os.popen('grep "energy without" OUTCAR | tail -1 | awk \'{print $5}\'').read())
         self.efermi=float(os.popen('grep "E-fermi" OUTCAR | awk \'{print $3}\'').read())
 
@@ -984,10 +986,8 @@ class Dos(object):
                         for idx_atom in range(sum(self.cell.stoichiometry.values())) ] \
                             for idx_spin in range(self.nspins_pdos) ]
 
+    @log_wrap
     def __init__(self, grepen, cell):
-
-        self.log = '\n\n\n'
-        self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
         self.nspins_dos = {'para':1, 'fm':2, 'ncl':1}[grepen.spin]
         self.nspins_pdos = {'para':1, 'fm':2, 'ncl':3}[grepen.spin]
         self.grepen = grepen
@@ -1038,9 +1038,6 @@ class Dos(object):
                     for idx_spin in range(self.nspins_pdos):
                         self.pdos[idx_spin, idx_atom, idx_orbital, idx, 1] = doscar_site_atom_.pop(0)
 
-        self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
-        print self.log
-
 
 
 # imports bandstructure from EIGENVAL.
@@ -1051,53 +1048,55 @@ class Bands(object):
 
     @shared.MWT(timeout=2592000)
     def bands_interp(self):
-        return = [ [ Rbf(self.bands[idx_spin, idx_band, :,0], self.bands[idx_spin, idx_band, :,1], self.bands[idx_spin, idx_band, :,2], self.bands[idx_spin, idx_band, :,3]) \
+        return = [ [ Rbf(self.kpts[:,0], self.kpts[:,1], self.kpts[:,2], self.bands[idx_spin, idx_band]) \
                            for idx_band in range(self.grepen.nbands) ] for idx_spin in range(self.nspins_bands) ]
 
+    @log_wrap
     def __init__(self, grepen):
-
-        self.log = '\n\n\n'
-        self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
         self.grepen = grepen
         self.nspins_bands = {'para':1, 'fm':2, 'ncl':1}[grepen.spin]
 
         # bands
         with open("EIGENVAL","r") as f:
             eigenval = [x.split() for x in f.readlines()][7:]
-        self.bands = np.zeros([self.nspins_bands, grepen.nbands, grepen.nkpts, 4])
+        self.kpts = np.zeros(grepen.nkpts)
+        self.bands = np.zeros([self.nspins_bands, grepen.nbands, grepen.nkpts])
         for idx_kpt in range(grepen.nkpts):
             #
             eigenval_ = eigenval.pop(0)
-            self.bands[:, :, idx_kpt, :3] = eigenval_[:3]
+            self.kpts[idx_kpt] = eigenval)[:3]
             #
             for idx_band in range(grepen.nbands):
                 eigenval_ = eigenval.pop(0) ; eigenval_.pop(0)
                 for idx_spin in range(grepen.nspins):
-                    self.bands[idx_spin, idx_band, idx_kpt, 4] = eigenval_.pop(0)
+                    self.bands[idx_spin, idx_band, idx_kpt] = eigenval_.pop(0)
 
-        ## initialise kpoints
-        kpts = [kpte[0:3] for kpte in self.bands[0]]
-        ### get kpts nearest neighbor list
-        min_kpt_dist = np.amin(spatial.distance.pdist(kpts))
-        kpts_nn_tree = spatial.cKDTree(kpts)
-        kpts_nn_list = kpts_nn_tree.query_pairs(r=min_kpt_dist*1.5,output_type='ndarray')
-        self.log += "bands.py: finite kpoint mesh precision delta_k (2pi/a) is %.5f; number of kpoints sampled is %d\n" %(min_kpt_dist, len(kpts))
-        ## compute bandstructure-wise CBM and VBM
-        self.flat_bands=[] # flattened out:
-        for band in self.bands:
-            for kpte in band:
-                self.flat_bands.append(kpte)
-        self.flat_bands=np.float64(self.flat_bands)
-        CBM1_kpte_idx=np.argmin([kpte[3] for kpte in self.flat_bands if kpte[4]==0])
-        VBM1_kpte_idx=np.argmax([kpte[3] for kpte in self.flat_bands if kpte[4]==1])
-        CBM1_kpte=[kpte for kpte in self.flat_bands if kpte[4]==0][CBM1_kpte_idx]
-        VBM1_kpte=[kpte for kpte in self.flat_bands if kpte[4]==1][VBM1_kpte_idx]
-        CBM1=CBM1_kpte[3]
-        VBM1=VBM1_kpte[3]
-        CV_divide=0.5
-        VBM1S=VBM1*(1-CV_divide)+CBM1*CV_divide ; CBM1S = CBM1*(1-CV_divide) + VBM1*CV_divide
-        self.log += "bands.py: bandstructure bandgap* is %.5f, CBM1* is %s, VBM1* is %s\n" %(CBM1-VBM1,CBM1_kpte[0:4],VBM1_kpte[0:4])
-        ## compute neargap bands
+        # delta_k
+        min_kpt_dist = np.amin( spatial.distance.pdist(kpts, metric='Euclidean'), axis=None )   # spatial.distance.pdist() produces a list of distances. amin() produces minimum for flattened input
+        kpts_nn = spatial.cKDTree( kpts )                                                        # returns a KDTree object, which has interface for querying nearest neighbors of any kpt
+        kpts_nn_list = kpts_nn.query_pairs(r=min_kpt_dist*1.5, output_type='ndarray')           # gets all nearest-neighbor idx_kpt pairs
+        self.log += u"finite kpoint mesh \u0394k = %.5f." %(min_kpt_dist)
+
+        # bandgap
+        self.bandgap = [ [] for idx_spin in range(self.nspins_bands) ]
+        for idx_spin in range(self.nspins_bands):
+            vbm = max([e for e in np.nditer(self.bands[idx_spin]) where e<grepen.efermi])
+            cbm = min([e for e in np.nditer(self.bands[idx_spin]) where e>grepen.efermi])
+            self.bandgap[idx_spin] = [vbm, cbm] if cbm>vbm else []
+            print "spin %s: VBM %s at %s, CBM %s at %s, bandgap %s eV" \
+                  % (idx_spin, vbm, self.kpts[ np.where(self.bands[idx_spin]==vbm)[0] ], cbm, self.kpts[ np.where(self.bands[idx_spin]==cbm)[0] ], cbm-vbm) \
+                  if cbm>vbm else "spin %s: no bandgap" % (idx_spin)
+
+
+        # neargap bands for delta_e
+        lower, upper = [max(self.bandgap[:,0]), min(self.bandgap[:,1])] if any(self.bandgap) and min(self.bandgap[:,1])>max(self.bandgap[:,0])\
+                                                                        else [grepen.efermi, grepen.efermi]
+        for neargap_criterion in [0.15, 0.3]:
+            neargap_bands =
+
+
+
+
         self.neargap_bands=[]
         for band in self.bands:
             if any([(kpte[3]<VBM1S and kpte[3]>VBM1-0.5) for kpte in band]) or any([(kpte[3]>CBM1S and kpte[3]<CBM1+0.5) for kpte in band]):
@@ -1108,7 +1107,7 @@ class Bands(object):
         # precision check
         ## calculate DeltaE_KPOINTS by grabbing average E diff / average E diff near bandgap from EIGENVAL.
         ### specify ranges to look for
-        range_avg_kpt_de = [0.1,0.15,0.2,0.5]
+        range_avg_kpt_de = [0.15,0.3]
         ### loop over each band (otherwise mixing is undesirable)
         avg_kpt_de=np.float_([0]*len(range_avg_kpt_de))
         count_avg_kpt_de=np.float_([0]*len(range_avg_kpt_de))
@@ -1161,7 +1160,7 @@ class Bands(object):
 
         print self.log
 
-    # plot E(KPOINT)
+    # plot band: slightly broken
     def plot(self,i):
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
@@ -1182,9 +1181,9 @@ class Bands(object):
 
 # executes population analysis
 class Charge(object):
+
+    @log_wrap
     def __init__(self, cell, grepen, dos):
-        self.log = '\n\n\n'
-        self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
         # sanity check
         if len(dos.pdos) < 2 or len(dos.pdos[1]) < 10:
             raise shared.CustomError(self.__class__.__name__ +' __init__: site-project DOSCAR too short.')
@@ -1271,16 +1270,13 @@ class Charge(object):
                 for idx2_line in range(idx_line + 2,idx_line + 6 + sum(cell.stoichiometry.values())):
                     self.log += lines[idx2_line]
 
-            self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
-
-        print self.log
 
 
 class Errors(object):
+
+    @log_wrap
     def __init__(self,Agrepen,Ados,Abands,Bgrepen=None,Bdos=None,Bbands=None):
 
-        self.log = '\n\n\n'
-        self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
         ## self.rules (aka error types) in dirA
         self.rules = []
         self.de = 0
@@ -1338,7 +1334,3 @@ class Errors(object):
         self.log += 'errors.py: you should expect an error around %.4f eV in dirA. see details below.\n' %(self.de)
         for rule in self.rules:
             self.log += ' '*4 + rule + '\n'
-
-        self.log += '*' * 35 + ' charge of ' + os.getcwd() + ' ' + '*' * 35
-
-        print self.log
