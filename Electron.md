@@ -89,12 +89,13 @@ __kpts__[_idx_kpt_] = [ kx ky kz ]      <!-- less elegant, but saves space -->
     _min_kpt_dist_      smallest |k1-k2|
     _kpts_nn_           KDTree object storing nearest-neighbor information about __kpts__ array.
     _kpts_nn_list_[]    = [idx1_kpt, idx2_kpt] where |k1-k2|~min_kpt_dist
-
-    _kpts_salted_   kpt with 12 wiggles
-    _kpts_salted_hull
 __bands__[_idx_spin_][_idx_band_][_idx_kpt_] = E
 __nspin_bands__ spin=para: 1, spin=fm|afm: 2, spin=ncl: 1
 __bands_interp__[_idx_spin_][_idx_band_](kx,ky,kz) = E
 __bandgaps__[_idx_spin_] = [vbm, cbm] or []     <!-- small. not a numpy array -->
 
-_neargap_bands_ for each idx_spin
+delta_e: idx_spin=0 ZERO==bandgap/2 idx_band===0 kpt_nn_list_====[0,1]
+
+_kpts_salted_   kpt with 100 wiggles, to calculate bandgaps_interp
+_bands_interp_spin_flat_[] = [ kx ky kz e ]
+__bandgaps_interp__

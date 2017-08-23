@@ -25,7 +25,7 @@ import time
 # MySFTPClient
 # @MWT
 # @moonphase_wrap
-# WRAPAROUND constants
+# wraparound error constant
 # @log
 
 #
@@ -351,15 +351,6 @@ def moonphase_wrap(func):
             result = func(self, *args, **kwargs)
             return result
     return wrapped
-
-
-
-# ===========================================================================
-
-# WRAPAROUND constants
-
-DOS_WRAPAROUND = 1E-3
-E_WRAPAROUND = 1E-2
 
 
 # ===========================================================================

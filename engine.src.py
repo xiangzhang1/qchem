@@ -993,6 +993,7 @@ class Dos(object):
 
     @log_wrap
     def __init__(self, grepen, cell):
+        ZERO = 0.001
         self.nspins_dos = {'para':1, 'fm':2, 'ncl':1}[grepen.spin]
         self.nspins_pdos = {'para':1, 'fm':2, 'ncl':3}[grepen.spin]
         self.grepen = grepen
@@ -1022,10 +1023,10 @@ class Dos(object):
         self.bandgap = np.zeros(self.nspins_dos)
         for idx_spin in range(self.nspins_dos):
             i = self.idx_fermi
-            while self.dos[idx_spin, i, 1] < shared.DOS_WRAPAROUND:
+            while abs(self.dos[idx_spin, i, 1]) < ZERO:
                 i -= 1
             j = self.idx_fermi
-            while self.dos[idx_spin, j, 1] < shared.DOS_WRAPAROUND:
+            while abs(self.dos[idx_spin, j, 1]) < ZERO:
                 j += 1
             self.bandgap[idx_spin] = [] if i == j else [self.dos[idx_spin, i, 0], self.dos[idx_spin, j, 0]]
             print "spin %s: VBM %s, CBM %s, bandgap %s eV" % (idx_spin, self.bandgap[idx_spin][0], self.bandgap[idx_spin][1], self.bandgap[idx_spin][1]-self.bandgap[idx_spin][0]) \
@@ -1059,6 +1060,7 @@ class Bands(object):
 
     @log_wrap
     def __init__(self, grepen):
+        ZERO = 0.01
         self.grepen = grepen
         self.nspins_bands = {'para':1, 'fm':2, 'ncl':1}[grepen.spin]
 
@@ -1087,13 +1089,13 @@ class Bands(object):
         # bandgap
         self.bandgaps = [ [] for idx_spin in range(self.nspins_bands) ]
         for idx_spin in range(self.nspins_bands):
-            vbm = max([e for e in np.nditer(self.bands[idx_spin]) where e<=grepen.efermi + shared.E_WRAPAROUND])    # else VB slightly beyond efermi is considered CB
-            cbm = min([e for e in np.nditer(self.bands[idx_spin]) where e>=grepen.efermi + shared.E_WRAPAROUND])    # np.nditer is an iterator looping over all dimensions of an array.
+            vbm = max([e for e in np.nditer(self.bands[idx_spin]) where e<=grepen.efermi + ZERO])    # else VB slightly beyond efermi is considered CB
+            cbm = min([e for e in np.nditer(self.bands[idx_spin]) where e>=grepen.efermi + ZERO])    # np.nditer is an iterator looping over all dimensions of an array.
                                                                                                # the array itself is an iterator looping normally by outmost dimension.
-            self.bandgaps[idx_spin] = [vbm, cbm] if cbm > vbm + shared.E_WRAPAROUND else []
+            self.bandgaps[idx_spin] = [vbm, cbm] if cbm > vbm + shared.e_precision_error else []
             print "spin %s: VBM %s at %s, CBM %s at %s, bandgap %s eV\n" \
                   % (idx_spin, vbm, self.kpts[ np.where(self.bands[idx_spin]==vbm)[0] ], cbm, self.kpts[ np.where(self.bands[idx_spin]==cbm)[0] ], cbm-vbm) \
-                  if cbm > vbm + shared.E_WRAPAROUND else "spin %s: no bandgap" % (idx_spin)
+                  if cbm > vbm + shared.e_precision_error else "spin %s: no bandgap" % (idx_spin)
         self.log += '-' * 70 + '\n'
 
         # neargap bands, delta_e
@@ -1102,64 +1104,52 @@ class Bands(object):
         for idx_spin in range(self.nspins_bands):
             if not self.bandgaps[idx_spin]: # conductor
                 self.log += u'spin %s: no bandgap, \u3B4E skipped.' % idx_spin ; continue
-            if [idx2_spin for idx2_spin in range(idx_spin) if self.bandgaps[idx2_spin] and np.linalg.norm(np.subtract(self.bangaps[idx_spin], self.bandgaps[idx2_spin])) < shared.E_WRAPAROUND]:    # repetitive
+            if [idx2_spin for idx2_spin in range(idx_spin) if self.bandgaps[idx2_spin] and np.linalg.norm(np.subtract(self.bangaps[idx_spin], self.bandgaps[idx2_spin])) < shared.e_precision_error]:    # repetitive
                 self.log += u'spin %s: repetitive, \u3B4E skipped. ' % ( idx_spin ) ; continue
-            # specify ranges to look for
+            # specify neargap criterion ZERO
             self.log += u'spin %s, nearest neighbor \u03B4E = E\u2098-E\u2099:\n' % (idx_spin)
-            delta_ks = []
-            for neargap_criterion in [0.15, 0.3]:
+            delta_ks = [] ; bandgap = abs(np.subtract(self.bandgaps[idx_spin]))
+            for ZERO in [bandgap, bandgap/2, bandgap/4]:
                 # for each NN pair, compute |delta_e| if energy is within bound
                 for idx_band in range(grepen.nbands):
                     for kpts_nn_list_ in kpts_nn_list:  # kpts_nn_list_ = [ idx1_kpt idx2_kpt ]
-                        if all(self.bandgaps[idx_spin][0]-neargap_criterion < self.bands[idx_spin][idx_band][idx_kpt] < self.bandgaps[idx_spin][1]+neargap_criterion for idx_kpt in kpts_nn_list_):    # is near gap
+                        if all(self.bandgaps[idx_spin][0]-ZERO < self.bands[idx_spin][idx_band][idx_kpt] < self.bandgaps[idx_spin][1]+ZERO for idx_kpt in kpts_nn_list_):    # is near gap
                             delta_ks.append( abs(self.bands[idx_spin][idx_band][kpts_nn_list_[0]] - self.bands[idx_spin][idx_band][kpts_nn_list_[1]]) )
                 self.log += u'  CBM/VBM +- %.2f eV: \u03B4E = %.5f eV, # of samples = %d.\n' %( np.mean(delta_ks), len(delta_ks) )
 
 
-        # interpolated bandgap for mesh
+        # interpolated bandgap
+        self.log += 'Usually bandgap is between interpolated and raw bandgap. '
         if not grepen.is_kpoints_mesh:
             self.log += 'kpoints is not mesh, bandgap_interp skipped'
         else:
-            kpts_salted = [ kpt + salt for kpt in self.kpts for salt in np.random.uniform(-min_kpt_dist, min_kpt_dist, (12,3)) ]
-            kpts_salted_hull = scipy.spatial.ConvexHull(kpts_salted)
-            for spin in range(self.nspins_bands):
+            self.bandgaps_interp = [ [] for idx_spin in range(self.nspins_bands) ]
+            # kpts_salted
+            kpts_salted = [ kpt + salt for kpt in self.kpts for salt in np.random.uniform(-min_kpt_dist, min_kpt_dist, (100,3)) ]
+            for idx_spin in range(self.nspins_bands):
                 if not self.bandgaps[idx_spin]: # conductor
-                    self.log += u'spin %s: no bandgap, bandgap_interp skipped.' % ( idx_spin ) ; continue
-                if [idx2_spin for idx2_spin in range(idx_spin) if self.bandgaps[idx2_spin] and np.linalg.norm(np.subtract(self.bangaps[idx_spin], self.bandgaps[idx2_spin])) < shared.E_WRAPAROUND]:    # repetitive
-                    self.log += u'spin %s: repetitive, bandgap_interp skipped. ' % ( idx_spin ) ; continue
-                for idx_band in range(grepen.nbands):
-                    if any(self.bandgaps[idx_spin][0]-0.3 < e < self.bandgaps[idx_spin][1]+0.3 for e in self.bands[idx_spin][idx_band]):  # the choice of .3 is arbitrary
-
-
-        fit_1kpt_bandgaps=[]
-        for i_kpt,kpt in tqdm(enumerate(kpts)):
-            if i_kpt % 100 == 0:
-            near_kpt_maxmin_bnd=[[x-min_kpt_dist/2,x+min_kpt_dist/2] for x in kpt]
-            near_kpt_maxmin_energies = []
-            for (i_fit_neargap_band,fit_neargap_band) in enumerate(self.fit_neargap_bands()):
-                if fit_neargap_band(kpt[0],kpt[1],kpt[2]) < VBM1S:
-                    fun = lambda x: -1*fit_neargap_band(x[0],x[1],x[2])
-                    near_kpt_maxmin_energy = -1 * minimize(fun,kpt,bounds=near_kpt_maxmin_bnd).fun
-                    near_kpt_maxmin_energies.append(near_kpt_maxmin_energy)
-                elif fit_neargap_band(kpt[0],kpt[1],kpt[2]) > CBM1S:
-                    fun = lambda x: fit_neargap_band(x[0],x[1],x[2])
-                    near_kpt_maxmin_energy = minimize(fun,kpt,bounds=near_kpt_maxmin_bnd).fun
-                    near_kpt_maxmin_energies.append(near_kpt_maxmin_energy)
-                else:
-                    print 'bands.py initialisation error: fit_neargap_band ',kpt,' ',fit_neargap_band(kpt[0],kpt[1],kpt[2]),' energy is not above bands.VBM1s or below bands.CBM1S. ignoring.'
-                if VBM1 < near_kpt_maxmin_energy < CBM1:
-                    i_energy = min(self.neargap_bands[:,i_kpt,3], key=lambda x:abs(x-near_kpt_maxmin_energy))
-                    o_energy = near_kpt_maxmin_energy
-                    # print 'band.py: interpolated eigenstate found. Energy* is %.4f -> %.4f eV; kpoint* is %s -> %s' %(i_energy,o_energy,kpt,minimize(fun,kpt,bounds=near_kpt_maxmin_bnd).x)
-            near_kpt_maxmin_energies.append(VBM1)
-            near_kpt_maxmin_energies.append(CBM1)
-            fit_1kpt_bandgap = min([e for e in near_kpt_maxmin_energies if e > CBM1S]) - max([e for e in near_kpt_maxmin_energies if e < VBM1S])
-            fit_1kpt_bandgaps.append(fit_1kpt_bandgap)
-        self.fit_bandgap = min(fit_1kpt_bandgaps)
-        self.log += "bands.py: fitted bandgap* is %.5f. Usually bandgap is between fitted and raw bandgap*. For errors see errors.py.\n" %(self.fit_bandgap)
-        self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
-
-        print self.log
+                    self.log += u'spin %s: no bandgap, bandgaps_interp skipped.' % ( idx_spin ) ; continue
+                if [idx2_spin for idx2_spin in range(idx_spin) if self.bandgaps[idx2_spin] and np.linalg.norm(np.subtract(self.bangaps[idx_spin], self.bandgaps[idx2_spin])) < shared.e_precision_error]:    # repetitive
+                    self.log += u'spin %s: repetitive, bandgaps_interp skipped. ' % ( idx_spin ) ; continue
+                # bands_interp_spin_flat
+                ZERO = abs(np.subtract(self.bandgaps[idx_spin])) / 2.5
+                bands_interp_spin_flat = np.float32(
+                                         [
+                                           [kpt[0], kpt[1], kpt[2], self.bandgaps_interp()[idx_spin][idx_band](*kpt) ]
+                                           for kpt in self.kpts
+                                           for idx_band in range(grepen.nbands)
+                                           if any(self.bandgaps[idx_spin][0] - ZERO < e < self.bandgaps[idx_spin][1] + ZERO
+                                                  for e in self.bands[idx_spin][idx_band])
+                                         ]
+                                         )
+                # self.bandgap_interp
+                kx_vbm, ky_vbm, kz_vbm, vbm = np.amax([kpte for kpte in bands_interp_spin_flat if kpt[3] <= self.bandgaps[idx_spin][0] + ZERO])
+                kx_cbm, ky_cbm, kz_cbm, cbm = np.amin([kpte for kpte in bands_interp_spin_flat if kpt[3] >= self.bandgaps[idx_spin][1] - ZERO])
+                self.bandgaps[idx_spin] = [vbm, cbm] if cbm > vbm else []
+                print "spin %s, interpolated: VBM %s at %s , CBM %s at %s, bandgap %s eV\n" \
+                      % (idx_spin, vbm, [kx_vbm, ky_vbm, kz_vbm], cbm, [kx_cbm, ky_cbm, kz_cbm], cbm-vbm) \
+                      if cbm > vbm else "spin %s, interpolated: no bandgap" % (idx_spin)
+        self.log += '-' * 70 + '\n'
 
     # plot band: slightly broken
     def plot(self,i):
