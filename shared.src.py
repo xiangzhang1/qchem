@@ -25,7 +25,7 @@ import time
 # MySFTPClient
 # @MWT
 # @moonphase_wrap
-# MIN_DOS
+# WRAPAROUND constants
 # @log
 
 #
@@ -356,9 +356,10 @@ def moonphase_wrap(func):
 
 # ===========================================================================
 
-# MIN_DOS
+# WRAPAROUND constants
 
-MIN_DOS = 1E-3
+DOS_WRAPAROUND = 1E-3
+E_WRAPAROUND = 1E-2
 
 
 # ===========================================================================

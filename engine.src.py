@@ -404,11 +404,11 @@ class Cell(object):
         if '\n' in lines:
             lines = lines.splitlines()
         self.name = lines[0]
-        self.base = np.float_([ line.split() for line in lines[2:5] ]) * float(lines[1])
+        self.base = np.float32([ line.split() for line in lines[2:5] ]) * float(lines[1])
         self.stoichiometry = OrderedDict( zip(lines[5].split(), [int(x) for x in lines[6].split()]) )
         if not lines[7].startswith('D'):
             raise shared.CustomError(self.__class__.__name__+'__init__: unsupported POSCAR5 format. Only direct coordinates are supported.')
-        self.coordinates = np.float_([ line.split() for line in lines[8:8+sum(self.stoichiometry.values())] ])
+        self.coordinates = np.float32([ line.split() for line in lines[8:8+sum(self.stoichiometry.values())] ])
         for coor in self.coordinates:
             if len(coor)!=3:
                 raise shared.CustomError(self.__class__.__name__+'__init__: bad format. Coordinate line {%s}' %coor)
@@ -954,12 +954,14 @@ class Grepen(object):
         self.spin = prev_gen.getkw('spin')
         self.ismear = int(prev_gen.getkw('ismear'))
         self.sigma = 0 if self.ismear!=0 else float(prev_gen.getkw('ismear'))
+        self.prev_gen = prev_gen
 
         with open('DOSCAR','r') as doscar_file:
             self.is_doscar_usable = len(doscar_file.readlines()) > 7
 
         with open('KPOINTS','r') as kpoints_file:
-            self.is_kpoints_mesh = len(kpoints_file.readlines()) < 7
+            kpoints = prev_gen.getkw('kpoints').split()
+            self.is_kpoints_mesh = ( kpoints[0] in ['G','g','M','m'] and np.prod(kpoints[1:])>4 and len(kpoints_file.readlines()) < 7 )
 
         with open("EIGENVAL","r") as eigenval_file:
             eigenval = [ x.split() for x in eigenval_file.readlines() ]
@@ -968,6 +970,9 @@ class Grepen(object):
             self.nkpts = int( eigenval[5][1] )
             if (self.nkpts != len(eigenval) / (self.nbands+2)):
                 raise shared.CustomError(self.__class__.__name__ + '__init__: EIGENVAL file length not matching nkpts.')
+
+         for name, value in vars(self):
+             self.log += '%s: %s\n' % (name, value)
 
 
 class Dos(object):
@@ -1017,10 +1022,10 @@ class Dos(object):
         self.bandgap = np.zeros(self.nspins_dos)
         for idx_spin in range(self.nspins_dos):
             i = self.idx_fermi
-            while self.dos[idx_spin, i, 1] < shared.MIN_DOS:
+            while self.dos[idx_spin, i, 1] < shared.DOS_WRAPAROUND:
                 i -= 1
             j = self.idx_fermi
-            while self.dos[idx_spin, j, 1] < shared.MIN_DOS:
+            while self.dos[idx_spin, j, 1] < shared.DOS_WRAPAROUND:
                 j += 1
             self.bandgap[idx_spin] = [] if i == j else [self.dos[idx_spin, i, 0], self.dos[idx_spin, j, 0]]
             print "spin %s: VBM %s, CBM %s, bandgap %s eV" % (idx_spin, self.bandgap[idx_spin][0], self.bandgap[idx_spin][1], self.bandgap[idx_spin][1]-self.bandgap[idx_spin][0]) \
@@ -1046,6 +1051,7 @@ class Dos(object):
 # finds all sources of errors in bandstructure.
 class Bands(object):
 
+    # fit the band for verifying smoothness, and interpolating bandgap
     @shared.MWT(timeout=2592000)
     def bands_interp(self):
         return = [ [ Rbf(self.kpts[:,0], self.kpts[:,1], self.kpts[:,2], self.bands[idx_spin, idx_band]) \
@@ -1075,61 +1081,56 @@ class Bands(object):
         min_kpt_dist = np.amin( spatial.distance.pdist(kpts, metric='Euclidean'), axis=None )   # spatial.distance.pdist() produces a list of distances. amin() produces minimum for flattened input
         kpts_nn = spatial.cKDTree( kpts )                                                        # returns a KDTree object, which has interface for querying nearest neighbors of any kpt
         kpts_nn_list = kpts_nn.query_pairs(r=min_kpt_dist*1.5, output_type='ndarray')           # gets all nearest-neighbor idx_kpt pairs
-        self.log += u"finite kpoint mesh \u0394k = %.5f." %(min_kpt_dist)
+        self.log += u"kpoint mesh precision \u0394k = %.5f." %(min_kpt_dist)
+        self.log += '-' * 70 + '\n'
 
         # bandgap
-        self.bandgap = [ [] for idx_spin in range(self.nspins_bands) ]
+        self.bandgaps = [ [] for idx_spin in range(self.nspins_bands) ]
         for idx_spin in range(self.nspins_bands):
-            vbm = max([e for e in np.nditer(self.bands[idx_spin]) where e<grepen.efermi])
-            cbm = min([e for e in np.nditer(self.bands[idx_spin]) where e>grepen.efermi])
-            self.bandgap[idx_spin] = [vbm, cbm] if cbm>vbm else []
-            print "spin %s: VBM %s at %s, CBM %s at %s, bandgap %s eV" \
+            vbm = max([e for e in np.nditer(self.bands[idx_spin]) where e<=grepen.efermi + shared.E_WRAPAROUND])    # else VB slightly beyond efermi is considered CB
+            cbm = min([e for e in np.nditer(self.bands[idx_spin]) where e>=grepen.efermi + shared.E_WRAPAROUND])    # np.nditer is an iterator looping over all dimensions of an array.
+                                                                                               # the array itself is an iterator looping normally by outmost dimension.
+            self.bandgaps[idx_spin] = [vbm, cbm] if cbm > vbm + shared.E_WRAPAROUND else []
+            print "spin %s: VBM %s at %s, CBM %s at %s, bandgap %s eV\n" \
                   % (idx_spin, vbm, self.kpts[ np.where(self.bands[idx_spin]==vbm)[0] ], cbm, self.kpts[ np.where(self.bands[idx_spin]==cbm)[0] ], cbm-vbm) \
-                  if cbm>vbm else "spin %s: no bandgap" % (idx_spin)
+                  if cbm > vbm + shared.E_WRAPAROUND else "spin %s: no bandgap" % (idx_spin)
+        self.log += '-' * 70 + '\n'
+
+        # neargap bands, delta_e
+        # calculate DeltaE_KPOINTS by grabbing average E diff / average E diff near bandgap from EIGENVAL.
+        # for each spin
+        for idx_spin in range(self.nspins_bands):
+            if not self.bandgaps[idx_spin]: # conductor
+                self.log += u'spin %s: no bandgap, \u3B4E skipped.' % idx_spin ; continue
+            if [idx2_spin for idx2_spin in range(idx_spin) if self.bandgaps[idx2_spin] and np.linalg.norm(np.subtract(self.bangaps[idx_spin], self.bandgaps[idx2_spin])) < shared.E_WRAPAROUND]:    # repetitive
+                self.log += u'spin %s: repetitive, \u3B4E skipped. ' % ( idx_spin ) ; continue
+            # specify ranges to look for
+            self.log += u'spin %s, nearest neighbor \u03B4E = E\u2098-E\u2099:\n' % (idx_spin)
+            delta_ks = []
+            for neargap_criterion in [0.15, 0.3]:
+                # for each NN pair, compute |delta_e| if energy is within bound
+                for idx_band in range(grepen.nbands):
+                    for kpts_nn_list_ in kpts_nn_list:  # kpts_nn_list_ = [ idx1_kpt idx2_kpt ]
+                        if all(self.bandgaps[idx_spin][0]-neargap_criterion < self.bands[idx_spin][idx_band][idx_kpt] < self.bandgaps[idx_spin][1]+neargap_criterion for idx_kpt in kpts_nn_list_):    # is near gap
+                            delta_ks.append( abs(self.bands[idx_spin][idx_band][kpts_nn_list_[0]] - self.bands[idx_spin][idx_band][kpts_nn_list_[1]]) )
+                self.log += u'  CBM/VBM +- %.2f eV: \u03B4E = %.5f eV, # of samples = %d.\n' %( np.mean(delta_ks), len(delta_ks) )
 
 
-        # neargap bands for delta_e
-        lower, upper = [max(self.bandgap[:,0]), min(self.bandgap[:,1])] if any(self.bandgap) and min(self.bandgap[:,1])>max(self.bandgap[:,0])\
-                                                                        else [grepen.efermi, grepen.efermi]
-        for neargap_criterion in [0.15, 0.3]:
-            neargap_bands =
+        # interpolated bandgap for mesh
+        if not grepen.is_kpoints_mesh:
+            self.log += 'kpoints is not mesh, bandgap_interp skipped'
+        else:
+            kpts_salted = [ kpt + salt for kpt in self.kpts for salt in np.random.uniform(-min_kpt_dist, min_kpt_dist, (12,3)) ]
+            kpts_salted_hull = scipy.spatial.ConvexHull(kpts_salted)
+            for spin in range(self.nspins_bands):
+                if not self.bandgaps[idx_spin]: # conductor
+                    self.log += u'spin %s: no bandgap, bandgap_interp skipped.' % ( idx_spin ) ; continue
+                if [idx2_spin for idx2_spin in range(idx_spin) if self.bandgaps[idx2_spin] and np.linalg.norm(np.subtract(self.bangaps[idx_spin], self.bandgaps[idx2_spin])) < shared.E_WRAPAROUND]:    # repetitive
+                    self.log += u'spin %s: repetitive, bandgap_interp skipped. ' % ( idx_spin ) ; continue
+                for idx_band in range(grepen.nbands):
+                    if any(self.bandgaps[idx_spin][0]-0.3 < e < self.bandgaps[idx_spin][1]+0.3 for e in self.bands[idx_spin][idx_band]):  # the choice of .3 is arbitrary
 
 
-
-
-        self.neargap_bands=[]
-        for band in self.bands:
-            if any([(kpte[3]<VBM1S and kpte[3]>VBM1-0.5) for kpte in band]) or any([(kpte[3]>CBM1S and kpte[3]<CBM1+0.5) for kpte in band]):
-                self.neargap_bands.append(band)
-        self.neargap_bands=np.float_(self.neargap_bands)
-        self.log += 'bands.py: number of neargap_bands is %d\n' %(len(self.neargap_bands))
-
-        # precision check
-        ## calculate DeltaE_KPOINTS by grabbing average E diff / average E diff near bandgap from EIGENVAL.
-        ### specify ranges to look for
-        range_avg_kpt_de = [0.15,0.3]
-        ### loop over each band (otherwise mixing is undesirable)
-        avg_kpt_de=np.float_([0]*len(range_avg_kpt_de))
-        count_avg_kpt_de=np.float_([0]*len(range_avg_kpt_de))
-        for i_band,band in tqdm(enumerate(self.neargap_bands)):
-            #### for each NN pair, compute |delta_e| if energy is within bound
-            for nn_pair in kpts_nn_list:
-                ee_pair = band[nn_pair][:,3]
-                for idx,val in enumerate(range_avg_kpt_de):
-                    if all([VBM1-val<i<VBM1S for i in ee_pair]) or all([CBM1S<i<CBM1+val for i in ee_pair]):
-                        avg_kpt_de[idx] += abs(ee_pair[0]-ee_pair[1])
-                        count_avg_kpt_de[idx] += 1
-        for idx,val in tqdm(enumerate(count_avg_kpt_de)):
-            if val==0:
-                count_avg_kpt_de[idx]=1E-8
-        avg_kpt_de=np.divide(avg_kpt_de,count_avg_kpt_de)
-        self.log += 'bands.py: NN kpoints energy delta_E = E_j\'-E_j is:\n'
-        for idx,val in enumerate(range_avg_kpt_de):
-            self.log += '  CBM/VBM +- %.2f eV, difference is %.5f; number of samples is %d.\n' %(val,avg_kpt_de[idx],count_avg_kpt_de[idx])
-        self.de_kpoints = max(avg_kpt_de)
-        ## fit the band for i) verifying smoothness ii) estimating
-        ### ii) estimate bandgap
-        #### in each kpoint, get a bandgap (for each fit, get a max/min, then get the band). get the global bandgap.
         fit_1kpt_bandgaps=[]
         for i_kpt,kpt in tqdm(enumerate(kpts)):
             if i_kpt % 100 == 0:
@@ -1315,8 +1316,8 @@ class Errors(object):
                 fitband=[[kpt_e[0],kpt_e[1],kpt_e[2],float(Abands.fit_neargap_bands()[i_band](kpt_e[0],kpt_e[1],kpt_e[2])),kpt_e[4]] for kpt_e in band]
                 for kpt_e in band:
                     self.log += str(kpt_e[0]) + str(kpt_e[1]) + str(kpt_e[2]) + str(kpt_e[3]) + str(float(Abands.fit_neargap_bands()[i_band](kpt_e[0],kpt_e[1],kpt_e[2]))) + '\n'
-                fitband = np.float_(fitband)
-                band = np.float_(band)
+                fitband = np.float32(fitband)
+                band = np.float32(band)
                 band_deviation = abs((band - sum(band)/len(band)) - (fitband - sum(fitband)/len(fitband)))
                 avg_deviation = sum(band_deviation[:,3])/len(band_deviation[:,3])
                 self.de_interpd += avg_deviation
