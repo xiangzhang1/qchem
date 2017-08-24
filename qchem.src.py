@@ -12,8 +12,10 @@ import shared
 
 def Import(text):
 
-    '''if '#' not in text:
-        raise shared.CustomError('qchem.Import: bad syntax. Your text is {%s}.' %text)'''
+    #:partial syntax check
+    if '#' not in text:
+        raise shared.CustomError('qchem.Import: bad syntax. Your text is {%s}.' %text)
+    #;
     l = re.split('^#+\s*', text, flags=re.MULTILINE) ; l.pop(0)
     l = ['# '+x for x in l]
 
@@ -24,7 +26,7 @@ def Import(text):
             raise shared.CustomError(' Import: Node name %s is in already in shared.NODES.' %n.name)'''
         shared.NODES[n.name] = n
 
-def Dump(): 
+def Dump():
     # distinguish data source by prefix: shared.NODES.dump, shared.NODES.markdown, sigma.dump
     # distinguish datetime by postfix: 20170803094500
     if 'master' not in shared.NODES:
@@ -52,7 +54,7 @@ def Load(datetime=None):
 
 class Node(object):
 
-    def __init__(self, text='# newnode'):   
+    def __init__(self, text='# newnode'):
         # parses 1 node at a time. searches in NODES.
         # default to a newnode
 
@@ -65,15 +67,15 @@ class Node(object):
         l = [x.strip() for x in titleline.split(':')]
         self.name = l[0]
         if len(l) == 2: self.property = l[1]
-        
+
         # node.__dict__
-        
+
         while namevalpairs:
             '''namevalpair = namevalpairs.pop(0)
             if not namevalpair.rstrip():
                 continue
             name = namevalpair.split('\n')[0].strip(': ')
-            if name not in shared.READABLE_ATTR_LIST: 
+            if name not in shared.READABLE_ATTR_LIST:
                 continue
             value = namevalpair.split('\n',1)[1] if len(namevalpair.split('\n',1))>1 else ''
             if getattr(engine, name.title(), None):
@@ -83,7 +85,7 @@ class Node(object):
         '''# test gen if possible
         if getattr(self,'cell',None) and getattr(self,'phase',None) and getattr(self,'property',None):
            test_gen = engine.Gen(self)'''
-        
+
 
     '''def reset(self):
         # reset moonphase = 1. remove all non-readable attributes.
@@ -123,8 +125,8 @@ class Node(object):
             return 0
         else:
             return -2
-    
-            
+
+
     '''def __str__(self):
         result = '# ' + self.name + '\n\n'
         for varname in vars(self):
@@ -182,4 +184,3 @@ class Node(object):
             if getattr(node,'map',None):
                 node.map.del_node(self)
     '''
-
