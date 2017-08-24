@@ -1,7 +1,10 @@
+#!/usr/local/bin/python
 import dill as pickle   # dill requires citation
 import re
 import os
 import time
+
+print os.getcwd()
 
 import engine
 import shared
@@ -32,7 +35,9 @@ from scipy.optimize import minimize
 from scipy import spatial
 
 import shared
+import IPython
 
+IPython.embed()
 
 #with open('data/markdown') as f:
 #    qchem.Import(f.read())

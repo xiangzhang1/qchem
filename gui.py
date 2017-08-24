@@ -44,7 +44,7 @@ def patch_through(func):
         else:
             sep = '\n' + '-' * 30 + '\n'
             septop = '=' * 30 + '\n'
-            sepbot = '\n' + '=' * 30 
+            sepbot = '\n' + '=' * 30
             sys.stdout = mystdout = StringIO()
             try:
                 func(*args, **kwargs)
@@ -137,7 +137,7 @@ def traverse_json(j, cur_prefix=None):      # returns a triplet: [cur,   jam_for
         for subj in j['map']['nodes']:
             result += traverse_json(subj, cur)
     return result
-            
+
 def lookup_json(j, cur):
     if cur == 'master':
         return j    # note that the behavior is slightly different from qchem and sigmajs. the reason is that master is not global.
@@ -184,7 +184,7 @@ def combine_json(new_json, old_json=None):
             tmp['read_cam0:x'] = 200 * tmp['x'] - 100
             tmp['read_cam0:y'] = 200 * tmp['y'] - 100
         if 'renderer1:x' not in tmp or 'renderer1:y' not in tmp:
-            tmp['renderer1:x'] = 500 * tmp['x'] 
+            tmp['renderer1:x'] = 500 * tmp['x']
             tmp['read_cam0:y'] = 250 * tmp['y']
     return new_json
 
@@ -194,9 +194,10 @@ def combine_json(new_json, old_json=None):
 @login_required
 def get_docs_list():
     j = {'filenames':[]}
-    for fname in os.listdir(os.path.dirname(os.path.realpath(__file__))):
-        if fname.endswith('.md') or fname.endswith('.conf'):
-            j['filenames'].append(fname)
+    for fname in os.listdir(os.path.dirname(os.path.realpath(__file__)+'/docs')):
+        j['filenames'].append('docs/'+fname)
+    for fname in os.listdir(os.path.dirname(os.path.realpath(__file__)+'/conf')):
+        j['filenames'].append('conf/'+fname)
     return jsonify(j)
 
 @app.route('/open_docs', methods=['POST'])
@@ -256,11 +257,11 @@ def dump_sigma():
 
 
 # either load latest, or load a specific datetime.
-@app.route('/load_nodes', methods=['GET','POST'])   
+@app.route('/load_nodes', methods=['GET','POST'])
 @patch_through
 @login_required
 def load_nodes():
-    if request.method == 'POST': 
+    if request.method == 'POST':
         datetime = request.get_json(force=True)['datetime']
         qchem.Load(datetime)
     else:
@@ -270,14 +271,14 @@ def load_nodes():
 @return_through
 @login_required
 def load_sigma():
-    if request.method == 'POST':  # used in conjunction with load_nodes, so expect small timestamp difference 
+    if request.method == 'POST':  # used in conjunction with load_nodes, so expect small timestamp difference
         datetime = int(request.get_json(force=True)['datetime'])
         l = [int(x.replace('sigma.dump.','')) for x in os.listdir(shared.SCRIPT_DIR + '/data/') if x.startswith('sigma.dump')]
         if not l:   raise shared.CustomError('Load: no file near {%s} found' %datetime)
         l.sort()
         datetime = str( [x for x in l if abs(x-datetime)<2.1][-1] )
         filename = shared.SCRIPT_DIR + '/data/sigma.dump.' + datetime
-    else:  
+    else:
         l = [x for x in os.listdir(shared.SCRIPT_DIR + '/data/') if x.startswith('sigma.dump')]
         if not l:   raise shared.CustomError('Load: no file to load')
         l.sort()
@@ -306,7 +307,7 @@ def get_dumps_list():
 
 
 
-@app.route('/request_', methods=['POST','GET']) 
+@app.route('/request_', methods=['POST','GET'])
 @return_through
 @login_required
 def request_():  # either merge json, or use shared.NODES['master']     # yep, this is the magic function.
@@ -379,7 +380,7 @@ def compute_node():
 @app.route('/get_text', methods=['POST'])
 @return_through
 @login_required
-def get_text():  
+def get_text():
     j = request.get_json(force=True)
     n = shared.NODES['master'].map.lookup(j['cur'])
     return jsonify({'text':str(n)})
@@ -388,7 +389,7 @@ def get_text():
 @app.route('/edit_vars', methods=['POST'])
 @patch_through
 @login_required
-def edit_vars():    
+def edit_vars():
     # Node() format input. Less powerful than edit, but more intuitive.
     # Updates mentioend and readable parts only.
     j = request.get_json(force=True)
@@ -396,7 +397,7 @@ def edit_vars():
     for name,value in j.iteritems():
         if name == 'name' and '.' in value:
             raise shared.CustomError('dot . cannot be in name, because it is used in cur. ')
-        if name not in shared.READABLE_ATTR_LIST: 
+        if name not in shared.READABLE_ATTR_LIST:
             continue
         if getattr(engine, name.title(), None):
             value = getattr(engine, name.title())(value)
