@@ -22,8 +22,10 @@ def Import(text):
     while l:
         # print 'Import: parsing %s' %(l[-1].splitlines()[0] if l[-1].splitlines() else '')
         n = Node(l.pop())
-        '''if n.name in shared.NODES:
-            raise shared.CustomError(' Import: Node name %s is in already in shared.NODES.' %n.name)'''
+        #: name must not be in shared.NODES
+        if n.name in shared.NODES:
+            raise shared.CustomError(' Import: Node name %s is in already in shared.NODES.' %n.name)
+        #;
         shared.NODES[n.name] = n
 
 def Dump():
@@ -61,34 +63,38 @@ class Node(object):
         namevalpairs = text.split('\n\n')
 
         # node.name
-        '''if len(namevalpairs[0].splitlines()) != 1 or not namevalpairs[0].startswith('#'):
-            raise shared.CustomError(self.__class__.__name__ +': __init__: Titleline format is #name:opt. Your titleline is: {%s}' %namevalpairs[0])'''
+        #: partial grammar check
+        if len(namevalpairs[0].splitlines()) != 1 or not namevalpairs[0].startswith('#'):
+            raise shared.CustomError(self.__class__.__name__ +': __init__: Titleline format is #name:opt. Your titleline is: {%s}' %namevalpairs[0])
+        #;
         titleline = namevalpairs.pop(0).rstrip().lstrip('# ')
         l = [x.strip() for x in titleline.split(':')]
         self.name = l[0]
         if len(l) == 2: self.property = l[1]
 
         # node.__dict__
-
         while namevalpairs:
-            '''namevalpair = namevalpairs.pop(0)
+            namevalpair = namevalpairs.pop(0)
+            #: skip check
             if not namevalpair.rstrip():
                 continue
             name = namevalpair.split('\n')[0].strip(': ')
             if name not in shared.READABLE_ATTR_LIST:
                 continue
+            #;
             value = namevalpair.split('\n',1)[1] if len(namevalpair.split('\n',1))>1 else ''
             if getattr(engine, name.title(), None):
-                value = getattr(engine, name.title())(value)'''
+                value = getattr(engine, name.title())(value)
             setattr(self, name, value)
 
-        '''# test gen if possible
+        #: test gen if possible
         if getattr(self,'cell',None) and getattr(self,'phase',None) and getattr(self,'property',None):
-           test_gen = engine.Gen(self)'''
+           test_gen = engine.Gen(self)
+        #;
 
 
-    '''def reset(self):
-        # reset moonphase = 1. remove all non-readable attributes.
+    def reset(self):
+        #: reset moonphase = 1. remove all non-readable attributes.
         # remove engine
         if getattr(self, 'gen', None):
             engine_name = self.gen.getkw('engine')
@@ -104,7 +110,7 @@ class Node(object):
         if os.path.isdir(foldername):
             shutil.rmtree(foldername)
             print self.__class__.__name__ + '.reset: removed directory {%s}' %foldername
-    '''
+        #;
 
 
     @shared.moonphase_wrap
@@ -126,32 +132,32 @@ class Node(object):
         else:
             return -2
 
-
-    '''def __str__(self):
+    def __str__(self):
         result = '# ' + self.name + '\n\n'
         for varname in vars(self):
             if varname != 'name':
                 result += varname + ':\n' + str(vars(self)[varname]) + '\n\n'
         result += '\n\n'
         return result
-    '''
 
 
     def compute(self, proposed_name=None):
 
         if getattr(self, 'map', None):
-
+            # next to calculate
             l = [x for x in self.map if x.moonphase()==0 and (not self.map.prev(x) or self.map.prev(x).moonphase()==2) ]
-            '''if not l:
+            #: consider the proposed name
+            if not l:
                 raise shared.CustomError( self.__class__.__name__ + ': nothing to compute in parent node {%s]' %self.name )
             if proposed_name:
                 tmp_l = [x for x in l if x.name == proposed_name]
                 if not tmp_l:
                     raise shared.CustomError( self.__class__.__name__ + '.compute: cannot found proposed_name {%s} in map' %proposed_name)
                 n = tmp_l[0]
-            else:'''
+            #;
+            else:
                 n = l[0]
-
+            # important inherits
             for vname in vars(self):
                 if vname in shared.INHERITABLE_ATTR_LIST and not getattr(n, vname, None):
                     setattr(n,vname,getattr(self,vname))
@@ -183,4 +189,3 @@ class Node(object):
         for node in engine.Map().lookup('master').map.traverse():
             if getattr(node,'map',None):
                 node.map.del_node(self)
-    '''
