@@ -197,7 +197,7 @@ class ElementsDict(object):
             self._dict[element.name] = element
 
     def import_(self):
-        infile = open('shared.element.conf','r')
+        infile = open('conf/shared.element.conf','r')
         lines = [[field.strip() for field in line.split(':')] for line in infile.read().splitlines()]
         header = lines[0]
         for line_idx, line in enumerate(lines):

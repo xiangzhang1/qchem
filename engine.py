@@ -208,7 +208,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         if not [x for x in input_ if x.startswith('engine')]:
             raise shared.CustomError(self.__class__.__name__+': __init__: no engine=x found. Input_: {%s}' %input_)
         engine_name = [x for x in input_ if x.startswith('engine')][0].split('=')[1].strip()
-        with open(shared.SCRIPT_DIR + '/engine.gen.' + engine_name + '.conf') as conf:
+        with open(shared.SCRIPT_DIR + 'conf/engine.gen.' + engine_name + '.conf') as conf:
             lines = conf.read().splitlines()
             for line in [ [p.strip() for p in l.split(':')] for l in lines if not l.startswith('#') ]:
                 #:grammar check
