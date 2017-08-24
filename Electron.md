@@ -30,7 +30,7 @@ __is_kpoints_mesh__
 # Dos
 
 __log__
-__idx_fermi__   dos[][idx_fermi] = [ grepen.efermi ... ]
+__idx_fermi__   dos[][idx_fermi] = [ grepen.efermi ... ]    pdos[][][][idx_fermi] = [ grepen.efermi ... ]
 
 _DOSCAR_ =
 len(cell.stoichiometry)             ..                                                  # of loops                  ispin

@@ -33,10 +33,6 @@ from scipy import spatial
 
 import shared
 
-'''
-shit
-'''
-
 
 #with open('data/markdown') as f:
 #    qchem.Import(f.read())
@@ -44,7 +40,7 @@ shit
 #with open('POSCAR','r') as f:
 #    engine.Cell(f.read())
 
-qchem.Load()
+#qchem.Load()
 
 #print shared.NODES['master'].map
 
