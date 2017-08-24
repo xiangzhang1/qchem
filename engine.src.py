@@ -78,10 +78,10 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
                 result = operation_map[operator](kwvalset, kwvalset)
             if run and bool(result):
                 self.kw[kwname] = result
-                # ```
+                #:debug
                 if shared.DEBUG:
                     print self.__class__.__name__ + ' parse_require: gave kw {%s} value {%s}' % (kwname, result)
-                # '''
+                #;
             if run and not bool(result):
                 raise shared.CustomError(self.__class__.__name__ + ' parse_require run=True error: parse_require results in empty set: kwname {%s}, value {%s}, required value {%s}' % (kwname, self.kw[kwname] if kwname in self.kw else 'null', kwvalset))
             if not run and not bool(result) and shared.DEBUG:
@@ -104,13 +104,17 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             return bool(result)
         else:                               ## parse if expression
             result = self.parse_if(expression)
-            '''if not run and not result and shared.DEBUG:
-                    print self.__class__.__name__ + ' parse_require warning: parse_require results in empty set, deferred: expression {%s}' %(expression)'''
+            #:debug
+            if not run and not result and shared.DEBUG:
+                    print self.__class__.__name__ + ' parse_require warning: parse_require results in empty set, deferred: expression {%s}' %(expression)
+            #;
             return result
 
     def parse_if(self,expression):  # recursively evaluate complex if condition. accepts empty expression.
-        '''if ',' in expression:
-            raise shared.CustomError( self.__class__.__name__ + ' parse_if error: "," in if expression {%s} in engine.gen.*.conf. Did you mean to use "&"?' %expression)'''
+        #:grammar check
+        if ',' in expression:
+            raise shared.CustomError( self.__class__.__name__ + ' parse_if error: "," in if expression {%s} in engine.gen.*.conf. Did you mean to use "&"?' %expression)
+        #;
         operation_map = {
                 '&&': lambda x, y: x and y,
                 '||': lambda x, y: x or y,
@@ -175,8 +179,10 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             if self.parse_if(name):
                 result += name + ', '
         for name in self.kw:
-            '''if not self.getkw(name):
-                print 'What the literal fuck. name is {%s} and value is {%s} and name in self.kw is {%s}' %(name, self.getkw(name), name in self.kw)'''
+            #:None check
+            if not self.getkw(name):
+                print self.__class__.__name__ + '.__str__: name is {%s} and value is {%s} and name in self.kw is {%s}' %(name, self.getkw(name), name in self.kw)
+            #;
             result += name + '=' + self.getkw(name) + ', '
         return result
 
@@ -205,9 +211,9 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         with open(shared.SCRIPT_DIR + '/engine.gen.' + engine_name + '.conf') as conf:
             lines = conf.read().splitlines()
             for line in [ [p.strip() for p in l.split(':')] for l in lines if not l.startswith('#') ]:
-                #```
+                #:grammar check
                 if len(line) < 4: raise shared.CustomError('bad conf grammar error: needs 3 colons per line least in {%s}' %line)
-                #'''
+                #;
                 for part in [p.strip() for p in line[1].split(',') ]:
                     try:
                         if self.parse_if(line[0]) and self.parse_require(part,False):
@@ -560,25 +566,30 @@ class Map(object):
         return result
 
     def __init__(self, text=''):
-
-        '''self._dict, self._dict2 = {}, {}
-        text = text.split('\n')'''
+        #:initialize dict and text
+        self._dict, self._dict2 = {}, {}
+        text = text.split('\n')
+        #;
 
         # src -> dst
         for line in text:
             if not line.rstrip():   continue
-            '''line = [x.strip() for x in re.split('(->|-->)', line)]'''
+            line = [x.strip() for x in re.split('(->|-->)', line)]
+            #:lone node case
             if len(line) == 1:
                 src = self.lookup(line[0])
                 if src not in self._dict:   self._dict[src] = []
+            #;
             elif len(line) == 3:
                 src, dst = self.lookup(line[0]), self.lookup(line[2])
+                #:add src, dst to dict
                 if src not in self._dict:
                     self._dict[src] = []
                 if dst not in self._dict:
                     self._dict[dst] = []
-                '''m = self._dict if line[1]=='->' else self._dict2
-                m[src] = [dst] if src not in m else m[src]+[dst]'''
+                #;
+                m = self._dict if line[1]=='->' else self._dict2
+                m[src] = [dst] if src not in m else m[src]+[dst]
             else:
                 raise shared.CustomError(self.__class__.__name__ + '__init__: src -> dst. 3 parts needed')
 
@@ -672,7 +683,9 @@ class Vasp(object):
 
     def compute(self):
 
-        '''if shared.DEBUG==2:    print 'calling %s(%s).compute' %(self.__class__.__name__, getattr(self,'path','')) '''
+        #:debug msg
+        if shared.DEBUG==2:    print 'calling %s(%s).compute' %(self.__class__.__name__, getattr(self,'path',''))
+        #;
 
         if not getattr(self, 'wrapper', None):
             if os.path.exists(self.path):
@@ -754,7 +767,9 @@ class Vasp(object):
     @shared.moonphase_wrap
     def moonphase(self):
 
-        '''if shared.DEBUG==2:    print 'calling %s(%s).moonphase' %(self.__class__.__name__, getattr(self,'path','')) '''
+        #:debug benchmark msg
+        if shared.DEBUG==2:    print 'calling %s(%s).moonphase' %(self.__class__.__name__, getattr(self,'path',''))
+        #;
 
         if not getattr(self, 'wrapper', None):
             return 0
@@ -823,13 +838,15 @@ class Vasp(object):
         if os.path.isdir(self.path):
             shutil.rmtree(self.path)
 
-    '''def __str__(self):
+    def __str__(self):
+        #: return log and optimized_cell
         if getattr(self, 'optimized_cell', None):
             return '# optimized_cell:\n' + str(self.optimized_cell) + self.log
         if getattr(self, 'log', None):
             return self.log
         else:
-            return 'moonphase is not 2, nothing here'   '''
+            return 'moonphase is not 2, nothing here'
+        #;
 
 
     def pot(self, symbol):
@@ -928,17 +945,19 @@ class Electron(object):
     def moonphase(self):
         return 2 if getattr(self, 'log', None) else 0
 
-    '''def __str__(self):
+    def __str__(self):
+        #:return log
         if getattr(self, 'log', None):
             return self.log
         else:
             return 'moonphase is not 2, nothing here'
+        #;
 
     def delete(self):
+        #:remove folder
         if os.path.isdir(self.path):
             shutil.rmtree(self.path)
-    '''
-
+        #;
 
 class Grepen(object):
 

@@ -20,9 +20,11 @@ allow inherited attributes
 Convention
 ----------
 
-Use Atom built-in folding and `remember-folds` package.
+Use the `custom-fold` package for cross-platform editing.
 
-Alternatively, use the `custom-fold` package.
+Alternatively, use Atom built-in folding and the fragile `remember-folds` package.
+
+Alternatively,
 
 Use Atom developer mode to tweak:
 - ignore a[1][2] in markdown
