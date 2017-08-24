@@ -1,24 +1,36 @@
 #!/usr/bin/python
-# This is the end-encapuslation layer. This layer is essentially the SAME as the gui layer.
-#
+'''GUI and CLI, combined in one'''
+# flask
 from flask import Flask, request, jsonify, session, Response
 from flask_cors import CORS, cross_origin
 from functools import wraps
 
+# flask over https
+from OpenSSL import SSL
+context = SSL.Context(SSL.SSLv23_METHOD)
+context.use_privatekey_file('yourserver.key')
+context.use_certificate_file('yourserver.crt')
+
+# common libraries
 import sys
 import os
-from pprint import pprint
+import shutil
 import random
 import string
-from fuzzywuzzy import process
 import dill as pickle
-from cStringIO import StringIO
 import time
+from pprint import pprint
+import IPython
 
+from cStringIO import StringIO
+from fuzzywuzzy import process
+
+# qchem package
 import qchem
 import shared
 import engine
 from shared import ELEMENTS
+
 
 # logging
 #import logging
@@ -33,6 +45,7 @@ from shared import ELEMENTS
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
+app.run(host='127.0.0.1',port='5000', debug = False, ssl_context=context)
 
 # patches output and expected CustomError through; login security
 def patch_through(func):
@@ -209,17 +222,111 @@ def open_docs():
     with open(filename,'r') as f:
         return jsonify({'text':f.read()})
 
-@app.route('/x93d_python_rrho', methods=['POST'])
+@app.route('/ipython', methods=['GET'])
 @patch_through
 @login_required
-# Tries to eval, then exec.
-# If code contains SyntaxError, then it's executed.
-def x93d_python_rrho():
-    code = request.get_json(force=True)['code']
-    try:
-        print eval(code)
-    except SyntaxError:
-        exec(code)
+def ipython():
+    '''invokes embedded ipython'''
+    IPython.embed()
+
+
+# the real qchem functions
+@app.route('/reset_NODES', methods=['GET'])
+@patch_through
+@login_required
+def reset_NODES():
+    shared.NODES = {}
+
+@app.route('/import_markdown', methods=['GET'])
+@patch_through
+@login_required
+def import_markdown():
+    with open('data/markdown') as f:
+        qchem.Import(f.read())
+
+@app.route('/new_', methods=['GET'])
+@patch_through
+@login_required
+def new_():
+    shared.NODES['master'] = qchem.Node('# master\n\nmap:\n\n')
+
+@app.route('/dump_nodes', methods=['GET'])
+@patch_through
+@login_required
+def dump_nodes():
+    qchem.Dump()
+
+@app.route('/dump_sigma', methods=['POST'])
+@patch_through
+@login_required
+def dump_sigma():
+    old_json = request.get_json(force=True)
+    with open(os.path.dirname(os.path.realpath(__file__))+'/data/sigma.dump.'+time.strftime('%Y%m%d%H%M%S'),'wb') as dumpfile:
+        pickle.dump(old_json, dumpfile, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+# either load latest, or load a specific datetime.
+@app.route('/load_nodes', methods=['GET','POST'])
+@patch_through
+@login_required
+def load_nodes():
+    if request.method == 'POST':
+        datetime = request.get_json(force=True)['datetime']
+        qchem.Load(datetime)
+    else:
+        qchem.Load()
+
+@app.route('/load_sigma', methods=['GET','POST'])
+@return_through
+@login_required
+def load_sigma():
+    if request.method == 'POST':  # used in conjunction with load_nodes, so expect small timestamp difference
+        datetime = int(request.get_json(force=True)['datetime'])
+        l = [int(x.replace('sigma.dump.','')) for x in os.listdir(shared.SCRIPT_DIR + '/data/') if x.startswith('sigma.dump')]
+        if not l:   raise shared.CustomError('Load: no file near {%s} found' %datetime)
+        l.sort()
+        datetime = str( [x for x in l if abs(x-datetime)<2.1][-1] )
+        filename = shared.SCRIPT_DIR + '/data/sigma.dump.' + datetime
+    else:
+        l = [x for x in os.listdir(shared.SCRIPT_DIR + '/data/') if x.startswith('sigma.dump')]
+        if not l:   raise shared.CustomError('Load: no file to load')
+        l.sort()
+        filename = shared.SCRIPT_DIR + '/data/' + l[-1]
+    if os.path.isfile(filename):
+        with open(filename,'rb') as dumpfile:
+            old_json = pickle.load(dumpfile)
+        print 'Loaded {%s}' %filename
+    else:
+        raise shared.CustomError( 'load_sigma: File {%s} not found' %filename )
+        old_json = {}
+    return jsonify(old_json)
+
+@app.route('/get_dumps_list', methods=['GET'])
+@return_through
+@login_required
+def get_dumps_list():
+    j = {'datetimes':[]}
+    l = []
+    for fname in os.listdir(shared.SCRIPT_DIR+'/data/'):
+        if fname.startswith('shared.NODES.dump.'):
+            l.append(fname.replace('shared.NODES.dump.',''))
+    l.sort(reverse=True)
+    j['datetimes'] = l[:5]
+    return jsonify(j)
+
+
+
+@app.route('/request_', methods=['POST','GET'])
+@return_through
+@login_required
+def request_():  # either merge json, or use shared.NODES['master']     # yep, this is the magic function.
+    if request.method == 'POST':
+        old_json = request.get_json(force=True)
+        if shared.DEBUG==2: print 'before to_json' + '*'*70
+        new_json = to_json(shared.NODES['master'])
+        if shared.DEBUG==2: print 'after to_json' + '*'*70
+        new_json = combine_json(new_json, old_json)
+        return jsonify( new_json )
 
 # the real qchem functions
 @app.route('/reset_NODES', methods=['GET'])

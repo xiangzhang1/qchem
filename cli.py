@@ -1,41 +1,36 @@
-#!/usr/local/bin/python
-import dill as pickle   # dill requires citation
-import re
-import os
-import time
+#!/usr/bin/python
+'''CLI, as a backup option during downtime'''
 
-print os.getcwd()
+# flask
+from flask import Flask, request, jsonify, session, Response
+from flask_cors import CORS, cross_origin
+from functools import wraps
 
-import engine
-import shared
-import qchem
+# flask over https
+from OpenSSL import SSL
+context = SSL.Context(SSL.SSLv23_METHOD)
+context.use_privatekey_file('yourserver.key')
+context.use_certificate_file('yourserver.crt')
 
-import os
+# common libraries
 import sys
-import subprocess
-import re
-import numpy as np
-import scipy
+import os
 import shutil
-from pprint import pprint
-import tempfile
-import hashlib
-from subprocess import call, check_output, STDOUT, CalledProcessError
-from filecmp import dircmp
-from collections import OrderedDict
-import paramiko
-
-from mpl_toolkits.mplot3d import Axes3D
-import matplotlib.pyplot as plt
+import random
+import string
+import dill as pickle
 import time
-import progressbar
-from progressbar import Bar, Counter, ETA,FormatLabel, Percentage,ProgressBar 
-from scipy.interpolate import Rbf
-from scipy.optimize import minimize
-from scipy import spatial
-
-import shared
+from pprint import pprint
 import IPython
+
+from cStringIO import StringIO
+from fuzzywuzzy import process
+
+# qchem package
+import qchem
+import shared
+import engine
+from shared import ELEMENTS
 
 IPython.embed()
 
