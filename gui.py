@@ -40,8 +40,6 @@ from shared import ELEMENTS
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
-#app.run(host='127.0.0.1',port='5000', debug = False, ssl_context=('cert/domain.crt','cert/domain.key'))
-app.run()
 
 # patches output and expected CustomError through; login security
 def patch_through(func):
@@ -89,7 +87,7 @@ def login_required(func):
     return wrapped
 
 # for testing
-@app.route('/', methods=['GET'])
+@app.route('/hello_world')
 def hellowworld():
     return 'hello, world!'
 
@@ -565,3 +563,9 @@ def del_edge():
     j = request.get_json(force=True)
     n = shared.NODES['master'].map.lookup(j['cur'])
     n.map.del_edge(j['src'],j['dst'])
+
+
+# =========================================================================== 
+
+app.run(host='127.0.0.1',port='5000', debug = False, ssl_context=('cert/domain.crt','cert/domain.key'))
+#app.run()
