@@ -249,9 +249,8 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             for name in self.kw:
                 if len(self.kw[name]) != 1:
                     raise shared.CustomError( self.__class__.__name__+' error: non-unique output. Kw[%s]={%s} has not been restricted to 1 value.' %(name,self.kw[name]) )
-            self.moonphase=3    # parsing and validating of input_ is complete.
-            if self.parse_if('engine=vasp'):
-                self.check_memory()
+        if self.parse_if('engine=vasp'):
+            self.check_memory()
 
     def check_memory(self):
         # make temporary dir
@@ -740,7 +739,7 @@ class Vasp(object):
                 self.wrapper += ' cd %s\n' %self.remote_folder_name
                 self.wrapper += ' sbatch --nodes=%s --ntasks=%s --job-name=%s -t 12:00:00 --export=ALL subfile\n' %(self.gen.getkw('nnode'), ncore_total, self.remote_folder_name)
                 self.wrapper += 'EOF\n'
-                self.subfile += '#!/bin/bash\n. /usr/share/Modules/init/bash\nmodule purge\nmodule load mvapich2-2.2/intel\nmpirun -np %s /opt/vasp.5.4.1.03082016/bin/vasp_%s' %(ncore_total, flavor)
+                self.subfile += '#!/bin/bash\n. /usr/share/Modules/init/bash\nmodule purge\nmodule load mvapich2-2.2/intel\nmpirun -np %s /opt/vasp.5.4.4/bin/vasp_%s' %(ncore_total, flavor)
             with open('wrapper','w') as of_:
                 of_.write(self.wrapper)
                 os.system('chmod +x wrapper')
@@ -793,11 +792,20 @@ class Vasp(object):
                     vasp_is_running = pgrep_output.strip() != ''
                 except CalledProcessError:
                     vasp_is_running = False
-            elif self.gen.parse_if('platform=nanaimo|irmik'):
+            elif self.gen.parse_if('platform=nanaimo|platform=irmik'):
                 #:debug msg
                 if shared.DEBUG==2: print self.__class__.__name__ + '.moonphase: asking %s for status of {%s}' %(self.gen.getkw('platform'), self.path)
                 #;
                 ssh = paramiko.SSHClient()
+                #:paramiko config
+                ssh._policy = paramiko.WarningPolicy()
+                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                ssh_config = paramiko.SSHConfig()
+                user_config_file = os.path.expanduser("~/.ssh/config")
+                if os.path.exists(user_config_file):
+                    with open(user_config_file) as f:
+                        ssh_config.parse(f)
+                #;
                 ssh.load_system_host_keys()
                 ssh.connect(self.gen.getkw('platform'), username='xzhang1')
                 ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command("squeue -n %s" %self.remote_folder_name)
@@ -810,7 +818,7 @@ class Vasp(object):
             # change to vasprun.xml directory
             if self.gen.parse_if('platform=dellpc'):
                 os.chdir(self.path)
-            elif self.gen.parse_if('platform=nanaimo|irmik'):
+            elif self.gen.parse_if('platform=nanaimo|platform=irmik'):
                 #:legacy compatible script to reapri self.remote_folder_name. disabled.
                 #if not getattr(self, 'remote_folder_name', None):
                 #    self.remote_folder_name = self.path.split('/')[-2] + '_' + self.path.split('/')[-1] + '_' + hashlib.md5(self.path).hexdigest()[:5] + '_' + str(time.time())
@@ -832,7 +840,7 @@ class Vasp(object):
                         return -1
                     else:
                         # download folder
-                        if self.gen.parse_if('platform=nanaimo|irmik|hodduk'):
+                        if self.gen.parse_if('platform=nanaimo|platform=irmik|platform=hodduk'):
                             print self.__class__.__name__ + '.moonphase: copying remote folder {%s} back to self.path {%s}' %(self.remote_folder_name, self.path)
                             subprocess.Popen(['rsync', '-a', '-h', '--info=progress2', '%s:%s/' %(self.gen.getkw('platform'),self.remote_folder_name), '%s'%self.path], stdout=sys.stdout, stderr=sys.stderr).wait()
                             #os.system('scp -r /home/xzhang1/Shared/%s/%s/ %s' %(self.gen.getkw('platform'), self.remote_folder_name, self.path))
