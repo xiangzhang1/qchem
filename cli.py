@@ -9,8 +9,8 @@ from functools import wraps
 # flask over https
 from OpenSSL import SSL
 context = SSL.Context(SSL.SSLv23_METHOD)
-context.use_privatekey_file('yourserver.key')
-context.use_certificate_file('yourserver.crt')
+context.use_privatekey_file('~/.ssh/id_rsa')
+context.use_certificate_file('~/.ssh/id_rsa.pub')
 
 # common libraries
 import sys
