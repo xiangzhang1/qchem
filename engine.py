@@ -208,7 +208,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         if not [x for x in input_ if x.startswith('engine')]:
             raise shared.CustomError(self.__class__.__name__+': __init__: no engine=x found. Input_: {%s}' %input_)
         engine_name = [x for x in input_ if x.startswith('engine')][0].split('=')[1].strip()
-        with open(shared.SCRIPT_DIR + 'conf/engine.gen.' + engine_name + '.conf') as conf:
+        with open(shared.SCRIPT_DIR + '/conf/engine.gen.' + engine_name + '.conf') as conf:
             lines = conf.read().splitlines()
             for line in [ [p.strip() for p in l.split(':')] for l in lines if not l.startswith('#') ]:
                 #:grammar check
@@ -1008,7 +1008,7 @@ class Dos(object):
         return [ [ [ interp1d(self.pdos[idx_spin, idx_atom, idx_orbital, :, energy], self.pdos[idx_spin, idx_atom, idx_orbital, :, PDOS], kind='cubic') \
                      for idx_orbital in range(self.norbitals_pdos) ] \
                         for idx_atom in range(sum(self.cell.stoichiometry.values())) ] \
-                            for idx_spin in range(self.nspins_pdos) ]
+                            for idx_spin in tqdm(range(self.nspins_pdos)) ]
 
     @shared.log_wrap
     def __init__(self, grepen, cell):
@@ -1075,7 +1075,7 @@ class Bands(object):
     @shared.MWT(timeout=2592000)
     def bands_interp(self):
         return [ [ Rbf(self.kpts[:,0], self.kpts[:,1], self.kpts[:,2], self.bands[idx_spin, idx_band])
-                           for idx_band in range(self.grepen.nbands) ] for idx_spin in range(self.nspins_bands) ]
+                           for idx_band in tqdm(range(self.grepen.nbands)) ] for idx_spin in range(self.nspins_bands) ]
 
     @shared.log_wrap
     def __init__(self, grepen):
@@ -1153,12 +1153,15 @@ class Bands(object):
                 if [idx2_spin for idx2_spin in range(idx_spin) if self.bandgaps[idx2_spin] and np.linalg.norm(np.subtract(self.bangaps[idx_spin], self.bandgaps[idx2_spin])) < ZERO]:    # repetitive
                     self.log += u'spin %s: repetitive, bandgaps_interp skipped. ' % ( idx_spin ) ; continue
                 # bands_interp_spin_flat
+                #:tqdm banner
+                print 'interpolating bandgap'
+                #;
                 ZERO = abs(np.subtract(self.bandgaps[idx_spin])) / 2.5
                 bands_interp_spin_flat = np.float32(
                                          [
                                            [kpt[0], kpt[1], kpt[2], self.bandgaps_interp()[idx_spin][idx_band](*kpt) ]
                                            for kpt in self.kpts
-                                           for idx_band in range(grepen.nbands)
+                                           for idx_band in tqdm(range(grepen.nbands))
                                            if any(self.bandgaps[idx_spin][0] - ZERO < e < self.bandgaps[idx_spin][1] + ZERO
                                                   for e in self.bands[idx_spin][idx_band])
                                          ]
@@ -1304,7 +1307,10 @@ class Errors(object):
             if not Bbands.bandgaps[0] or not Abands.bandgaps[0]:
                 raise shared.CustomError(self.__class__.__name__ + '.__init__: bandgap not found for spin 0')
             ZERO = (Bbands.bandgaps[idx_spin][1] - Bbands.bandgaps[idx_spin][0]) / 3
-            for idx_band, band in enumerate(Bbands[idx_spin]):
+            #:tqdm banner
+            print 'interpolating Bbands for comparison:'
+            #;
+            for idx_band, band in tqdm(enumerate(Bbands[idx_spin])):
                 if any(Bbands.bandgaps[idx_spin][0] - ZERO < e < Bbands.bandgaps[idx_spin][1] + ZERO for e in self.bands[idx_spin][idx_band]):
                     self.de_interpd.append( np.average( abs( Abands.bands[idx_spin][idx_band] - np.float32( Bbands.bands_interp()[idx_spin][idx_band](*kpt) for kpt in Abands.kpts ) ) ) )
                     self.log += 'in band %d, between dirA and dirB, interpolation plus Cauchy error is %.5f.\n' %(i_band, self.de_interpd[-1])
