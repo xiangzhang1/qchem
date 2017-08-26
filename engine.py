@@ -721,19 +721,26 @@ class Vasp(object):
             # write scripts and instructions
             # subfile actually runs vasp. wrapper submits the subfile to system.
             self.wrapper = '#!/bin/bash\n' ; self.subfile = '#!/bin/bash\n'
-            if self.gen.getkw('platform') == 'dellpc':
+            if self.gen.parse_if('platform=dellpc'):
                 self.subfile += 'echo $PWD `date` start; echo '+'-'*75+'\n'
                 self.subfile += 'mpiexec.hydra -n %s /home/xzhang1/src/vasp.5.4.1/bin/vasp_%s </dev/null \n' %(ncore_total, flavor)
                 self.subfile += 'mail -s "VASP job finished: {${PWD##*/}}" 8576361405@vtext.com <<<EOM \n'
                 self.subfile += 'echo $PWD `date` end  ; echo '+'-'*75+'\n'
                 self.wrapper += 'nohup ./subfile 2>&1 >> run.log &'
-            if self.gen.getkw('platform') == 'nanaimo':
+            if self.gen.parse_if('platform=nanaimo'):
                 self.wrapper += 'rsync -a . nanaimo:~/%s\n' %self.remote_folder_name
                 self.wrapper += 'ssh nanaimo <<EOF\n'
                 self.wrapper += ' cd %s\n' %self.remote_folder_name
                 self.wrapper += ' sbatch --nodes=%s --ntasks=%s --job-name=%s -t 12:00:00 --export=ALL subfile\n' %(self.gen.getkw('nnode'), ncore_total, self.remote_folder_name)
                 self.wrapper += 'EOF\n'
                 self.subfile += '#!/bin/bash\n. /usr/share/Modules/init/bash\nmodule purge\nmodule load intel\nmodule load impi\nmpirun -np %s /opt/vasp.5.4.4/bin/vasp_%s' %(ncore_total, flavor)
+            if self.gen.parse_if('platform=irmik'):
+                self.wrapper += 'rsync -a . irmik:~/%s\n' %self.remote_folder_name
+                self.wrapper += 'ssh irmik <<EOF\n'
+                self.wrapper += ' cd %s\n' %self.remote_folder_name
+                self.wrapper += ' sbatch --nodes=%s --ntasks=%s --job-name=%s -t 12:00:00 --export=ALL subfile\n' %(self.gen.getkw('nnode'), ncore_total, self.remote_folder_name)
+                self.wrapper += 'EOF\n'
+                self.subfile += '#!/bin/bash\n. /usr/share/Modules/init/bash\nmodule purge\nmodule load mvapich2-2.2/intel\nmpirun -np %s /opt/vasp.5.4.1.03082016/bin/vasp_%s' %(ncore_total, flavor)
             with open('wrapper','w') as of_:
                 of_.write(self.wrapper)
                 os.system('chmod +x wrapper')
@@ -786,11 +793,13 @@ class Vasp(object):
                     vasp_is_running = pgrep_output.strip() != ''
                 except CalledProcessError:
                     vasp_is_running = False
-            elif self.gen.parse_if('platform=nanaimo'):
+            elif self.gen.parse_if('platform=nanaimo|irmik'):
+                #:debug msg
                 if shared.DEBUG==2: print self.__class__.__name__ + '.moonphase: asking %s for status of {%s}' %(self.gen.getkw('platform'), self.path)
+                #;
                 ssh = paramiko.SSHClient()
                 ssh.load_system_host_keys()
-                ssh.connect('nanaimo', username='xzhang1')
+                ssh.connect(self.gen.getkw('platform'), username='xzhang1')
                 ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command("squeue -n %s" %self.remote_folder_name)
                 result = ssh_stdout.read().strip()
                 # ssh.close()
@@ -801,10 +810,12 @@ class Vasp(object):
             # change to vasprun.xml directory
             if self.gen.parse_if('platform=dellpc'):
                 os.chdir(self.path)
-            elif self.gen.parse_if('platform=nanaimo'):
-                if not getattr(self, 'remote_folder_name', None):
-                    self.remote_folder_name = self.path.split('/')[-2] + '_' + self.path.split('/')[-1] + '_' + hashlib.md5(self.path).hexdigest()[:5] + '_' + str(time.time())
-                    print self.__class__.__name__ + '.moonphase: repaired self.remote_folder_name'
+            elif self.gen.parse_if('platform=nanaimo|irmik'):
+                #:legacy compatible script to reapri self.remote_folder_name. disabled.
+                #if not getattr(self, 'remote_folder_name', None):
+                #    self.remote_folder_name = self.path.split('/')[-2] + '_' + self.path.split('/')[-1] + '_' + hashlib.md5(self.path).hexdigest()[:5] + '_' + str(time.time())
+                #    print self.__class__.__name__ + '.moonphase: repaired self.remote_folder_name'
+                #;
                 ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command("[ -d %s ] && echo 'exists' " %self.remote_folder_name)
                 result = ssh_stdout.read().strip()
                 if not result:
@@ -822,7 +833,7 @@ class Vasp(object):
                     else:
                         # download folder
                         if self.gen.parse_if('platform=nanaimo|irmik|hodduk'):
-                            print self.__class__.__name__ + '.moonphase: copying nanaimo folder {%s} back to self.path {%s}' %(self.remote_folder_name, self.path)
+                            print self.__class__.__name__ + '.moonphase: copying remote folder {%s} back to self.path {%s}' %(self.remote_folder_name, self.path)
                             subprocess.Popen(['rsync', '-a', '-h', '--info=progress2', '%s:%s/' %(self.gen.getkw('platform'),self.remote_folder_name), '%s'%self.path], stdout=sys.stdout, stderr=sys.stderr).wait()
                             #os.system('scp -r /home/xzhang1/Shared/%s/%s/ %s' %(self.gen.getkw('platform'), self.remote_folder_name, self.path))
                             print self.__class__.__name__ + '.moonphase: copy complete.'
