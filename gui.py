@@ -5,14 +5,9 @@ from flask import Flask, request, jsonify, session, Response
 from flask_cors import CORS, cross_origin
 from functools import wraps
 
-# flask over https
-from OpenSSL import SSL
-context = SSL.Context(SSL.SSLv23_METHOD)
-context.use_privatekey_file('yourserver.key')
-context.use_certificate_file('yourserver.crt')
-
 # common libraries
 import sys
+sys.dont_write_bytecode = True
 import os
 import shutil
 import random
@@ -45,7 +40,7 @@ from shared import ELEMENTS
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
-app.run(host='127.0.0.1',port='5000', debug = False, ssl_context=context)
+app.run(host='127.0.0.1',port='5000', debug = False, ssl_context=('cert/domain.crt','cert/domain.key'))
 
 # patches output and expected CustomError through; login security
 def patch_through(func):

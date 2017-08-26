@@ -9,8 +9,8 @@ from functools import wraps
 # flask over https
 from OpenSSL import SSL
 context = SSL.Context(SSL.SSLv23_METHOD)
-context.use_privatekey_file('~/.ssh/id_rsa')
-context.use_certificate_file('~/.ssh/id_rsa.pub')
+context.use_privatekey_file('cert/domain.key')
+context.use_certificate_file('cert/domain.crt')
 
 # common libraries
 import sys
@@ -25,6 +25,7 @@ import IPython
 
 from cStringIO import StringIO
 from fuzzywuzzy import process
+
 
 # qchem package
 import qchem
