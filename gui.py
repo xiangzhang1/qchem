@@ -201,9 +201,9 @@ def combine_json(new_json, old_json=None):
 @login_required
 def get_docs_list():
     j = {'filenames':[]}
-    for fname in os.listdir(os.path.dirname(os.path.realpath(__file__))+'/docs'):
+    for fname in os.listdir(shared.SCRIPT_DIR+'/docs'):
         j['filenames'].append('docs/'+fname)
-    for fname in os.listdir(os.path.dirname(os.path.realpath(__file__))+'/conf'):
+    for fname in os.listdir(shared.SCRIPT_DIR+'/conf'):
         j['filenames'].append('conf/'+fname)
     return jsonify(j)
 
@@ -212,7 +212,7 @@ def get_docs_list():
 @login_required
 def open_docs():
     fname = request.get_json(force=True)['fname']
-    filename = os.path.dirname(os.path.realpath(__file__))+'/'+fname
+    filename = shared.SCRIPT_DIR+'/'+fname
     with open(filename,'r') as f:
         return jsonify({'text':f.read()})
 
@@ -255,7 +255,7 @@ def dump_nodes():
 @login_required
 def dump_sigma():
     old_json = request.get_json(force=True)
-    with open(os.path.dirname(os.path.realpath(__file__))+'/data/sigma.dump.'+time.strftime('%Y%m%d%H%M%S'),'wb') as dumpfile:
+    with open(shared.SCRIPT_DIR+'/data/sigma.dump.'+time.strftime('%Y%m%d%H%M%S'),'wb') as dumpfile:
         pickle.dump(old_json, dumpfile, protocol=pickle.HIGHEST_PROTOCOL)
 
 
