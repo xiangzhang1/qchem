@@ -1027,6 +1027,7 @@ class Bands(object):
     # fit the band for verifying smoothness, and interpolating bandgap
     @shared.MWT(timeout=2592000)
     def bands_interp(self):
+        print 'bands interp calculated once'
         return [ [ Rbf(self.kpts[:,0], self.kpts[:,1], self.kpts[:,2], self.bands[idx_spin, idx_band])
                            for idx_band in range(self.grepen.nbands) ] for idx_spin in range(self.nspins_bands) ]
 
@@ -1060,9 +1061,7 @@ class Bands(object):
 
         # delta_k
         min_kpt_dist = np.amin( spatial.distance.pdist(self.kpts, metric='Euclidean'), axis=None )   # spatial.distance.pdist() produces a list of distances. amin() produces minimum for flattened input
-        print 'parsing nearest neighbor list...'
         kpts_nn = spatial.cKDTree( self.kpts )                                                        # returns a KDTree object, which has interface for querying nearest neighbors of any kpt
-        print 'done'
         kpts_nn_list = kpts_nn.query_pairs(r=min_kpt_dist*1.5, output_type='ndarray')           # gets all nearest-neighbor idx_kpt pairs
         self.log += u"kpoint mesh precision \u0394k = %.5f 2\u03C0/a.\n" %(min_kpt_dist)
         self.log += '-' * 70 + '\n'
@@ -1122,7 +1121,7 @@ class Bands(object):
                 bands_interp_spin_flat = np.float32(
                                          [
                                            [ kpt[0], kpt[1], kpt[2], self.bands_interp()[idx_spin][idx_band](*kpt) ]
-                                           for kpt in tqdm(self.kpts, leave=False)
+                                           for kpt in tqdm(self.kpts_salted, leave=False, desc='interpolating bands')
                                            for idx_band in range(grepen.nbands)
                                            if any(self.bandgaps[idx_spin][0] - ZERO < e < self.bandgaps[idx_spin][1] + ZERO for e in self.bands[idx_spin, idx_band])
                                          ]
@@ -1130,7 +1129,7 @@ class Bands(object):
                 # self.bandgap_interp
                 kx_vbm, ky_vbm, kz_vbm, vbm = np.amax([kpte for kpte in bands_interp_spin_flat if kpt[3] <= self.bandgaps[idx_spin][0] + ZERO])
                 kx_cbm, ky_cbm, kz_cbm, cbm = np.amin([kpte for kpte in bands_interp_spin_flat if kpt[3] >= self.bandgaps[idx_spin][1] - ZERO])
-                self.bandgaps[idx_spin] = [vbm, cbm] if cbm > vbm else []
+                self.bandgaps_interp[idx_spin] = [vbm, cbm] if cbm > vbm else []
                 self.log += "spin %s, interpolated: VBM %s at %s , CBM %s at %s, bandgap %s eV\n" \
                       % (idx_spin, vbm, [kx_vbm, ky_vbm, kz_vbm], cbm, [kx_cbm, ky_cbm, kz_cbm], cbm-vbm) \
                       if cbm > vbm else "spin %s, interpolated: no bandgap\n" % (idx_spin)
@@ -1297,7 +1296,7 @@ class Electron(object):
                 raise shared.CustomError(self.__class__.__name__ + ' compute: self.path {%s} taken' %self.path)
             print 'copying previous folder... ',
             shutil.copytree(self.prev.path, self.path)
-            print 'done'     # return to line start, but do not go to next line
+            print '\r',     # return to line start, but do not go to next line
             os.chdir(self.path)
 
             if self.gen.parse_if('cell'):
