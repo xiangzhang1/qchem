@@ -105,6 +105,6 @@ Instead, we minimize Rbf, with the constraint that such a 'signed distance' is p
   3. Add by min_kpt_dist
 -->
 _delaunay_ _convex_hull_
-_kptes_[] = [kpt e]
+_kptes_[] = [kx ky kz e]
 
 __bandgaps_interp__
