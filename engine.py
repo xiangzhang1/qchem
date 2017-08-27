@@ -1026,10 +1026,10 @@ class Dos(object):
 # finds all sources of errors in bandstructure.
 class Bands(object):
 
-    # fit the band for verifying smoothness, and interpolating bandgap
     @shared.MWT(timeout=2592000)
     def bands_interp(self):
-        return [ [ shared.rbf_wrap(Rbf(self.kpts[:,0], self.kpts[:,1], self.kpts[:,2], self.bands[idx_spin, idx_band]))
+        '''fit the band for verifying smoothness, and interpolating bandgap'''
+        return [ [ Rbf(self.kpts[:,0], self.kpts[:,1], self.kpts[:,2], self.bands[idx_spin, idx_band])
                            for idx_band in range(self.grepen.nbands) ] for idx_spin in range(self.nspins_bands) ]
 
     @shared.debug_wrap
@@ -1110,11 +1110,9 @@ class Bands(object):
             convex_hull = scipy.spatial.ConvexHull(self.kpts)
             facets = convex_hull.equations  # [[A,B,C,D], ...]
             delaunay = scipy.spatial.Delaunay(self.kpts)
-            def abcroot(facets_):
-                return np.linalg.norm(facets_[:3])
             def constraint(kpt, facets=facets, delaunay=delaunay):
                 sign = 1 if delaunay.find_simplex(kpt) >= 0 else -1
-                min_dist = abs(np.amin( np.divide( np.dot(facets, np.append(kpt,1)), np.apply_along_axis(abcroot, 1, facets) ) )) * sign
+                min_dist = abs(np.amin( np.divide( np.dot(facets, np.append(kpt,1)), np.apply_along_axis(lambda x: np.linalg.norm(x[:3]), 1, facets) ) )) * sign
                 return min_dist + min_kpt_dist
             # optimize for each spin and each band
             for idx_spin in range(self.nspins_bands):
@@ -1131,7 +1129,7 @@ class Bands(object):
                     if any(self.bandgaps[idx_spin][0] - ZERO < e < self.bandgaps[idx_spin][1] + ZERO for e in self.bands[idx_spin, idx_band]):
                         for sign in [-1, 1]:
                             result = scipy.optimize.minimize(
-                                                      self.bands_interp()[idx_spin][idx_band],
+                                                      lambda x,self=self,idx_spin=idx_spin,idx_band=idx_band,sign=sign: self.bands_interp()[idx_spin][idx_band] * sign,
                                                       x0 = [0.5, 0.5, 0.5],
                                                       method = 'SLSQP',
                                                       constraints = {'type': 'ineq', 'fun': constraint},
@@ -1155,7 +1153,7 @@ class Bands(object):
         else:
             self.log += 'kpoints is not mesh, bandgap_interp skipped. \n'
 
-    # plot band: slightly broken
+    #: plot band: slightly broken
     def plot(self,i):
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
@@ -1173,6 +1171,7 @@ class Bands(object):
         #
         plt.show()
         return
+    #;
 
 # executes population analysis
 class Charge(object):
