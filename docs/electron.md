@@ -94,7 +94,8 @@ __nspin_bands__ spin=para: 1, spin=fm|afm: 2, spin=ncl: 1
 __bands_interp__[_idx_spin_][_idx_band_](kx,ky,kz) = E
 __bandgaps__[_idx_spin_] = [vbm, cbm] or []     <!-- small. not a numpy array -->
 
-_delta_e_ idx_spin=0 ZERO==bandgap/2 idx_band===0 kpt_nn_list_====[0,1]
+_delta_e_[idx_spin=0][ZERO==bandgap/2][idx_band===0][kpt_nn_list_====[0,1]] = E <!--doesnt actually exist -->
+_delta_e_flat_[]
 
 _kpts_salted_   kpt with 100 wiggles, to calculate bandgaps_interp
 _bands_interp_spin_flat_[] = [ kx ky kz e ]
