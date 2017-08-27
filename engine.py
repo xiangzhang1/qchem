@@ -1111,7 +1111,7 @@ class Bands(object):
             def abcroot(facets_):
                 return np.linalg.norm(facets_[:3])
             def constraint(kpt, facets=facets, delaunay=delaunay):
-                sign = delaunay.find_simplex(kpt) >= 0 ? 1 : -1
+                sign = 1 if delaunay.find_simplex(kpt) >= 0 else -1
                 min_dist = np.amin( np.divide( np.dot(facets, np.append(kpt,1)), np.apply_along_axis(abcroot, 1, facets) ) ) * sign
                 return min_dist + min_kpt_dist
             # optimize for each spin and each band
@@ -1125,9 +1125,11 @@ class Bands(object):
                 #;
                 kptes = []
                 ZERO = abs(np.subtract(*self.bandgaps[idx_spin])) / 2.5
-                for idx_band in range(grepen.nbands):   # speedup, and max/min
+                for idx_band in range(grepen.nbands):
+                     #: speedup, and max/min
                     if any(self.bandgaps[idx_spin][0] - ZERO < e < self.bandgaps[idx_spin][1] + ZERO for e in self.bands[idx_spin, idx_band]):
                         for sign in (-1,1):
+                            #;
                             result = scipy.optimize.fmin_slsqp(self.bands_interp()[idx_spin][idx_band] * sign,
                                                       x0 = self.kpts[ np.where(self.bands[idx_spin]==self.bandgaps[idx_spin][0])[0][0] ],
                                                       f_ieqcons = constraint,
