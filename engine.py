@@ -1089,10 +1089,10 @@ class Bands(object):
             # specify neargap criterion ZERO
             self.log += u'spin %s, nearest neighbor \u03B4E:\n' % (idx_spin)
             bandgap = abs(np.subtract(*self.bandgaps[idx_spin]))
-            for ZERO in tqdm([bandgap, bandgap/2, bandgap/4], leave=False, desc='calculating delta_e in neargap bands'):
+            for ZERO in tqdm([bandgap, bandgap/2, bandgap/4], position=0):
                 delta_e_flat = []
                 # for each NN pair, compute |delta_e| if energy is within bound
-                for idx_band in range(grepen.nbands):
+                for idx_band in trange(grepen.nbands, leave=False, desc='calculating delta_e in neargap bands', position=1):
                     for kpts_nn_list_ in kpts_nn_list:  # kpts_nn_list_ = [ idx1_kpt idx2_kpt ]
                         if all(self.bandgaps[idx_spin][0]-ZERO < self.bands[idx_spin][idx_band][idx_kpt] < self.bandgaps[idx_spin][1]+ZERO for idx_kpt in kpts_nn_list_):    # is near gap
                             delta_e_flat.append( abs(self.bands[idx_spin][idx_band][kpts_nn_list_[0]] - self.bands[idx_spin][idx_band][kpts_nn_list_[1]]) )
@@ -1111,7 +1111,7 @@ class Bands(object):
             def abcroot(facets_):
                 return np.linalg.norm(facets_[:3])
             def constraint(kpt, facets=facets, delaunay=delaunay):
-                sign = 1 if p >= 0 else -1
+                sign = 1 if delaunay.find_simplex(kpt) >= 0 else -1
                 min_dist = abs(np.amin( np.divide( np.dot(facets, np.append(kpt,1)), np.apply_along_axis(abcroot, 1, facets) ) )) * sign
                 return min_dist + min_kpt_dist
             # optimize for each spin and each band
