@@ -22,7 +22,7 @@ import traceback, sys, code
 # DEBUG option, SCRIPT_DIR, HOME_DIR
 # NODES, Fragile lists
 # ELEMENTS
-# CustomError
+# CustomError, DeferError
 # MySFTPClient
 # @MWT
 # @moonphase_wrap
@@ -268,6 +268,8 @@ ELEMENTS.import_()
 class CustomError(Exception):
     pass
 
+class DeferError(Exception):
+    pass
 
 # ===========================================================================
 

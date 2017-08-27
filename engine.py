@@ -43,11 +43,11 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
     # ---------
     def getkw(self, kwname):
         if kwname not in self.kw:
-            return None
+            raise shared.DeferError(self.__class__.__name__ + '. getkw: keyword {%s} not found, DeferError raised' %kwname)
         if len(self.kw[kwname]) != 1:
-            raise shared.CustomError(self.__class__.__name__ + ' getkw error:  self.kw[kwname] does not have 1 unique value.  wait till that happens and try again.')
+            raise shared.DeferError(self.__class__.__name__ + '.getkw: self.kw[kwname] does not have 1 unique value, DeferError raised')
         if not isinstance(next(iter(self.kw[kwname])), basestring):
-            raise shared.CustomError(self.__class__.__name__ + ' getkw error:  value {%s} of kw {%s} is not string' % (next(iter(self.kw[kwname])), kwname))
+            raise shared.CustomError(self.__class__.__name__ + '.getkw: value {%s} of kw {%s} is not string' % (next(iter(self.kw[kwname])), kwname))
         return next(iter(self.kw[kwname]))
 
     def evaluate(self, expression):
@@ -161,8 +161,8 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         with open('KPOINTS','w') as outfile:
             outfile.write('KPOINTS\n')
             outfile.write('0\n')
-            outfile.write(self.getkw('kpoints').split()[3] + '\n')
-            outfile.write( ' '.join(self.getkw('kpoints').split()[0:3]) + '\n' )
+            outfile.write(self.getkw('kpoints').split()[0] + '\n')
+            outfile.write( ' '.join(self.getkw('kpoints').split()[1:]) + '\n' )
             outfile.write('0 0 0')
 
     def pot(self, symbol):
@@ -179,10 +179,6 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             if self.parse_if(name):
                 result += name + ', '
         for name in self.kw:
-            #:None check
-            if not self.getkw(name):
-                print self.__class__.__name__ + '.__str__: name is {%s} and value is {%s} and name in self.kw is {%s}' %(name, self.getkw(name), name in self.kw)
-            #;
             result += name + '=' + self.getkw(name) + ', '
         return result
 
@@ -220,17 +216,20 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
                             self.moonphase=2 ; self.parse_require(part,True) ; self.moonphase=1
                         else:
                             self.require.append([line[0],part,line[2],line[3]])
-                    except shared.CustomError:
+                    except shared.DeferError:
                             self.require.append([line[0],part,line[2],line[3]])
         ## round 2+: got a 'no' in first round
         continue_flag = True
         while continue_flag:
             continue_flag = False
             for line in self.require:
-                if self.parse_if(line[0]) and self.parse_require(line[1],False):
+                try:
+                    if self.parse_if(line[0]) and self.parse_require(line[1],False):
                         self.moonphase=2 ; self.parse_require(line[1],True) ; self.moonphase=1
                         continue_flag = True
                         self.require.remove(line)
+                except shared.DeferError:
+                    pass
         ## round last: the 'no' is final
         for line in self.require:
             if self.parse_if(line[0]):
@@ -344,32 +343,31 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
 
 
     def ismear5check(self):
-        if 'kpoints' not in self.kw:
-            raise shared.CustomError(self.__class__.__name__ + '.ismear5check: kpoints is undefined. Refer to execution order rules.')
+        '''kpoints is fit for ismear=5'''
         kpoints = self.getkw('kpoints').split(' ')
-        return np.prod([int(x) for x in kpoints[:-2] ]) > 2
+        # NEED band support
+        if kpoints[0] not in 'GM':
+            raise shared.CustomError(self.__class__.__name__ + '.ismear5check: First member of kpoints, {%s}, is not supported (need band support)' %kpoints[0])
+        return np.prod([int(x) for x in kpoints[1:] ]) > 2
 
     def kpointscheck(self):
-        kpoints = self.getkw('kpoints')
-        if not kpoints:
-            return False
-        if len(kpoints.split()) != 4 or not kpoints.split()[3].startswith(('G', 'g', 'M', 'm')):
-            raise shared.CustomError(self.__class__.__name__ + ' error: bad kpoints format. kpoints should be "kx ky kz monkhorst|G"')
-            return False
-        if  not kpoints.split()[3].startswith(('G', 'g')):
-            print self.__class__.__name__ + ' kpointscheck warning: In general, for low-symmetry cells it is sometimes difficult to symmetrize the k-mesh if it is not centered on Gamma. For hexagonal cell, it becomes indeed impossible.'
+        '''kpoints format is sane'''
+        kpoints = self.getkw('kpoints').split()
+        # NEED band support
+        if kpoints[0] in 'GM' and len(kpoints)==4:
+            return True
+        else:
+            raise shared.CustomError(self.__class__.__name__ + '.kpointscheck: Kpoints format wrong. ')
+        if kpoints[0] != 'G':
+            print self.__class__.__name__ + '.kpointscheck warning: In general, for low-symmetry cells it is sometimes difficult to symmetrize the k-mesh if it is not centered on Gamma. For hexagonal cell, it becomes indeed impossible.'
         return True
 
     def nkred_divide(self):
-        try:
-            kpoints = [int(x) for x in self.getkw('kpoints').split(' ')]
-            nkredx = int(self.getkw('nkredx'))
-            nkredy = int(self.getkw('nkredy'))
-            nkredz = int(self.getkw('nkredz'))
-            return kpoints[0] % nkredx == 0 and kpoints[1] % nkredy == 0 and kpoints[2] % nkredz == 0
-        except (KeyError, AttributeError, ValueError) as KwError:
-            raise shared.CustomError(self.__class__.__name__ + ' error: kx should be divisible by nkredx, etc.')
-            return False
+        kpoints = self.getkw('kpoints').split(' ')
+        return kpoints[0] in 'GM'\
+               and int(kpoints[1]) % int(self.getkw('nkredx')) == 0 \
+               and int(kpoints[2]) % int(self.getkw('nkredy')) == 0 \
+               and int(kpoints[3]) % int(self.getkw('nkredz')) == 0
 
     def magmom(self):
         magmom = ''
@@ -934,9 +932,7 @@ class Grepen(object):
 
         with open('KPOINTS','r') as kpoints_file:
             kpoints = prev_gen.getkw('kpoints').split()
-            self.is_kpoints_mesh = ( kpoints[0] in ['G','g','M','m'] and np.prod(kpoints[1:])>4 and len(kpoints_file.readlines())<7 )
-            print kpoints
-            IPython.embed()
+            self.is_kpoints_mesh = ( kpoints[0] in 'GM' and np.prod(np.float32(kpoints[1:]))>4 and len(kpoints_file.readlines())<7 )
 
         with open("EIGENVAL","r") as eigenval_file:
             eigenval = [ x.split() for x in eigenval_file.readlines() ]
@@ -1305,9 +1301,9 @@ class Electron(object):
         if not getattr(self, 'log', None):
             if os.path.isdir(self.path):
                 raise shared.CustomError(self.__class__.__name__ + ' compute: self.path {%s} taken' %self.path)
-            print 'copying previous folder...'
+            print 'copying previous folder...',
             shutil.copytree(self.prev.path, self.path)
-            print 'copying complete\n'
+            print 'copying complete\n',
             os.chdir(self.path)
 
             if self.gen.parse_if('cell'):
