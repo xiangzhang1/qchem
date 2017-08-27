@@ -1089,10 +1089,10 @@ class Bands(object):
             # specify neargap criterion ZERO
             self.log += u'spin %s, nearest neighbor \u03B4E:\n' % (idx_spin)
             bandgap = abs(np.subtract(*self.bandgaps[idx_spin]))
-            for ZERO in tqdm([bandgap, bandgap/2, bandgap/4], position=0, desc='calculating delta_e in neargap bands', ):
+            for ZERO in [bandgap, bandgap/2, bandgap/4]:
                 delta_e_flat = []
                 # for each NN pair, compute |delta_e| if energy is within bound
-                for idx_band in trange(grepen.nbands, leave=False, position=1):
+                for idx_band in trange(grepen.nbands, leave=False, desc='calculating delta_e in neargap bands', )):
                     for kpts_nn_list_ in kpts_nn_list:  # kpts_nn_list_ = [ idx1_kpt idx2_kpt ]
                         if all(self.bandgaps[idx_spin][0]-ZERO < self.bands[idx_spin][idx_band][idx_kpt] < self.bandgaps[idx_spin][1]+ZERO for idx_kpt in kpts_nn_list_):    # is near gap
                             delta_e_flat.append( abs(self.bands[idx_spin][idx_band][kpts_nn_list_[0]] - self.bands[idx_spin][idx_band][kpts_nn_list_[1]]) )
@@ -1136,7 +1136,7 @@ class Bands(object):
                                                       f_ieqcons = constraint,
                                                       acc = 1e-3,
                                                       full_output = True)
-                            kptes.append([out, fxco])
+                            kptes.append([out, fx])
                 kpt_at_vbm, vbm = np.amax([kpte for kpte in kptes if self.bandgaps[idx_spin][0]-ZERO<kpte[1]<self.bandgaps[idx_spin][0]+ZERO], axis=1)
                 kpt_at_cbm, cbm = np.amin([kpte for kpte in kptes if self.bandgaps[idx_spin][1]-ZERO<kpte[1]<self.bandgaps[idx_spin][1]+ZERO], axis=1)
                 # self.bandgap_interp
