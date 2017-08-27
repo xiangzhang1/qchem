@@ -1047,7 +1047,7 @@ class Bands(object):
         #:pop header lines
         del eigenval[:6]
         #;
-        for idx_kpt in range(grepen.nkpts):
+        for idx_kpt in tqdm(range(grepen.nkpts)):
             #
             #:pop [empty line]
             eigenval.pop(0)
@@ -1061,7 +1061,7 @@ class Bands(object):
                     self.bands[idx_spin, idx_band, idx_kpt] = eigenval_.pop(0)
 
         # delta_k
-        min_kpt_dist = np.amin( spatial.distance.pdist(kpts, metric='Euclidean'), axis=None )   # spatial.distance.pdist() produces a list of distances. amin() produces minimum for flattened input
+        min_kpt_dist = np.amin( spatial.distance.pdist(self.kpts, metric='Euclidean'), axis=None )   # spatial.distance.pdist() produces a list of distances. amin() produces minimum for flattened input
         kpts_nn = spatial.cKDTree( kpts )                                                        # returns a KDTree object, which has interface for querying nearest neighbors of any kpt
         kpts_nn_list = kpts_nn.query_pairs(r=min_kpt_dist*1.5, output_type='ndarray')           # gets all nearest-neighbor idx_kpt pairs
         self.log += u"kpoint mesh precision \u0394k = %.5f." %(min_kpt_dist)
