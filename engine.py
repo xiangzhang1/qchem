@@ -27,7 +27,7 @@ import time
 
 # import progressbar
 # from progressbar import Bar, Counter, ETA,FormatLabel, Percentage,ProgressBar
-from tqdm import tqdm
+from tqdm import tqdm, trange
 
 from scipy.interpolate import Rbf
 from scipy.interpolate import interp1d
@@ -955,7 +955,7 @@ class Dos(object):
     def dos_interp(self):
         energy = 0 ; DOS = 1    # dict-like indexing: a = [3eV, 0.28]; print a[energy]
         return [ interp1d( self.dos[idx_spin, :, energy], self.dos[idx_spin, :, DOS] ) \
-                 for idx_spin in tqdm(range(self.nspins_dos)) ]
+                 for idx_spin in trange(self.nspins_dos, leave=False) ]
 
     @shared.MWT(timeout=2592000)
     def pdos_interp(self):
@@ -963,7 +963,7 @@ class Dos(object):
         return [ [ [ interp1d(self.pdos[idx_spin, idx_atom, idx_orbital, :, energy], self.pdos[idx_spin, idx_atom, idx_orbital, :, PDOS], kind='cubic') \
                      for idx_orbital in range(self.norbitals_pdos) ] \
                         for idx_atom in range(sum(self.cell.stoichiometry.values())) ] \
-                            for idx_spin in tqdm(range(self.nspins_pdos)) ]
+                            for idx_spin in trange(self.nspins_pdos, leave=False) ]
 
     @shared.log_wrap
     def __init__(self, grepen, cell):
@@ -1030,7 +1030,7 @@ class Bands(object):
     @shared.MWT(timeout=2592000)
     def bands_interp(self):
         return [ [ Rbf(self.kpts[:,0], self.kpts[:,1], self.kpts[:,2], self.bands[idx_spin, idx_band])
-                           for idx_band in tqdm(range(self.grepen.nbands)) ] for idx_spin in range(self.nspins_bands) ]
+                           for idx_band in trange(self.grepen.nbands, leave=False) ] for idx_spin in range(self.nspins_bands) ]
 
     @shared.debug_wrap
     @shared.log_wrap
@@ -1047,7 +1047,7 @@ class Bands(object):
         #:pop header lines
         del eigenval[:6]
         #;
-        for idx_kpt in tqdm(range(grepen.nkpts)):
+        for idx_kpt in trange(grepen.nkpts, leave=False):
             #
             #:pop [empty line]
             eigenval.pop(0)
@@ -1062,7 +1062,7 @@ class Bands(object):
 
         # delta_k
         min_kpt_dist = np.amin( spatial.distance.pdist(self.kpts, metric='Euclidean'), axis=None )   # spatial.distance.pdist() produces a list of distances. amin() produces minimum for flattened input
-        kpts_nn = spatial.cKDTree( kpts )                                                        # returns a KDTree object, which has interface for querying nearest neighbors of any kpt
+        kpts_nn = spatial.cKDTree( self.kpts )                                                        # returns a KDTree object, which has interface for querying nearest neighbors of any kpt
         kpts_nn_list = kpts_nn.query_pairs(r=min_kpt_dist*1.5, output_type='ndarray')           # gets all nearest-neighbor idx_kpt pairs
         self.log += u"kpoint mesh precision \u0394k = %.5f." %(min_kpt_dist)
         self.log += '-' * 70 + '\n'
@@ -1123,7 +1123,7 @@ class Bands(object):
                                          [
                                            [kpt[0], kpt[1], kpt[2], self.bandgaps_interp()[idx_spin][idx_band](*kpt) ]
                                            for kpt in self.kpts
-                                           for idx_band in tqdm(range(grepen.nbands))
+                                           for idx_band in trange(grepen.nbands, leave=False)
                                            if any(self.bandgaps[idx_spin][0] - ZERO < e < self.bandgaps[idx_spin][1] + ZERO
                                                   for e in self.bands[idx_spin][idx_band])
                                          ]
@@ -1272,7 +1272,7 @@ class Errors(object):
             #:tqdm banner
             print 'interpolating Bbands for comparison:'
             #;
-            for idx_band, band in tqdm(enumerate(Bbands[idx_spin])):
+            for idx_band, band in tqdm(enumerate(Bbands[idx_spin]), leave=False):
                 if any(Bbands.bandgaps[idx_spin][0] - ZERO < e < Bbands.bandgaps[idx_spin][1] + ZERO for e in self.bands[idx_spin][idx_band]):
                     self.de_interpd.append( np.average( abs( Abands.bands[idx_spin][idx_band] - np.float32( Bbands.bands_interp()[idx_spin][idx_band](*kpt) for kpt in Abands.kpts ) ) ) )
                     self.log += 'in band %d, between dirA and dirB, interpolation plus Cauchy error is %.5f.\n' %(i_band, self.de_interpd[-1])
