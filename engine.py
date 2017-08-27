@@ -1003,8 +1003,8 @@ class Dos(object):
             while abs(self.dos[idx_spin, j, 1]) < ZERO:
                 j += 1
             self.bandgap[idx_spin] = [] if i == j else [self.dos[idx_spin, i, 0], self.dos[idx_spin, j, 0]]
-            self.log += "spin %s: VBM %s, CBM %s, bandgap %s eV" % (idx_spin, self.bandgap[idx_spin][0], self.bandgap[idx_spin][1], self.bandgap[idx_spin][1]-self.bandgap[idx_spin][0]) \
-                  if i != j else "spin %s: no bandgap" % (idx_spin)
+            self.log += "spin %s: VBM %s, CBM %s, bandgap %s eV\n" % (idx_spin, self.bandgap[idx_spin][0], self.bandgap[idx_spin][1], self.bandgap[idx_spin][1]-self.bandgap[idx_spin][0]) \
+                  if i != j else "spin %s: no bandgap\n" % (idx_spin)
 
         # pdos
         self.norbitals_pdos = ( len(doscar_site[0][0]) - 1 ) / self.nspins_pdos
@@ -1050,7 +1050,7 @@ class Bands(object):
             #
             for idx_band in range(grepen.nbands):
                 eigenval_ = eigenval.pop(0) ; eigenval_.pop(0)
-                for idx_spin in range(grepen.nspins):
+                for idx_spin in range(self.nspins_bands):
                     self.bands[idx_spin, idx_band, idx_kpt] = eigenval_.pop(0)
 
         # delta_k
@@ -1069,7 +1069,7 @@ class Bands(object):
             self.bandgaps[idx_spin] = [vbm, cbm] if cbm > vbm + ZERO else []
             self.log += "spin %s: VBM %s at %s, CBM %s at %s, bandgap %s eV\n" \
                   % (idx_spin, vbm, self.kpts[ np.where(self.bands[idx_spin]==vbm)[0] ], cbm, self.kpts[ np.where(self.bands[idx_spin]==cbm)[0] ], cbm-vbm) \
-                  if cbm > vbm + ZERO else "spin %s: no bandgap" % (idx_spin)
+                  if cbm > vbm + ZERO else "spin %s: no bandgap\n" % (idx_spin)
         self.log += '-' * 70 + '\n'
 
         # neargap bands, delta_e
@@ -1078,9 +1078,9 @@ class Bands(object):
         for idx_spin in range(self.nspins_bands):
             ZERO = 0.01
             if not self.bandgaps[idx_spin]: # conductor
-                self.log += u'spin %s: no bandgap, \u3B4E skipped.' % idx_spin ; continue
+                self.log += u'spin %s: no bandgap, \u3B4E skipped.\n' % idx_spin ; continue
             if [idx2_spin for idx2_spin in range(idx_spin) if self.bandgaps[idx2_spin] and np.linalg.norm(np.subtract(self.bangaps[idx_spin], self.bandgaps[idx2_spin])) < ZERO]:    # repetitive
-                self.log += u'spin %s: repetitive, \u3B4E skipped. ' % ( idx_spin ) ; continue
+                self.log += u'spin %s: repetitive, \u3B4E skipped. \n' % ( idx_spin ) ; continue
             # specify neargap criterion ZERO
             self.log += u'spin %s, nearest neighbor \u03B4E = E\u2098-E\u2099:\n' % (idx_spin)
             delta_e_flat = [] ; bandgap = abs(np.subtract(*self.bandgaps[idx_spin]))
@@ -1104,9 +1104,9 @@ class Bands(object):
             for idx_spin in range(self.nspins_bands):
                 ZERO = 0.01
                 if not self.bandgaps[idx_spin]: # conductor
-                    self.log += u'spin %s: no bandgap, bandgaps_interp skipped.' % ( idx_spin ) ; continue
+                    self.log += u'spin %s: no bandgap, bandgaps_interp skipped.\n' % ( idx_spin ) ; continue
                 if [idx2_spin for idx2_spin in range(idx_spin) if self.bandgaps[idx2_spin] and np.linalg.norm(np.subtract(self.bangaps[idx_spin], self.bandgaps[idx2_spin])) < ZERO]:    # repetitive
-                    self.log += u'spin %s: repetitive, bandgaps_interp skipped. ' % ( idx_spin ) ; continue
+                    self.log += u'spin %s: repetitive, bandgaps_interp skipped.\n' % ( idx_spin ) ; continue
                 # bands_interp_spin_flat
                 #:tqdm banner
                 print 'interpolating bandgap'
@@ -1127,7 +1127,7 @@ class Bands(object):
                 self.bandgaps[idx_spin] = [vbm, cbm] if cbm > vbm else []
                 self.log += "spin %s, interpolated: VBM %s at %s , CBM %s at %s, bandgap %s eV\n" \
                       % (idx_spin, vbm, [kx_vbm, ky_vbm, kz_vbm], cbm, [kx_cbm, ky_cbm, kz_cbm], cbm-vbm) \
-                      if cbm > vbm else "spin %s, interpolated: no bandgap" % (idx_spin)
+                      if cbm > vbm else "spin %s, interpolated: no bandgap\n" % (idx_spin)
         self.log += '-' * 70 + '\n'
 
     # plot band: slightly broken
