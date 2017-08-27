@@ -839,7 +839,7 @@ class Vasp(object):
                     else:
                         # download folder
                         if self.gen.parse_if('platform=nanaimo|platform=irmik|platform=hodduk'):
-                            print self.__class__.__name__ + '.moonphase: copying remote folder {%s} back to self.path {%s}' %(self.remote_folder_name, self.path)
+                            print '%s %s.moonphase: copying remote folder {%s} back to self.path {%s} %s' %(shared.bcolors.WARNING, self.__class__.__name__, self.remote_folder_name, self.path, shared.bcolors.ENDC)
                             subprocess.Popen(['rsync', '-a', '-h', '--info=progress2', '%s:%s/' %(self.gen.getkw('platform'),self.remote_folder_name), '%s'%self.path], stdout=sys.stdout, stderr=sys.stderr).wait()
                             #os.system('scp -r /home/xzhang1/Shared/%s/%s/ %s' %(self.gen.getkw('platform'), self.remote_folder_name, self.path))
                             print self.__class__.__name__ + '.moonphase: copy complete.'
@@ -953,7 +953,7 @@ class Dos(object):
     def dos_interp(self):
         energy = 0 ; DOS = 1    # dict-like indexing: a = [3eV, 0.28]; print a[energy]
         return [ interp1d( self.dos[idx_spin, :, energy], self.dos[idx_spin, :, DOS] ) \
-                 for idx_spin in trange(self.nspins_dos, leave=False) ]
+                 for idx_spin in range(self.nspins_dos) ]
 
     @shared.MWT(timeout=2592000)
     def pdos_interp(self):
@@ -961,7 +961,7 @@ class Dos(object):
         return [ [ [ interp1d(self.pdos[idx_spin, idx_atom, idx_orbital, :, energy], self.pdos[idx_spin, idx_atom, idx_orbital, :, PDOS], kind='cubic') \
                      for idx_orbital in range(self.norbitals_pdos) ] \
                         for idx_atom in range(sum(self.cell.stoichiometry.values())) ] \
-                            for idx_spin in trange(self.nspins_pdos, leave=False) ]
+                            for idx_spin in range(self.nspins_pdos) ]
 
     @shared.log_wrap
     def __init__(self, grepen, cell):
@@ -1028,7 +1028,7 @@ class Bands(object):
     @shared.MWT(timeout=2592000)
     def bands_interp(self):
         return [ [ Rbf(self.kpts[:,0], self.kpts[:,1], self.kpts[:,2], self.bands[idx_spin, idx_band])
-                           for idx_band in trange(self.grepen.nbands, leave=False) ] for idx_spin in range(self.nspins_bands) ]
+                           for idx_band in range(self.grepen.nbands) ] for idx_spin in range(self.nspins_bands) ]
 
     @shared.debug_wrap
     @shared.log_wrap
@@ -1045,7 +1045,7 @@ class Bands(object):
         #:pop header lines
         del eigenval[:6]
         #;
-        for idx_kpt in trange(grepen.nkpts, leave=False):
+        for idx_kpt in trange(grepen.nkpts, leave=False, desc='reading bands: '):
             #
             #:pop [empty line]
             eigenval.pop(0)
@@ -1060,9 +1060,9 @@ class Bands(object):
 
         # delta_k
         min_kpt_dist = np.amin( spatial.distance.pdist(self.kpts, metric='Euclidean'), axis=None )   # spatial.distance.pdist() produces a list of distances. amin() produces minimum for flattened input
-        print 'parsing nearest neighbor list...',
+        print 'parsing nearest neighbor list...'
         kpts_nn = spatial.cKDTree( self.kpts )                                                        # returns a KDTree object, which has interface for querying nearest neighbors of any kpt
-        print '\r',
+        print 'done'
         kpts_nn_list = kpts_nn.query_pairs(r=min_kpt_dist*1.5, output_type='ndarray')           # gets all nearest-neighbor idx_kpt pairs
         self.log += u"kpoint mesh precision \u0394k = %.5f 2\u03C0/a.\n" %(min_kpt_dist)
         self.log += '-' * 70 + '\n'
@@ -1094,7 +1094,7 @@ class Bands(object):
             for ZERO in [bandgap, bandgap/2, bandgap/4]:
                 delta_e_flat = []
                 # for each NN pair, compute |delta_e| if energy is within bound
-                for idx_band in trange(grepen.nbands, leave=False):
+                for idx_band in trange(grepen.nbands, leave=False, desc='calculating delta_e in neargap bands: '):
                     for kpts_nn_list_ in kpts_nn_list:  # kpts_nn_list_ = [ idx1_kpt idx2_kpt ]
                         if all(self.bandgaps[idx_spin][0]-ZERO < self.bands[idx_spin][idx_band][idx_kpt] < self.bandgaps[idx_spin][1]+ZERO for idx_kpt in kpts_nn_list_):    # is near gap
                             delta_e_flat.append( abs(self.bands[idx_spin][idx_band][kpts_nn_list_[0]] - self.bands[idx_spin][idx_band][kpts_nn_list_[1]]) )
@@ -1118,15 +1118,12 @@ class Bands(object):
                 if [idx2_spin for idx2_spin in range(idx_spin) if self.bandgaps[idx2_spin] and np.linalg.norm(np.subtract(self.bangaps[idx_spin], self.bandgaps[idx2_spin])) < ZERO]:    # repetitive
                     self.log += u'spin %s: repetitive, bandgaps_interp skipped.\n' % ( idx_spin ) ; continue
                 # bands_interp_spin_flat
-                #:tqdm banner
-                print 'interpolating bandgap'
-                #;
-                ZERO = abs(np.subtract(self.bandgaps[idx_spin])) / 2.5
+                ZERO = abs(np.subtract(*self.bandgaps[idx_spin])) / 2.5
                 bands_interp_spin_flat = np.float32(
                                          [
                                            [kpt[0], kpt[1], kpt[2], self.bandgaps_interp()[idx_spin][idx_band](*kpt) ]
-                                           for kpt in self.kpts
-                                           for idx_band in trange(grepen.nbands, leave=False)
+                                           for kpt in tqdm(self.kpts, leave=False)
+                                           for idx_band in range(grepen.nbands)
                                            if any(self.bandgaps[idx_spin][0] - ZERO < e < self.bandgaps[idx_spin][1] + ZERO
                                                   for e in self.bands[idx_spin][idx_band])
                                          ]
@@ -1272,10 +1269,7 @@ class Errors(object):
             if not Bbands.bandgaps[0] or not Abands.bandgaps[0]:
                 raise shared.CustomError(self.__class__.__name__ + '.__init__: bandgap not found for spin 0')
             ZERO = (Bbands.bandgaps[idx_spin][1] - Bbands.bandgaps[idx_spin][0]) / 3
-            #:tqdm banner
-            print 'interpolating Bbands for comparison:'
-            #;
-            for idx_band, band in tqdm(enumerate(Bbands[idx_spin]), leave=False):
+            for idx_band, band in tqdm(enumerate(Bbands[idx_spin]), leave=False, desc='interpolating Bbands for comparison:'):
                 if any(Bbands.bandgaps[idx_spin][0] - ZERO < e < Bbands.bandgaps[idx_spin][1] + ZERO for e in self.bands[idx_spin][idx_band]):
                     self.de_interpd.append( np.average( abs( Abands.bands[idx_spin][idx_band] - np.float32( Bbands.bands_interp()[idx_spin][idx_band](*kpt) for kpt in Abands.kpts ) ) ) )
                     self.log += 'in band %d, between dirA and dirB, interpolation plus Cauchy error is %.5f.\n' %(i_band, self.de_interpd[-1])
@@ -1304,7 +1298,7 @@ class Electron(object):
                 raise shared.CustomError(self.__class__.__name__ + ' compute: self.path {%s} taken' %self.path)
             print 'copying previous folder... ',
             shutil.copytree(self.prev.path, self.path)
-            print '\r',     # return to line start, but do not go to next line
+            print 'done'     # return to line start, but do not go to next line
             os.chdir(self.path)
 
             if self.gen.parse_if('cell'):
