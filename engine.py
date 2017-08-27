@@ -1060,9 +1060,9 @@ class Bands(object):
 
         # delta_k
         min_kpt_dist = np.amin( spatial.distance.pdist(self.kpts, metric='Euclidean'), axis=None )   # spatial.distance.pdist() produces a list of distances. amin() produces minimum for flattened input
-        print 'parsing nearest neighbor list...'
+        print 'parsing nearest neighbor list...',
         kpts_nn = spatial.cKDTree( self.kpts )                                                        # returns a KDTree object, which has interface for querying nearest neighbors of any kpt
-        print 'parsing complete\n'
+        print '\r',
         kpts_nn_list = kpts_nn.query_pairs(r=min_kpt_dist*1.5, output_type='ndarray')           # gets all nearest-neighbor idx_kpt pairs
         self.log += u"kpoint mesh precision \u0394k = %.5f 2\u03C0/a.\n" %(min_kpt_dist)
         self.log += '-' * 70 + '\n'
@@ -1099,13 +1099,14 @@ class Bands(object):
                         if all(self.bandgaps[idx_spin][0]-ZERO < self.bands[idx_spin][idx_band][idx_kpt] < self.bandgaps[idx_spin][1]+ZERO for idx_kpt in kpts_nn_list_):    # is near gap
                             delta_e_flat.append( abs(self.bands[idx_spin][idx_band][kpts_nn_list_[0]] - self.bands[idx_spin][idx_band][kpts_nn_list_[1]]) )
                 self.log += u'  CBM/VBM +- %.2f eV: \u03B4E = %.5f eV, # of kpts = %d.\n' %( ZERO, np.mean(delta_e_flat), len(delta_e_flat) )
+                            if delta_e_flat else u'  CBM/VBM +- %.2f eV: # of kpts = 0.\n' %( ZERO )
 
 
 
         # interpolated bandgap
         self.log += 'Usually bandgap is between interpolated and raw bandgap. '
         if not grepen.is_kpoints_mesh:
-            self.log += 'kpoints is not mesh, bandgap_interp skipped'
+            self.log += 'kpoints is not mesh, bandgap_interp skipped. \n'
         else:
             self.bandgaps_interp = [ [] for idx_spin in range(self.nspins_bands) ]
             # kpts_salted
@@ -1301,9 +1302,9 @@ class Electron(object):
         if not getattr(self, 'log', None):
             if os.path.isdir(self.path):
                 raise shared.CustomError(self.__class__.__name__ + ' compute: self.path {%s} taken' %self.path)
-            print 'copying previous folder...',
+            print 'copying previous folder... ',
             shutil.copytree(self.prev.path, self.path)
-            print 'copying complete\n',
+            print '\r',     # return to line start, but do not go to next line
             os.chdir(self.path)
 
             if self.gen.parse_if('cell'):

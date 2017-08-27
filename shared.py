@@ -175,6 +175,7 @@ class ElementsDict(object):
     def __init__(self, *elements):
         self._list = []
         self._dict = {}
+        self.orbitals = 's p_y p_z p_x d_xy d_yz d_z2 d_xz d_x^2-y^2'.split()   # user added
         for element in elements:
             if element.number > len(self._list) + 1:
                 raise ValueError("Elements must be added in order")
@@ -185,8 +186,6 @@ class ElementsDict(object):
             self._dict[element.number] = element
             self._dict[element.symbol] = element
             self._dict[element.name] = element
-
-            self.orbitals = 's p_y p_z p_x d_xy d_yz d_z2 d_xz d_x^2-y^2'.split()
 
     def add(self,*elements):
         for element in elements:
