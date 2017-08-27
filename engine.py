@@ -254,12 +254,12 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
 
     def check_memory(self):
         # make temporary dir
-        path = shared.SCRIPT_DIR + '/check_memory'
-        if os.path.exists(path):
+        tmp_path = shared.SCRIPT_DIR + '/check_memory_tmp'
+        if os.path.exists(tmp_path):
             #raise shared.CustomError('Folder {%s} already exists. Usually do not delete folder to avoid confusion.' %path)
-            os.system('trash '+path)
-        os.mkdir(path)
-        os.chdir(path)
+            os.system('trash '+tmp_path)
+        os.mkdir(tmp_path)
+        os.chdir(tmp_path)
         # alter and write
         wayback = []
         multiplier = 1
@@ -303,8 +303,8 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         else:
             print self.__class__.__name__ + ' check_memory report: Mem required is {' + str(memory_required) + '} GB. Available mem is {' + str(memory_available) + '} GB.'
         # cleanup
-        os.chdir('..')
-        shutil.rmtree('check_memory')
+        os.chdir(shared.SCRIPT_DIR)
+        shutil.rmtree(tmp_path)
 
     # User-defined (funcname)
     # -----------------------
@@ -772,14 +772,15 @@ class Vasp(object):
 
     @shared.moonphase_wrap
     def moonphase(self):
-
         #:debug benchmark msg
         if shared.DEBUG==2:    print 'calling %s(%s).moonphase' %(self.__class__.__name__, getattr(self,'path',''))
         #;
 
         if not getattr(self, 'wrapper', None):
             return 0
+
         elif not getattr(self, 'log', None):
+
             # implements the choke mechanism. instead of reporting computable, report choke. unless detects computation complete, then report success/fail
             if not os.path.exists(self.path):
                 return -1
@@ -810,7 +811,6 @@ class Vasp(object):
                 ssh.connect(self.gen.getkw('platform'), username='xzhang1')
                 ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command("squeue -n %s" %self.remote_folder_name)
                 result = ssh_stdout.read().strip()
-                # ssh.close()
                 vasp_is_running = ( len(result.splitlines()) > 1 )
             else:
                 raise shared.CustomError(self.__class__.__name__ + '.moonphase: i don\'t know what to do')
@@ -819,18 +819,18 @@ class Vasp(object):
             if self.gen.parse_if('platform=dellpc'):
                 os.chdir(self.path)
             elif self.gen.parse_if('platform=nanaimo|platform=irmik'):
-                #:legacy compatible script to reapri self.remote_folder_name. disabled.
-                #if not getattr(self, 'remote_folder_name', None):
-                #    self.remote_folder_name = self.path.split('/')[-2] + '_' + self.path.split('/')[-1] + '_' + hashlib.md5(self.path).hexdigest()[:5] + '_' + str(time.time())
-                #    print self.__class__.__name__ + '.moonphase: repaired self.remote_folder_name'
+                #:check sshfs mounted
+                tmp_path = '%s/Shared/%s' % (shared.HOME_DIR, self.gen.getkw('platform'))
+                if not os.listdir(tmp_path):
+                    raise shared.CustomError(self.__class__.__name__ + '.moonphase: platform %s not mounted using sshfs' %(self.gen.getkw('platform')))
                 #;
-                ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command("[ -d %s ] && echo 'exists' " %self.remote_folder_name)
-                result = ssh_stdout.read().strip()
-                if not result:
+                tmp_path = '%s/Shared/%s/%s' % (shared.HOME_DIR, self.gen.getkw('platform'), self.remote_folder_name)
+                if not os.path.isfile(tmp_path + '/vasprun.xml'):
                     return 1
-                os.chdir(remote_path)
+                else:
+                    os.chdir(tmp_path)
             else:
-                pass
+                raise shared.CustomError(self.__class__.__name__ + '.moonphase: i don\'t know what to do')
 
             # inspect vasprun.xml
             if os.path.isfile('vasprun.xml') and os.path.getmtime('vasprun.xml')>os.path.getmtime('wrapper') and not vasp_is_running :
@@ -911,72 +911,7 @@ class Dummy(object):
 #===========================================================================
 
 # Electron
-class Electron(object):
 
-    def __init__(self, node):
-
-        self.gen = node.gen
-        self.path = node.path
-        self.prev = node.prev
-
-
-    def compute(self):
-
-        if not getattr(self, 'log', None):
-            if os.path.isdir(self.path):
-                raise shared.CustomError(self.__class__.__name__ + ' compute: self.path {%s} taken' %self.path)
-            shutil.copytree(self.prev.path, self.path)
-            os.chdir(self.path)
-
-            if self.gen.parse_if('cell'):
-                with open('POSCAR','r') as infile:
-                    self.cell = Cell(infile.read())
-
-            if self.gen.parse_if('grepen'):
-                self.grepen = Grepen(self.prev.gen)
-
-            if self.gen.parse_if('dos'):
-                self.dos = Dos(self.grepen, self.cell)
-
-            if self.gen.parse_if('bands'):
-                self.bands = Bands(self.grepen)
-
-            if self.gen.parse_if('charge'):
-                self.charge = Charge(self.cell, self.grepen, self.dos)
-
-            if self.gen.parse_if('errors'):
-                if self.gen.getkw('cur'):
-                    nodeB = engine.Map().lookup(self.gen.getkw('cur'))
-                    self.errors = Errors(self.grepen, self.dos, self.bands, nodeB.electron.grepen, nodeB.electron.dos, nodeB.electron.bands)
-                else:
-                    self.errors = Errors(self.grepen, self.dos, self.bands)
-
-            self.log = ''
-            for name in ['cell', 'grepen', 'dos', 'bands','charge', 'errors']:
-                if getattr(self, name, None) and getattr(getattr(self, name),'log', None):
-                    self.log += str( getattr(getattr(self, name), 'log') )
-
-        else:
-            raise shared.CustomError(self.__class__.__name__ + ' compute: moonphase is 2. why are you here?')
-
-
-    @shared.moonphase_wrap
-    def moonphase(self):
-        return 2 if getattr(self, 'log', None) else 0
-
-    def __str__(self):
-        #:return log
-        if getattr(self, 'log', None):
-            return self.log
-        else:
-            return 'moonphase is not 2, nothing here'
-        #;
-
-    def delete(self):
-        #:remove folder
-        if os.path.isdir(self.path):
-            shutil.rmtree(self.path)
-        #;
 
 class Grepen(object):
 
@@ -1009,7 +944,7 @@ class Grepen(object):
             if (self.nkpts != len(eigenval) / (self.nbands+2)):
                 raise shared.CustomError(self.__class__.__name__ + '__init__: EIGENVAL file length not matching nkpts.')
 
-        for name, value in vars(self):
+        for name, value in vars(self).iteritems():
              self.log += '%s: %s\n' % (name, value)
 
 
@@ -1338,3 +1273,74 @@ class Errors(object):
             self.log += 'smearing should be larger than numerical energy error: sigma[%.4f] > DE_INTERPD[%.4f]' %(Agrepen.sigma, np.average(self.de_interpd))
 
         self.log += 'errors.py: you should expect an error around %.4f eV in dirA. \n' %(self.de)
+
+
+
+class Electron(object):
+    '''the big boss'''
+
+    def __init__(self, node):
+
+        self.gen = node.gen
+        self.path = node.path
+        self.prev = node.prev
+
+
+    def compute(self):
+
+        if not getattr(self, 'log', None):
+            if os.path.isdir(self.path):
+                raise shared.CustomError(self.__class__.__name__ + ' compute: self.path {%s} taken' %self.path)
+            shutil.copytree(self.prev.path, self.path)
+            os.chdir(self.path)
+
+            if self.gen.parse_if('cell'):
+                with open('POSCAR','r') as infile:
+                    self.cell = Cell(infile.read())
+
+            if self.gen.parse_if('grepen'):
+                self.grepen = Grepen(self.prev.gen)
+
+            if self.gen.parse_if('dos'):
+                self.dos = Dos(self.grepen, self.cell)
+
+            if self.gen.parse_if('bands'):
+                self.bands = Bands(self.grepen)
+
+            if self.gen.parse_if('charge'):
+                self.charge = Charge(self.cell, self.grepen, self.dos)
+
+            if self.gen.parse_if('errors'):
+                if self.gen.getkw('cur'):
+                    nodeB = engine.Map().lookup(self.gen.getkw('cur'))
+                    self.errors = Errors(self.grepen, self.dos, self.bands, nodeB.electron.grepen, nodeB.electron.dos, nodeB.electron.bands)
+                else:
+                    self.errors = Errors(self.grepen, self.dos, self.bands)
+
+            self.log = ''
+            for name in ['cell', 'grepen', 'dos', 'bands','charge', 'errors']:
+                if getattr(self, name, None) and getattr(getattr(self, name),'log', None):
+                    self.log += str( getattr(getattr(self, name), 'log') )
+
+        else:
+            raise shared.CustomError(self.__class__.__name__ + ' compute: moonphase is 2. why are you here?')
+
+    @shared.moonphase_wrap
+    def moonphase(self):
+        return 2 if getattr(self, 'log', None) else 0
+
+    def __str__(self):
+        #:return log
+        if getattr(self, 'log', None):
+            return self.log
+        else:
+            return 'moonphase is not 2, nothing here'
+        #;
+
+    def delete(self):
+        #:remove folder
+        if os.path.isdir(self.path):
+            shutil.rmtree(self.path)
+        #;
+
+

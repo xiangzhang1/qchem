@@ -18,7 +18,7 @@ import time
 
 # INDEX
 # =====
-# DEBUG option, SCRIPT_DIR
+# DEBUG option, SCRIPT_DIR, HOME_DIR
 # NODES, Fragile lists
 # ELEMENTS
 # CustomError
@@ -32,6 +32,7 @@ import time
 # ===========================================================================
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+HOME_DIR = os.path.expanduser(os.path.expanduser("~"))
 
 DEBUG = 1
 #DEBUG = 0
@@ -367,3 +368,4 @@ def log_wrap(func):
         self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
         print self.log
         return result
+    return wrapped
