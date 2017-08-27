@@ -1134,7 +1134,7 @@ class Bands(object):
                                                       lambda x, self=self, sign=sign: sign * self.bands_interp()[idx_spin][idx_band](*x) ,
                                                       x0 = self.kpts[ np.where(self.bands[idx_spin]==self.bandgaps[idx_spin][0])[0][0] ],
                                                       f_ieqcons = constraint,
-                                                      tol = 1e-3)
+                                                      acc = 1e-3)
                             kptes.append([result.x, result.fun])
                 kpt_at_vbm, vbm = np.amax([kpte for kpte in kptes if self.bandgaps[idx_spin][0]-ZERO<kpte[1]<self.bandgaps[idx_spin][0]+ZERO], axis=1)
                 kpt_at_cbm, cbm = np.amin([kpte for kpte in kptes if self.bandgaps[idx_spin][1]-ZERO<kpte[1]<self.bandgaps[idx_spin][1]+ZERO], axis=1)
