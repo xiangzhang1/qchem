@@ -317,7 +317,7 @@ def request_():  # either merge json, or use shared.NODES['master']     # yep, t
     if request.method == 'POST':
         old_json = request.get_json(force=True)
         if shared.DEBUG==2: print 'before to_json' + '*'*70
-        new_json = to_json(shared.NODES['master'])
+        new_json = to_json(engine.Map().lookup('master'))
         if shared.DEBUG==2: print 'after to_json' + '*'*70
         new_json = combine_json(new_json, old_json)
         return jsonify( new_json )
@@ -328,7 +328,7 @@ def request_():  # either merge json, or use shared.NODES['master']     # yep, t
 @login_required
 def new_node():
     j = request.get_json(force=True)
-    n = shared.NODES['master'].map.lookup(j['cur'])
+    n = engine.Map().lookup(j['cur'])
     n.map.add_node(qchem.Node())
 
 @app.route('/del_node', methods=['POST'])
@@ -344,14 +344,14 @@ def del_node():
 @login_required
 def reset_node():
     j = request.get_json(force=True)
-    shared.NODES['master'].map.lookup(j['cur']).reset()
+    engine.Map().lookup(j['cur']).reset()
 
 @app.route('/copy_ref', methods=['POST'])
 @patch_through
 @login_required
 def copy_ref():
     j = request.get_json(force=True)
-    n = shared.NODES['master'].map.lookup(j['cur'])
+    n = engine.Map().lookup(j['cur'])
     shared.NODES[n.name] = n
 
 @app.route('/duplicate_node', methods=['POST'])
@@ -359,8 +359,8 @@ def copy_ref():
 @login_required
 def duplicate_node():
     j = request.get_json(force=True)
-    parent_n = shared.NODES['master'].map.lookup(j['cur'])
-    n = shared.NODES['master'].map.lookup(j['cur']+'.'+j['name'])
+    parent_n = engine.Map().lookup(j['cur'])
+    n = engine.Map().lookup(j['cur']+'.'+j['name'])
     new_node = qchem.Node('# newnode')
     for attr in vars(n):
         if attr in ['name','path']:
@@ -374,14 +374,14 @@ def duplicate_node():
 @login_required
 def compute_node():
     j = request.get_json(force=True)
-    shared.NODES['master'].map.lookup(j['cur']).compute(proposed_name=j['name'])  #delegate to parent, suggest compute name
+    engine.Map().lookup(j['cur']).compute(proposed_name=j['name'])  #delegate to parent, suggest compute name
 
 @app.route('/get_text', methods=['POST'])
 @return_through
 @login_required
 def get_text():
     j = request.get_json(force=True)
-    n = shared.NODES['master'].map.lookup(j['cur'])
+    n = engine.Map().lookup(j['cur'])
     return jsonify({'text':str(n)})
 
 
@@ -392,7 +392,7 @@ def edit_vars():
     # Node() format input. Less powerful than edit, but more intuitive.
     # Updates mentioend and readable parts only.
     j = request.get_json(force=True)
-    n = shared.NODES['master'].map.lookup(j.pop('cur'))
+    n = engine.Map().lookup(j.pop('cur'))
     for name,value in j.iteritems():
         if name == 'name' and '.' in value:
             raise shared.CustomError('dot . cannot be in name, because it is used in cur. ')
@@ -410,7 +410,7 @@ def edit():
     # Import format input. Not in place.
     # Update mentioned parts only
     j = request.get_json(force=True)
-    node = shared.NODES['master'].map.lookup(j.pop('cur'))
+    node = engine.Map().lookup(j.pop('cur'))
     #  map rule
     if 'map:' in j['text']:
         for x in node.map if getattr(node,'map',None) else []:
@@ -442,7 +442,7 @@ def make_connection():
 @login_required
 def paste_ref():
     j = request.get_json(force=True)
-    n = shared.NODES['master'].map.lookup(j['cur'])
+    n = engine.Map().lookup(j['cur'])
     shared.NODES[j['name']] = n.map.lookup(j['name'])
     n.map.add_node(n.map.lookup(j['name']))
 
@@ -451,7 +451,7 @@ def paste_ref():
 @login_required
 def add_edge():
     j = request.get_json(force=True)
-    n = shared.NODES['master'].map.lookup(j['cur'])
+    n = engine.Map().lookup(j['cur'])
     n.map.add_edge(j['src'],j['dst'])
 
 @app.route('/del_edge', methods=['POST'])
@@ -459,7 +459,7 @@ def add_edge():
 @login_required
 def del_edge():
     j = request.get_json(force=True)
-    n = shared.NODES['master'].map.lookup(j['cur'])
+    n = engine.Map().lookup(j['cur'])
     n.map.del_edge(j['src'],j['dst'])
 
 
