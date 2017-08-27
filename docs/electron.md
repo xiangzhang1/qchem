@@ -95,9 +95,16 @@ __bandgaps__[_idx_spin_] = [vbm, cbm] or []     <!-- small. not a numpy array --
 _delta_e_[idx_spin=0][ZERO==bandgap/2][idx_band===0][kpt_nn_list_====[0,1]] = E <!--doesnt actually exist -->
 _delta_e_flat_[]
 
-<!-- the following does not work. rbf interpolation is fast, but calculating each is slow
-_kpts_salted_   kpt with 100 wiggles, to calculate bandgaps_interp
-_bands_interp_spin_flat_[] = [ kx ky kz e ]   
+<!-- Interpolate and get bandgap.
+Because the region is irregular, the simplest idea is to compute Rbf(*kpt) for each kpt.
+This costs too much time per kpt.
+Instead, we minimize Rbf, with the constraint that such a 'signed distance' is positive:
+  0. Compute Delaunay(points) and ConvexHull(points)
+  1. Compute whether point is in Delaunay
+  2. Compute distance from point to nearest ConvexHull facet, and multiply by 1's sign.
+  3. Add by min_kpt_dist
 -->
-  
+_delaunay_ _convex_hull_
+_kptes_[] = [kpt e]
+
 __bandgaps_interp__

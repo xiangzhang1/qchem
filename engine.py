@@ -1027,7 +1027,7 @@ class Bands(object):
     # fit the band for verifying smoothness, and interpolating bandgap
     @shared.MWT(timeout=2592000)
     def bands_interp(self):
-        return [ [ Rbf(self.kpts[:,0], self.kpts[:,1], self.kpts[:,2], self.bands[idx_spin, idx_band])
+        return [ [ lambda x, self=self: Rbf(self.kpts[:,0], self.kpts[:,1], self.kpts[:,2], self.bands[idx_spin, idx_band])(*x)
                            for idx_band in range(self.grepen.nbands) ] for idx_spin in range(self.nspins_bands) ]
 
     @shared.debug_wrap
@@ -1099,40 +1099,49 @@ class Bands(object):
                 self.log += u'  CBM/VBM +- %.2f eV: \u03B4E = %.5f eV, # of kpts = %d.\n' %( ZERO, np.mean(delta_e_flat), len(delta_e_flat) ) \
                             if delta_e_flat else u'  CBM/VBM +- %.2f eV: # of kpts = 0.\n' %( ZERO )
 
-
-
-        # interpolated bandgap
-        self.log += 'Usually bandgap is between interpolated and raw bandgap. '
-        if not grepen.is_kpoints_mesh:
-            self.log += 'kpoints is not mesh, bandgap_interp skipped. \n'
-        else:
+        #: interpolated bandgap
+        self.log += 'Usually bandgap is between interpolated and raw bandgap. \n'
+        #;
+        if grepen.is_kpoints_mesh:
             self.bandgaps_interp = [ [] for idx_spin in range(self.nspins_bands) ]
-            # kpts_salted
-            kpts_salted = [ kpt + salt for kpt in self.kpts for salt in np.random.uniform(-min_kpt_dist, min_kpt_dist, (100,3)) ]
+            # define constraint (see docs)
+            convex_hull = scipy.spatial.ConvexHull(self.kpts)
+            facets = convex_hull.equations  # [[A,B,C,D], ...]
+            delaunay = scipy.spatial.Delaunay(self.kpts)
+            def abcroot(facets_):
+                return np.linalg.norm(facets_[:3])
+            def constraint(kpt, facets=facets, delaunay=delaunay):
+                sign = delaunay.find_simplex(kpt) >= 0 ? 1 : -1
+                min_dist = np.amin( np.divide( np.dot(facets, np.append(kpt,1)), np.apply_along_axis(abcroot, 1, facets) ) ) * sign
+                return min_dist + min_kpt_dist
+            # optimize for each spin and each band
             for idx_spin in range(self.nspins_bands):
+                #:relevant parameters exist
                 ZERO = 0.01
                 if not self.bandgaps[idx_spin]: # conductor
                     self.log += u'spin %s: no bandgap, bandgaps_interp skipped.\n' % ( idx_spin ) ; continue
                 if [idx2_spin for idx2_spin in range(idx_spin) if self.bandgaps[idx2_spin] and np.linalg.norm(np.subtract(self.bangaps[idx_spin], self.bandgaps[idx2_spin])) < ZERO]:    # repetitive
                     self.log += u'spin %s: repetitive, bandgaps_interp skipped.\n' % ( idx_spin ) ; continue
-                # bands_interp_spin_flat
+                #;
+                kptes = []
                 ZERO = abs(np.subtract(*self.bandgaps[idx_spin])) / 2.5
-                bands_interp_spin_flat = np.float32(
-                                         [
-                                           [ kpt[0], kpt[1], kpt[2], self.bands_interp()[idx_spin][idx_band](*kpt) ]
-                                           for kpt in tqdm(kpts_salted, leave=False, desc='interpolating bands')
-                                           for idx_band in range(grepen.nbands)
-                                           if any(self.bandgaps[idx_spin][0] - ZERO < e < self.bandgaps[idx_spin][1] + ZERO for e in self.bands[idx_spin, idx_band])
-                                         ]
-                                         )
+                for idx_band in range(grepen.nbands):   # speedup, and max/min
+                    if any(self.bandgaps[idx_spin][0] - ZERO < e < self.bandgaps[idx_spin][1] + ZERO for e in self.bands[idx_spin, idx_band]):
+                        for sign in (-1,1):
+                            result = scipy.optimize.fmin_slsqp(self.bands_interp()[idx_spin][idx_band] * sign,
+                                                      x0 = self.kpts[ np.where(self.bands[idx_spin]==self.bandgaps[idx_spin][0])[0][0] ],
+                                                      f_ieqcons = constraint,
+                                                      tol = 1e-3)
+                            kptes.append([result.x, result.fun])
+                kpt_at_vbm, vbm = np.amax([kpte for kpte in kptes if self.bandgaps[idx_spin][0]-ZERO<kpte[1]<self.bandgaps[idx_spin][0]+ZERO], axis=1)
+                kpt_at_cbm, cbm = np.amin([kpte for kpte in kptes if self.bandgaps[idx_spin][1]-ZERO<kpte[1]<self.bandgaps[idx_spin][1]+ZERO], axis=1)
                 # self.bandgap_interp
-                kx_vbm, ky_vbm, kz_vbm, vbm = np.amax([kpte for kpte in bands_interp_spin_flat if kpte[3] <= self.bandgaps[idx_spin][0] + ZERO])
-                kx_cbm, ky_cbm, kz_cbm, cbm = np.amin([kpte for kpte in bands_interp_spin_flat if kpte[3] >= self.bandgaps[idx_spin][1] - ZERO])
-                self.bandgaps_interp[idx_spin] = [vbm, cbm] if cbm > vbm else []
                 self.log += "spin %s, interpolated: VBM %s at %s , CBM %s at %s, bandgap %s eV\n" \
-                      % (idx_spin, vbm, [kx_vbm, ky_vbm, kz_vbm], cbm, [kx_cbm, ky_cbm, kz_cbm], cbm-vbm) \
+                      % (idx_spin, vbm, kpt_at_vbm, cbm, kpt_at_cbm, cbm-vbm) \
                       if cbm > vbm else "spin %s, interpolated: no bandgap\n" % (idx_spin)
-        self.log += '-' * 70 + '\n'
+            self.log += '-' * 70 + '\n'
+        else:
+            self.log += 'kpoints is not mesh, bandgap_interp skipped. \n'
 
     # plot band: slightly broken
     def plot(self,i):
