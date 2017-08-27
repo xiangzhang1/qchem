@@ -1117,13 +1117,10 @@ class Bands(object):
                     self.log += u'spin %s: repetitive, bandgaps_interp skipped.\n' % ( idx_spin ) ; continue
                 # bands_interp_spin_flat
                 ZERO = abs(np.subtract(*self.bandgaps[idx_spin])) / 2.5
-                print 'starting interpolation'
-                f = self.bands_interp()[idx_spin][idx_band]
-                print 'interpolation ended'
                 bands_interp_spin_flat = np.float32(
                                          [
-                                           [ kpt[0], kpt[1], kpt[2], f(*kpt) ]
-                                           for kpt in tqdm(kpts_salted, leave=False, desc='using interpolated bands')
+                                           [ kpt[0], kpt[1], kpt[2], self.bands_interp()[idx_spin][idx_band](*kpt) ]
+                                           for kpt in tqdm(kpts_salted, leave=False, desc='interpolating bands')
                                            for idx_band in range(grepen.nbands)
                                            if any(self.bandgaps[idx_spin][0] - ZERO < e < self.bandgaps[idx_spin][1] + ZERO for e in self.bands[idx_spin, idx_band])
                                          ]
