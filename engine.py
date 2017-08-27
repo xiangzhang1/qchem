@@ -1132,10 +1132,10 @@ class Bands(object):
                         for sign in [-1, 1]:
                             result = scipy.optimize.minimize(
                                                       self.bands_interp()[idx_spin][idx_band],
-                                                      x0 = self.kpts[ np.where(self.bands[idx_spin]==self.bandgaps[idx_spin][0])[0][0] ],
+                                                      x0 = [0.5, 0.5, 0.5],
                                                       method = 'SLSQP',
                                                       constraints = {'type': 'ineq', 'fun': constraint},
-                                                      tol = 1e-3)
+                                                      tol = 1e-9)
                             kptes.append([result.x[0], result.x[1], result.x[2], result.fun * sign])
                         print 'this band used to have max %s at %s, min %s at %s' % ( np.amax(self.bands[idx_spin, idx_band]), self.kpts[np.argmax(self.bands[idx_spin, idx_band])], np.amin(self.bands[idx_spin, idx_band]), self.kpts[np.argmin(self.bands[idx_spin, idx_band])] )
                         print 'fitted max %s, min %s' % ( kptes[-2], kptes[-1] )
