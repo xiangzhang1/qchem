@@ -22,9 +22,7 @@ Convention
 
 Use the `custom-fold` package for cross-platform editing.
 
-Alternatively, use Atom built-in folding and the fragile `remember-folds` package.
-
-Alternatively,
+At the same time, use Atom built-in folding and the fragile `remember-folds` package, for less important tweaks.
 
 Use Atom developer mode to tweak:
 - ignore a[1][2] in markdown

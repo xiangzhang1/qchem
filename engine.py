@@ -934,7 +934,9 @@ class Grepen(object):
 
         with open('KPOINTS','r') as kpoints_file:
             kpoints = prev_gen.getkw('kpoints').split()
-            self.is_kpoints_mesh = ( kpoints[0] in ['G','g','M','m'] and np.prod(kpoints[1:])>4 and len(kpoints_file.readlines()) < 7 )
+            self.is_kpoints_mesh = ( kpoints[0] in ['G','g','M','m'] and np.prod(kpoints[1:])>4 and len(kpoints_file.readlines())<7 )
+            print kpoints
+            IPython.embed()
 
         with open("EIGENVAL","r") as eigenval_file:
             eigenval = [ x.split() for x in eigenval_file.readlines() ]
@@ -1062,21 +1064,23 @@ class Bands(object):
 
         # delta_k
         min_kpt_dist = np.amin( spatial.distance.pdist(self.kpts, metric='Euclidean'), axis=None )   # spatial.distance.pdist() produces a list of distances. amin() produces minimum for flattened input
+        print 'parsing nearest neighbor list...'
         kpts_nn = spatial.cKDTree( self.kpts )                                                        # returns a KDTree object, which has interface for querying nearest neighbors of any kpt
+        print 'parsing complete\n'
         kpts_nn_list = kpts_nn.query_pairs(r=min_kpt_dist*1.5, output_type='ndarray')           # gets all nearest-neighbor idx_kpt pairs
-        self.log += u"kpoint mesh precision \u0394k = %.5f." %(min_kpt_dist)
+        self.log += u"kpoint mesh precision \u0394k = %.5f 2\u03C0/a.\n" %(min_kpt_dist)
         self.log += '-' * 70 + '\n'
 
         # bandgap
         self.bandgaps = [ [] for idx_spin in range(self.nspins_bands) ]
         for idx_spin in range(self.nspins_bands):
-            vbm = max([e for e in np.nditer(self.bands[idx_spin]) if e<=grepen.efermi + ZERO])    # else VB slightly beyond efermi is considered CB
-            cbm = min([e for e in np.nditer(self.bands[idx_spin]) if e>=grepen.efermi + ZERO])    # np.nditer is an iterator looping over all dimensions of an array.
+            vbm = max([e for e in tqdm(np.nditer(self.bands[idx_spin]), leave=False) if e<=grepen.efermi + ZERO])    # else VB slightly beyond efermi is considered CB
+            cbm = min([e for e in tqdm(np.nditer(self.bands[idx_spin]), leave=False) if e>=grepen.efermi + ZERO])    # np.nditer is an iterator looping over all dimensions of an array.
                                                                                                # the array itself is an iterator looping normally by outmost dimension.
             self.bandgaps[idx_spin] = [vbm, cbm] if cbm > vbm + ZERO else []
-            self.log += "spin %s: VBM %s at %s, CBM %s at %s, bandgap %s eV\n" \
-                  % (idx_spin, vbm, self.kpts[ np.where(self.bands[idx_spin]==vbm)[0] ], cbm, self.kpts[ np.where(self.bands[idx_spin]==cbm)[0] ], cbm-vbm) \
-                  if cbm > vbm + ZERO else "spin %s: no bandgap\n" % (idx_spin)
+            self.log += "spin %s: VBM %s at %s, CBM %s at %s, kpoint-independent bandgap %s eV\n" \
+                  % (idx_spin, vbm, self.kpts[ np.where(self.bands[idx_spin]==vbm)[0][0] ], cbm, self.kpts[ np.where(self.bands[idx_spin]==cbm)[0][0] ], cbm-vbm) \
+                  if cbm > vbm + ZERO else "spin %s: no bandgap\n" % (idx_spin)     # only first instance is printed.
         self.log += '-' * 70 + '\n'
 
         # neargap bands, delta_e
@@ -1089,15 +1093,17 @@ class Bands(object):
             if [idx2_spin for idx2_spin in range(idx_spin) if self.bandgaps[idx2_spin] and np.linalg.norm(np.subtract(self.bangaps[idx_spin], self.bandgaps[idx2_spin])) < ZERO]:    # repetitive
                 self.log += u'spin %s: repetitive, \u3B4E skipped. \n' % ( idx_spin ) ; continue
             # specify neargap criterion ZERO
-            self.log += u'spin %s, nearest neighbor \u03B4E = E\u2098-E\u2099:\n' % (idx_spin)
-            delta_e_flat = [] ; bandgap = abs(np.subtract(*self.bandgaps[idx_spin]))
+            self.log += u'spin %s, nearest neighbor \u03B4E:\n' % (idx_spin)
+            bandgap = abs(np.subtract(*self.bandgaps[idx_spin]))
             for ZERO in [bandgap, bandgap/2, bandgap/4]:
+                delta_e_flat = []
                 # for each NN pair, compute |delta_e| if energy is within bound
-                for idx_band in range(grepen.nbands):
+                for idx_band in trange(grepen.nbands, leave=False):
                     for kpts_nn_list_ in kpts_nn_list:  # kpts_nn_list_ = [ idx1_kpt idx2_kpt ]
                         if all(self.bandgaps[idx_spin][0]-ZERO < self.bands[idx_spin][idx_band][idx_kpt] < self.bandgaps[idx_spin][1]+ZERO for idx_kpt in kpts_nn_list_):    # is near gap
                             delta_e_flat.append( abs(self.bands[idx_spin][idx_band][kpts_nn_list_[0]] - self.bands[idx_spin][idx_band][kpts_nn_list_[1]]) )
-                self.log += u'  CBM/VBM +- %.2f eV: \u03B4E = %.5f eV, # of samples = %d.\n' %( ZERO, np.mean(delta_e_flat), len(delta_e_flat) )
+                self.log += u'  CBM/VBM +- %.2f eV: \u03B4E = %.5f eV, # of kpts = %d.\n' %( ZERO, np.mean(delta_e_flat), len(delta_e_flat) )
+
 
 
         # interpolated bandgap
@@ -1299,10 +1305,9 @@ class Electron(object):
         if not getattr(self, 'log', None):
             if os.path.isdir(self.path):
                 raise shared.CustomError(self.__class__.__name__ + ' compute: self.path {%s} taken' %self.path)
-            #:copy banner
             print 'copying previous folder...'
-            #;
             shutil.copytree(self.prev.path, self.path)
+            print 'copying complete\n'
             os.chdir(self.path)
 
             if self.gen.parse_if('cell'):
