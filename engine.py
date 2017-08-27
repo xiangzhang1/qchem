@@ -1138,14 +1138,14 @@ class Bands(object):
                                                       f_ieqcons = constraint,
                                                       acc = 1e-3,
                                                       full_output = True)
-                            kptes.append([out, fx])
+                            kptes.append([out[0], out[1], out[2], fx])
                 kptes = np.float32(kptes)
-                pprint(kptes[:2])
-                kpt_at_vbm, vbm = np.amax([kpte for kpte in kptes if self.bandgaps[idx_spin][0]-ZERO<kpte[1]<self.bandgaps[idx_spin][0]+ZERO], axis=1)
-                kpt_at_cbm, cbm = np.amin([kpte for kpte in kptes if self.bandgaps[idx_spin][1]-ZERO<kpte[1]<self.bandgaps[idx_spin][1]+ZERO], axis=1)
-                # self.bandgap_interp
+                # self.bandgaps_interp
+                vbm = np.amax([kpte[3] for kpte in kptes if self.bandgaps[idx_spin][0]-ZERO<kpte[3]<self.bandgaps[idx_spin][0]+ZERO], axis=1)
+                cbm = np.amin([kpte[3] for kpte in kptes if self.bandgaps[idx_spin][1]-ZERO<kpte[3]<self.bandgaps[idx_spin][1]+ZERO], axis=1)
+                self.bandgaps_interp[idx_spin] = [vbm, cbm] if cbm>vbm else []
                 self.log += "spin %s, interpolated: VBM %s at %s , CBM %s at %s, bandgap %s eV\n" \
-                      % (idx_spin, vbm, kpt_at_vbm, cbm, kpt_at_cbm, cbm-vbm) \
+                      % (idx_spin, vbm, kptes[np.where(kptes[:,3]==vbm)[0],:3], cbm, kptes[np.where(kptes[:,3]==cbm)[0],:3], cbm-vbm) \
                       if cbm > vbm else "spin %s, interpolated: no bandgap\n" % (idx_spin)
             self.log += '-' * 70 + '\n'
         else:
