@@ -994,7 +994,7 @@ class Dos(object):
                 self.dos[idx_spin, idx, 1] = doscar_tot_.pop(0)
         self.idx_fermi = abs(self.dos[0, :, 0] - self.grepen.efermi).argmin() + 1
         # bandgap
-        self.bandgap = np.zeros(self.nspins_dos)
+        self.bandgap = [ [] for idx_spin in self.nspins_dos ]
         for idx_spin in range(self.nspins_dos):
             i = self.idx_fermi
             while abs(self.dos[idx_spin, i, 1]) < ZERO:
@@ -1343,5 +1343,3 @@ class Electron(object):
         if os.path.isdir(self.path):
             shutil.rmtree(self.path)
         #;
-
-
