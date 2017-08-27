@@ -408,6 +408,7 @@ def debug_wrap(func):
                 ns.update(frame.f_locals)
                 code.interact(local=ns)
                 print bcolors.FAIL + 'debug ended\n:' + bcolors.ENDC
+                sys.exit()
         else:
             return func(*args, **kwargs)
     return wrapped
