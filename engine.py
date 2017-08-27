@@ -1041,12 +1041,17 @@ class Bands(object):
 
         # bands
         with open("EIGENVAL","r") as f:
-            eigenval = [x.split() for x in f.readlines()][7:]
+            eigenval = [x.split() for x in f.readlines()]
         self.kpts = np.zeros([grepen.nkpts,3])
         self.bands = np.zeros([self.nspins_bands, grepen.nbands, grepen.nkpts])
+        #:pop header lines
+        del eigenval[:6]
+        #;
         for idx_kpt in range(grepen.nkpts):
             #
-            print shared.bcolors.FAIL + str(eigenval[0:4]) + shared.bcolors.ENDC + '\n'
+            #:pop [empty line]
+            eigenval.pop(0)
+            #;
             eigenval_ = eigenval.pop(0)
             self.kpts[idx_kpt,:] = eigenval_[:3]
             #

@@ -81,9 +81,7 @@ grepen.nelectrons                   grepen.nkpts                                
 [empty line]
 kpts[_idx_kpt_][0]   kpts[_idx_kpt_][1]   kpts[_idx_kpt_][2]                            weight
 _idx_band_==0                       bands[_idx_spin_===0][_idx_band_][_idx_kpt_]  ...   occupancy    ...
-...
-[empty line]
-...
+... ([empty ... occupancy ...\n)
 
 __kpts__[_idx_kpt_] = [ kx ky kz ]      <!-- less elegant, but saves space -->
     _min_kpt_dist_      smallest |k1-k2|
