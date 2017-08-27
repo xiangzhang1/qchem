@@ -1123,7 +1123,7 @@ class Bands(object):
                             for sign in (-1,1):
                                 e = sign * scipy.optimize.minimize(lambda x,self=self,idx_spin=idx_spin,idx_band=idx_band,sign=sign: self.bands_interp()[idx_spin][idx_band](*x) * sign,
                                                                    x0 = kpt,
-                                                                   bounds = [x-min_kpt_dist,x+min_kpt_dist for x in kpt],
+                                                                   bounds = [[x-min_kpt_dist,x+min_kpt_dist] for x in kpt],
                                                                    tol=1e-3).fun
                                 kptes.append(kpt[0],kpt[1],kpt[2], e)
                 kptes = np.float32(kptes)
