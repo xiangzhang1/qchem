@@ -1128,17 +1128,17 @@ class Bands(object):
                 kptes = []
                 ZERO = abs(np.subtract(*self.bandgaps[idx_spin])) / 2.5
                 for idx_band in trange(grepen.nbands, leave=False, desc='interpolating bands for bandgap'):
-                     #: speedup, max/min 1/-1, suppress stdout
                     if any(self.bandgaps[idx_spin][0] - ZERO < e < self.bandgaps[idx_spin][1] + ZERO for e in self.bands[idx_spin, idx_band]):
-                        for sign in (-1,1):
-                            #;
+                        for sign in [-1, 1]:
                             result = scipy.optimize.minimize(
                                                       lambda x, self=self, sign=sign: sign * self.bands_interp()[idx_spin][idx_band](*x) ,
                                                       x0 = self.kpts[ np.where(self.bands[idx_spin]==self.bandgaps[idx_spin][0])[0][0] ],
                                                       method = 'SLSQP',
                                                       constraints = {'type': 'ineq', 'fun': constraint},
                                                       tol = 1e-3)
-                            kptes.append([result.x[0], result.x[1], result.x[2], result.fun])
+                            kptes.append([result.x[0], result.x[1], result.x[2], result.fun * sign])
+                        print 'this band used to have max %s, min %s' % ( np.amax(self.bands[idx_spin, idx_band]), np.amin(self.bands[idx_spin, idx_band]) )
+                        print 'fitted max %s, min %s' % ( kptes[-2], kptes[-1] )
                 kptes = np.float32(kptes)
                 # self.bandgaps_interp
                 print '#' * 50
