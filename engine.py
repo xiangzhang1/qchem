@@ -1027,7 +1027,6 @@ class Bands(object):
     # fit the band for verifying smoothness, and interpolating bandgap
     @shared.MWT(timeout=2592000)
     def bands_interp(self):
-        print 'bands interp calculated once'
         return [ [ Rbf(self.kpts[:,0], self.kpts[:,1], self.kpts[:,2], self.bands[idx_spin, idx_band])
                            for idx_band in range(self.grepen.nbands) ] for idx_spin in range(self.nspins_bands) ]
 
@@ -1090,10 +1089,10 @@ class Bands(object):
             # specify neargap criterion ZERO
             self.log += u'spin %s, nearest neighbor \u03B4E:\n' % (idx_spin)
             bandgap = abs(np.subtract(*self.bandgaps[idx_spin]))
-            for ZERO in [bandgap, bandgap/2, bandgap/4]:
+            for ZERO in tqdm([bandgap, bandgap/2, bandgap/4], leave=False, desc='calculating delta_e in neargap bands'):
                 delta_e_flat = []
                 # for each NN pair, compute |delta_e| if energy is within bound
-                for idx_band in trange(grepen.nbands, leave=False, desc='calculating delta_e in neargap bands'):
+                for idx_band in range(grepen.nbands):
                     for kpts_nn_list_ in kpts_nn_list:  # kpts_nn_list_ = [ idx1_kpt idx2_kpt ]
                         if all(self.bandgaps[idx_spin][0]-ZERO < self.bands[idx_spin][idx_band][idx_kpt] < self.bandgaps[idx_spin][1]+ZERO for idx_kpt in kpts_nn_list_):    # is near gap
                             delta_e_flat.append( abs(self.bands[idx_spin][idx_band][kpts_nn_list_[0]] - self.bands[idx_spin][idx_band][kpts_nn_list_[1]]) )
@@ -1118,10 +1117,13 @@ class Bands(object):
                     self.log += u'spin %s: repetitive, bandgaps_interp skipped.\n' % ( idx_spin ) ; continue
                 # bands_interp_spin_flat
                 ZERO = abs(np.subtract(*self.bandgaps[idx_spin])) / 2.5
+                print 'starting interpolation'
+                f = self.bands_interp()[idx_spin][idx_band]
+                print 'interpolation ended'
                 bands_interp_spin_flat = np.float32(
                                          [
-                                           [ kpt[0], kpt[1], kpt[2], self.bands_interp()[idx_spin][idx_band](*kpt) ]
-                                           for kpt in tqdm(self.kpts_salted, leave=False, desc='interpolating bands')
+                                           [ kpt[0], kpt[1], kpt[2], f(*kpt) ]
+                                           for kpt in tqdm(kpts_salted, leave=False, desc='using interpolated bands')
                                            for idx_band in range(grepen.nbands)
                                            if any(self.bandgaps[idx_spin][0] - ZERO < e < self.bandgaps[idx_spin][1] + ZERO for e in self.bands[idx_spin, idx_band])
                                          ]
@@ -1296,7 +1298,7 @@ class Electron(object):
                 raise shared.CustomError(self.__class__.__name__ + ' compute: self.path {%s} taken' %self.path)
             print 'copying previous folder... ',
             shutil.copytree(self.prev.path, self.path)
-            print '\r',     # return to line start, but do not go to next line
+            print 'done',     # return to line start, but do not go to next line
             os.chdir(self.path)
 
             if self.gen.parse_if('cell'):
