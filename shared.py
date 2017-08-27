@@ -421,7 +421,6 @@ def debug_wrap(func):
 # rbf_wrap
 
 def rbf_wrap(rbf):
-    @wraps(rbf)
     def wrapped(kpt):
         return rbf(kpt[0], kpt[1], kpt[2])
     return wrapped
