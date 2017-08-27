@@ -1132,13 +1132,13 @@ class Bands(object):
                     if any(self.bandgaps[idx_spin][0] - ZERO < e < self.bandgaps[idx_spin][1] + ZERO for e in self.bands[idx_spin, idx_band]):
                         for sign in (-1,1):
                             #;
-                            x,fun = scipy.optimize.minimize(
+                            result = scipy.optimize.minimize(
                                                       lambda x, self=self, sign=sign: sign * self.bands_interp()[idx_spin][idx_band](*x) ,
                                                       x0 = self.kpts[ np.where(self.bands[idx_spin]==self.bandgaps[idx_spin][0])[0][0] ],
                                                       method = 'SLSQP',
                                                       constraints = {'type': 'ineq', 'fun': constraint},
                                                       tol = 1e-3)
-                            kptes.append([x[0], x[1], x[2], fun])
+                            kptes.append([result.x[0], result.x[1], result.x[2], result.fun])
                 kptes = np.float32(kptes)
                 # self.bandgaps_interp
                 vbm = np.amax([kpte[3] for kpte in kptes if self.bandgaps[idx_spin][0]-ZERO<kpte[3]<self.bandgaps[idx_spin][0]+ZERO])
