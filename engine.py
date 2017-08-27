@@ -1046,6 +1046,7 @@ class Bands(object):
         self.bands = np.zeros([self.nspins_bands, grepen.nbands, grepen.nkpts])
         for idx_kpt in range(grepen.nkpts):
             #
+            print shared.bcolors.FAIL + eigenval[0:4] + shared.bcolors.ENDC + '\n'
             eigenval_ = eigenval.pop(0)
             self.kpts[idx_kpt,:] = eigenval_[:3]
             #
