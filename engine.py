@@ -970,7 +970,9 @@ class Dos(object):
         self.nspins_pdos = {'para':1, 'fm':2, 'ncl':3}[grepen.spin]
         self.grepen = grepen
         self.cell = cell
-        self.log += 'Fermi level = %s\n\n' % (self.grepen.efermi)
+        for name in ['nspins_dos', 'nspins_pdos']:
+            self.log += '%s%s%s: %s\n' % (shared.bcolors.BOLD, name, shared.bcolors.ENDC, getattr(self,name,None))
+
         if not grepen.is_doscar_usable:
             raise shared.CustomError(self.__class__.__name__ + '.__init__: DOSCAR is not usable.')
 
