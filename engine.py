@@ -18,7 +18,7 @@ from subprocess import call, check_output, STDOUT, CalledProcessError
 from filecmp import dircmp
 from collections import OrderedDict
 import paramiko
-
+import IPython
 from itertools import groupby
 
 from mpl_toolkits.mplot3d import Axes3D
@@ -1137,8 +1137,9 @@ class Bands(object):
                                                       constraints = {'type': 'ineq', 'fun': constraint},
                                                       tol = 1e-3)
                             kptes.append([result.x[0], result.x[1], result.x[2], result.fun * sign])
-                        print 'this band used to have max %s, min %s' % ( np.amax(self.bands[idx_spin, idx_band]), np.amin(self.bands[idx_spin, idx_band]) )
+                        print 'this band used to have max %s at %s, min %s at %s' % ( np.amax(self.bands[idx_spin, idx_band]), self.kpts[np.argmax(self.bands[idx_spin, idx_band])], np.amin(self.bands[idx_spin, idx_band]), self.kpts[np.argmin(self.bands[idx_spin, idx_band])] )
                         print 'fitted max %s, min %s' % ( kptes[-2], kptes[-1] )
+                        IPython.embed()
                 kptes = np.float32(kptes)
                 # self.bandgaps_interp
                 print '#' * 50
