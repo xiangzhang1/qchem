@@ -14,6 +14,7 @@ from pprint import pprint
 from functools import wraps
 import paramiko
 import time
+import traceback, sys, code
 
 
 # INDEX
@@ -26,8 +27,9 @@ import time
 # @MWT
 # @moonphase_wrap
 # wraparound error constant
-# @log
+# @log_wrap
 # bcolors (different from Fragile lists)
+# @debug_wrap
 
 #
 # ===========================================================================
@@ -384,3 +386,28 @@ class bcolors:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
+
+
+# ===========================================================================
+
+# debug_wrap
+
+def debug_wrap(func):
+    @wraps(func)
+    def wrapped(*args, **kwargs):
+        if DEBUG > 0:
+            try:
+                return func(*args, **kwargs)    # the important part
+            except:
+                print bcolors.FAIL + 'error invoked, debug starting at frame of error:\n' + bcolors.ENDC
+                type, value, tb = sys.exc_info()
+                traceback.print_exc()
+                last_frame = lambda tb=tb: last_frame(tb.tb_next) if tb.tb_next else tb
+                frame = last_frame().tb_frame
+                ns = dict(frame.f_globals)
+                ns.update(frame.f_locals)
+                code.interact(local=ns)
+                print bcolors.FAIL + 'debug ended\n:' + bcolors.ENDC
+        else:
+            return func(*args, **kwargs)
+    return wrapped

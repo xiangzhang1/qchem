@@ -1032,6 +1032,7 @@ class Bands(object):
         return [ [ Rbf(self.kpts[:,0], self.kpts[:,1], self.kpts[:,2], self.bands[idx_spin, idx_band])
                            for idx_band in tqdm(range(self.grepen.nbands)) ] for idx_spin in range(self.nspins_bands) ]
 
+    @shared.debug_wrap
     @shared.log_wrap
     def __init__(self, grepen):
         ZERO = 0.01
