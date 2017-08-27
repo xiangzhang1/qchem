@@ -945,7 +945,8 @@ class Grepen(object):
                 raise shared.CustomError(self.__class__.__name__ + '__init__: EIGENVAL file length not matching nkpts.')
 
         for name, value in vars(self).iteritems():
-             self.log += '%s: %s\n' % (name, value)
+            if name != 'log':
+                self.log += '%s %s %s: %s\n' % (shared.bcolors.BOLD, name, shared.bcolors.ENDC, value)
 
 
 class Dos(object):
@@ -984,7 +985,7 @@ class Dos(object):
             doscar_site = doscar_parts[3:]  # doscar_site[idx_atom=0]
 
         # dos
-        self.dos = np.zeros([self.nspins_dos, len(doscar_tot)])
+        self.dos = np.zeros([self.nspins_dos, len(doscar_tot), 2])
         for idx, doscar_tot_ in enumerate(doscar_tot):
             #
             self.dos[:, idx, 0] = doscar_tot_.pop(0)
@@ -1007,7 +1008,7 @@ class Dos(object):
 
         # pdos
         self.norbitals_pdos = ( len(doscar_site[0][0]) - 1 ) / self.nspins_pdos
-        self.pdos = np.zeros([self.nspins_pdos, sum(self.cell.stoichiometry.values()), self.norbitals_pdos, len(doscar_site[0])])
+        self.pdos = np.zeros([self.nspins_pdos, sum(self.cell.stoichiometry.values()), self.norbitals_pdos, len(doscar_site[0]), 2])
         for idx_atom, doscar_site_atom in doscar_site:
             for idx, doscar_site_atom_ in enumerate(doscar_site_atom):
                 #
@@ -1040,7 +1041,7 @@ class Bands(object):
         # bands
         with open("EIGENVAL","r") as f:
             eigenval = [x.split() for x in f.readlines()][7:]
-        self.kpts = np.zeros(grepen.nkpts)
+        self.kpts = np.zeros([grepen.nkpts,3])
         self.bands = np.zeros([self.nspins_bands, grepen.nbands, grepen.nkpts])
         for idx_kpt in range(grepen.nkpts):
             #

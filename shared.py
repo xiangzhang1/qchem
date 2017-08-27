@@ -27,6 +27,7 @@ import time
 # @moonphase_wrap
 # wraparound error constant
 # @log
+# bcolors (different from Fragile lists)
 
 #
 # ===========================================================================
@@ -365,7 +366,21 @@ def log_wrap(func):
         self.log = '\n\n\n'
         self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
         result = func(self, *args, **kwargs)    # the important part
-        self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
+        self.log += '*' * 75
         print self.log
         return result
     return wrapped
+
+# ===========================================================================
+
+# @bcolors
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'

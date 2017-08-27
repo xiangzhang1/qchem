@@ -57,7 +57,7 @@ __nspins_dos__ spin=para: 1, spin=fm|afm: 2, spin=ncl: 1
 __dos_interp__()[_idx_spin_](energy) = DOS
 __bandgap__[_idx_spin_] = [vbm, cbm] or []
 
-_doscar_site_[_idx_atom_=0] =  [ energy    s-DOS                           p-DOS         ... ]   spin=para
+_DOSCAR_SITE_[_idx_atom_=0] =  [ energy    s-DOS                           p-DOS         ... ]   spin=para
                                [ energy    s-DOS(up) s-DOS(down)           p-DOS(up)     ... ]   spin=fm|afm
                                [ energy    s-DOS(x) s-DOS(y) s-DOS(z)      p-DOS(x)      ... ]   spin=fm|afm
                             =  pdos[][_idx_atom_][][idx==0][energy]  pdos[_idx_spin_====0][_idx_atom_][_idx_orbital_===0][idx][PDOS]     ...     ...
