@@ -1003,7 +1003,7 @@ class Dos(object):
             while abs(self.dos[idx_spin, j, 1]) < ZERO:
                 j += 1
             self.bandgap[idx_spin] = [] if i == j else [self.dos[idx_spin, i, 0], self.dos[idx_spin, j, 0]]
-            print "spin %s: VBM %s, CBM %s, bandgap %s eV" % (idx_spin, self.bandgap[idx_spin][0], self.bandgap[idx_spin][1], self.bandgap[idx_spin][1]-self.bandgap[idx_spin][0]) \
+            self.log += "spin %s: VBM %s, CBM %s, bandgap %s eV" % (idx_spin, self.bandgap[idx_spin][0], self.bandgap[idx_spin][1], self.bandgap[idx_spin][1]-self.bandgap[idx_spin][0]) \
                   if i != j else "spin %s: no bandgap" % (idx_spin)
 
         # pdos
@@ -1046,7 +1046,7 @@ class Bands(object):
         for idx_kpt in range(grepen.nkpts):
             #
             eigenval_ = eigenval.pop(0)
-            self.kpts[idx_kpt] = eigenval[:3]
+            self.kpts[idx_kpt,:] = eigenval_[:3]
             #
             for idx_band in range(grepen.nbands):
                 eigenval_ = eigenval.pop(0) ; eigenval_.pop(0)
