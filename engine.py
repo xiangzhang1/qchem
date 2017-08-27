@@ -1009,7 +1009,7 @@ class Dos(object):
         # pdos
         self.norbitals_pdos = ( len(doscar_site[0][0]) - 1 ) / self.nspins_pdos
         self.pdos = np.zeros([self.nspins_pdos, sum(self.cell.stoichiometry.values()), self.norbitals_pdos, len(doscar_site[0]), 2])
-        for idx_atom, doscar_site_atom in tqdm(enumerate(doscar_site)):
+        for idx_atom, doscar_site_atom in enumerate(doscar_site):
             for idx, doscar_site_atom_ in enumerate(doscar_site_atom):
                 #
                 self.pdos[:, idx_atom, :, idx, 0] = doscar_site_atom_.pop(0)
@@ -1067,7 +1067,7 @@ class Bands(object):
             cbm = min([e for e in np.nditer(self.bands[idx_spin]) if e>=grepen.efermi + ZERO])    # np.nditer is an iterator looping over all dimensions of an array.
                                                                                                # the array itself is an iterator looping normally by outmost dimension.
             self.bandgaps[idx_spin] = [vbm, cbm] if cbm > vbm + ZERO else []
-            print "spin %s: VBM %s at %s, CBM %s at %s, bandgap %s eV\n" \
+            self.log += "spin %s: VBM %s at %s, CBM %s at %s, bandgap %s eV\n" \
                   % (idx_spin, vbm, self.kpts[ np.where(self.bands[idx_spin]==vbm)[0] ], cbm, self.kpts[ np.where(self.bands[idx_spin]==cbm)[0] ], cbm-vbm) \
                   if cbm > vbm + ZERO else "spin %s: no bandgap" % (idx_spin)
         self.log += '-' * 70 + '\n'
