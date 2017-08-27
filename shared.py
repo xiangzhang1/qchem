@@ -368,9 +368,7 @@ def log_wrap(func):
     def wrapped(self, *args, **kwargs):
         self.log = '\n\n'
         self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
-        print 'calculating %s...' %self.__class__.__name__,
         result = func(self, *args, **kwargs)    # the important part
-        print 'done'
         self.log += '*' * len('*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n\n')   #matching length
         print self.log
         return result

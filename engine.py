@@ -1141,6 +1141,9 @@ class Bands(object):
                             kptes.append([result.x[0], result.x[1], result.x[2], result.fun])
                 kptes = np.float32(kptes)
                 # self.bandgaps_interp
+                print '#' * 50
+                print 'bandgap is ', self.bandgaps[idx_spin]
+                pprint(kptes[:,3])
                 vbm = np.amax([kpte[3] for kpte in kptes if self.bandgaps[idx_spin][0]-ZERO<kpte[3]<self.bandgaps[idx_spin][0]+ZERO])
                 cbm = np.amin([kpte[3] for kpte in kptes if self.bandgaps[idx_spin][1]-ZERO<kpte[3]<self.bandgaps[idx_spin][1]+ZERO])
                 self.bandgaps_interp[idx_spin] = [vbm, cbm] if cbm>vbm else []
