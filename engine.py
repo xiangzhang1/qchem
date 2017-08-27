@@ -1009,7 +1009,7 @@ class Dos(object):
         # pdos
         self.norbitals_pdos = ( len(doscar_site[0][0]) - 1 ) / self.nspins_pdos
         self.pdos = np.zeros([self.nspins_pdos, sum(self.cell.stoichiometry.values()), self.norbitals_pdos, len(doscar_site[0]), 2])
-        for idx_atom, doscar_site_atom in doscar_site:
+        for idx_atom, doscar_site_atom in tqdm(enumerate(doscar_site)):
             for idx, doscar_site_atom_ in enumerate(doscar_site_atom):
                 #
                 self.pdos[:, idx_atom, :, idx, 0] = doscar_site_atom_.pop(0)
