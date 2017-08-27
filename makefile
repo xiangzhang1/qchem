@@ -3,4 +3,4 @@ clean:
 push:
 	git add -A ; git commit -am. ; git push
 pull:
-	git pull
+	git pull ; ./gui.py
