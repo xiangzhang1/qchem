@@ -1127,8 +1127,8 @@ class Bands(object):
                                          ]
                                          )
                 # self.bandgap_interp
-                kx_vbm, ky_vbm, kz_vbm, vbm = np.amax([kpte for kpte in bands_interp_spin_flat if kpt[3] <= self.bandgaps[idx_spin][0] + ZERO])
-                kx_cbm, ky_cbm, kz_cbm, cbm = np.amin([kpte for kpte in bands_interp_spin_flat if kpt[3] >= self.bandgaps[idx_spin][1] - ZERO])
+                kx_vbm, ky_vbm, kz_vbm, vbm = np.amax([kpte for kpte in bands_interp_spin_flat if kpte[3] <= self.bandgaps[idx_spin][0] + ZERO])
+                kx_cbm, ky_cbm, kz_cbm, cbm = np.amin([kpte for kpte in bands_interp_spin_flat if kpte[3] >= self.bandgaps[idx_spin][1] - ZERO])
                 self.bandgaps_interp[idx_spin] = [vbm, cbm] if cbm > vbm else []
                 self.log += "spin %s, interpolated: VBM %s at %s , CBM %s at %s, bandgap %s eV\n" \
                       % (idx_spin, vbm, [kx_vbm, ky_vbm, kz_vbm], cbm, [kx_cbm, ky_cbm, kz_cbm], cbm-vbm) \
