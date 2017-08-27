@@ -30,6 +30,7 @@ import traceback, sys, code
 # @log_wrap
 # bcolors (different from Fragile lists)
 # @debug_wrap
+# rbf_wrap
 
 #
 # ===========================================================================
@@ -412,4 +413,15 @@ def debug_wrap(func):
                 sys.exit()
         else:
             return func(*args, **kwargs)
+    return wrapped
+
+
+# ===========================================================================
+
+# rbf_wrap
+
+def rbf_wrap(rbf):
+    @wraps(rbf)
+    def wrapped(kpt):
+        return rbf(kpt[0], kpt[1], kpt[2])
     return wrapped

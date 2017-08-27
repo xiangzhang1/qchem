@@ -1029,7 +1029,7 @@ class Bands(object):
     # fit the band for verifying smoothness, and interpolating bandgap
     @shared.MWT(timeout=2592000)
     def bands_interp(self):
-        return [ [ Rbf(self.kpts[:,0], self.kpts[:,1], self.kpts[:,2], self.bands[idx_spin, idx_band])
+        return [ [ shared.rbf_wrap(Rbf(self.kpts[:,0], self.kpts[:,1], self.kpts[:,2], self.bands[idx_spin, idx_band]))
                            for idx_band in range(self.grepen.nbands) ] for idx_spin in range(self.nspins_bands) ]
 
     @shared.debug_wrap
@@ -1131,7 +1131,7 @@ class Bands(object):
                     if any(self.bandgaps[idx_spin][0] - ZERO < e < self.bandgaps[idx_spin][1] + ZERO for e in self.bands[idx_spin, idx_band]):
                         for sign in [-1, 1]:
                             result = scipy.optimize.minimize(
-                                                      lambda x, self=self, sign=sign: sign * self.bands_interp()[idx_spin][idx_band](*x) ,
+                                                      self.bands_interp()[idx_spin][idx_band],
                                                       x0 = self.kpts[ np.where(self.bands[idx_spin]==self.bandgaps[idx_spin][0])[0][0] ],
                                                       method = 'SLSQP',
                                                       constraints = {'type': 'ineq', 'fun': constraint},
