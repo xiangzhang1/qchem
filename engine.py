@@ -1106,14 +1106,6 @@ class Bands(object):
         #;
         if grepen.is_kpoints_mesh:
             self.bandgaps_interp = [ [] for idx_spin in range(self.nspins_bands) ]
-            # define constraint (see docs)
-            convex_hull = scipy.spatial.ConvexHull(self.kpts)
-            facets = convex_hull.equations  # [[A,B,C,D], ...]
-            delaunay = scipy.spatial.Delaunay(self.kpts)
-            def constraint(kpt, facets=facets, delaunay=delaunay):
-                sign = 1 if delaunay.find_simplex(kpt) >= 0 else -1
-                min_dist = abs(np.amin( np.divide( np.dot(facets, np.append(kpt,1)), np.apply_along_axis(lambda x: np.linalg.norm(x[:3]), 1, facets) ) )) * sign
-                return min_dist + min_kpt_dist
             # optimize for each spin and each band
             for idx_spin in range(self.nspins_bands):
                 #:relevant parameters exist
@@ -1127,23 +1119,16 @@ class Bands(object):
                 ZERO = abs(np.subtract(*self.bandgaps[idx_spin])) / 2.5
                 for idx_band in trange(grepen.nbands, leave=False, desc='interpolating bands for bandgap'):
                     if any(self.bandgaps[idx_spin][0] - ZERO < e < self.bandgaps[idx_spin][1] + ZERO for e in self.bands[idx_spin, idx_band]):
-                        for sign in [-1, 1]:
-                            result = scipy.optimize.minimize(
-                                                      lambda x,self=self,idx_spin=idx_spin,idx_band=idx_band,sign=sign: self.bands_interp()[idx_spin][idx_band](*x) * sign,
-                                                      x0 = [0, 0, 0],
-                                                      method = 'SLSQP',
-                                                      constraints = {'type': 'ineq', 'fun': constraint},
-                                                      tol = 1e-3)
-                            kptes.append([result.x[0], result.x[1], result.x[2], result.fun * sign])
-                        print 'this band used to have max %s at %s, min %s at %s' % ( np.amax(self.bands[idx_spin, idx_band]), self.kpts[np.argmax(self.bands[idx_spin, idx_band])], np.amin(self.bands[idx_spin, idx_band]), self.kpts[np.argmin(self.bands[idx_spin, idx_band])] )
-                        print 'fitted max %s, min %s' % ( kptes[-2], kptes[-1] )
-                        IPython.embed()
+                        for kpt in self.kpts:
+                            for sign in (-1,1):
+                                e = sign * scipy.optimize.minimize(lambda x,self=self,idx_spin=idx_spin,idx_band=idx_band,sign=sign: self.bands_interp()[idx_spin][idx_band](*x) * sign,
+                                                                   x0 = kpt,
+                                                                   bounds = [x-min_kpt_dist,x+min_kpt_dist for x in kpt],
+                                                                   tol=1e-3).fun
+                                kptes.append(kpt[0],kpt[1],kpt[2], e)
                 kptes = np.float32(kptes)
                 # self.bandgaps_interp
-                print '#' * 50
-                print 'bandgap is ', self.bandgaps[idx_spin]
-                pprint(kptes[:,3])
-                vbm = np.amax([kpte[3] for kpte in kptes if self.bandgaps[idx_spin][0]-ZERO<kpte[3]<self.bandgaps[idx_spin][0]+ZERO])
+                cbm = np.amax([kpte[3] for kpte in kptes if self.bandgaps[idx_spin][0]-ZERO<kpte[3]<self.bandgaps[idx_spin][0]+ZERO])
                 cbm = np.amin([kpte[3] for kpte in kptes if self.bandgaps[idx_spin][1]-ZERO<kpte[3]<self.bandgaps[idx_spin][1]+ZERO])
                 self.bandgaps_interp[idx_spin] = [vbm, cbm] if cbm>vbm else []
                 self.log += "spin %s, interpolated: VBM %s at %s , CBM %s at %s, bandgap %s eV\n" \

@@ -96,13 +96,14 @@ _delta_e_[idx_spin=0][ZERO==bandgap/2][idx_band===0][kpt_nn_list_====[0,1]] = E 
 _delta_e_flat_[]
 
 <!-- Interpolate and get bandgap.
-Because the region is irregular, the simplest idea is to compute Rbf(*kpt) for each kpt.
-This costs too much time per kpt.
-Instead, we minimize Rbf, with the constraint that such a 'signed distance' is positive:
+Because the region is irregular, the 1st idea is to compute Rbf(*kpt) for each kpt. This costs too much time per kpt.
+The 2nd idea is to minimize Rbf, with the constraint that such a 'signed distance' is positive:
   0. Compute Delaunay(points) and ConvexHull(points)
   1. Compute whether point is in Delaunay
   2. Compute distance from point to nearest ConvexHull facet, and multiply by 1's sign.
   3. Add by min_kpt_dist
+But convergence turned out poor.
+Thus, the 3rd and slowest idea is to find maximum and minimum near each kpoint.
 -->
 _delaunay_ _convex_hull_
 _kptes_[] = [kx ky kz e]
