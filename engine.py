@@ -1187,7 +1187,7 @@ class Charge(object):
                                           / \
                                           np.trapz( dos.pdos[idx_spin, idx_atom, idx_orbital, :INFINITY, 1 ] , \
                                                                       x = dos.pdos[idx_spin, idx_atom, idx_orbital, :INFINITY, 0 ] )
-                        self.log += '%s %.2f' % (shared.ELEMENTS[idx_orbital], integrated_pdos)
+                        self.log += '%s %.2f' % (shared.ELEMENTS.orbitals[idx_orbital], integrated_pdos)
                     self.log += '\n'
 
         # Bader charge
