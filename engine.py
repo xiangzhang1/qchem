@@ -1061,13 +1061,6 @@ class Bands(object):
                 for idx_spin in range(self.nspins_bands):
                     self.bands[idx_spin, idx_band, idx_kpt] = eigenval_.pop(0)
 
-        # delta_k
-        min_kpt_dist = np.amin( spatial.distance.pdist(self.kpts, metric='Euclidean'), axis=None )   # spatial.distance.pdist() produces a list of distances. amin() produces minimum for flattened input
-        kpts_nn = spatial.cKDTree( self.kpts )                                                        # returns a KDTree object, which has interface for querying nearest neighbors of any kpt
-        kpts_nn_list = kpts_nn.query_pairs(r=min_kpt_dist*1.5, output_type='ndarray')           # gets all nearest-neighbor idx_kpt pairs
-        self.log += u"kpoint mesh precision \u0394k = %.5f 2\u03C0/a.\n" %(min_kpt_dist)
-        self.log += '-' * 70 + '\n'
-
         # bandgap
         self.bandgaps = [ [] for idx_spin in range(self.nspins_bands) ]
         for idx_spin in range(self.nspins_bands):
@@ -1078,7 +1071,13 @@ class Bands(object):
             self.log += "spin %s: VBM %s at %s, CBM %s at %s, kpoint-independent bandgap %s eV\n" \
                   % (idx_spin, vbm, self.kpts[ np.where(self.bands[idx_spin]==vbm)[0][0] ], cbm, self.kpts[ np.where(self.bands[idx_spin]==cbm)[0][0] ], cbm-vbm) \
                   if cbm > vbm + ZERO else "spin %s: no bandgap\n" % (idx_spin)     # only first instance is printed.
-        self.log += '-' * 70 + '\n'
+        hr()
+
+        # delta_k
+        min_kpt_dist = np.amin( spatial.distance.pdist(self.kpts, metric='Euclidean'), axis=None )   # spatial.distance.pdist() produces a list of distances. amin() produces minimum for flattened input
+        kpts_nn = spatial.cKDTree( self.kpts )                                                        # returns a KDTree object, which has interface for querying nearest neighbors of any kpt
+        kpts_nn_list = kpts_nn.query_pairs(r=min_kpt_dist*1.5, output_type='ndarray')           # gets all nearest-neighbor idx_kpt pairs
+        self.log += u"kpoint mesh precision \u0394k = %.5f 2\u03C0/a.\n" %(min_kpt_dist)
 
         # neargap bands, delta_e
         # calculate DeltaE_KPOINTS by grabbing average E diff / average E diff near bandgap from EIGENVAL.
@@ -1092,16 +1091,16 @@ class Bands(object):
             # specify neargap criterion ZERO
             self.log += u'spin %s, nearest neighbor \u03B4E:\n' % (idx_spin)
             bandgap = abs(np.subtract(*self.bandgaps[idx_spin]))
-            for ZERO in [bandgap, bandgap/2, bandgap/4]:
+            for ZERO in tqdm([bandgap, bandgap/2, bandgap/4], leave=False, position=0, desc='calculating delta_e in neargap bands'):
                 delta_e_flat = []
                 # for each NN pair, compute |delta_e| if energy is within bound
-                for idx_band in trange(grepen.nbands, leave=False, desc='calculating delta_e in neargap bands'):
+                for idx_band in trange(grepen.nbands, leave=False, position=1):
                     for kpts_nn_list_ in kpts_nn_list:  # kpts_nn_list_ = [ idx1_kpt idx2_kpt ]
                         if all(self.bandgaps[idx_spin][0]-ZERO < self.bands[idx_spin][idx_band][idx_kpt] < self.bandgaps[idx_spin][1]+ZERO for idx_kpt in kpts_nn_list_):    # is near gap
                             delta_e_flat.append( abs(self.bands[idx_spin][idx_band][kpts_nn_list_[0]] - self.bands[idx_spin][idx_band][kpts_nn_list_[1]]) )
                 self.log += u'  CBM/VBM +- %.2f eV: \u03B4E = %.5f eV, # of kpts = %d.\n' %( ZERO, np.mean(delta_e_flat), len(delta_e_flat) ) \
                             if delta_e_flat else u'  CBM/VBM +- %.2f eV: # of kpts = 0.\n' %( ZERO )
-        self.log += '-' * 70 + '\n'
+        hr()
 
         #: interpolated bandgap
         self.log += 'Usually bandgap is between interpolated and raw bandgap. \n'
@@ -1136,7 +1135,6 @@ class Bands(object):
                 self.log += "spin %s, interpolated: VBM %s at %s , CBM %s at %s, bandgap %s eV\n" \
                       % (idx_spin, vbm, kptes[np.where(kptes[:,3]==vbm)[0][0],:3], cbm, kptes[np.where(kptes[:,3]==cbm)[0][0],:3], cbm-vbm) \
                       if cbm > vbm else "spin %s, interpolated: no bandgap\n" % (idx_spin)
-            self.log += '-' * 70 + '\n'
         else:
             self.log += 'kpoints is not mesh, bandgap_interp skipped. \n'
 
