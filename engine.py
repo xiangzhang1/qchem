@@ -972,7 +972,7 @@ class Dos(object):
         self.cell = cell
         for name in ['nspins_dos', 'nspins_pdos']:
             self.log += '%s: %s\n' % (name, getattr(self,name,None))
-        self.log += '-' * 145 + '\n'
+        self.log += '-' * 130 + '\n'
 
         if not grepen.is_doscar_usable:
             raise shared.CustomError(self.__class__.__name__ + '.__init__: DOSCAR is not usable.')
@@ -1004,7 +1004,7 @@ class Dos(object):
             while abs(self.dos[idx_spin, j, 1]) < ZERO:
                 j += 1
             self.bandgap[idx_spin] = [] if i == j else [self.dos[idx_spin, i, 0], self.dos[idx_spin, j, 0]]
-            self.log += "spin %s: VBM %s, CBM %s, bandgap %s eV\n" % (idx_spin, self.bandgap[idx_spin][0], self.bandgap[idx_spin][1], self.bandgap[idx_spin][1]-self.bandgap[idx_spin][0]) \
+            self.log += "spin %s: VBM %s, CBM %s, bandgap %.5f eV\n" % (idx_spin, self.bandgap[idx_spin][0], self.bandgap[idx_spin][1], self.bandgap[idx_spin][1]-self.bandgap[idx_spin][0]) \
                   if i != j else "spin %s: no bandgap\n" % (idx_spin)
 
         # pdos
@@ -1068,10 +1068,10 @@ class Bands(object):
             cbm = min([e for e in tqdm(np.nditer(self.bands[idx_spin]), leave=False) if e>=grepen.efermi + ZERO])    # np.nditer is an iterator looping over all dimensions of an array.
                                                                                                # the array itself is an iterator looping normally by outmost dimension.
             self.bandgaps[idx_spin] = [vbm, cbm] if cbm > vbm + ZERO else []
-            self.log += "spin %s: VBM %s at %s, CBM %s at %s, kpoint-independent bandgap %s eV\n" \
+            self.log += "spin %s: VBM %s at %s, CBM %s at %s, kpoint-independent bandgap %.5f eV\n" \
                   % (idx_spin, vbm, self.kpts[ np.where(self.bands[idx_spin]==vbm)[0][0] ], cbm, self.kpts[ np.where(self.bands[idx_spin]==cbm)[0][0] ], cbm-vbm) \
                   if cbm > vbm + ZERO else "spin %s: no bandgap\n" % (idx_spin)     # only first instance is printed.
-        self.log += '-' * 145 + '\n'
+        self.log += '-' * 130 + '\n'
 
         # delta_k
         min_kpt_dist = np.amin( spatial.distance.pdist(self.kpts, metric='Euclidean'), axis=None )   # spatial.distance.pdist() produces a list of distances. amin() produces minimum for flattened input
@@ -1100,7 +1100,7 @@ class Bands(object):
                             delta_e_flat.append( abs(self.bands[idx_spin][idx_band][kpts_nn_list_[0]] - self.bands[idx_spin][idx_band][kpts_nn_list_[1]]) )
                 self.log += u'  CBM/VBM +- %.2f eV: \u03B4E = %.5f eV, # of kpts = %d.\n' %( ZERO, np.mean(delta_e_flat), len(delta_e_flat) ) \
                             if delta_e_flat else u'  CBM/VBM +- %.2f eV: # of kpts = 0.\n' %( ZERO )
-        self.log += '-' * 145 + '\n'
+        self.log += '-' * 130 + '\n'
 
         #: interpolated bandgap
         self.log += 'Usually bandgap is between interpolated and raw bandgap. \n'
@@ -1132,7 +1132,7 @@ class Bands(object):
                 cbm = np.amax([kpte[3] for kpte in kptes if self.bandgaps[idx_spin][0]-ZERO<kpte[3]<self.bandgaps[idx_spin][0]+ZERO])
                 cbm = np.amin([kpte[3] for kpte in kptes if self.bandgaps[idx_spin][1]-ZERO<kpte[3]<self.bandgaps[idx_spin][1]+ZERO])
                 self.bandgaps_interp[idx_spin] = [vbm, cbm] if cbm>vbm else []
-                self.log += "spin %s, interpolated: VBM %s at %s , CBM %s at %s, bandgap %s eV\n" \
+                self.log += "spin %s, interpolated: VBM %s at %s , CBM %s at %s, bandgap %.5f eV\n" \
                       % (idx_spin, vbm, kptes[np.where(kptes[:,3]==vbm)[0][0],:3], cbm, kptes[np.where(kptes[:,3]==cbm)[0][0],:3], cbm-vbm) \
                       if cbm > vbm else "spin %s, interpolated: no bandgap\n" % (idx_spin)
         else:
@@ -1161,6 +1161,7 @@ class Bands(object):
 # executes population analysis
 class Charge(object):
 
+    @shared.debug_wrap
     @shared.log_wrap
     def __init__(self, cell, grepen, dos):
         # sanity check
