@@ -1335,7 +1335,7 @@ class Electron(object):
             self.log = ''
             for name in ['cell', 'grepen', 'dos', 'bands','charge', 'errors']:
                 if getattr(self, name, None) and getattr(getattr(self, name),'log', None):
-                    self.log += str( getattr(getattr(self, name), 'log') )
+                    self.log += getattr(getattr(self, name), 'log').encode('utf-8')
 
         else:
             raise shared.CustomError(self.__class__.__name__ + ' compute: moonphase is 2. why are you here?')
