@@ -971,7 +971,8 @@ class Dos(object):
         self.grepen = grepen
         self.cell = cell
         for name in ['nspins_dos', 'nspins_pdos']:
-            self.log += '%s%s%s: %s\n' % (shared.bcolors.BOLD, name, shared.bcolors.ENDC, getattr(self,name,None))
+            self.log += '%s: %s\n' % (name, getattr(self,name,None))
+        self.log += '-' * 70 + '\n'
 
         if not grepen.is_doscar_usable:
             raise shared.CustomError(self.__class__.__name__ + '.__init__: DOSCAR is not usable.')
@@ -1100,6 +1101,7 @@ class Bands(object):
                             delta_e_flat.append( abs(self.bands[idx_spin][idx_band][kpts_nn_list_[0]] - self.bands[idx_spin][idx_band][kpts_nn_list_[1]]) )
                 self.log += u'  CBM/VBM +- %.2f eV: \u03B4E = %.5f eV, # of kpts = %d.\n' %( ZERO, np.mean(delta_e_flat), len(delta_e_flat) ) \
                             if delta_e_flat else u'  CBM/VBM +- %.2f eV: # of kpts = 0.\n' %( ZERO )
+        self.log += '-' * 70 + '\n'
 
         #: interpolated bandgap
         self.log += 'Usually bandgap is between interpolated and raw bandgap. \n'
@@ -1132,7 +1134,7 @@ class Bands(object):
                 cbm = np.amin([kpte[3] for kpte in kptes if self.bandgaps[idx_spin][1]-ZERO<kpte[3]<self.bandgaps[idx_spin][1]+ZERO])
                 self.bandgaps_interp[idx_spin] = [vbm, cbm] if cbm>vbm else []
                 self.log += "spin %s, interpolated: VBM %s at %s , CBM %s at %s, bandgap %s eV\n" \
-                      % (idx_spin, vbm, kptes[np.where(kptes[:,3]==vbm)[0],:3], cbm, kptes[np.where(kptes[:,3]==cbm)[0],:3], cbm-vbm) \
+                      % (idx_spin, vbm, kptes[np.where(kptes[:,3]==vbm)[0][0],:3], cbm, kptes[np.where(kptes[:,3]==cbm)[0][0],:3], cbm-vbm) \
                       if cbm > vbm else "spin %s, interpolated: no bandgap\n" % (idx_spin)
             self.log += '-' * 70 + '\n'
         else:

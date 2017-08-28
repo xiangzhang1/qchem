@@ -105,7 +105,7 @@ The 2nd idea is to minimize Rbf, with the constraint that such a 'signed distanc
 But convergence turned out poor.
 Thus, the 3rd and slowest idea is to find maximum and minimum near each kpoint.
 -->
-_delaunay_ _convex_hull_
 _kptes_[] = [kx ky kz e]
+<!-- note that any attempt at parallelization requires pickling of entire environment, and is thus unlikely to be efficient -->
 
 __bandgaps_interp__
