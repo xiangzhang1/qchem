@@ -1325,7 +1325,7 @@ class Electron(object):
 
             if self.gen.parse_if('errors'):
                 try:
-                    self.gen.getkw('cur'):
+                    self.gen.getkw('cur')
                     nodeB = engine.Map().lookup(self.gen.getkw('cur'))
                     self.errors = Errors(self.grepen, self.dos, self.bands, nodeB.electron.grepen, nodeB.electron.dos, nodeB.electron.bands)
                 except shared.DeferError:
