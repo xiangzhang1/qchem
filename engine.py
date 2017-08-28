@@ -839,7 +839,7 @@ class Vasp(object):
                     else:
                         # download folder
                         if self.gen.parse_if('platform=nanaimo|platform=irmik|platform=hodduk'):
-                            print '%s %s.moonphase: copying remote folder {%s} back to self.path {%s} %s' %(shared.bcolors.WARNING, self.__class__.__name__, self.remote_folder_name, self.path, shared.bcolors.ENDC)
+                            print '%s.moonphase: copying remote folder {%s} back to self.path {%s}' %(self.__class__.__name__, self.remote_folder_name, self.path)
                             subprocess.Popen(['rsync', '-a', '-h', '--info=progress2', '%s:%s/' %(self.gen.getkw('platform'),self.remote_folder_name), '%s'%self.path], stdout=sys.stdout, stderr=sys.stderr).wait()
                             #os.system('scp -r /home/xzhang1/Shared/%s/%s/ %s' %(self.gen.getkw('platform'), self.remote_folder_name, self.path))
                             print self.__class__.__name__ + '.moonphase: copy complete.'
@@ -944,7 +944,7 @@ class Grepen(object):
 
         for name, value in vars(self).iteritems():
             if name != 'log':
-                self.log += '%s%s%s: %s\n' % (shared.bcolors.BOLD, name, shared.bcolors.ENDC, value)
+                self.log += '%s: %s\n' % (name, value)
 
 
 class Dos(object):
@@ -1191,7 +1191,7 @@ class Charge(object):
                                           if np.trapz( dos.pdos[idx_spin, idx_atom, idx_orbital, :dos.idx_fermi, 1 ] , \
                                                                       x = dos.pdos[idx_spin, idx_atom, idx_orbital, :dos.idx_fermi, 0 ] ) > 0 \
                                           else 0
-                        self.log += '%9s %5.2f' % (shared.ELEMENTS.orbitals[idx_orbital], integrated_pdos)
+                        self.log += '%7s %5.2f' % (shared.ELEMENTS.orbitals[idx_orbital], integrated_pdos)
                     self.log += '\n'
 
         # Bader charge
@@ -1250,27 +1250,26 @@ class Errors(object):
 
         ## source of error : requirement
         self.de = 0
-        self.log += u'explanation: requirement for \u03B4\n'
         ## rule
         if Agrepen.ismear == 0:
-            self.log += u'gaussian smearing smoothes out irregularities with size sigma: sigma[%.4f] < \u03B4[%.4f]/2' %(Agrepen.sigma,self.de)
+            self.log += u'gaussian smearing smoothes out irregularities with size sigma: sigma[%.4f] < \u03B4E[%.4f]/2\n' %(Agrepen.sigma,self.de)
             self.de = max(self.de, Agrepen.sigma * 2)
         ## rule
-        self.log += u'sparse kpoints grid may miss in-between eigenvalues. E(j)-E(j\')[%.4f] < \u03B4[%.4f]/2' %(Abands.delta_e,self.de)
+        self.log += u'sparse kpoints grid may miss in-between eigenvalues. E(j)-E(j\')[%.4f] < \u03B4E[%.4f]/2\n' %(Abands.delta_e,self.de)
         self.de = max(self.de, Abands.delta_e * 2)
         ## rule
-        self.log += u'all details between two DOS points are lost. 10/NEDOS[%.4f] < \u03B4[%.4f]/2' %(10.0/Agrepen.nedos,self.de)
+        self.log += u'all details between two DOS points are lost. 10/NEDOS[%.4f] < \u03B4[%.4f]/2\n' %(10.0/Agrepen.nedos,self.de)
         self.de = max(self.de, 10.0/float(Agrepen.nedos) * 2)
         ## rule
-        self.log += 'DOS should not be so fine that kpoint mesh coarseness is obvious. 10/NEDOS[%.4f] > DE_KPOINTS[%.4f]' %(10.0/Agrepen.nedos,Abands.delta_e)
+        self.log += 'DOS should not be so fine that kpoint mesh coarseness is obvious. 10/NEDOS[%.4f] > DE_KPOINTS[%.4f]\n' %(10.0/Agrepen.nedos,Abands.delta_e)
 
         # comparing against dirB
         self.de_interpd = []
         if not Bgrepen:
-            self.log += self.__class__.__name__ + ': skipped E(k) numerical error check, aka A <-> B_interp. purely numeric error should be smaller than 0.01 eV. '
+            self.log += self.__class__.__name__ + ': skipped E(k) numerical error check, aka A <-> B_interp. purely numeric error should be smaller than 0.01 eV. \n'
         else:
             idx_spin = 0
-            self.log += self.__class__.__name__ + ': comparing idx_spin=0 only.'    # faciliate comparison between ncl and fm
+            self.log += self.__class__.__name__ + ': comparing idx_spin=0 only.\n'    # faciliate comparison between ncl and fm
             if Bbands.bands[0].shape != Abands.bands[0].shape:
                 raise shared.CustomError(self.__class__.__name__ + '.__init__: A and B bands are incompatible')
             if not Bbands.bandgaps[0] or not Abands.bandgaps[0]:

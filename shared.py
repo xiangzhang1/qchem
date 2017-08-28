@@ -175,7 +175,7 @@ class ElementsDict(object):
     def __init__(self, *elements):
         self._list = []
         self._dict = {}
-        self.orbitals = 's p_y p_z p_x d_xy d_yz d_z2 d_xz d_x2-y2'.split()   # user added
+        self.orbitals = 's p_y p_z p_x d_xy d_yz d_z2 d_xz dx2-y2'.split()   # user added
         self.spins = {1: ['tot'], 2: [u'\u2191', u'\u2193'], 3:['x','y','z'], 4: ['x','y','z','tot']}   # user added
         for element in elements:
             if element.number > len(self._list) + 1:
