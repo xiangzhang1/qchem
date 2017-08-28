@@ -1026,10 +1026,6 @@ class Dos(object):
 # imports kpoints list.
 # interpolates.
 # finds all sources of errors in bandstructure.
-def kpt_to_kpte(kpt):
-    return [ kpt[0], kpt[1], kpt[2],
-             sign * scipy.optimize.minimize(rbf, x0 = kpt, bounds = [[x-min_kpt_dist,x+min_kpt_dist] for x in kpt], tol=1e-3).fun ]
-
 class Bands(object):
 
     @shared.MWT(timeout=2592000)
@@ -1126,8 +1122,15 @@ class Bands(object):
                 for idx_band in trange(grepen.nbands, leave=False, desc='interpolating bands for bandgap'):
                     if any(self.bandgaps[idx_spin][0] - ZERO < e < self.bandgaps[idx_spin][1] + ZERO for e in self.bands[idx_spin, idx_band]):
                         for sign in (-1,1):
-                            def rbf(x): return self.bands_interp()[idx_spin][idx_band](*x) * sign
-                            p = Pool(20) ; kptes += p.map(kpt_to_kpte, self.kpts)
+                            p = Pool()
+                            es = p.map( scipy.optimize.minimize( fun = shared.rbf_wrap(self.bands_interp()[idx_spin][idx_band], sign),
+                                                                 x0 = kpt,
+                                                                 bounds = [[x-min_kpt_dist,x+min_kpt_dist] for x in kpt],
+                                                                 tol=1e-3),
+                                        self.kpts )
+                            for idx_kpt, kpt in enuemrate(self.kpts):
+                                kptes.append([kpt[0],kpt[1],kpt[2],es[idx_kpt].fun])
+
                 kptes = np.float32(kptes)
                 # self.bandgaps_interp
                 cbm = np.amax([kpte[3] for kpte in kptes if self.bandgaps[idx_spin][0]-ZERO<kpte[3]<self.bandgaps[idx_spin][0]+ZERO])

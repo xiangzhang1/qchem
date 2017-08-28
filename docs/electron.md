@@ -99,8 +99,8 @@ _delta_e_flat_[]
 Because the region is irregular, the 1st idea is to compute Rbf(*kpt) for each kpt. This costs too much time per kpt.
 The 2nd idea is to minimize Rbf, with the constraint that such a 'signed distance' is positive:
   0. Compute Delaunay(points) and ConvexHull(points)
-  1. Compute whether point is in Delaunay
-  2. Compute distance from point to nearest ConvexHull facet, and multiply by 1's sign.
+  1. Compute whether point is in Delaunay [](https://stackoverflow.com/questions/16750618/whats-an-efficient-way-to-find-if-a-point-lies-in-the-convex-hull-of-a-point-cl)
+  2. Compute distance from point to nearest ConvexHull facet, and multiply by 1's sign.  [](http://mathinsight.org/distance_point_plane)      [](http://scipy.github.io/devdocs/generated/scipy.spatial.ConvexHull.html)
   3. Add by min_kpt_dist
 But convergence turned out poor.
 Thus, the 3rd and slowest idea is to find maximum and minimum near each kpoint.
