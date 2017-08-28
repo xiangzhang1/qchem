@@ -944,7 +944,7 @@ class Grepen(object):
 
         for name, value in vars(self).iteritems():
             if name != 'log':
-                self.log += '%s %s %s: %s\n' % (shared.bcolors.BOLD, name, shared.bcolors.ENDC, value)
+                self.log += '%s%s%s: %s\n' % (shared.bcolors.BOLD, name, shared.bcolors.ENDC, value)
 
 
 class Dos(object):
@@ -967,7 +967,7 @@ class Dos(object):
     def __init__(self, grepen, cell):
         ZERO = 0.001
         self.nspins_dos = {'para':1, 'fm':2, 'ncl':1}[grepen.spin]
-        self.nspins_pdos = {'para':1, 'fm':2, 'ncl':3}[grepen.spin]
+        self.nspins_pdos = {'para':1, 'fm':2, 'ncl':4}[grepen.spin]
         self.grepen = grepen
         self.cell = cell
         for name in ['nspins_dos', 'nspins_pdos']:
@@ -1118,9 +1118,9 @@ class Bands(object):
                 #;
                 kptes = []
                 ZERO = abs(np.subtract(*self.bandgaps[idx_spin])) / 2.5
-                for idx_band in trange(grepen.nbands, leave=False, desc='interpolating bands for bandgap'):
+                for idx_band in trange(grepen.nbands, leave=False, desc='interpolating bands for bandgap', position=0):
                     if any(self.bandgaps[idx_spin][0] - ZERO < e < self.bandgaps[idx_spin][1] + ZERO for e in self.bands[idx_spin, idx_band]):
-                        for kpt in self.kpts:
+                        for kpt in tqdm(self.kpts, leave=False, position=1):
                             for sign in (-1,1):
                                 e = sign * scipy.optimize.minimize(lambda x,self=self,idx_spin=idx_spin,idx_band=idx_band,sign=sign: self.bands_interp()[idx_spin][idx_band](*x) * sign,
                                                                    x0 = kpt,
