@@ -1124,7 +1124,7 @@ class Bands(object):
                             for sign in (-1,1):
                                 e = sign * scipy.optimize.minimize(lambda x,self=self,idx_spin=idx_spin,idx_band=idx_band,sign=sign: self.bands_interp()[idx_spin][idx_band](*x) * sign,
                                                                    x0 = kpt,
-                                                                   bounds = [[x-min_kpt_dist,x+min_kpt_dist] for x in kpt],
+                                                                   bounds = [[x-min_kpt_dist*2,x+min_kpt_dist*2] for x in kpt],
                                                                    tol=1e-3).fun
                                 kptes.append([kpt[0],kpt[1],kpt[2],e])
                 kptes = np.float32(kptes)
@@ -1186,8 +1186,11 @@ class Charge(object):
                                                     x = dos.pdos[idx_spin, idx_atom, idx_orbital, :dos.idx_fermi, 0 ] ) \
                                           / \
                                           np.trapz( dos.pdos[idx_spin, idx_atom, idx_orbital, :INFINITY, 1 ] , \
-                                                                      x = dos.pdos[idx_spin, idx_atom, idx_orbital, :INFINITY, 0 ] )
-                        self.log += '%s %.2f' % (shared.ELEMENTS.orbitals[idx_orbital], integrated_pdos)
+                                                                      x = dos.pdos[idx_spin, idx_atom, idx_orbital, :INFINITY, 0 ] ) \
+                                          if np.trapz( dos.pdos[idx_spin, idx_atom, idx_orbital, :dos.idx_fermi, 1 ] , \
+                                                                      x = dos.pdos[idx_spin, idx_atom, idx_orbital, :dos.idx_fermi, 0 ] ) > 0 \
+                                          else 0
+                        self.log += '%9s %5.2f' % (shared.ELEMENTS.orbitals[idx_orbital], integrated_pdos)
                     self.log += '\n'
 
         # Bader charge
@@ -1321,10 +1324,11 @@ class Electron(object):
                 self.charge = Charge(self.cell, self.grepen, self.dos)
 
             if self.gen.parse_if('errors'):
-                if self.gen.getkw('cur'):
+                try:
+                    self.gen.getkw('cur'):
                     nodeB = engine.Map().lookup(self.gen.getkw('cur'))
                     self.errors = Errors(self.grepen, self.dos, self.bands, nodeB.electron.grepen, nodeB.electron.dos, nodeB.electron.bands)
-                else:
+                except shared.DeferError:
                     self.errors = Errors(self.grepen, self.dos, self.bands)
 
             self.log = ''
