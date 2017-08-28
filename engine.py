@@ -1130,7 +1130,7 @@ class Bands(object):
                                                                    tol=1e-3).fun
 
                                 return [kpt[0],kpt[1],kpt[2],e]
-                            kptes = Parallel(n_jobs=20)(delayed(mappy)(kpt) for kpt in self.)
+                            kptes = Parallel(n_jobs=20)(delayed(mappy)(kpt) for kpt in self.kpts)
                 kptes = np.float32(kptes)
                 # self.bandgaps_interp
                 cbm = np.amax([kpte[3] for kpte in kptes if self.bandgaps[idx_spin][0]-ZERO<kpte[3]<self.bandgaps[idx_spin][0]+ZERO])
