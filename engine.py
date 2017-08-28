@@ -21,7 +21,8 @@ import paramiko
 import IPython
 from itertools import groupby
 
-from multiprocessing import Pool
+from joblib import Parallel, delayed
+import multiprocessing
 
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
@@ -1121,16 +1122,15 @@ class Bands(object):
                 ZERO = abs(np.subtract(*self.bandgaps[idx_spin])) / 2.5
                 for idx_band in trange(grepen.nbands, leave=False, desc='interpolating bands for bandgap'):
                     if any(self.bandgaps[idx_spin][0] - ZERO < e < self.bandgaps[idx_spin][1] + ZERO for e in self.bands[idx_spin, idx_band]):
-                        for sign in (-1,1):
-                            p = Pool()
-                            es = p.map( scipy.optimize.minimize( fun = shared.rbf_wrap(self.bands_interp()[idx_spin][idx_band], sign),
-                                                                 x0 = kpt,
-                                                                 bounds = [[x-min_kpt_dist,x+min_kpt_dist] for x in kpt],
-                                                                 tol=1e-3),
-                                        self.kpts )
-                            for idx_kpt, kpt in enuemrate(self.kpts):
-                                kptes.append([kpt[0],kpt[1],kpt[2],es[idx_kpt].fun])
+                        for sign in (1,-1):
+                            def mappy(kpt):
+                                e = sign * scipy.optimize.minimize(lambda x,self=self,idx_spin=idx_spin,idx_band=idx_band,sign=sign: self.bands_interp()[idx_spin][idx_band](*x) * sign,
+                                                                   x0 = kpt,
+                                                                   bounds = [[x-min_kpt_dist,x+min_kpt_dist] for x in kpt],
+                                                                   tol=1e-3).fun
 
+                                return [kpt[0],kpt[1],kpt[2],e]
+                            kptes = Parallel(n_jobs=20)(delayed(mappy)(kpt) for kpt in self.)
                 kptes = np.float32(kptes)
                 # self.bandgaps_interp
                 cbm = np.amax([kpte[3] for kpte in kptes if self.bandgaps[idx_spin][0]-ZERO<kpte[3]<self.bandgaps[idx_spin][0]+ZERO])
