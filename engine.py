@@ -972,7 +972,7 @@ class Dos(object):
         self.cell = cell
         for name in ['nspins_dos', 'nspins_pdos']:
             self.log += '%s: %s\n' % (name, getattr(self,name,None))
-        self.log += '-' * 70 + '\n'
+        self.log += '-' * 145 + '\n'
 
         if not grepen.is_doscar_usable:
             raise shared.CustomError(self.__class__.__name__ + '.__init__: DOSCAR is not usable.')
@@ -1071,7 +1071,7 @@ class Bands(object):
             self.log += "spin %s: VBM %s at %s, CBM %s at %s, kpoint-independent bandgap %s eV\n" \
                   % (idx_spin, vbm, self.kpts[ np.where(self.bands[idx_spin]==vbm)[0][0] ], cbm, self.kpts[ np.where(self.bands[idx_spin]==cbm)[0][0] ], cbm-vbm) \
                   if cbm > vbm + ZERO else "spin %s: no bandgap\n" % (idx_spin)     # only first instance is printed.
-        hr()
+        self.log += '-' * 145 + '\n'
 
         # delta_k
         min_kpt_dist = np.amin( spatial.distance.pdist(self.kpts, metric='Euclidean'), axis=None )   # spatial.distance.pdist() produces a list of distances. amin() produces minimum for flattened input
@@ -1100,7 +1100,7 @@ class Bands(object):
                             delta_e_flat.append( abs(self.bands[idx_spin][idx_band][kpts_nn_list_[0]] - self.bands[idx_spin][idx_band][kpts_nn_list_[1]]) )
                 self.log += u'  CBM/VBM +- %.2f eV: \u03B4E = %.5f eV, # of kpts = %d.\n' %( ZERO, np.mean(delta_e_flat), len(delta_e_flat) ) \
                             if delta_e_flat else u'  CBM/VBM +- %.2f eV: # of kpts = 0.\n' %( ZERO )
-        hr()
+        self.log += '-' * 145 + '\n'
 
         #: interpolated bandgap
         self.log += 'Usually bandgap is between interpolated and raw bandgap. \n'
