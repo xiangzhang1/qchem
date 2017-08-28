@@ -1100,10 +1100,11 @@ class Bands(object):
                             delta_e_flat.append( abs(self.bands[idx_spin][idx_band][kpts_nn_list_[0]] - self.bands[idx_spin][idx_band][kpts_nn_list_[1]]) )
                 self.log += u'  CBM/VBM +- %.2f eV: \u03B4E = %.5f eV, # of kpts = %d.\n' %( ZERO, np.mean(delta_e_flat), len(delta_e_flat) ) \
                             if delta_e_flat else u'  CBM/VBM +- %.2f eV: # of kpts = 0.\n' %( ZERO )
+                self.delta_e = np.mean(delta_e_flat) if delta_e_flat    # for Errors
         self.log += '-' * 130 + '\n'
 
         #: interpolated bandgap
-        self.log += 'Usually bandgap is between interpolated and raw bandgap. \n'
+        self.log += 'bandgap is often between interpolated and raw bandgap. \n'
         #;
         if grepen.is_kpoints_mesh:
             self.bandgaps_interp = [ [] for idx_spin in range(self.nspins_bands) ]
@@ -1170,16 +1171,16 @@ class Charge(object):
 
         # let's start!
         # pristine electronic configuration
-        self.log += '\n\nGS electron configurations for elements in POSCAR\n'   # a good idea is to indent within header
+        self.log += 'ground-state electron configurations:\n'   # a good idea is to indent within header
         for element in cell.stoichiometry:
-            self.log += "%s: %s" %(element, shared.ELEMENTS[element].eleconfig)
+            self.log += "%s: %s\n" %(element, shared.ELEMENTS[element].eleconfig)
 
         # integrate pdos scaled
         idx_atom = 0
         for symbol, natoms in cell.stoichiometry.iteritems():
             for idx_atom in range(idx_atom, idx_atom + natoms):
                 for idx_spin in range(dos.nspins_pdos):
-                    self.log += "%s.%s s%s\t" % ( idx_atom, element, idx_spin )
+                    self.log += "%s%s %4s: " % ( symbol, idx_atom, 's_'+shared.ELEMENTS.spins[dos.nspins_pdos][idx_spin] )
                     for idx_orbital in range(dos.norbitals_pdos):
                         INFINITY = np.argmax( dos.pdos[idx_spin, idx_atom, idx_orbital, :, 0 ] > grepen.efermi+5 )
                         integrated_pdos = np.trapz( dos.pdos[idx_spin, idx_atom, idx_orbital, :dos.idx_fermi, 1 ] , \
@@ -1255,13 +1256,13 @@ class Errors(object):
             self.log += u'gaussian smearing smoothes out irregularities with size sigma: sigma[%.4f] < \u03B4[%.4f]/2' %(Agrepen.sigma,self.de)
             self.de = max(self.de, Agrepen.sigma * 2)
         ## rule
-        self.log += u'sparse kpoints grid may miss in-between eigenvalues. E(j)-E(j\')[%.4f] < \u03B4[%.4f]/2' %(Abands.de_kpoints,self.de)
-        self.de = max(self.de, Abands.de_kpoints * 2)
+        self.log += u'sparse kpoints grid may miss in-between eigenvalues. E(j)-E(j\')[%.4f] < \u03B4[%.4f]/2' %(Abands.delta_e,self.de)
+        self.de = max(self.de, Abands.delta_e * 2)
         ## rule
         self.log += u'all details between two DOS points are lost. 10/NEDOS[%.4f] < \u03B4[%.4f]/2' %(10.0/Agrepen.nedos,self.de)
         self.de = max(self.de, 10.0/float(Agrepen.nedos) * 2)
         ## rule
-        self.log += 'DOS should not be so fine that kpoint mesh coarseness is obvious. 10/NEDOS[%.4f] > DE_KPOINTS[%.4f]' %(10.0/Agrepen.nedos,Abands.de_kpoints)
+        self.log += 'DOS should not be so fine that kpoint mesh coarseness is obvious. 10/NEDOS[%.4f] > DE_KPOINTS[%.4f]' %(10.0/Agrepen.nedos,Abands.delta_e)
 
         # comparing against dirB
         self.de_interpd = []

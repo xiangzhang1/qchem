@@ -94,6 +94,7 @@ __bandgaps__[_idx_spin_] = [vbm, cbm] or []     <!-- small. not a numpy array --
 
 _delta_e_[idx_spin=0][ZERO==bandgap/2][idx_band===0][kpt_nn_list_====[0,1]] = E <!--doesnt actually exist -->
 _delta_e_flat_[]
+__delta_e__
 
 <!-- Interpolate and get bandgap.
 Because the region is irregular, the 1st idea is to compute Rbf(*kpt) for each kpt. This costs too much time per kpt.
