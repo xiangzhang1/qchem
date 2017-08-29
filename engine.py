@@ -1302,7 +1302,7 @@ class Errors(object):
             for idx_band, band in tqdm(enumerate(Bbands.bands[idx_spin]), leave=False, desc='interpolating Bbands for comparison'):
                 if any(Bbands.bandgaps[idx_spin][0] - ZERO < e < Bbands.bandgaps[idx_spin][0] + ZERO for e in Abands.bands[idx_spin][idx_band]):
                     self.de_interpd.append( np.average( abs( np.float_(Abands.bands[idx_spin][idx_band]) - np.float_([Bbands.bands_interp()[idx_spin][idx_band](*kpt) for kpt in Abands.kpts]) ) ) )
-                    self.log += 'in band %d, between dirA and dirB, interpolation plus Cauchy error is %.5f.\n' %(i_band, self.de_interpd[-1])
+                    self.log += 'in band %d, between dirA and dirB, interpolation plus Cauchy error is %.5f.\n' %(idx_band, self.de_interpd[-1])
 
             ## rule
             self.log += 'smearing should be larger than numerical energy error: sigma[%.4f] > DE_INTERPD[%.4f]' %(Agrepen.sigma, np.average(self.de_interpd))
