@@ -180,8 +180,10 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
                         'L': '0.5 0.5 0.5'
                     }
                 }
-                for high_symmetry_symbol in kpoints[2:]:
-                    outfile.write(high_symmetry_symbol_dict[self.getkw('struk')][high_symmetry_symbol]+'\n')
+                for idx in range(2, len(kpoints)-1):
+                    outfile.write(high_symmetry_symbol_dict[self.getkw('struk')][kpoints[idx]]+'\n')
+                    outfile.write(high_symmetry_symbol_dict[self.getkw('struk')][kpoints[idx+1]]+'\n')
+                    outfile.write('\n')
             else:
                 raise shared.CustomError(self.__class__.__name__ + '.write_incar_kpoints: kpoints starter looks wrong')
 
