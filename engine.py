@@ -374,10 +374,10 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         kpoints = self.getkw('kpoints').split()
         if kpoints[0] in 'GM' and len(kpoints)==4:
             return True
-        elif kpoints[1] in 'L' and len(kpoints)>2:
+        elif kpoints[0] in 'L' and len(kpoints)>2:
             return True
         else:
-            raise shared.CustomError(self.__class__.__name__ + '.kpointscheck: Kpoints format wrong. ')
+            raise shared.CustomError(self.__class__.__name__ + '.kpointscheck: kpoints format wrong. ')
         if kpoints[0] == 'M':
             print self.__class__.__name__ + '.kpointscheck warning: In general, for low-symmetry cells it is sometimes difficult to symmetrize the k-mesh if it is not centered on Gamma. For hexagonal cell, it becomes indeed impossible.'
         return True
