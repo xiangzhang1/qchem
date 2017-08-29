@@ -159,11 +159,27 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
                 if name not in self.kw_internal_set:
                     outfile.write('    '+name.upper()+' = '+str(self.getkw(name))+'\n')
         with open('KPOINTS','w') as outfile:
-            outfile.write('KPOINTS\n')
-            outfile.write('0\n')
-            outfile.write(self.getkw('kpoints').split()[0] + '\n')
-            outfile.write( ' '.join(self.getkw('kpoints').split()[1:]) + '\n' )
-            outfile.write('0 0 0')
+            kpoints = self.getkw('kpoints').split()
+            if kpoints[0] in 'GM':
+                outfile.write('KPOINTS\n')
+                outfile.write('0\n')
+                outfile.write(kpoints[0] + '\n')
+                outfile.write( ' '.join(kpoints[1:]) + '\n' )
+                outfile.write('0 0 0')
+            elif kpoints[0] in 'L':
+                outfile.write('KPOINTS\n%s\nline\nreciprocal\n' %kpoints[1])
+                high_symmetry_symbol_dict = {
+                    'B1' : {
+                        'G': '0 0 0',
+                        'X': '0 0 0.5',
+                        'W': '0 0.5 0.5',
+                        'L': '0.5 0.5 0.5'
+                    }
+                }
+                for high_symmetry_symbol in kpoints[2:]:
+                    outfile.write(high_symmetry_symbol_dict[self.getkw('struk')][high_symmetry_symbol]+'\n')
+            else:
+                raise shared.CustomError(self.__class__.__name__ + '.write_incar_kpoints: kpoints starter looks wrong')
 
     def pot(self, symbol):
         if len(shared.ELEMENTS[symbol].pot) == 0:
@@ -345,20 +361,24 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
     def ismear5check(self):
         '''kpoints is fit for ismear=5'''
         kpoints = self.getkw('kpoints').split(' ')
-        # NEED band support
-        if kpoints[0] not in 'GM':
-            raise shared.CustomError(self.__class__.__name__ + '.ismear5check: First member of kpoints, {%s}, is not supported (need band support)' %kpoints[0])
-        return np.prod([int(x) for x in kpoints[1:] ]) > 2
+        if kpoints[0] in 'GM':
+            return np.prod([int(x) for x in kpoints[1:] ]) > 2
+        elif kpoints[0] in 'L':
+            print self.__class__.__name__ + '.ismear5check warning: line mode, not fully tested'
+            return int(kpoints[1]) > 2
+        else:
+            raise shared.CustomError(self.__class__.__name__ + '.ismear5check: bad kpoints format')
 
     def kpointscheck(self):
         '''kpoints format is sane'''
         kpoints = self.getkw('kpoints').split()
-        # NEED band support
         if kpoints[0] in 'GM' and len(kpoints)==4:
+            return True
+        elif kpoints[1] in 'L' and len(kpoints)>2:
             return True
         else:
             raise shared.CustomError(self.__class__.__name__ + '.kpointscheck: Kpoints format wrong. ')
-        if kpoints[0] != 'G':
+        if kpoints[0] == 'M':
             print self.__class__.__name__ + '.kpointscheck warning: In general, for low-symmetry cells it is sometimes difficult to symmetrize the k-mesh if it is not centered on Gamma. For hexagonal cell, it becomes indeed impossible.'
         return True
 
