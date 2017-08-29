@@ -855,7 +855,7 @@ class Vasp(object):
                 raise shared.CustomError(self.__class__.__name__ + '.moonphase: i don\'t know what to do')
 
             # inspect vasprun.xml
-            if os.path.isfile('vasprun.xml') and os.path.getmtime('vasprun.xml')>os.path.getmtime('wrapper') and not vasp_is_running :
+            if os.path.isfile('vasprun.xml') and os.path.getmtime('vasprun.xml')>os.path.getmtime(self.path+'/wrapper') and not vasp_is_running :
                 with open('vasprun.xml','r') as if_:
                     if if_.read().splitlines()[-1] != '</modeling>' and not os.path.isfile('.moonphase'):
                         print(self.__class__.__name__+'compute FYI: Vasp computation at %s went wrong. vasprun.xml is incomplete. Use .moonphase file to overwrite.' %self.path)
@@ -1154,7 +1154,7 @@ class Bands(object):
                                 kptes.append([kpt[0],kpt[1],kpt[2],e])
                 kptes = np.float32(kptes)
                 # self.bandgaps_interp
-                cbm = np.amax([kpte[3] for kpte in kptes if self.bandgaps[idx_spin][0]-ZERO<kpte[3]<self.bandgaps[idx_spin][0]+ZERO])
+                vbm = np.amax([kpte[3] for kpte in kptes if self.bandgaps[idx_spin][0]-ZERO<kpte[3]<self.bandgaps[idx_spin][0]+ZERO])
                 cbm = np.amin([kpte[3] for kpte in kptes if self.bandgaps[idx_spin][1]-ZERO<kpte[3]<self.bandgaps[idx_spin][1]+ZERO])
                 self.bandgaps_interp[idx_spin] = [vbm, cbm] if cbm>vbm else []
                 self.log += "spin %s, interpolated: VBM %s at %s , CBM %s at %s, bandgap %.5f eV\n" \
@@ -1269,6 +1269,7 @@ class Charge(object):
 
 class Errors(object):
 
+    @shared.debug_wrap
     @shared.log_wrap
     def __init__(self, Agrepen, Ados, Abands, Bgrepen=None, Bdos=None, Bbands=None):
 
