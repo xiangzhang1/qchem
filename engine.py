@@ -1294,13 +1294,13 @@ class Errors(object):
         else:
             idx_spin = 0
             self.log += self.__class__.__name__ + ': comparing idx_spin=0 only.\n'    # faciliate comparison between ncl and fm
-            if Bbands.bands[0].shape != Abands.bands[0].shape:
-                raise shared.CustomError(self.__class__.__name__ + '.__init__: A and B bands are incompatible')
+            if len(Bbands.bands[0]) != len(Abands.bands[0]):
+                raise shared.CustomError(self.__class__.__name__ + '.__init__: A and B bands have incompatible NBANDS')
             if not Bbands.bandgaps[0] or not Abands.bandgaps[0]:
                 raise shared.CustomError(self.__class__.__name__ + '.__init__: bandgap not found for spin 0')
-            ZERO = (Bbands.bandgaps[idx_spin][1] - Bbands.bandgaps[idx_spin][0]) / 3
+            ZERO = (Bbands.bandgaps[idx_spin][1] - Bbands.bandgaps[idx_spin][0]) / 2
             for idx_band, band in tqdm(enumerate(Bbands[idx_spin]), leave=False, desc='interpolating Bbands for comparison'):
-                if any(Bbands.bandgaps[idx_spin][0] - ZERO < e < Bbands.bandgaps[idx_spin][1] + ZERO for e in self.bands[idx_spin][idx_band]):
+                if any(Bbands.bandgaps[idx_spin][0] - ZERO < e < Bbands.bandgaps[idx_spin][0] + ZERO for e in self.bands[idx_spin][idx_band]):
                     self.de_interpd.append( np.average( abs( Abands.bands[idx_spin][idx_band] - np.float32( Bbands.bands_interp()[idx_spin][idx_band](*kpt) for kpt in Abands.kpts ) ) ) )
                     self.log += 'in band %d, between dirA and dirB, interpolation plus Cauchy error is %.5f.\n' %(i_band, self.de_interpd[-1])
 
