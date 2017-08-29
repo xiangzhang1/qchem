@@ -135,11 +135,7 @@ class Node(object):
     def __str__(self):
         result = '# ' + self.name + '\n\n'
         for varname in vars(self):
-            if varname == 'name':
-                pass
-            elif varname == 'log':  # unicode problem
-                result += varname + ':\n' + vars(self)[varname] + '\n\n'
-            else:
+            if varname != 'name':
                 result += varname + ':\n' + str(vars(self)[varname]) + '\n\n'
         result += '\n\n'
         return result
