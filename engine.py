@@ -730,7 +730,7 @@ class Vasp(object):
             ncore_total = str(  int(self.gen.getkw('nnode')) * int(self.gen.getkw('ncore_node'))  )
             if self.gen.parse_if('spin=ncl'):   # vasp flavor
                 flavor = 'ncl'
-            elif all([int(x)==1 for x in self.gen.getkw('kpoints').split()[0:3]]):
+            elif self.gen.getkw('kpoints').split()[0] in 'GM' and all([int(x)==1 for x in self.gen.getkw('kpoints').split()[1:]]):
                 flavor = 'gam'
             elif self.gen.getkw('nnode') == '0':
                 ncore_total = 1
@@ -749,14 +749,14 @@ class Vasp(object):
                 self.subfile += 'echo $PWD `date` end  ; echo '+'-'*75+'\n'
                 self.wrapper += 'nohup ./subfile 2>&1 >> run.log &'
             if self.gen.parse_if('platform=nanaimo'):
-                self.wrapper += 'rsync -a . nanaimo:~/%s\n' %self.remote_folder_name
+                self.wrapper += 'rsync -av . nanaimo:~/%s\n' %self.remote_folder_name
                 self.wrapper += 'ssh nanaimo <<EOF\n'
                 self.wrapper += ' cd %s\n' %self.remote_folder_name
                 self.wrapper += ' sbatch --nodes=%s --ntasks=%s --job-name=%s -t 12:00:00 --export=ALL subfile\n' %(self.gen.getkw('nnode'), ncore_total, self.remote_folder_name)
                 self.wrapper += 'EOF\n'
                 self.subfile += '#!/bin/bash\n. /usr/share/Modules/init/bash\nmodule purge\nmodule load intel\nmodule load impi\nmpirun -np %s /opt/vasp.5.4.4/bin/vasp_%s' %(ncore_total, flavor)
             if self.gen.parse_if('platform=irmik'):
-                self.wrapper += 'rsync -a . irmik:~/%s\n' %self.remote_folder_name
+                self.wrapper += 'rsync -av . irmik:~/%s\n' %self.remote_folder_name
                 self.wrapper += 'ssh irmik <<EOF\n'
                 self.wrapper += ' cd %s\n' %self.remote_folder_name
                 self.wrapper += ' sbatch --nodes=%s --ntasks=%s --job-name=%s -t 12:00:00 --export=ALL subfile\n' %(self.gen.getkw('nnode'), ncore_total, self.remote_folder_name)
