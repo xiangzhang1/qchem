@@ -61,6 +61,10 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             return expression
 
     def parse_require(self, expression, run=False):  # Executes single require expression. Accepts empty expression as True.
+        #:simple grammar check
+        if len(expression.splitlines()) > 1:
+            raise shared.CustomError(self.__class__.__name__ + '.parse_require: expression {%s} contains line break' %expression)
+        #;
         operation_map = {
                 '=': lambda x, y: x & y,
                 '!=': lambda x, y: x - y,
@@ -364,11 +368,8 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         kpoints = self.getkw('kpoints').split(' ')
         if kpoints[0] in 'GM':
             return np.prod([int(x) for x in kpoints[1:] ]) > 2
-        elif kpoints[0] in 'L':
-            print self.__class__.__name__ + '.ismear5check warning: line mode, not fully tested'
-            return int(kpoints[1]) > 2
         else:
-            raise shared.CustomError(self.__class__.__name__ + '.ismear5check: bad kpoints format')
+            return False
 
     def kpointscheck(self):
         '''kpoints format is sane'''
