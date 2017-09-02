@@ -1232,7 +1232,7 @@ class Charge(object):
             for idx_atom in range(sum(cell.stoichiometry.values()[0:idx_element]),sum(cell.stoichiometry.values()[0:idx_element+1])):
                 nline = idx_atom + 2
                 self.log += lines[nline].split()[4] + ' '
-       self.log += '-' * 130 + '\n'
+        self.log += '-' * 130 + '\n'
 
         # OUTCAR RWIGS [decomposed] charge
         self.log += "\n\nTotal charge inside the Wigner-Seitz Radius in OUTCAR\n"
