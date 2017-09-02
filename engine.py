@@ -855,7 +855,7 @@ class Vasp(object):
                 raise shared.CustomError(self.__class__.__name__ + '.moonphase: i don\'t know what to do')
 
             # inspect vasprun.xml
-            if os.path.isfile('vasprun.xml') and os.path.getmtime('vasprun.xml')>os.path.getmtime(self.path+'/wrapper') and not vasp_is_running :
+            if os.path.isfile('vasprun.xml') and not vasp_is_running :  # and os.path.getmtime('vasprun.xml') > os.path.getmtime(self.path+'/wrapper') : buggy with sshfs, not needed because vasprun.xml is not copied
                 with open('vasprun.xml','r') as if_:
                     if if_.read().splitlines()[-1] != '</modeling>' and not os.path.isfile('.moonphase'):
                         print(self.__class__.__name__+'compute FYI: Vasp computation at %s went wrong. vasprun.xml is incomplete. Use .moonphase file to overwrite.' %self.path)
@@ -1137,9 +1137,9 @@ class Bands(object):
                 #:relevant parameters exist
                 ZERO = 0.01
                 if not self.bandgaps[idx_spin]: # conductor
-                    self.log += u'spin %s: no bandgap, bandgaps_interp skipped.\n' % ( idx_spin ) ; continue
+                    self.log += 'spin %s: no bandgap, bandgaps_interp skipped.\n' % ( idx_spin ) ; continue
                 if [idx2_spin for idx2_spin in range(idx_spin) if self.bandgaps[idx2_spin] and np.linalg.norm(np.subtract(self.bandgaps[idx_spin], self.bandgaps[idx2_spin])) < ZERO]:    # repetitive
-                    self.log += u'spin %s: repetitive, bandgaps_interp skipped.\n' % ( idx_spin ) ; continue
+                    self.log += 'spin %s: repetitive, bandgaps_interp skipped.\n' % ( idx_spin ) ; continue
                 #;
                 kptes = []
                 ZERO = abs(np.subtract(*self.bandgaps[idx_spin])) / 2.5
