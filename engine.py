@@ -1207,17 +1207,11 @@ class Charge(object):
         for symbol, natoms in cell.stoichiometry.iteritems():
             for idx_atom in range(idx_atom, idx_atom + natoms):
                 for idx_spin in range(dos.nspins_pdos):
-                    self.log += "%5s %2s: " % ( symbol + str(idx_atom), shared.ELEMENTS.spins[dos.nspins_pdos][idx_spin] )
+                    self.log += "%5s%2s: " % ( symbol + str(idx_atom), shared.ELEMENTS.spins[dos.nspins_pdos][idx_spin] )
                     for idx_orbital in range(dos.norbitals_pdos):
                         INFINITY = np.argmax( dos.pdos[idx_spin, idx_atom, idx_orbital, :, 0 ] > grepen.efermi+5 )
                         integrated_pdos = np.trapz( dos.pdos[idx_spin, idx_atom, idx_orbital, :dos.idx_fermi, 1 ] , \
-                                                    x = dos.pdos[idx_spin, idx_atom, idx_orbital, :dos.idx_fermi, 0 ] ) \
-                                          / \
-                                          np.trapz( dos.pdos[idx_spin, idx_atom, idx_orbital, :INFINITY, 1 ] , \
-                                                                      x = dos.pdos[idx_spin, idx_atom, idx_orbital, :INFINITY, 0 ] ) \
-                                          if np.trapz( dos.pdos[idx_spin, idx_atom, idx_orbital, :dos.idx_fermi, 1 ] , \
-                                                                      x = dos.pdos[idx_spin, idx_atom, idx_orbital, :dos.idx_fermi, 0 ] ) > 0 \
-                                          else 0
+                                                    x = dos.pdos[idx_spin, idx_atom, idx_orbital, :dos.idx_fermi, 0 ] ) 
                         self.log += '%7s %5.2f' % (shared.ELEMENTS.orbitals[idx_orbital], abs(integrated_pdos))
                     self.log += '\n'
         self.log += '-' * 130 + '\n'
