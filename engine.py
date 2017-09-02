@@ -783,7 +783,7 @@ class Vasp(object):
                 self.log = if_.read()
             # write parent cell if opt
             parent_node = Map().rlookup(attr_list={'vasp':self}, node_list=[self.prev], unique=True, parent=True)
-            if self.prev.gen.parse_if('opt'):
+            if self.prev and self.prev.gen.parse_if('opt'):
                 with open('CONTCAR','r') as infile:
                     text = infile.read()
                     setattr(parent_node, 'cell', Cell(text))
