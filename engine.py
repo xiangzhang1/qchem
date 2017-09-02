@@ -1063,6 +1063,8 @@ class Bands(object):
         ZERO = 0.01
         self.grepen = grepen
         self.nspins_bands = {'para':1, 'fm':2, 'ncl':1}[grepen.spin]
+        self.log += 'nspins_bands: %s\n' % nspins_bands
+        self.log += '-' * 130 + '\n'
 
         # bands
         with open("EIGENVAL","r") as f:
@@ -1198,14 +1200,14 @@ class Charge(object):
         self.log += 'ground-state electron configurations:\n'   # a good idea is to indent within header
         for element in cell.stoichiometry:
             self.log += "%s: %s\n" %(element, shared.ELEMENTS[element].eleconfig)
-        self.log += '\n\n'
+        self.log += '-' * 130 + '\n'
 
         # integrate pdos scaled
         idx_atom = 0
         for symbol, natoms in cell.stoichiometry.iteritems():
             for idx_atom in range(idx_atom, idx_atom + natoms):
                 for idx_spin in range(dos.nspins_pdos):
-                    self.log += "%5s %4s: " % ( symbol + str(idx_atom), 's_'+shared.ELEMENTS.spins[dos.nspins_pdos][idx_spin] )
+                    self.log += "%5s %2s: " % ( symbol + str(idx_atom), shared.ELEMENTS.spins[dos.nspins_pdos][idx_spin] )
                     for idx_orbital in range(dos.norbitals_pdos):
                         INFINITY = np.argmax( dos.pdos[idx_spin, idx_atom, idx_orbital, :, 0 ] > grepen.efermi+5 )
                         integrated_pdos = np.trapz( dos.pdos[idx_spin, idx_atom, idx_orbital, :dos.idx_fermi, 1 ] , \
@@ -1218,6 +1220,7 @@ class Charge(object):
                                           else 0
                         self.log += '%7s %5.2f' % (shared.ELEMENTS.orbitals[idx_orbital], abs(integrated_pdos))
                     self.log += '\n'
+        self.log += '-' * 130 + '\n'
 
         # Bader charge
         self.log += "\n\nBader charge. Boundaries are defined as zero-flux surfaces. Note that certain flags should be set (e.g. LAECHG) for this to be reasonable.\n"
@@ -1229,6 +1232,7 @@ class Charge(object):
             for idx_atom in range(sum(cell.stoichiometry.values()[0:idx_element]),sum(cell.stoichiometry.values()[0:idx_element+1])):
                 nline = idx_atom + 2
                 self.log += lines[nline].split()[4] + ' '
+       self.log += '-' * 130 + '\n'
 
         # OUTCAR RWIGS [decomposed] charge
         self.log += "\n\nTotal charge inside the Wigner-Seitz Radius in OUTCAR\n"
@@ -1239,7 +1243,7 @@ class Charge(object):
                     break
             for idx2_line in range(idx_line ,idx_line + 4 + sum(cell.stoichiometry.values())):
                 self.log += lines[idx2_line]
-        self.log += '\n\n'
+        self.log += '-' * 130 + '\n'
 
         # Bader magnetic moment
         if grepen.spin == 'fm' or grepen.spin == 'afm':
@@ -1254,6 +1258,7 @@ class Charge(object):
                         lines = f.readlines()
                         self.log += lines[nline].split()[4]
                 self.log += '\n'
+        self.log += '-' * 130 + '\n'
 
         # OUTCAR RWIGS magnetic moment
         if grepen.spin == 'fm' or grepen.spin == 'afm':

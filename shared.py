@@ -176,7 +176,7 @@ class ElementsDict(object):
         self._list = []
         self._dict = {}
         self.orbitals = 's p_y p_z p_x d_xy d_yz d_z2 d_xz dx2-y2'.split()   # user added
-        self.spins = {1: ['tot'], 2: [u'\u2191', u'\u2193'], 3:['x','y','z'], 4: ['x','y','z','tot']}   # user added
+        self.spins = {1: [''], 2: [u'\u2191', u'\u2193'], 3:['_x','_y','_z'], 4: ['','_x','_y','_z']}   # user added
         for element in elements:
             if element.number > len(self._list) + 1:
                 raise ValueError("Elements must be added in order")
