@@ -1063,7 +1063,7 @@ class Bands(object):
         ZERO = 0.01
         self.grepen = grepen
         self.nspins_bands = {'para':1, 'fm':2, 'ncl':1}[grepen.spin]
-        self.log += 'nspins_bands: %s\n' % nspins_bands
+        self.log += 'nspins_bands: %s\n' % (self.nspins_bands)
         self.log += '-' * 130 + '\n'
 
         # bands
