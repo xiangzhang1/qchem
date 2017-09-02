@@ -1110,7 +1110,7 @@ class Bands(object):
             ZERO = 0.01
             if not self.bandgaps[idx_spin]: # conductor
                 self.log += u'spin %s: no bandgap, \u3B4E skipped.\n' % idx_spin ; continue
-            if [idx2_spin for idx2_spin in range(idx_spin) if self.bandgaps[idx2_spin] and np.linalg.norm(np.subtract(self.bangaps[idx_spin], self.bandgaps[idx2_spin])) < ZERO]:    # repetitive
+            if [idx2_spin for idx2_spin in range(idx_spin) if self.bandgaps[idx2_spin] and np.linalg.norm(np.subtract(self.bandgaps[idx_spin], self.bandgaps[idx2_spin])) < ZERO]:    # repetitive
                 self.log += u'spin %s: repetitive, \u3B4E skipped. \n' % ( idx_spin ) ; continue
             # specify neargap criterion ZERO
             self.log += u'spin %s, nearest neighbor \u03B4E:\n' % (idx_spin)
@@ -1138,7 +1138,7 @@ class Bands(object):
                 ZERO = 0.01
                 if not self.bandgaps[idx_spin]: # conductor
                     self.log += u'spin %s: no bandgap, bandgaps_interp skipped.\n' % ( idx_spin ) ; continue
-                if [idx2_spin for idx2_spin in range(idx_spin) if self.bandgaps[idx2_spin] and np.linalg.norm(np.subtract(self.bangaps[idx_spin], self.bandgaps[idx2_spin])) < ZERO]:    # repetitive
+                if [idx2_spin for idx2_spin in range(idx_spin) if self.bandgaps[idx2_spin] and np.linalg.norm(np.subtract(self.bandgaps[idx_spin], self.bandgaps[idx2_spin])) < ZERO]:    # repetitive
                     self.log += u'spin %s: repetitive, bandgaps_interp skipped.\n' % ( idx_spin ) ; continue
                 #;
                 kptes = []
@@ -1215,7 +1215,7 @@ class Charge(object):
                                           if np.trapz( dos.pdos[idx_spin, idx_atom, idx_orbital, :dos.idx_fermi, 1 ] , \
                                                                       x = dos.pdos[idx_spin, idx_atom, idx_orbital, :dos.idx_fermi, 0 ] ) > 0 \
                                           else 0
-                        self.log += '%7s %5.2f' % (shared.ELEMENTS.orbitals[idx_orbital], integrated_pdos)
+                        self.log += '%7s %5.2f' % (shared.ELEMENTS.orbitals[idx_orbital], abs(integrated_pdos))
                     self.log += '\n'
 
         # Bader charge
