@@ -1093,7 +1093,7 @@ class Bands(object):
                                                                                                # the array itself is an iterator looping normally by outmost dimension.
             self.bandgaps[idx_spin] = [vbm, cbm] if cbm > vbm + ZERO else []
             self.log += "spin %s: VBM %s at %s, CBM %s at %s, kpoint-independent bandgap %.5f eV\n" \
-                  % (idx_spin, vbm, self.kpts[ np.where(self.bands[idx_spin]==vbm)[0][0] ], cbm, self.kpts[ np.where(self.bands[idx_spin]==cbm)[0][0] ], cbm-vbm) \
+                  % (idx_spin, vbm, self.kpts[ np.where(self.bands[idx_spin]==vbm)[1][0] ], cbm, self.kpts[ np.where(self.bands[idx_spin]==cbm)[1][0] ], cbm-vbm) \
                   if cbm > vbm + ZERO else "spin %s: no bandgap\n" % (idx_spin)     # only first instance is printed.
         self.log += '-' * 130 + '\n'
 
