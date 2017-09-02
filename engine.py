@@ -1231,10 +1231,11 @@ class Charge(object):
             for idx_atom in range(sum(cell.stoichiometry.values()[0:idx_element]),sum(cell.stoichiometry.values()[0:idx_element+1])):
                 nline = idx_atom + 2
                 self.log += lines[nline].split()[4] + ' '
+            self.log += '\n'
         self.log += '-' * 130 + '\n'
 
         # OUTCAR RWIGS [decomposed] charge
-        self.log += "\n\nTotal charge inside the Wigner-Seitz Radius in OUTCAR\n"
+        self.log += "Total charge inside the Wigner-Seitz Radius in OUTCAR\n"
         with open('OUTCAR','r') as f:
             lines = f.readlines()
             for idx_line,line in enumerate(lines):
@@ -1246,7 +1247,7 @@ class Charge(object):
 
         # Bader magnetic moment
         if grepen.spin == 'fm' or grepen.spin == 'afm':
-            self.log += "\n\nAn oversimplified version of Bader magnetic moment.\n"
+            self.log += "An oversimplified version of Bader magnetic moment.\n"
             os.popen('chgsplit.sh CHGCAR').read()
             os.popen('bader cf2').read()
             for idx_element, element in enumerate(cell.stoichiometry.keys()):
@@ -1261,7 +1262,7 @@ class Charge(object):
 
         # OUTCAR RWIGS magnetic moment
         if grepen.spin == 'fm' or grepen.spin == 'afm':
-            self.log += "\n\nMagnetization (x) [total magnetic moment inside the Wigner-Seitz Radius] in OUTCAR\n"
+            self.log += "Magnetization (x) [total magnetic moment inside the Wigner-Seitz Radius] in OUTCAR\n"
             with open('OUTCAR','r') as f:
                 lines = f.readlines()
                 for idx_line,line in enumerate(lines):

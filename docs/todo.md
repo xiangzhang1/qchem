@@ -1,4 +1,12 @@
-1. delete property button.
-2. bandstructure support (kpoints), Strukturbericht Symbol support - _partially complete_
-3. large file split storage support
-4. parallelization
+delete property button:
+edit is update-only, so del is useless.
+
+large file split storage support
+
+parallelization:
+Dask parallelization is easy and good. Unfortunately, overheads are of the order of 1 min. Plus, numpy automatically utilizes parallelization.
+
+-------
+
+bandstructure support (kpoints), Strukturbericht Symbol support:
+partially complete
