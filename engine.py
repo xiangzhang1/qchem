@@ -1146,19 +1146,18 @@ class Bands(object):
                 if [idx2_spin for idx2_spin in range(idx_spin) if self.bandgaps[idx2_spin] and np.linalg.norm(np.subtract(self.bandgaps[idx_spin], self.bandgaps[idx2_spin])) < ZERO]:    # repetitive
                     self.log += 'spin %s: repetitive, bandgaps_interp skipped.\n' % ( idx_spin ) ; continue
                 #;
-                lazy_kptes = []
+                kptes = []
                 ZERO = abs(np.subtract(*self.bandgaps[idx_spin])) / 2.5
                 for idx_band in trange(grepen.nbands, leave=False, desc='interpolating bands for bandgap', position=0):
                     if any(self.bandgaps[idx_spin][0] - ZERO < e < self.bandgaps[idx_spin][1] + ZERO for e in self.bands[idx_spin, idx_band]):
                         for kpt in tqdm(self.kpts, leave=False, position=1):
                             for sign in (-1,1):
-                                e = sign * delayed(scipy.optimize.minimize)(lambda x,self=self,idx_spin=idx_spin,idx_band=idx_band,sign=sign: self.bands_interp()[idx_spin][idx_band](*x) * sign,
+                                e = sign * scipy.optimize.minimize(lambda x,self=self,idx_spin=idx_spin,idx_band=idx_band,sign=sign: self.bands_interp()[idx_spin][idx_band](*x) * sign,
                                                                    x0 = kpt,
                                                                    bounds = [[x-min_kpt_dist*0.5,x+min_kpt_dist*0.5] for x in kpt],
                                                                    tol=1e-6).fun
-                                lazy_kptes.append([kpt[0],kpt[1],kpt[2],e])
-                with ProgressBar():
-                    kptes = np.float32(compute(*lazy_kptes, get=dask.multiprocessing.get))
+                                kptes.append([kpt[0],kpt[1],kpt[2],e])
+                kptes = np.float32(kptes)
                 # self.bandgaps_interp
                 vbm = np.amax([kpte[3] for kpte in kptes if self.bandgaps[idx_spin][0]-ZERO<kpte[3]<self.bandgaps[idx_spin][0]+ZERO])
                 cbm = np.amin([kpte[3] for kpte in kptes if self.bandgaps[idx_spin][1]-ZERO<kpte[3]<self.bandgaps[idx_spin][1]+ZERO])
