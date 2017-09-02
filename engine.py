@@ -27,7 +27,9 @@ import time
 
 from tqdm import tqdm, trange
 
-import dask.multiprocessing, dask.compute, dask.delayed, dask.diagnostics.ProgressBar
+from dask import compute, delayed
+from dask.diagnostics import ProgressBar
+import dask.multiprocessing
 
 from scipy.interpolate import Rbf
 from scipy.interpolate import interp1d
@@ -1054,9 +1056,9 @@ class Bands(object):
     @shared.MWT(timeout=2592000)
     def bands_interp(self):
         '''fit the band for verifying smoothness, and interpolating bandgap'''
-        results = [ [ dask.delayed(Rbf)(self.kpts[:,0], self.kpts[:,1], self.kpts[:,2], self.bands[idx_spin, idx_band])
+        results = [ [ delayed(Rbf)(self.kpts[:,0], self.kpts[:,1], self.kpts[:,2], self.bands[idx_spin, idx_band])
                            for idx_band in range(self.grepen.nbands) ] for idx_spin in range(self.nspins_bands) ]
-        return dask.compute(*results, get=dask.multiprocessing.get)
+        return compute(*results, get=dask.multiprocessing.get)
 
     @shared.debug_wrap
     @shared.log_wrap
@@ -1150,12 +1152,12 @@ class Bands(object):
                     if any(self.bandgaps[idx_spin][0] - ZERO < e < self.bandgaps[idx_spin][1] + ZERO for e in self.bands[idx_spin, idx_band]):
                         for kpt in tqdm(self.kpts, leave=False, position=1):
                             for sign in (-1,1):
-                                e = sign * dask.delayed(scipy.optimize.minimize)(lambda x,self=self,idx_spin=idx_spin,idx_band=idx_band,sign=sign: self.bands_interp()[idx_spin][idx_band](*x) * sign,
+                                e = sign * delayed(scipy.optimize.minimize)(lambda x,self=self,idx_spin=idx_spin,idx_band=idx_band,sign=sign: self.bands_interp()[idx_spin][idx_band](*x) * sign,
                                                                    x0 = kpt,
                                                                    bounds = [[x-min_kpt_dist*0.5,x+min_kpt_dist*0.5] for x in kpt],
                                                                    tol=1e-6).fun
                                 lazy_kptes.append([kpt[0],kpt[1],kpt[2],e])
-                with dask.diagnostics.ProgressBar():
+                with ProgressBar():
                     kptes = np.float32(compute(*lazy_kptes, get=dask.multiprocessing.get))
                 # self.bandgaps_interp
                 vbm = np.amax([kpte[3] for kpte in kptes if self.bandgaps[idx_spin][0]-ZERO<kpte[3]<self.bandgaps[idx_spin][0]+ZERO])
