@@ -25,9 +25,9 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import time
 
-# import progressbar
-# from progressbar import Bar, Counter, ETA,FormatLabel, Percentage,ProgressBar
 from tqdm import tqdm, trange
+
+import dask.multiprocessing, dask.compute, dask.delayed, dask.diagnostics.ProgressBar
 
 from scipy.interpolate import Rbf
 from scipy.interpolate import interp1d
@@ -1054,8 +1054,9 @@ class Bands(object):
     @shared.MWT(timeout=2592000)
     def bands_interp(self):
         '''fit the band for verifying smoothness, and interpolating bandgap'''
-        return [ [ Rbf(self.kpts[:,0], self.kpts[:,1], self.kpts[:,2], self.bands[idx_spin, idx_band])
+        results = [ [ dask.delayed(Rbf)(self.kpts[:,0], self.kpts[:,1], self.kpts[:,2], self.bands[idx_spin, idx_band])
                            for idx_band in range(self.grepen.nbands) ] for idx_spin in range(self.nspins_bands) ]
+        return dask.compute(*results, get=dask.multiprocessing.get)
 
     @shared.debug_wrap
     @shared.log_wrap
@@ -1143,18 +1144,19 @@ class Bands(object):
                 if [idx2_spin for idx2_spin in range(idx_spin) if self.bandgaps[idx2_spin] and np.linalg.norm(np.subtract(self.bandgaps[idx_spin], self.bandgaps[idx2_spin])) < ZERO]:    # repetitive
                     self.log += 'spin %s: repetitive, bandgaps_interp skipped.\n' % ( idx_spin ) ; continue
                 #;
-                kptes = []
+                lazy_kptes = []
                 ZERO = abs(np.subtract(*self.bandgaps[idx_spin])) / 2.5
                 for idx_band in trange(grepen.nbands, leave=False, desc='interpolating bands for bandgap', position=0):
                     if any(self.bandgaps[idx_spin][0] - ZERO < e < self.bandgaps[idx_spin][1] + ZERO for e in self.bands[idx_spin, idx_band]):
                         for kpt in tqdm(self.kpts, leave=False, position=1):
                             for sign in (-1,1):
-                                e = sign * scipy.optimize.minimize(lambda x,self=self,idx_spin=idx_spin,idx_band=idx_band,sign=sign: self.bands_interp()[idx_spin][idx_band](*x) * sign,
+                                e = sign * dask.delayed(scipy.optimize.minimize)(lambda x,self=self,idx_spin=idx_spin,idx_band=idx_band,sign=sign: self.bands_interp()[idx_spin][idx_band](*x) * sign,
                                                                    x0 = kpt,
                                                                    bounds = [[x-min_kpt_dist*0.5,x+min_kpt_dist*0.5] for x in kpt],
                                                                    tol=1e-6).fun
-                                kptes.append([kpt[0],kpt[1],kpt[2],e])
-                kptes = np.float32(kptes)
+                                lazy_kptes.append([kpt[0],kpt[1],kpt[2],e])
+                with dask.diagnostics.ProgressBar():
+                    kptes = np.float32(compute(*lazy_kptes, get=dask.multiprocessing.get))
                 # self.bandgaps_interp
                 vbm = np.amax([kpte[3] for kpte in kptes if self.bandgaps[idx_spin][0]-ZERO<kpte[3]<self.bandgaps[idx_spin][0]+ZERO])
                 cbm = np.amin([kpte[3] for kpte in kptes if self.bandgaps[idx_spin][1]-ZERO<kpte[3]<self.bandgaps[idx_spin][1]+ZERO])
@@ -1203,6 +1205,7 @@ class Charge(object):
         self.log += '-' * 130 + '\n'
 
         # integrate pdos scaled
+        self.log += 'Integrated PDOS. Each orbital is normalized to 1. If ONE is too small, -INT is returned.'
         idx_atom = 0
         for symbol, natoms in cell.stoichiometry.iteritems():
             for idx_atom in range(idx_atom, idx_atom + natoms):
@@ -1213,10 +1216,8 @@ class Charge(object):
                         ONE = np.trapz( dos.pdos[idx_spin, idx_atom, idx_orbital, :INFINITY, 1 ] , \
                                                     x = dos.pdos[idx_spin, idx_atom, idx_orbital, :INFINITY, 0 ] )
                         integrated_pdos = np.trapz( dos.pdos[idx_spin, idx_atom, idx_orbital, :dos.idx_fermi, 1 ] , \
-                                                    x = dos.pdos[idx_spin, idx_atom, idx_orbital, :dos.idx_fermi, 0 ] ) / ONE \
-                                          if ONE > 0 \
-                                          else 0
-                        self.log += '%7s %3.1f|%2.1f' % (shared.ELEMENTS.orbitals[idx_orbital], ONE, abs(integrated_pdos))
+                                                    x = dos.pdos[idx_spin, idx_atom, idx_orbital, :dos.idx_fermi, 0 ] )
+                        self.log += '%7s %5.2f' % (shared.ELEMENTS.orbitals[idx_orbital], abs(integrated_pdos / ONE) if abs(ONE) > 0.4 else -abs(integrated_pdos) )
                     self.log += '\n'
         self.log += '-' * 130 + '\n'
 
