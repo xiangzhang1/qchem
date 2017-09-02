@@ -1056,9 +1056,8 @@ class Bands(object):
     @shared.MWT(timeout=2592000)
     def bands_interp(self):
         '''fit the band for verifying smoothness, and interpolating bandgap'''
-        results = [ [ delayed(Rbf)(self.kpts[:,0], self.kpts[:,1], self.kpts[:,2], self.bands[idx_spin, idx_band])
+        return [ [ Rbf(self.kpts[:,0], self.kpts[:,1], self.kpts[:,2], self.bands[idx_spin, idx_band])
                            for idx_band in range(self.grepen.nbands) ] for idx_spin in range(self.nspins_bands) ]
-        return compute(*results, get=dask.multiprocessing.get)
 
     @shared.debug_wrap
     @shared.log_wrap
@@ -1206,7 +1205,7 @@ class Charge(object):
         self.log += '-' * 130 + '\n'
 
         # integrate pdos scaled
-        self.log += 'Integrated PDOS. Each orbital is normalized to 1. If ONE is too small, -INT is returned.'
+        self.log += 'Integrated PDOS. Each orbital is normalized to 1. If ONE is too small, -INT is returned.\n'
         idx_atom = 0
         for symbol, natoms in cell.stoichiometry.iteritems():
             for idx_atom in range(idx_atom, idx_atom + natoms):

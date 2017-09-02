@@ -1,5 +1,5 @@
 Grammar
-========
+-------
 
 import PEP8
 
@@ -26,3 +26,5 @@ At the same time, use Atom built-in folding and the fragile `remember-folds` pac
 
 Use Atom developer mode to tweak:
 - ignore a[1][2] in markdown
+
+Dask parallelization is good. Unfortunately, overheads are of the order of 1 min.
