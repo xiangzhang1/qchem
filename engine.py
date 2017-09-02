@@ -1157,7 +1157,7 @@ class Bands(object):
                 vbm = np.amax([kpte[3] for kpte in kptes if self.bandgaps[idx_spin][0]-ZERO<kpte[3]<self.bandgaps[idx_spin][0]+ZERO])
                 cbm = np.amin([kpte[3] for kpte in kptes if self.bandgaps[idx_spin][1]-ZERO<kpte[3]<self.bandgaps[idx_spin][1]+ZERO])
                 self.bandgaps_interp[idx_spin] = [vbm, cbm] if cbm>vbm else []
-                self.log += "spin %s, interpolated: VBM %s at %s , CBM %s at %s, bandgap %.5f eV\n" \
+                self.log += "spin %s, interpolated: VBM %s near %s , CBM %s near %s, bandgap %.5f eV\n" \
                       % (idx_spin, vbm, kptes[np.where(kptes[:,3]==vbm)[0][0],:3], cbm, kptes[np.where(kptes[:,3]==cbm)[0][0],:3], cbm-vbm) \
                       if cbm > vbm else "spin %s, interpolated: no bandgap\n" % (idx_spin)
         else:
@@ -1198,13 +1198,14 @@ class Charge(object):
         self.log += 'ground-state electron configurations:\n'   # a good idea is to indent within header
         for element in cell.stoichiometry:
             self.log += "%s: %s\n" %(element, shared.ELEMENTS[element].eleconfig)
+        self.log += '\n\n'
 
         # integrate pdos scaled
         idx_atom = 0
         for symbol, natoms in cell.stoichiometry.iteritems():
             for idx_atom in range(idx_atom, idx_atom + natoms):
                 for idx_spin in range(dos.nspins_pdos):
-                    self.log += "%s%s %4s: " % ( symbol, idx_atom, 's_'+shared.ELEMENTS.spins[dos.nspins_pdos][idx_spin] )
+                    self.log += "%5s %4s: " % ( symbol + str(idx_atom), 's_'+shared.ELEMENTS.spins[dos.nspins_pdos][idx_spin] )
                     for idx_orbital in range(dos.norbitals_pdos):
                         INFINITY = np.argmax( dos.pdos[idx_spin, idx_atom, idx_orbital, :, 0 ] > grepen.efermi+5 )
                         integrated_pdos = np.trapz( dos.pdos[idx_spin, idx_atom, idx_orbital, :dos.idx_fermi, 1 ] , \
