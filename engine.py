@@ -442,7 +442,7 @@ class Cell(object):
         elif shared.DEBUG>0:
             pprint([[sel=='T' for sel in line.split()[3:]] for line in lines[9:9+sum(self.stoichiometry.values())]])
         if lines[7].startswith('D'):
-            self.coordinates = np.float32([ line.split() for line in lines[8:8+sum(self.stoichiometry.values())] ])
+            self.coordinates = np.float32([ line.split()[:3] for line in lines[8:8+sum(self.stoichiometry.values())] ])
             for coor in self.coordinates:
                 if len(coor)!=3:
                     raise shared.CustomError(self.__class__.__name__+'__init__: bad format. Coordinate line {%s}' %coor)
