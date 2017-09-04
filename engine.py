@@ -270,9 +270,9 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         for kwname in set(self.kw.keys())-self.kw_legal_set:
             print self.__class__.__name__+' warning: illegal name. Kw {%s} is not required and has been ignored.' % kwname
             del self.kw[kwname]
-            for name in self.kw:
-                if len(self.kw[name]) != 1:
-                    raise shared.CustomError( self.__class__.__name__+' error: non-unique output. Kw[%s]={%s} has not been restricted to 1 value.' %(name,self.kw[name]) )
+        for name in self.kw:
+            if len(self.kw[name]) != 1:
+                raise shared.CustomError( self.__class__.__name__+' error: non-unique output. Kw[%s]={%s} has not been restricted to 1 value.' %(name,self.kw[name]) )
         if self.parse_if('engine=vasp'):
             self.check_memory()
 
