@@ -366,6 +366,9 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             result += 50
         return str(result)
 
+    def crappyencut(self):
+        return str(max( [ shared.ELEMENTS[symbol].pot_encut for symbol in self.cell.stoichiometry.keys() ] )+20)
+
 
     def ismear5check(self):
         '''kpoints is fit for ismear=5'''
@@ -439,8 +442,6 @@ class Cell(object):
         if lines[7].startswith('Select') and all(all(sel=='T' for sel in line.split()[3:]) for line in lines[9:9+sum(self.stoichiometry.values())] ):
             print self.__class__.__name__ + '.__init__: Selective dynamics cell, all T. Converting to trivial cell...'
             lines.pop(7)
-        elif shared.DEBUG>0:
-            pprint([[sel=='T' for sel in line.split()[3:]] for line in lines[9:9+sum(self.stoichiometry.values())]])
         if lines[7].startswith('D'):
             self.coordinates = np.float32([ line.split()[:3] for line in lines[8:8+sum(self.stoichiometry.values())] ])
             for coor in self.coordinates:
