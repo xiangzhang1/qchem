@@ -754,7 +754,7 @@ class Vasp(object):
             self.remote_folder_name = self.path.split('/')[-2] + '_' + self.path.split('/')[-1] + '_' + hashlib.md5(self.path).hexdigest()[:5] + '_' + str(time.time())
             # write scripts and instructions
             # subfile actually runs vasp. wrapper submits the subfile to system.
-            self.wrapper = '#!/bin/bash\n' ; self.subfile = '#!/bin/bash\necho $PWD `date` start\n-------------------------\n'
+            self.wrapper = '#!/bin/bash\n' ; self.subfile = '#!/bin/bash\necho $PWD `date` start\necho -------------------------\n'
             if self.gen.parse_if('platform=dellpc'):
                 self.subfile += 'mpiexec.hydra -n %s /home/xzhang1/src/vasp.5.4.1/bin/vasp_%s </dev/null \n' %(ncore_total, flavor)
                 self.subfile += 'mail -s "VASP job finished: {${PWD##*/}}" 8576361405@vtext.com <<<EOM \n'
@@ -773,7 +773,7 @@ class Vasp(object):
                 self.wrapper += ' sbatch --nodes=%s --ntasks=%s --job-name=%s -t 12:00:00 --export=ALL subfile\n' %(self.gen.getkw('nnode'), ncore_total, self.remote_folder_name)
                 self.wrapper += 'EOF\n'
                 self.subfile += '#!/bin/bash\n. /usr/share/Modules/init/bash\nmodule purge\nmodule load mvapich2-2.2/intel\nmpirun -np %s /opt/vasp.5.4.4/bin/vasp_%s\n' %(ncore_total, flavor)
-            self.subfile += 'echo $PWD `date` end\n-------------------------\n'
+            self.subfile += 'echo $PWD `date` end \necho -------------------------\n'
             with open('wrapper','w') as of_:
                 of_.write(self.wrapper)
                 os.system('chmod +x wrapper')
