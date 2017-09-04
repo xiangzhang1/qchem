@@ -47,7 +47,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         if kwname not in self.kw:
             raise shared.DeferError(self.__class__.__name__ + '. getkw: keyword {%s} not found, DeferError raised' %kwname)
         if len(self.kw[kwname]) != 1:
-            raise shared.DeferError(self.__class__.__name__ + '.getkw: self.kw[kwname] does not have 1 unique value, DeferError raised')
+            raise shared.DeferError(self.__class__.__name__ + '.getkw: self.kw[%s] does not have 1 unique value {%s}, DeferError raised' %(kwname, self.kw[kwname]))
         if not isinstance(next(iter(self.kw[kwname])), basestring):
             raise shared.CustomError(self.__class__.__name__ + '.getkw: value {%s} of kw {%s} is not string' % (next(iter(self.kw[kwname])), kwname))
         return next(iter(self.kw[kwname]))
