@@ -776,6 +776,7 @@ class Vasp(object):
             #    os.system(wrapper)
             print '-'*50 + '\n' + self.__class__.__name__ + ': wrapper generated at   %s   , waiting for filesystem update. ' %self.path
 
+        # no log but invoked, only possible from moonphase. write parent.
         elif not getattr(self,'log',None):
             os.chdir(self.path)
             # log
@@ -784,8 +785,8 @@ class Vasp(object):
             with open(filename,'r') as if_:
                 self.log = if_.read()
             # write parent cell if opt
-            parent_node = Map().rlookup(attr_list={'vasp':self}, node_list=[self.prev], unique=True, parent=True)
-            if self.prev and self.prev.gen.parse_if('opt'):
+            parent_node = Map().rlookup(attr_list={'vasp':self}, unique=True, parent=True)
+            if getattr(self, 'gen', None) and self.gen.parse_if('opt'):
                 with open('CONTCAR','r') as infile:
                     text = infile.read()
                     setattr(parent_node, 'cell', Cell(text))
