@@ -435,12 +435,17 @@ class Cell(object):
         self.name = lines[0]
         self.base = np.float32([ line.split() for line in lines[2:5] ]) * float(lines[1])
         self.stoichiometry = OrderedDict( zip(lines[5].split(), [int(x) for x in lines[6].split()]) )
-        if not lines[7].startswith('D'):
-            raise shared.CustomError(self.__class__.__name__+'__init__: unsupported POSCAR5 format. Only direct coordinates are supported.')
-        self.coordinates = np.float32([ line.split() for line in lines[8:8+sum(self.stoichiometry.values())] ])
-        for coor in self.coordinates:
-            if len(coor)!=3:
-                raise shared.CustomError(self.__class__.__name__+'__init__: bad format. Coordinate line {%s}' %coor)
+        # fork parsing on Direct | Selective Dynamics
+        if line[7].startswith('Selective') and all([ sel=='T' for sel in line.split()[3:] for line in lines[8:8+sum(self.stoichiometry.values())] ]):
+            print self.__class__.__name__ + '.__init__: Selective dynamics cell with all T. Converting to trivial cell...'
+            lines.pop(7)
+        if lines[7].startswith('D'):
+            self.coordinates = np.float32([ line.split() for line in lines[8:8+sum(self.stoichiometry.values())] ])
+            for coor in self.coordinates:
+                if len(coor)!=3:
+                    raise shared.CustomError(self.__class__.__name__+'__init__: bad format. Coordinate line {%s}' %coor)
+        else:
+            raise shared.CustomError(self.__class__.__name__+'__init__: unsupported POSCAR5 format. ')
         # some computation
         self.nelectrons = sum( [self.stoichiometry[symbol] * shared.ELEMENTS[symbol].pot_zval for symbol in self.stoichiometry] )
 
