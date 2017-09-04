@@ -773,7 +773,7 @@ class Vasp(object):
                 self.wrapper += ' sbatch --nodes=%s --ntasks=%s --job-name=%s -t 12:00:00 --export=ALL subfile\n' %(self.gen.getkw('nnode'), ncore_total, self.remote_folder_name)
                 self.wrapper += 'EOF\n'
                 self.subfile += '#!/bin/bash\n. /usr/share/Modules/init/bash\nmodule purge\nmodule load mvapich2-2.2/intel\nmpirun -np %s /opt/vasp.5.4.4/bin/vasp_%s\n' %(ncore_total, flavor)
-            self.subfile = 'echo $PWD `date` end\n-------------------------\n'
+            self.subfile += 'echo $PWD `date` end\n-------------------------\n'
             with open('wrapper','w') as of_:
                 of_.write(self.wrapper)
                 os.system('chmod +x wrapper')
