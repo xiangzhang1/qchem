@@ -369,6 +369,9 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
     def crappyencut(self):
         return str(max( [ shared.ELEMENTS[symbol].pot_encut for symbol in self.cell.stoichiometry.keys() ] )+20)
 
+    def npar(self):
+        return str( int(self.getkw('ncore_node')) * int(self.getkw('nnode')) / int(self.getkw('ncore')) )
+
 
     def ismear5check(self):
         '''kpoints is fit for ismear=5'''
@@ -751,12 +754,10 @@ class Vasp(object):
             self.remote_folder_name = self.path.split('/')[-2] + '_' + self.path.split('/')[-1] + '_' + hashlib.md5(self.path).hexdigest()[:5] + '_' + str(time.time())
             # write scripts and instructions
             # subfile actually runs vasp. wrapper submits the subfile to system.
-            self.wrapper = '#!/bin/bash\n' ; self.subfile = '#!/bin/bash\n'
+            self.wrapper = '#!/bin/bash\n' ; self.subfile = '#!/bin/bash\necho $PWD `date` start\n-------------------------\n'
             if self.gen.parse_if('platform=dellpc'):
-                self.subfile += 'echo $PWD `date` start; echo '+'-'*75+'\n'
                 self.subfile += 'mpiexec.hydra -n %s /home/xzhang1/src/vasp.5.4.1/bin/vasp_%s </dev/null \n' %(ncore_total, flavor)
                 self.subfile += 'mail -s "VASP job finished: {${PWD##*/}}" 8576361405@vtext.com <<<EOM \n'
-                self.subfile += 'echo $PWD `date` end  ; echo '+'-'*75+'\n'
                 self.wrapper += 'nohup ./subfile 2>&1 >> run.log &'
             if self.gen.parse_if('platform=nanaimo'):
                 self.wrapper += 'rsync -av . nanaimo:~/%s\n' %self.remote_folder_name
@@ -764,14 +765,15 @@ class Vasp(object):
                 self.wrapper += ' cd %s\n' %self.remote_folder_name
                 self.wrapper += ' sbatch --nodes=%s --ntasks=%s --job-name=%s -t 12:00:00 --export=ALL subfile\n' %(self.gen.getkw('nnode'), ncore_total, self.remote_folder_name)
                 self.wrapper += 'EOF\n'
-                self.subfile += '#!/bin/bash\n. /usr/share/Modules/init/bash\nmodule purge\nmodule load intel\nmodule load impi\nmpirun -np %s /opt/vasp.5.4.4/bin/vasp_%s' %(ncore_total, flavor)
+                self.subfile += '#!/bin/bash\n. /usr/share/Modules/init/bash\nmodule purge\nmodule load intel\nmodule load impi\nmpirun -np %s /opt/vasp.5.4.4/bin/vasp_%s\n' %(ncore_total, flavor)
             if self.gen.parse_if('platform=irmik'):
                 self.wrapper += 'rsync -av . irmik:~/%s\n' %self.remote_folder_name
                 self.wrapper += 'ssh irmik <<EOF\n'
                 self.wrapper += ' cd %s\n' %self.remote_folder_name
                 self.wrapper += ' sbatch --nodes=%s --ntasks=%s --job-name=%s -t 12:00:00 --export=ALL subfile\n' %(self.gen.getkw('nnode'), ncore_total, self.remote_folder_name)
                 self.wrapper += 'EOF\n'
-                self.subfile += '#!/bin/bash\n. /usr/share/Modules/init/bash\nmodule purge\nmodule load mvapich2-2.2/intel\nmpirun -np %s /opt/vasp.5.4.4/bin/vasp_%s' %(ncore_total, flavor)
+                self.subfile += '#!/bin/bash\n. /usr/share/Modules/init/bash\nmodule purge\nmodule load mvapich2-2.2/intel\nmpirun -np %s /opt/vasp.5.4.4/bin/vasp_%s\n' %(ncore_total, flavor)
+            self.subfile = 'echo $PWD `date` end\n-------------------------\n'
             with open('wrapper','w') as of_:
                 of_.write(self.wrapper)
                 os.system('chmod +x wrapper')
@@ -869,7 +871,7 @@ class Vasp(object):
             if os.path.isfile('vasprun.xml') and not vasp_is_running :  # and os.path.getmtime('vasprun.xml') > os.path.getmtime(self.path+'/wrapper') : buggy with sshfs, not needed because vasprun.xml is not copied
                 with open('vasprun.xml','r') as if_:
                     if if_.read().splitlines()[-1] != '</modeling>' and not os.path.isfile('.moonphase'):
-                        print(self.__class__.__name__+'compute FYI: Vasp computation at %s went wrong. vasprun.xml is incomplete. Use .moonphase file to overwrite.' %self.path)
+                        # print(self.__class__.__name__+'compute FYI: Vasp computation at %s went wrong. vasprun.xml is incomplete. Use .moonphase file to overwrite.' %self.path)
                         return -1
                     else:
                         # download folder
