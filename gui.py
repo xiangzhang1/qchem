@@ -402,6 +402,14 @@ def edit_vars():
             value = getattr(engine, name.title())(value)
         setattr(n, name, value)
 
+@app.route('/del_attr', methods=['POST'])
+@patch_through
+@login_required
+def edit_vars():
+    # get cur and attr_name, and delete
+    j = request.get_json(force=True)
+    n = engine.Map().lookup(j['cur'])
+    delattr(n, j['attr_name'])
 
 @app.route('/edit', methods=['POST'])
 @patch_through
