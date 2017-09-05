@@ -730,13 +730,13 @@ class Vasp(object):
                 shutil.copyfile(self.prev.path+'/CHGCAR', self.path+'/CHGCAR')
             if self.gen.parse_if('icharg=0|icharg=10|istart=1|istart=2'):
                 shutil.copyfile(self.prev.path+'/WAVECAR', self.path+'/WAVECAR')
-            if getattr(self, 'prev', None) and getattr(self.prev, 'gen', None) and self.prev.gen.parse_if('opt') and os.path.isfile(self.prev.path+'CONTCAR'):
-                shutil.copyfile('CONTCAR','POSCAR')
             # write incar etc. Relies on inheritance.
             os.chdir(self.path)
             self.gen.write_incar_kpoints()
             with open('POSCAR','w') as f:
                 f.write(str(self.cell))
+            if getattr(self, 'prev', None) and getattr(self.prev, 'gen', None) and self.prev.gen.parse_if('opt') and os.path.isfile(self.prev.path+'CONTCAR'):
+                shutil.copyfile(self.prev.path+'CONTCAR',self.path+'POSCAR')
             for symbol in self.cell.stoichiometry.keys():
                 self.pot(symbol)
             # setting variables
