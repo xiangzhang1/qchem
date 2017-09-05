@@ -790,6 +790,12 @@ class Vasp(object):
         # no log but invoked, only possible from moonphase. write parent.
         elif not getattr(self,'log',None):
             os.chdir(self.path)
+            # download folder
+            if self.gen.parse_if('platform=nanaimo|platform=irmik|platform=hodduk'):
+                print '%s.moonphase: copying remote folder {%s} back to self.path {%s}' %(self.__class__.__name__, self.remote_folder_name, self.path)
+                subprocess.Popen(['rsync', '-a', '-h', '--info=progress2', '%s:%s/' %(self.gen.getkw('platform'),self.remote_folder_name), '%s'%self.path], stdout=sys.stdout, stderr=sys.stderr).wait()
+                #os.system('scp -r /home/xzhang1/Shared/%s/%s/ %s' %(self.gen.getkw('platform'), self.remote_folder_name, self.path))
+                print self.__class__.__name__ + '.compute: copy complete.'
             # log
             l = os.listdir(self.path)
             filename = [x for x in l if x.startswith(('slurm-','run.log','OSZICAR'))][0]
@@ -806,7 +812,7 @@ class Vasp(object):
         else:
             print self.__class__.__name__ + ' compute: calculation already completed at %s. Why are you here?' %self.path
 
-    # moonphase wrap functionality is convoluted in
+    @shared.moonphase_wrap
     def moonphase(self):
         #:debug benchmark msg
         if shared.DEBUG==2:    print 'calling %s(%s).moonphase' %(self.__class__.__name__, getattr(self,'path',''))
@@ -871,16 +877,10 @@ class Vasp(object):
             # inspect vasprun.xml
             if os.path.isfile('vasprun.xml') and not vasp_is_running :  # and os.path.getmtime('vasprun.xml') > os.path.getmtime(self.path+'/wrapper') : buggy with sshfs, not needed because vasprun.xml is not copied
                 with open('vasprun.xml','r') as if_:
-                    if if_.read().splitlines()[-1] != '</modeling>' and not os.path.isfile('.moonphase'):
+                    if if_.read().splitlines()[-1] != '</modeling>':
                         # print(self.__class__.__name__+'compute FYI: Vasp computation at %s went wrong. vasprun.xml is incomplete. Use .moonphase file to overwrite.' %self.path)
                         return -1
                     else:
-                        # download folder
-                        if self.gen.parse_if('platform=nanaimo|platform=irmik|platform=hodduk'):
-                            print '%s.moonphase: copying remote folder {%s} back to self.path {%s}' %(self.__class__.__name__, self.remote_folder_name, self.path)
-                            subprocess.Popen(['rsync', '-a', '-h', '--info=progress2', '%s:%s/' %(self.gen.getkw('platform'),self.remote_folder_name), '%s'%self.path], stdout=sys.stdout, stderr=sys.stderr).wait()
-                            #os.system('scp -r /home/xzhang1/Shared/%s/%s/ %s' %(self.gen.getkw('platform'), self.remote_folder_name, self.path))
-                            print self.__class__.__name__ + '.moonphase: copy complete.'
                         self.compute()
                         return 2
             else:
