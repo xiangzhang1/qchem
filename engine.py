@@ -763,14 +763,14 @@ class Vasp(object):
                 self.wrapper += 'rsync -av . nanaimo:~/%s\n' %self.remote_folder_name
                 self.wrapper += 'ssh nanaimo <<EOF\n'
                 self.wrapper += ' cd %s\n' %self.remote_folder_name
-                self.wrapper += ' sbatch --nodes=%s --ntasks=%s --job-name=%s -t 12:00:00 --export=ALL subfile\n' %(self.gen.getkw('nnode'), ncore_total, self.remote_folder_name)
+                self.wrapper += ' sbatch --nodes=%s --ntasks=%s --job-name=%s -t 48:00:00 --export=ALL subfile\n' %(self.gen.getkw('nnode'), ncore_total, self.remote_folder_name)
                 self.wrapper += 'EOF\n'
                 self.subfile += '#!/bin/bash\n. /usr/share/Modules/init/bash\nmodule purge\nmodule load intel\nmodule load impi\nmpirun -np %s /opt/vasp.5.4.4/bin/vasp_%s\n' %(ncore_total, flavor)
             if self.gen.parse_if('platform=irmik'):
                 self.wrapper += 'rsync -av . irmik:~/%s\n' %self.remote_folder_name
                 self.wrapper += 'ssh irmik <<EOF\n'
                 self.wrapper += ' cd %s\n' %self.remote_folder_name
-                self.wrapper += ' sbatch --nodes=%s --ntasks=%s --job-name=%s -t 12:00:00 --export=ALL subfile\n' %(self.gen.getkw('nnode'), ncore_total, self.remote_folder_name)
+                self.wrapper += ' sbatch --nodes=%s --ntasks=%s --job-name=%s -t 48:00:00 --export=ALL subfile\n' %(self.gen.getkw('nnode'), ncore_total, self.remote_folder_name)
                 self.wrapper += 'EOF\n'
                 self.subfile += '#!/bin/bash\n. /usr/share/Modules/init/bash\nmodule purge\nmodule load mvapich2-2.2/intel\nmpirun -np %s /opt/vasp.5.4.4/bin/vasp_%s\n' %(ncore_total, flavor)
             self.subfile += 'echo $PWD `date` end \necho -------------------------\n'
