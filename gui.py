@@ -405,7 +405,7 @@ def edit_vars():
 @app.route('/del_attr', methods=['POST'])
 @patch_through
 @login_required
-def edit_vars():
+def del_attr():
     # get cur and attr_name, and delete
     j = request.get_json(force=True)
     n = engine.Map().lookup(j['cur'])
