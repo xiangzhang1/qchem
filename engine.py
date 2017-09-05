@@ -730,13 +730,13 @@ class Vasp(object):
                 shutil.copyfile(self.prev.path+'/CHGCAR', self.path+'/CHGCAR')
             if self.gen.parse_if('icharg=0|icharg=10|istart=1|istart=2'):
                 shutil.copyfile(self.prev.path+'/WAVECAR', self.path+'/WAVECAR')
+            if getattr(self, 'prev', None) and getattr(self.prev, 'optimized_cell', None):
+                setattr(self, 'cell', self.prev.optimized_cell)
             # write incar etc. Relies on inheritance.
             os.chdir(self.path)
             self.gen.write_incar_kpoints()
             with open('POSCAR','w') as f:
                 f.write(str(self.cell))
-            if getattr(self, 'prev', None) and getattr(self.prev, 'gen', None) and self.prev.gen.parse_if('opt') and os.path.isfile(self.prev.path+'CONTCAR'):
-                shutil.copyfile(self.prev.path+'CONTCAR',self.path+'POSCAR')
             for symbol in self.cell.stoichiometry.keys():
                 self.pot(symbol)
             # setting variables
@@ -760,14 +760,14 @@ class Vasp(object):
                 self.subfile += 'mail -s "VASP job finished: {${PWD##*/}}" 8576361405@vtext.com <<<EOM \n'
                 self.wrapper += 'nohup ./subfile 2>&1 >> run.log &'
             if self.gen.parse_if('platform=nanaimo'):
-                self.wrapper += 'rsync -av . nanaimo:~/%s\n' %self.remote_folder_name
+                self.wrapper += 'rsync -avP . nanaimo:~/%s\n' %self.remote_folder_name
                 self.wrapper += 'ssh nanaimo <<EOF\n'
                 self.wrapper += ' cd %s\n' %self.remote_folder_name
                 self.wrapper += ' sbatch --nodes=%s --ntasks=%s --job-name=%s -t 48:00:00 --export=ALL subfile\n' %(self.gen.getkw('nnode'), ncore_total, self.remote_folder_name)
                 self.wrapper += 'EOF\n'
                 self.subfile += '#!/bin/bash\n. /usr/share/Modules/init/bash\nmodule purge\nmodule load intel\nmodule load impi\nmpirun -np %s /opt/vasp.5.4.4/bin/vasp_%s\n' %(ncore_total, flavor)
             if self.gen.parse_if('platform=irmik'):
-                self.wrapper += 'rsync -av . irmik:~/%s\n' %self.remote_folder_name
+                self.wrapper += 'rsync -avP . irmik:~/%s\n' %self.remote_folder_name
                 self.wrapper += 'ssh irmik <<EOF\n'
                 self.wrapper += ' cd %s\n' %self.remote_folder_name
                 self.wrapper += ' sbatch --nodes=%s --ntasks=%s --job-name=%s -t 48:00:00 --export=ALL subfile\n' %(self.gen.getkw('nnode'), ncore_total, self.remote_folder_name)
