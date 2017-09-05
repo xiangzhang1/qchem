@@ -730,8 +730,9 @@ class Vasp(object):
                 shutil.copyfile(self.prev.path+'/CHGCAR', self.path+'/CHGCAR')
             if self.gen.parse_if('icharg=0|icharg=10|istart=1|istart=2'):
                 shutil.copyfile(self.prev.path+'/WAVECAR', self.path+'/WAVECAR')
-            if getattr(self, 'prev', None) and getattr(self.prev, 'optimized_cell', None):
+            if getattr(self, 'prev', None) and getattr(self.prev, 'vasp', None) and getattr(self.prev.vasp, 'optimized_cell', None):
                 setattr(self, 'cell', self.prev.optimized_cell)
+                print self.__class__.__name__ + '.compute: prev.vasp.optimized_cell overwrites self.cell.'
             # write incar etc. Relies on inheritance.
             os.chdir(self.path)
             self.gen.write_incar_kpoints()
