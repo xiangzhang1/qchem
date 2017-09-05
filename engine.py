@@ -806,7 +806,7 @@ class Vasp(object):
         else:
             print self.__class__.__name__ + ' compute: calculation already completed at %s. Why are you here?' %self.path
 
-    @shared.moonphase_wrap
+    # moonphase wrap functionality is convoluted in
     def moonphase(self):
         #:debug benchmark msg
         if shared.DEBUG==2:    print 'calling %s(%s).moonphase' %(self.__class__.__name__, getattr(self,'path',''))
@@ -864,7 +864,7 @@ class Vasp(object):
                 if not os.path.isfile(tmp_path + '/vasprun.xml'):
                     return 1
                 else:
-                    os.chdir(tmp_path)
+                    os.chdir(tmp_path)  # this is the only place sshfs is needed: vasprun.xml.
             else:
                 raise shared.CustomError(self.__class__.__name__ + '.moonphase: i don\'t know what to do')
 
