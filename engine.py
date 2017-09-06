@@ -1206,6 +1206,7 @@ class Charge(object):
 
         # Bader charge
         self.log += "\n\nBader charge. Boundaries are defined as zero-flux surfaces. Note that certain flags should be set (e.g. LAECHG) for this to be reasonable.\n"
+        print 'running bader...'
         os.popen('bader CHGCAR').read()
         with open('ACF.dat','r') as f:
             lines = f.readlines()
@@ -1297,7 +1298,7 @@ class Errors(object):
             self.log += '-' * 130 + '\n'
 
         # compute eigenvalue jump, for dos verification purposes. only for idx_spin=0.
-        self.eigenvalue_jump = np.mean(np.diff(electron.bands.bands[0]).flatten)
+        self.eigenvalue_jump = np.mean(np.diff(electron.bands.bands[0]))
 
         # ismear -> error
         if electron.grepen.ismear == 0:
@@ -1399,6 +1400,7 @@ class Electron(object):
         if not getattr(self, 'log', None):
             if os.path.isdir(self.path):
                 raise shared.CustomError(self.__class__.__name__ + ' compute: self.path {%s} taken' %self.path)
+            print 'copying to prev.path to self.path...' ; sys.stdout.flush()
             subprocess.Popen(['rsync', '--exclude=WAVECAR', '-ah', '%s/' %(self.prev.path), '%s/' %(self.path)], stdout=sys.stdout, stderr=sys.stderr).wait()
             os.chdir(self.path)
 

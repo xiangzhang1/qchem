@@ -121,8 +121,8 @@ ___if is_kpoints_mesh___
     _kpts_nn_list_[]    = [idx1_kpt, idx2_kpt] where |k1-k2|~min_kpt_dist
 
     <!-- neargap_bands deltaE_deltaKpt -->
-    _deltaE_deltaKpt_[idx_spin=0][ZERO==bandgap/2][idx_band===0][kpt_nn_list_====[0,1]] = E <!--doesnt actually exist -->
-    _deltaE_deltaKpt_flat_[]
+    _de_dkpt_[idx_spin=0][ZERO==bandgap/2][idx_band===0][kpt_nn_list_====[0,1]] = E <!--doesnt actually exist -->
+    _de_dkpt_flat_[]
     __de_dkpt__ dE(dkpt)
 
 __error__
