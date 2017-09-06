@@ -1206,8 +1206,9 @@ class Charge(object):
 
         # Bader charge
         self.log += "\n\nBader charge. Boundaries are defined as zero-flux surfaces. Note that certain flags should be set (e.g. LAECHG) for this to be reasonable.\n"
-        print 'running bader...'
+        print 'running bader...' ; sys.stdout.flush()
         os.popen('bader CHGCAR').read()
+        print '\r                 \r' ; sys.stdout.flush()
         with open('ACF.dat','r') as f:
             lines = f.readlines()
         for idx_element, element in enumerate(electron.cell.stoichiometry.keys()):
@@ -1320,7 +1321,7 @@ class Errors(object):
             self.log += u'dos would break down when eigenvalue jump is obvious. 10/NEDOS[%.4f] > \u03B4E[%.4f]\n' %(10.0/electron.grepen.nedos, self.eigenvalue_jump)
 
         # check by comparing against backdrop
-        if electron.grepen.parse_if('backdrop !null'):
+        if electron.gen.parse_if('backdrop !null'):
 
             backdrop = Map().lookup(electron.grepen.getkw('backdrop'))
             compare = Map().lookup(electron.grepen.getkw('compare')).split()
@@ -1402,6 +1403,7 @@ class Electron(object):
                 raise shared.CustomError(self.__class__.__name__ + ' compute: self.path {%s} taken' %self.path)
             print 'copying to prev.path to self.path...' ; sys.stdout.flush()
             subprocess.Popen(['rsync', '--exclude=WAVECAR', '-ah', '%s/' %(self.prev.path), '%s/' %(self.path)], stdout=sys.stdout, stderr=sys.stderr).wait()
+            print '\r                                \r' ; sys.stdout.flush()
             os.chdir(self.path)
 
             if self.gen.parse_if('cell'):
