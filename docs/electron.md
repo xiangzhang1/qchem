@@ -3,6 +3,8 @@ Electron
 
 __log__
 
+总体来说，设计为数据在封装对象之间的传递。
+
 
 # Grepen
 
@@ -84,29 +86,41 @@ _idx_band_==0                       bands[_idx_spin_===0][_idx_band_][_idx_kpt_]
 ... ([empty ... occupancy ...\n)
 
 __kpts__[_idx_kpt_] = [ kx ky kz ]      <!-- less elegant, but saves space -->
-    _min_kpt_dist_      smallest |k1-k2|
-    _kpts_nn_           KDTree object storing nearest-neighbor information about __kpts__ array.
-    _kpts_nn_list_[]    = [idx1_kpt, idx2_kpt] where |k1-k2|~min_kpt_dist
+
 __bands__[_idx_spin_][_idx_band_][_idx_kpt_] = E
 __nspin_bands__ spin=para: 1, spin=fm|afm: 2, spin=ncl: 1
-__bands_interp__[_idx_spin_][_idx_band_](kx,ky,kz) = E
 __bandgaps__[_idx_spin_] = [vbm, cbm] or []     <!-- small. not a numpy array -->
 
-_delta_e_[idx_spin=0][ZERO==bandgap/2][idx_band===0][kpt_nn_list_====[0,1]] = E <!--doesnt actually exist -->
-_delta_e_flat_[]
-__delta_e__
+___if is_kpoints_mesh___
+    __bands_interp__[_idx_spin_][_idx_band_](kx,ky,kz) = E
+    <!-- Interpolate and get bandgap.
+    Because the region is irregular, the 1st idea is to compute Rbf(*kpt) for each kpt. This costs too much time per kpt.
+    The 2nd idea is to minimize Rbf, with the constraint that such a 'signed distance' is positive:
+      0. Compute Delaunay(points) and ConvexHull(points)
+      1. Compute whether point is in Delaunay [](https://stackoverflow.com/questions/16750618/whats-an-efficient-way-to-find-if-a-point-lies-in-the-convex-hull-of-a-point-cl)
+      2. Compute distance from point to nearest ConvexHull facet, and multiply by 1's sign.  [](http://mathinsight.org/distance_point_plane)      [](http://scipy.github.io/devdocs/generated/scipy.spatial.ConvexHull.html)
+      3. Add by min_kpt_dist
+    But convergence turned out poor.
+    Thus, the 3rd and slowest idea is to find maximum and minimum near each kpoint.
+    -->
+    <!-- note that any attempt at parallelization requires pickling of entire environment, and is thus unlikely to be efficient -->
+    __bandgaps_interp__
 
-<!-- Interpolate and get bandgap.
-Because the region is irregular, the 1st idea is to compute Rbf(*kpt) for each kpt. This costs too much time per kpt.
-The 2nd idea is to minimize Rbf, with the constraint that such a 'signed distance' is positive:
-  0. Compute Delaunay(points) and ConvexHull(points)
-  1. Compute whether point is in Delaunay [](https://stackoverflow.com/questions/16750618/whats-an-efficient-way-to-find-if-a-point-lies-in-the-convex-hull-of-a-point-cl)
-  2. Compute distance from point to nearest ConvexHull facet, and multiply by 1's sign.  [](http://mathinsight.org/distance_point_plane)      [](http://scipy.github.io/devdocs/generated/scipy.spatial.ConvexHull.html)
-  3. Add by min_kpt_dist
-But convergence turned out poor.
-Thus, the 3rd and slowest idea is to find maximum and minimum near each kpoint.
--->
-_kptes_[] = [kx ky kz e]
-<!-- note that any attempt at parallelization requires pickling of entire environment, and is thus unlikely to be efficient -->
 
-__bandgaps_interp__
+
+# Charge
+
+# Errors
+
+___if is_kpoints_mesh___
+
+    __min_kpt_dist__      smallest |k1-k2|
+    _kpts_nn_           KDTree object storing nearest-neighbor information about __kpts__ array.
+    _kpts_nn_list_[]    = [idx1_kpt, idx2_kpt] where |k1-k2|~min_kpt_dist
+
+    <!-- neargap_bands deltaE_deltaKpt -->
+    _deltaE_deltaKpt_[idx_spin=0][ZERO==bandgap/2][idx_band===0][kpt_nn_list_====[0,1]] = E <!--doesnt actually exist -->
+    _deltaE_deltaKpt_flat_[]
+    __de_dkpt__ dE(dkpt)
+
+__de__

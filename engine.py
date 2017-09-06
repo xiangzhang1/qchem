@@ -1116,36 +1116,6 @@ class Bands(object):
                   if cbm > vbm + ZERO else "spin %s: no bandgap\n" % (idx_spin)     # only first instance is printed.
         self.log += '-' * 130 + '\n'
 
-        # delta_k
-        min_kpt_dist = np.amin( spatial.distance.pdist(self.kpts, metric='Euclidean'), axis=None )   # spatial.distance.pdist() produces a list of distances. amin() produces minimum for flattened input
-        kpts_nn = spatial.cKDTree( self.kpts )                                                        # returns a KDTree object, which has interface for querying nearest neighbors of any kpt
-        kpts_nn_list = kpts_nn.query_pairs(r=min_kpt_dist*1.5, output_type='ndarray')           # gets all nearest-neighbor idx_kpt pairs
-        self.log += u"kpoint mesh precision \u0394k = %.5f 2\u03C0/a.\n" %(min_kpt_dist)
-
-        # neargap bands, delta_e
-        # calculate DeltaE_KPOINTS by grabbing average E diff / average E diff near bandgap from EIGENVAL.
-        # for each spin
-        for idx_spin in range(self.nspins_bands):
-            ZERO = 0.01
-            if not self.bandgaps[idx_spin]: # conductor
-                self.log += u'spin %s: no bandgap, \u3B4E skipped.\n' % idx_spin ; continue
-            if [idx2_spin for idx2_spin in range(idx_spin) if self.bandgaps[idx2_spin] and np.linalg.norm(np.subtract(self.bandgaps[idx_spin], self.bandgaps[idx2_spin])) < ZERO]:    # repetitive
-                self.log += u'spin %s: repetitive, \u3B4E skipped. \n' % ( idx_spin ) ; continue
-            # specify neargap criterion ZERO
-            self.log += u'spin %s, nearest neighbor \u03B4E:\n' % (idx_spin)
-            bandgap = abs(np.subtract(*self.bandgaps[idx_spin]))
-            for ZERO in tqdm([bandgap, bandgap/2, bandgap/4], leave=False, position=0, desc='calculating delta_e in neargap bands'):
-                delta_e_flat = []
-                # for each NN pair, compute |delta_e| if energy is within bound
-                for idx_band in trange(grepen.nbands, leave=False, position=1):
-                    for kpts_nn_list_ in kpts_nn_list:  # kpts_nn_list_ = [ idx1_kpt idx2_kpt ]
-                        if all(self.bandgaps[idx_spin][0]-ZERO < self.bands[idx_spin][idx_band][idx_kpt] < self.bandgaps[idx_spin][1]+ZERO for idx_kpt in kpts_nn_list_):    # is near gap
-                            delta_e_flat.append( abs(self.bands[idx_spin][idx_band][kpts_nn_list_[0]] - self.bands[idx_spin][idx_band][kpts_nn_list_[1]]) )
-                self.log += u'  CBM/VBM +- %.2f eV: \u03B4E = %.5f eV, # of kpts = %d.\n' %( ZERO, np.mean(delta_e_flat), len(delta_e_flat) ) \
-                            if delta_e_flat else u'  CBM/VBM +- %.2f eV: # of kpts = 0.\n' %( ZERO )
-                if delta_e_flat :   self.delta_e = np.mean(delta_e_flat)    # for Errors
-        self.log += '-' * 130 + '\n'
-
         #: interpolated bandgap
         self.log += 'bandgap is often between interpolated and raw bandgap. \n'
         #;
@@ -1168,7 +1138,7 @@ class Bands(object):
                             for sign in (-1,1):
                                 e = sign * scipy.optimize.minimize(lambda x,self=self,idx_spin=idx_spin,idx_band=idx_band,sign=sign: self.bands_interp()[idx_spin][idx_band](*x) * sign,
                                                                    x0 = kpt,
-                                                                   bounds = [[x-min_kpt_dist*0.5,x+min_kpt_dist*0.5] for x in kpt],
+                                                                   bounds = [[x-self.min_kpt_dist*0.5,x+self.min_kpt_dist*0.5] for x in kpt],
                                                                    tol=1e-6).fun
                                 kptes.append([kpt[0],kpt[1],kpt[2],e])
                 kptes = np.float32(kptes)
@@ -1179,17 +1149,12 @@ class Bands(object):
                 self.log += "spin %s, interpolated: VBM %s near %s , CBM %s near %s, bandgap %.5f eV\n" \
                       % (idx_spin, vbm, kptes[np.where(kptes[:,3]==vbm)[0][0],:3], cbm, kptes[np.where(kptes[:,3]==cbm)[0][0],:3], cbm-vbm) \
                       if cbm > vbm else "spin %s, interpolated: no bandgap\n" % (idx_spin)
-        else:
-            self.log += 'kpoints is not mesh, bandgap_interp skipped. \n'
 
-    #: plot band: slightly broken
-    def plot(self,i):
+    #: plot band
+    def plot(self, idx_spin, idx_band):
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
-        xs = self.bands[i][:,0]
-        ys = self.bands[i][:,1]
-        zs = self.bands[i][:,2]
-        cs = self.bands[i][:,3]
+        xs, ys, zs, cs = self.kpts[:,0], self.kpts[:,1], self.kpts[:,2], self.bands[idx_spin,idx_band]
         p = ax.scatter(xs, ys, zs, s=15, c=cs)
         #
         ax.set_xlabel('KX')
@@ -1201,6 +1166,7 @@ class Bands(object):
         plt.show()
         return
     #;
+
 
 # executes population analysis
 class Charge(object):
@@ -1292,22 +1258,62 @@ class Errors(object):
 
     @shared.debug_wrap
     @shared.log_wrap
-    def __init__(self, Agrepen, Ados, Abands, Bgrepen=None, Bdos=None, Bbands=None):
+    def __init__(self, electron, backdrop=None):
 
-        ## source of error : requirement
         self.de = 0
-        ## rule
-        if Agrepen.ismear == 0:
-            self.log += u'gaussian smearing smoothes out irregularities with size sigma: sigma[%.4f] < \u03B4E[%.4f]/2\n' %(Agrepen.sigma,self.de)
-            self.de = max(self.de, Agrepen.sigma * 2)
-        ## rule
-        self.log += u'sparse kpoints grid may miss in-between eigenvalues. E(j)-E(j\')[%.4f] < \u03B4E[%.4f]/2\n' %(Abands.delta_e,self.de)
-        self.de = max(self.de, Abands.delta_e * 2)
-        ## rule
-        self.log += u'all details between two DOS points are lost. 10/NEDOS[%.4f] < \u03B4[%.4f]/2\n' %(10.0/Agrepen.nedos,self.de)
-        self.de = max(self.de, 10.0/float(Agrepen.nedos) * 2)
-        ## rule
-        self.log += 'DOS should not be so fine that kpoint mesh coarseness is obvious. 10/NEDOS[%.4f] > DE_KPOINTS[%.4f]\n' %(10.0/Agrepen.nedos,Abands.delta_e)
+
+        # delta_k
+        if electron.grepen.is_kpoints_mesh:
+            self.min_kpt_dist = np.amin( spatial.distance.pdist(electron.bands.kpts, metric='Euclidean'), axis=None )   # spatial.distance.pdist() produces a list of distances. amin() produces minimum for flattened input
+            kpts_nn = spatial.cKDTree( electron.bands.kpts )                                                        # returns a KDTree object, which has interface for querying nearest neighbors of any kpt
+            kpts_nn_list = kpts_nn.query_pairs(r=self.min_kpt_dist*1.5, output_type='ndarray')           # gets all nearest-neighbor idx_kpt pairs
+            self.log += u"kpoint mesh precision \u0394k = %.5f 2\u03C0/a.\n" %(self.min_kpt_dist)
+
+        # neargap bands, de_dkpt
+        # calculate DeltaE_KPOINTS by grabbing average E diff / average E diff near bandgap from EIGENVAL.
+        # for each spin
+        if electron.grepen.is_kpoints_mesh:
+            for idx_spin in range(electron.bands.nspins_bands):
+                ZERO = 0.01
+                if not electron.bands.bandgaps[idx_spin]: # conductor
+                    self.log += u'spin %s: no bandgap, \u3B4E skipped.\n' % idx_spin ; continue
+                if [idx2_spin for idx2_spin in range(idx_spin) if electron.bands.bandgaps[idx2_spin] and np.linalg.norm(np.subtract(electron.bands.bandgaps[idx_spin], electron.bands.bandgaps[idx2_spin])) < ZERO]:    # repetitive
+                    self.log += u'spin %s: repetitive, \u3B4E skipped. \n' % ( idx_spin ) ; continue
+                # specify neargap criterion ZERO
+                self.log += u'spin %s, nearest neighbor \u03B4E:\n' % (idx_spin)
+                bandgap = abs(np.subtract(*electron.bands.bandgaps[idx_spin]))
+                for ZERO in tqdm([bandgap, bandgap/2, bandgap/4], leave=False, position=0, desc='calculating de_dkpt in neargap bands'):
+                    de_dkpt_flat = []
+                    # for each NN pair, compute |de_dkpt| if energy is within bound
+                    for idx_band in trange(grepen.nbands, leave=False, position=1):
+                        for kpts_nn_list_ in kpts_nn_list:  # kpts_nn_list_ = [ idx1_kpt idx2_kpt ]
+                            if all(electron.bands.bandgaps[idx_spin][0]-ZERO < electron.bands.bands[idx_spin][idx_band][idx_kpt] < electron.bands.bandgaps[idx_spin][1]+ZERO for idx_kpt in kpts_nn_list_):    # is near gap
+                                de_dkpt_flat.append( abs(electron.bands.bands[idx_spin][idx_band][kpts_nn_list_[0]] - electron.bands.bands[idx_spin][idx_band][kpts_nn_list_[1]]) )
+                    self.log += u'  CBM/VBM +- %.2f eV: \u03B4E = %.5f eV, # of kpts = %d.\n' %( ZERO, np.mean(de_dkpt_flat), len(de_dkpt_flat) ) \
+                                if de_dkpt_flat else u'  CBM/VBM +- %.2f eV: # of kpts = 0.\n' %( ZERO )
+                    if de_dkpt_flat :   self.de_dkpt = np.mean(de_dkpt_flat)    # for Errors
+            self.log += '-' * 130 + '\n'
+
+        # check ismear
+        if electron.grepen.ismear == 0:
+            self.log += u'gaussian smearing smoothes out irregularities with size sigma: sigma[%.4f] < \u03B4E[%.4f]/2\n' %(electron.grepen.sigma,self.de)
+            self.de = max(self.de, electron.grepen.sigma * 2)
+
+        # check finite kpoints neargap de_dkpt
+        if electron.grepen.is_kpoints_mesh:
+            self.log += u'sparse kpoints grid may miss in-between eigenvalues. E(j)-E(j\')[%.4f] < \u03B4E[%.4f]/2\n' %(self.de_dkpt,self.de)
+            self.de = max(self.de, self.de_dkpt * 2)
+
+        # check nedos
+        if electron.grepen.is_doscar_usable:
+            self.log += u'all details between two DOS points are lost. 10/NEDOS[%.4f] < \u03B4[%.4f]/2\n' %(10.0/electron.grepen.nedos,self.de)
+            self.de = max(self.de, 10.0/float(electron.grepen.nedos) * 2)
+
+        # check nedos vs kpoints
+        if electron.grepen.is_kpoints_mesh and electron.grepen.is_doscar_usable:
+            self.log += 'DOS should not be so fine that kpoint mesh coarseness is obvious. 10/NEDOS[%.4f] > DE_KPOINTS[%.4f]\n' %(10.0/electron.grepen.nedos,self.de_dkpt)
+        elif not electron.grepen.is_kpoints_mesh and electron.grepen.is_doscar_usable:
+            self.log += 'DOS idea would break down when eigenvalue jump is obvious. 10/NEDOS[%.4f] > DE_KPOINTS[%.4f]\n' %(10.0/electron.grepen.nedos,self.de_dkpt)
 
         # comparing against dirB
         self.de_interpd = []
