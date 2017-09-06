@@ -484,7 +484,7 @@ def copy_remote_folder_name():
 @app.route('/copy_path', methods=['POST'])
 @return_through
 @login_required
-def copy_remote_folder_name():
+def copy_path():
     j = request.copy_path(force=True)
     n = engine.Map().lookup(j['cur'])
     try:
