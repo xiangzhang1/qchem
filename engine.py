@@ -1333,6 +1333,7 @@ class Errors(object):
             if 'band' in compare:
 
                 #: preliminary checks
+                self.log += '-' * 130 + '\n'
                 if not getattr(electron, 'bands', None) or not getattr(backdrop, 'bands', None):
                     raise shared.CustomError(self.__class__.__name__ + '.compute: electron or backdrop does not have bands property.')
                 if not backdrop.grepen.is_kpoints_mesh and electron.grepen.is_kpoints_mesh:
@@ -1373,6 +1374,7 @@ class Errors(object):
             if 'cell' in compare:
 
                 #: preliminary checks
+                self.log += '-' * 130 + '\n'
                 if not np.array_equal(electron.cell.stoichiometry, backdrop.cell.stoichiometry):
                     raise shared.CustomError(self.__class__.__name__ + '.compute: cell stoichiometry are not the same, cannot compute')
                 #;
@@ -1381,7 +1383,9 @@ class Errors(object):
                 self.log += u'average fractional coordinate difference between self and backdrop is %s \u212B. \n' % np.average( abs(electron.cell.coordinates - backdrop.cell.coordinates).flatten() )
 
 
-        # wrap-up
+        #: wrap-up
+        self.log += '-' * 130 + '\n'
+        #;
         self.log += 'errors.py: in short, you should expect an error around %.4f eV in dirA. \n' %(self.error)
 
 
