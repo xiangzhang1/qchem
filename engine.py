@@ -891,8 +891,11 @@ class Vasp(object):
             return 2
 
     def delete(self):
+        #: remove path
         if os.path.isdir(self.path):
+            print 'removing self.path {%s}' %self.path
             shutil.rmtree(self.path)
+        #;
 
     def __str__(self):
         #: return log and optimized_cell
@@ -941,9 +944,11 @@ class Dummy(object):
         return 2
 
     def delete(self):
+        #: remove path
         if os.path.isdir(self.path):
+            print 'removing self.path {%s}' %self.path
             shutil.rmtree(self.path)
-
+        #;
 
 #===========================================================================
 
@@ -964,7 +969,6 @@ class Grepen(object):
         self.spin = electron.prev.gen.getkw('spin')
         self.ismear = int(electron.prev.gen.getkw('ismear'))
         self.sigma = 0 if self.ismear!=0 else float(electron.prev.gen.getkw('ismear'))
-        self.electron.prev.gen = electron.prev.gen
 
         with open('DOSCAR','r') as doscar_file:
             self.is_doscar_usable = len(doscar_file.readlines()) > 7
@@ -1394,7 +1398,7 @@ class Electron(object):
         if not getattr(self, 'log', None):
             if os.path.isdir(self.path):
                 raise shared.CustomError(self.__class__.__name__ + ' compute: self.path {%s} taken' %self.path)
-            subprocess.Popen(['rsync', '-avPh', '%s/' %(self.prev.path), '%s/' %(self.path)], stdout=sys.stdout, stderr=sys.stderr).wait()
+            subprocess.Popen(['rsync', '--exclude=WAVECAR', '--exclude=CHG*', '-avPh', '%s/' %(self.prev.path), '%s/' %(self.path)], stdout=sys.stdout, stderr=sys.stderr).wait()
             os.chdir(self.path)
 
             if self.gen.parse_if('cell'):
@@ -1438,6 +1442,7 @@ class Electron(object):
 
     def delete(self):
         #:remove folder
+        print 'removing folder {%s}' %self.path
         if os.path.isdir(self.path):
             shutil.rmtree(self.path)
         #;
