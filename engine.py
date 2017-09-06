@@ -1312,7 +1312,7 @@ class Errors(object):
         # check nedos vs kpoints
         if electron.grepen.is_kpoints_mesh and electron.grepen.is_doscar_usable:
             self.log += 'DOS should not be so fine that kpoint mesh coarseness is obvious. 10/NEDOS[%.4f] > DE_KPOINTS[%.4f]\n' %(10.0/electron.grepen.nedos,self.de_dkpt)
-        elif not electron.grepen.is_kpoints_mesh and electron.grepen.is_doscar_usable:
+        elif not electron.grepen.is_kpoints_mesh and electron.grepen.is_doscar_usable: 
             self.log += 'DOS idea would break down when eigenvalue jump is obvious. 10/NEDOS[%.4f] > DE_KPOINTS[%.4f]\n' %(10.0/electron.grepen.nedos,self.de_dkpt)
 
         # comparing against dirB
