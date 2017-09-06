@@ -481,6 +481,18 @@ def copy_remote_folder_name():
     except AttributeError, shared.DeferError:
         return jsonify({'remote_folder_name':'remote_folder_name_not_assigned'})
 
+@app.route('/copy_path', methods=['POST'])
+@return_through
+@login_required
+def copy_remote_folder_name():
+    j = request.copy_path(force=True)
+    n = engine.Map().lookup(j['cur'])
+    try:
+        return jsonify({'path': n.path})
+    except AttributeError:
+        return jsonify({'path':'path_not_assigned'})
+
+
 # ===========================================================================
 
 app.run(host='127.0.0.1',port='5000', debug = False, ssl_context=('cert/domain.crt','cert/domain.key'))
