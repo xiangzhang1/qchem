@@ -1175,9 +1175,10 @@ class Charge(object):
     @shared.debug_wrap
     @shared.log_wrap
     def __init__(self, electron):
-        # sanity check
-        if electron.dos.norbitals_pelectron.dos > len(shared.ELEMENTS.orbitals):
+        #: preliminary check
+        if electron.dos.norbitals_pdos > len(shared.ELEMENTS.orbitals):
             raise shared.CustomError(self.__class__.__name__ +' __init__: more orbitals than supported.')
+        #;
 
         # let's start!
         # pristine electronic configuration
@@ -1186,20 +1187,20 @@ class Charge(object):
             self.log += "%s: %s\n" %(element, shared.ELEMENTS[element].eleconfig)
         self.log += '-' * 130 + '\n'
 
-        # integrate pelectron.dos scaled
+        # integrate pdos scaled
         self.log += 'Integrated PDOS. Each orbital is normalized to 1. If ONE is too small, -INT is returned.\n'
         idx_atom = 0
         for symbol, natoms in electron.cell.stoichiometry.iteritems():
             for idx_atom in range(idx_atom, idx_atom + natoms):
-                for idx_spin in range(electron.dos.nspins_pelectron.dos):
-                    self.log += "%5s%2s: " % ( symbol + str(idx_atom), shared.ELEMENTS.spins[electron.dos.nspins_pelectron.dos][idx_spin] )
-                    for idx_orbital in range(electron.dos.norbitals_pelectron.dos):
-                        INFINITY = np.argmax( electron.dos.pelectron.dos[idx_spin, idx_atom, idx_orbital, :, 0 ] > electron.grepen.efermi+5 )
-                        ONE = np.trapz( electron.dos.pelectron.dos[idx_spin, idx_atom, idx_orbital, :INFINITY, 1 ] , \
-                                                    x = electron.dos.pelectron.dos[idx_spin, idx_atom, idx_orbital, :INFINITY, 0 ] )
-                        integrated_pelectron.dos = np.trapz( electron.dos.pelectron.dos[idx_spin, idx_atom, idx_orbital, :electron.dos.idx_fermi, 1 ] , \
-                                                    x = electron.dos.pelectron.dos[idx_spin, idx_atom, idx_orbital, :electron.dos.idx_fermi, 0 ] )
-                        self.log += '%7s %5.2f' % (shared.ELEMENTS.orbitals[idx_orbital], abs(integrated_pelectron.dos / ONE) if abs(ONE) > 0.4 else -abs(integrated_pelectron.dos) )
+                for idx_spin in range(electron.dos.nspins_pdos):
+                    self.log += "%5s%2s: " % ( symbol + str(idx_atom), shared.ELEMENTS.spins[electron.dos.nspins_pdos][idx_spin] )
+                    for idx_orbital in range(electron.dos.norbitals_pdos):
+                        INFINITY = np.argmax( electron.dos.pdos[idx_spin, idx_atom, idx_orbital, :, 0 ] > electron.grepen.efermi+5 )
+                        ONE = np.trapz( electron.dos.pdos[idx_spin, idx_atom, idx_orbital, :INFINITY, 1 ] , \
+                                                    x = electron.dos.pdos[idx_spin, idx_atom, idx_orbital, :INFINITY, 0 ] )
+                        integrated_pdos = np.trapz( electron.dos.pdos[idx_spin, idx_atom, idx_orbital, :electron.dos.idx_fermi, 1 ] , \
+                                                    x = electron.dos.pdos[idx_spin, idx_atom, idx_orbital, :electron.dos.idx_fermi, 0 ] )
+                        self.log += '%7s %5.2f' % (shared.ELEMENTS.orbitals[idx_orbital], abs(integrated_pdos / ONE) if abs(ONE) > 0.4 else -abs(integrated_pdos) )
                     self.log += '\n'
         self.log += '-' * 130 + '\n'
 
