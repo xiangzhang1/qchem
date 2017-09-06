@@ -1399,7 +1399,7 @@ class Electron(object):
         if not getattr(self, 'log', None):
             if os.path.isdir(self.path):
                 raise shared.CustomError(self.__class__.__name__ + ' compute: self.path {%s} taken' %self.path)
-            subprocess.Popen(['rsync', '--exclude=WAVECAR', '--exclude=CHG*', '-avh', '%s/' %(self.prev.path), '%s/' %(self.path)], stdout=sys.stdout, stderr=sys.stderr).wait()
+            subprocess.Popen(['rsync', '--exclude=WAVECAR', '-ah', '%s/' %(self.prev.path), '%s/' %(self.path)], stdout=sys.stdout, stderr=sys.stderr).wait()
             os.chdir(self.path)
 
             if self.gen.parse_if('cell'):
