@@ -123,7 +123,7 @@ _de_dkpt_[idx_spin=0][ZERO==bandgap/2][idx_band===0][kpt_nn_list_====[0,1]] = E 
 _de_dkpt_flat_[]
 __de_dkpt__ dE(dkpt)
 
-## general
+## if not is_kpoints_mesh
 
 __eigenvalue_jump__
 

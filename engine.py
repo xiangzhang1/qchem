@@ -1297,11 +1297,8 @@ class Errors(object):
                                 de_dkpt_flat.append( abs(electron.bands.bands[idx_spin][idx_band][kpts_nn_list_[0]] - electron.bands.bands[idx_spin][idx_band][kpts_nn_list_[1]]) )
                     self.log += u'  CBM/VBM +- %.2f eV: \u03B4E = %.5f eV, # of kpts = %d.\n' %( ZERO, np.mean(de_dkpt_flat), len(de_dkpt_flat) ) \
                                 if de_dkpt_flat else u'  CBM/VBM +- %.2f eV: # of kpts = 0.\n' %( ZERO )
-                    if de_dkpt_flat :   self.error_dkpt = np.mean(de_dkpt_flat)    # for Errors
+                    if de_dkpt_flat :   self.de_dkpt = np.mean(de_dkpt_flat)    # for Errors
             self.log += '-' * 130 + '\n'
-
-        # compute eigenvalue jump, for dos verification purposes. only for idx_spin=0.
-        self.eigenvalue_jump = np.mean(np.diff(electron.bands.bands[0]))
 
         # ismear -> error
         if electron.grepen.ismear == 0:
@@ -1310,17 +1307,17 @@ class Errors(object):
 
         # de_dkpt -> error
         if electron.grepen.is_kpoints_mesh:
-            self.log += u'sparse kpoints grid may miss in-between eigenvalues. E(j)-E(j\')[%.4f] < \u03B4E[%.4f]/2\n' %(self.error_dkpt,self.error)
-            self.error = max(self.error, self.error_dkpt * 2)
+            self.log += u'sparse kpoints grid may miss in-between eigenvalues. E(j)-E(j\')[%.4f] < \u03B4E[%.4f]/2\n' %(self.de_dkpt, self.error)
+            self.error = max(self.error, self.de_dkpt * 2)
 
         # nedos -> error
         if electron.grepen.is_doscar_usable:
-            self.log += u'all details between two DOS points are lost. 10/NEDOS[%.4f] < \u03B4[%.4f]/2\n' %(10.0/electron.grepen.nedos,self.error)
+            self.log += u'all details between two DOS points are lost. 10/NEDOS[%.4f] < \u03B4[%.4f]/2\n' %(10.0/electron.grepen.nedos, self.error)
             self.error = max(self.error, 10.0/float(electron.grepen.nedos) * 2)
 
         # check DOS validity (nedos)
         if electron.grepen.is_doscar_usable:
-            self.log += u'dos would break down when eigenvalue jump is obvious. 10/NEDOS[%.4f] > \u03B4E[%.4f]\n' %(10.0/electron.grepen.nedos, self.eigenvalue_jump)
+            self.log += u'dos should not be so fine that energy granularity is obvious. 10/NEDOS[%.4f] > \u03B4E[%.4f]\n' %(10.0/electron.grepen.nedos, self.de_dkpt if electron.grepen.is_kpoints_mesh else np.mean(np.diff(electron.bands.bands[0].flatten())))
 
         # check by comparing against backdrop
         if electron.gen.parse_if('backdrop !null'):
