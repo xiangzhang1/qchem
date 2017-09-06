@@ -485,7 +485,7 @@ def copy_remote_folder_name():
 @return_through
 @login_required
 def copy_path():
-    j = request.copy_path(force=True)
+    j = request.get_json(force=True)
     n = engine.Map().lookup(j['cur'])
     try:
         return jsonify({'path': n.path})
