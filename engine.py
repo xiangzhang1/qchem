@@ -956,7 +956,7 @@ class Grepen(object):
     def __init__(self, electron):
 
         self.energy=float(os.popen('grep "energy without" OUTCAR | tail -1 | awk \'{print $5}\'').read())
-        self.efermi=float(os.popen('grep "E-fermi" OUTCAR | awk \'{print $3}\'').read())
+        self.efermi=float(os.popen('grep "E-fermi" OUTCAR | tail -1 | awk \'{print $3}\'').read())
 
         self.nbands=int(os.popen('grep NBANDS OUTCAR | awk \'{print $15}\'').read())
         self.nedos=int(os.popen('grep NEDOS OUTCAR | awk \'{print $6}\'').read())
@@ -1394,9 +1394,7 @@ class Electron(object):
         if not getattr(self, 'log', None):
             if os.path.isdir(self.path):
                 raise shared.CustomError(self.__class__.__name__ + ' compute: self.path {%s} taken' %self.path)
-            print 'copying previous folder... ',
-            shutil.copytree(self.prev.path, self.path)
-            print 'done',     # return to line start, but do not go to next line
+            subprocess.Popen(['rsync', '-avPh', '%s/' %(self.prev.path), '%s/' %(self.path), stdout=sys.stdout, stderr=sys.stderr).wait()
             os.chdir(self.path)
 
             if self.gen.parse_if('cell'):
