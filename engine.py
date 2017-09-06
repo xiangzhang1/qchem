@@ -1326,7 +1326,7 @@ class Errors(object):
         if electron.gen.parse_if('backdrop !null'):
 
             backdrop = Map().lookup(electron.gen.getkw('backdrop'))
-            compare = Map().lookup(electron.gen.getkw('compare')).split()
+            compare = electron.gen.getkw('compare').split()
 
             # compare=band
             # 1. backdrop mesh, electron mesh
@@ -1406,7 +1406,7 @@ class Electron(object):
             #: copy prev.path to self.path
             print 'copying to prev.path to self.path...', ; sys.stdout.flush()
             subprocess.Popen(['rsync', '--exclude=WAVECAR', '-ah', '%s/' %(self.prev.path), '%s/' %(self.path)], stdout=sys.stdout, stderr=sys.stderr).wait()
-            print '\r                                \r', ; sys.stdout.flush()
+            print '\r                                                 \r', ; sys.stdout.flush()
             #;
             os.chdir(self.path)
 
