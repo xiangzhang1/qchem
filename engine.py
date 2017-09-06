@@ -1010,13 +1010,13 @@ class Dos(object):
     @shared.log_wrap
     def __init__(self, electron):
         ZERO = 0.001
-        self.nspins_dos = {'para':1, 'fm':2, 'ncl':1}[grepen.spin]
-        self.nspins_pdos = {'para':1, 'fm':2, 'ncl':4}[grepen.spin]
+        self.nspins_dos = {'para':1, 'fm':2, 'ncl':1}[electron.grepen.spin]
+        self.nspins_pdos = {'para':1, 'fm':2, 'ncl':4}[electron.grepen.spin]
         for name in ['nspins_dos', 'nspins_pdos']:
-            self.log += '%s: %s\n' % (name, getattr(self,name,None))
+            self.log += '%s: %s\n' % (name, getattr(self, name, None))
         self.log += '-' * 130 + '\n'
 
-        if not grepen.is_doscar_usable:
+        if not electron.grepen.is_doscar_usable:
             raise shared.CustomError(self.__class__.__name__ + '.__init__: DOSCAR is not usable.')
 
         # all DOSCAR lines, including dos and pdos
