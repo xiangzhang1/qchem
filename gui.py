@@ -470,6 +470,16 @@ def del_edge():
     n = engine.Map().lookup(j['cur'])
     n.map.del_edge(j['src'],j['dst'])
 
+@app.route('/copy_remote_folder_name', methods=['POST'])
+@return_through
+@login_required
+def copy_remote_folder_name():
+    j = request.get_json(force=True)
+    n = engine.Map().lookup(j['cur'])
+    try:
+        return jsonify({'remote_folder_name': n.vasp.remote_folder_name})
+    except AttributeError, shared.DeferError:
+        return jsonify({'remote_folder_name':'remote_folder_name_not_assigned'})
 
 # ===========================================================================
 
