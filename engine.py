@@ -953,7 +953,7 @@ class Dummy(object):
 class Grepen(object):
 
     @shared.log_wrap
-    def __init__(self, prev_gen):
+    def __init__(self, electron):
 
         self.energy=float(os.popen('grep "energy without" OUTCAR | tail -1 | awk \'{print $5}\'').read())
         self.efermi=float(os.popen('grep "E-fermi" OUTCAR | awk \'{print $3}\'').read())
@@ -961,16 +961,16 @@ class Grepen(object):
         self.nbands=int(os.popen('grep NBANDS OUTCAR | awk \'{print $15}\'').read())
         self.nedos=int(os.popen('grep NEDOS OUTCAR | awk \'{print $6}\'').read())
 
-        self.spin = prev_gen.getkw('spin')
-        self.ismear = int(prev_gen.getkw('ismear'))
-        self.sigma = 0 if self.ismear!=0 else float(prev_gen.getkw('ismear'))
-        self.prev_gen = prev_gen
+        self.spin = electron.prev.gen.getkw('spin')
+        self.ismear = int(electron.prev.gen.getkw('ismear'))
+        self.sigma = 0 if self.ismear!=0 else float(electron.prev.gen.getkw('ismear'))
+        self.electron.prev.gen = electron.prev.gen
 
         with open('DOSCAR','r') as doscar_file:
             self.is_doscar_usable = len(doscar_file.readlines()) > 7
 
         with open('KPOINTS','r') as kpoints_file:
-            kpoints = prev_gen.getkw('kpoints').split()
+            kpoints = electron.prev.gen.getkw('kpoints').split()
             self.is_kpoints_mesh = ( kpoints[0] in 'GM' and np.prod(np.float32(kpoints[1:]))>4 and len(kpoints_file.readlines())<7 )
 
         with open("EIGENVAL","r") as eigenval_file:
@@ -1004,12 +1004,10 @@ class Dos(object):
                             for idx_spin in range(self.nspins_pdos) ]
 
     @shared.log_wrap
-    def __init__(self, grepen, cell):
+    def __init__(self, electron):
         ZERO = 0.001
         self.nspins_dos = {'para':1, 'fm':2, 'ncl':1}[grepen.spin]
         self.nspins_pdos = {'para':1, 'fm':2, 'ncl':4}[grepen.spin]
-        self.grepen = grepen
-        self.cell = cell
         for name in ['nspins_dos', 'nspins_pdos']:
             self.log += '%s: %s\n' % (name, getattr(self,name,None))
         self.log += '-' * 130 + '\n'
@@ -1033,7 +1031,7 @@ class Dos(object):
             #
             for idx_spin in range(self.nspins_dos):
                 self.dos[idx_spin, idx, 1] = doscar_tot_.pop(0)
-        self.idx_fermi = abs(self.dos[0, :, 0] - self.grepen.efermi).argmin() + 1
+        self.idx_fermi = abs(self.dos[0, :, 0] - electron.grepen.efermi).argmin() + 1
         # bandgap
         self.bandgap = [ [] for idx_spin in range(self.nspins_dos) ]
         for idx_spin in range(self.nspins_dos):
@@ -1049,7 +1047,7 @@ class Dos(object):
 
         # pdos
         self.norbitals_pdos = ( len(doscar_site[0][0]) - 1 ) / self.nspins_pdos
-        self.pdos = np.zeros([self.nspins_pdos, sum(self.cell.stoichiometry.values()), self.norbitals_pdos, len(doscar_site[0]), 2])
+        self.pdos = np.zeros([self.nspins_pdos, sum(electron.cell.stoichiometry.values()), self.norbitals_pdos, len(doscar_site[0]), 2])
         for idx_atom, doscar_site_atom in enumerate(doscar_site):
             for idx, doscar_site_atom_ in enumerate(doscar_site_atom):
                 #
@@ -1076,22 +1074,21 @@ class Bands(object):
 
     @shared.debug_wrap
     @shared.log_wrap
-    def __init__(self, grepen):
+    def __init__(self, electron):
         ZERO = 0.01
-        self.grepen = grepen
-        self.nspins_bands = {'para':1, 'fm':2, 'ncl':1}[grepen.spin]
+        self.nspins_bands = {'para':1, 'fm':2, 'ncl':1}[electron.grepen.spin]
         self.log += 'nspins_bands: %s\n' % (self.nspins_bands)
         self.log += '-' * 130 + '\n'
 
         # bands
         with open("EIGENVAL","r") as f:
             eigenval = [x.split() for x in f.readlines()]
-        self.kpts = np.zeros([grepen.nkpts,3])
-        self.bands = np.zeros([self.nspins_bands, grepen.nbands, grepen.nkpts])
+        self.kpts = np.zeros([electron.grepen.nkpts,3])
+        self.bands = np.zeros([self.nspins_bands, electron.grepen.nbands, electron.grepen.nkpts])
         #:pop header lines
         del eigenval[:6]
         #;
-        for idx_kpt in trange(grepen.nkpts, leave=False, desc='reading bands'):
+        for idx_kpt in trange(electron.grepen.nkpts, leave=False, desc='reading bands'):
             #
             #:pop [empty line]
             eigenval.pop(0)
@@ -1099,7 +1096,7 @@ class Bands(object):
             eigenval_ = eigenval.pop(0)
             self.kpts[idx_kpt,:] = eigenval_[:3]
             #
-            for idx_band in range(grepen.nbands):
+            for idx_band in range(electron.grepen.nbands):
                 eigenval_ = eigenval.pop(0) ; eigenval_.pop(0)
                 for idx_spin in range(self.nspins_bands):
                     self.bands[idx_spin, idx_band, idx_kpt] = eigenval_.pop(0)
@@ -1107,8 +1104,8 @@ class Bands(object):
         # bandgap
         self.bandgaps = [ [] for idx_spin in range(self.nspins_bands) ]
         for idx_spin in range(self.nspins_bands):
-            vbm = max([e for e in tqdm(np.nditer(self.bands[idx_spin]), leave=False) if e<=grepen.efermi + ZERO])    # else VB slightly beyond efermi is considered CB
-            cbm = min([e for e in tqdm(np.nditer(self.bands[idx_spin]), leave=False) if e>=grepen.efermi + ZERO])    # np.nditer is an iterator looping over all dimensions of an array.
+            vbm = max([e for e in tqdm(np.nditer(self.bands[idx_spin]), leave=False) if e<=electron.grepen.efermi + ZERO])    # else VB slightly beyond efermi is considered CB
+            cbm = min([e for e in tqdm(np.nditer(self.bands[idx_spin]), leave=False) if e>=electron.grepen.efermi + ZERO])    # np.nditer is an iterator looping over all dimensions of an array.
                                                                                                # the array itself is an iterator looping normally by outmost dimension.
             self.bandgaps[idx_spin] = [vbm, cbm] if cbm > vbm + ZERO else []
             self.log += "spin %s: VBM %s at %s, CBM %s at %s, kpoint-independent bandgap %.5f eV\n" \
@@ -1119,7 +1116,7 @@ class Bands(object):
         #: interpolated bandgap
         self.log += 'bandgap is often between interpolated and raw bandgap. \n'
         #;
-        if grepen.is_kpoints_mesh:
+        if electron.grepen.is_kpoints_mesh:
             self.bandgaps_interp = [ [] for idx_spin in range(self.nspins_bands) ]
             # optimize for each spin and each band
             for idx_spin in range(self.nspins_bands):
@@ -1132,7 +1129,7 @@ class Bands(object):
                 #;
                 kptes = []
                 ZERO = abs(np.subtract(*self.bandgaps[idx_spin])) / 2.5
-                for idx_band in trange(grepen.nbands, leave=False, desc='interpolating bands for bandgap', position=0):
+                for idx_band in trange(electron.grepen.nbands, leave=False, desc='interpolating bands for bandgap', position=0):
                     if any(self.bandgaps[idx_spin][0] - ZERO < e < self.bandgaps[idx_spin][1] + ZERO for e in self.bands[idx_spin, idx_band]):
                         for kpt in tqdm(self.kpts, leave=False, position=1):
                             for sign in (-1,1):
@@ -1173,32 +1170,32 @@ class Charge(object):
 
     @shared.debug_wrap
     @shared.log_wrap
-    def __init__(self, cell, grepen, dos):
+    def __init__(self, electron):
         # sanity check
-        if dos.norbitals_pdos > len(shared.ELEMENTS.orbitals):
+        if electron.dos.norbitals_pelectron.dos > len(shared.ELEMENTS.orbitals):
             raise shared.CustomError(self.__class__.__name__ +' __init__: more orbitals than supported.')
 
         # let's start!
         # pristine electronic configuration
         self.log += 'ground-state electron configurations:\n'   # a good idea is to indent within header
-        for element in cell.stoichiometry:
+        for element in electron.cell.stoichiometry:
             self.log += "%s: %s\n" %(element, shared.ELEMENTS[element].eleconfig)
         self.log += '-' * 130 + '\n'
 
-        # integrate pdos scaled
+        # integrate pelectron.dos scaled
         self.log += 'Integrated PDOS. Each orbital is normalized to 1. If ONE is too small, -INT is returned.\n'
         idx_atom = 0
-        for symbol, natoms in cell.stoichiometry.iteritems():
+        for symbol, natoms in electron.cell.stoichiometry.iteritems():
             for idx_atom in range(idx_atom, idx_atom + natoms):
-                for idx_spin in range(dos.nspins_pdos):
-                    self.log += "%5s%2s: " % ( symbol + str(idx_atom), shared.ELEMENTS.spins[dos.nspins_pdos][idx_spin] )
-                    for idx_orbital in range(dos.norbitals_pdos):
-                        INFINITY = np.argmax( dos.pdos[idx_spin, idx_atom, idx_orbital, :, 0 ] > grepen.efermi+5 )
-                        ONE = np.trapz( dos.pdos[idx_spin, idx_atom, idx_orbital, :INFINITY, 1 ] , \
-                                                    x = dos.pdos[idx_spin, idx_atom, idx_orbital, :INFINITY, 0 ] )
-                        integrated_pdos = np.trapz( dos.pdos[idx_spin, idx_atom, idx_orbital, :dos.idx_fermi, 1 ] , \
-                                                    x = dos.pdos[idx_spin, idx_atom, idx_orbital, :dos.idx_fermi, 0 ] )
-                        self.log += '%7s %5.2f' % (shared.ELEMENTS.orbitals[idx_orbital], abs(integrated_pdos / ONE) if abs(ONE) > 0.4 else -abs(integrated_pdos) )
+                for idx_spin in range(electron.dos.nspins_pelectron.dos):
+                    self.log += "%5s%2s: " % ( symbol + str(idx_atom), shared.ELEMENTS.spins[electron.dos.nspins_pelectron.dos][idx_spin] )
+                    for idx_orbital in range(electron.dos.norbitals_pelectron.dos):
+                        INFINITY = np.argmax( electron.dos.pelectron.dos[idx_spin, idx_atom, idx_orbital, :, 0 ] > electron.grepen.efermi+5 )
+                        ONE = np.trapz( electron.dos.pelectron.dos[idx_spin, idx_atom, idx_orbital, :INFINITY, 1 ] , \
+                                                    x = electron.dos.pelectron.dos[idx_spin, idx_atom, idx_orbital, :INFINITY, 0 ] )
+                        integrated_pelectron.dos = np.trapz( electron.dos.pelectron.dos[idx_spin, idx_atom, idx_orbital, :electron.dos.idx_fermi, 1 ] , \
+                                                    x = electron.dos.pelectron.dos[idx_spin, idx_atom, idx_orbital, :electron.dos.idx_fermi, 0 ] )
+                        self.log += '%7s %5.2f' % (shared.ELEMENTS.orbitals[idx_orbital], abs(integrated_pelectron.dos / ONE) if abs(ONE) > 0.4 else -abs(integrated_pelectron.dos) )
                     self.log += '\n'
         self.log += '-' * 130 + '\n'
 
@@ -1207,9 +1204,9 @@ class Charge(object):
         os.popen('bader CHGCAR').read()
         with open('ACF.dat','r') as f:
             lines = f.readlines()
-        for idx_element, element in enumerate(cell.stoichiometry.keys()):
+        for idx_element, element in enumerate(electron.cell.stoichiometry.keys()):
             self.log += element + ' '
-            for idx_atom in range(sum(cell.stoichiometry.values()[0:idx_element]),sum(cell.stoichiometry.values()[0:idx_element+1])):
+            for idx_atom in range(sum(electron.cell.stoichiometry.values()[0:idx_element]),sum(electron.cell.stoichiometry.values()[0:idx_element+1])):
                 nline = idx_atom + 2
                 self.log += lines[nline].split()[4] + ' '
             self.log += '\n'
@@ -1222,18 +1219,18 @@ class Charge(object):
             for idx_line,line in enumerate(lines):
                 if '# of ion' in line: # this is only an anchor. that particular line doesn't matter.
                     break
-            for idx2_line in range(idx_line ,idx_line + 4 + sum(cell.stoichiometry.values())):
+            for idx2_line in range(idx_line ,idx_line + 4 + sum(electron.cell.stoichiometry.values())):
                 self.log += lines[idx2_line]
         self.log += '-' * 130 + '\n'
 
         # Bader magnetic moment
-        if grepen.spin == 'fm' or grepen.spin == 'afm':
+        if electron.grepen.spin == 'fm' or electron.grepen.spin == 'afm':
             self.log += "An oversimplified version of Bader magnetic moment.\n"
             os.popen('chgsplit.sh CHGCAR').read()
             os.popen('bader cf2').read()
-            for idx_element, element in enumerate(cell.stoichiometry.keys()):
+            for idx_element, element in enumerate(electron.cell.stoichiometry.keys()):
                 self.log += element + ' '
-                for idx_atom in range(sum(cell.stoichiometry.values()[0:idx_element]),sum(cell.stoichiometry.values()[0:idx_element+1])):
+                for idx_atom in range(sum(electron.cell.stoichiometry.values()[0:idx_element]),sum(electron.cell.stoichiometry.values()[0:idx_element+1])):
                     nline = idx_atom + 2
                     with open('ACF.dat','r') as f:
                         lines = f.readlines()
@@ -1242,14 +1239,14 @@ class Charge(object):
         self.log += '-' * 130 + '\n'
 
         # OUTCAR RWIGS magnetic moment
-        if grepen.spin == 'fm' or grepen.spin == 'afm':
+        if electron.grepen.spin == 'fm' or electron.grepen.spin == 'afm':
             self.log += "Magnetization (x) [total magnetic moment inside the Wigner-Seitz Radius] in OUTCAR\n"
             with open('OUTCAR','r') as f:
                 lines = f.readlines()
                 for idx_line,line in enumerate(lines):
                     if 'magnetization (x)' in line: # this is only an anchor. that particular line doesn't matter.
                         break
-                for idx2_line in range(idx_line + 2,idx_line + 6 + sum(cell.stoichiometry.values())):
+                for idx2_line in range(idx_line + 2,idx_line + 6 + sum(electron.cell.stoichiometry.values())):
                     self.log += lines[idx2_line]
 
 
@@ -1260,7 +1257,7 @@ class Errors(object):
     @shared.log_wrap
     def __init__(self, electron, backdrop=None):
 
-        self.de = 0
+        self.error = 0
 
         # delta_k
         if electron.grepen.is_kpoints_mesh:
@@ -1291,51 +1288,95 @@ class Errors(object):
                                 de_dkpt_flat.append( abs(electron.bands.bands[idx_spin][idx_band][kpts_nn_list_[0]] - electron.bands.bands[idx_spin][idx_band][kpts_nn_list_[1]]) )
                     self.log += u'  CBM/VBM +- %.2f eV: \u03B4E = %.5f eV, # of kpts = %d.\n' %( ZERO, np.mean(de_dkpt_flat), len(de_dkpt_flat) ) \
                                 if de_dkpt_flat else u'  CBM/VBM +- %.2f eV: # of kpts = 0.\n' %( ZERO )
-                    if de_dkpt_flat :   self.de_dkpt = np.mean(de_dkpt_flat)    # for Errors
+                    if de_dkpt_flat :   self.error_dkpt = np.mean(de_dkpt_flat)    # for Errors
             self.log += '-' * 130 + '\n'
 
-        # check ismear
+        # compute eigenvalue jump, for dos verification purposes. only for idx_spin=0.
+        self.eigenvalue_jump = np.mean(np.diff(electron.bands.bands[0]).flatten)
+
+        # ismear -> error
         if electron.grepen.ismear == 0:
-            self.log += u'gaussian smearing smoothes out irregularities with size sigma: sigma[%.4f] < \u03B4E[%.4f]/2\n' %(electron.grepen.sigma,self.de)
-            self.de = max(self.de, electron.grepen.sigma * 2)
+            self.log += u'gaussian smearing smoothes out irregularities with size sigma: sigma[%.4f] < \u03B4E[%.4f]/2\n' %(electron.grepen.sigma,self.error)
+            self.error = max(self.error, electron.grepen.sigma * 2)
 
-        # check finite kpoints neargap de_dkpt
+        # de_dkpt -> error
         if electron.grepen.is_kpoints_mesh:
-            self.log += u'sparse kpoints grid may miss in-between eigenvalues. E(j)-E(j\')[%.4f] < \u03B4E[%.4f]/2\n' %(self.de_dkpt,self.de)
-            self.de = max(self.de, self.de_dkpt * 2)
+            self.log += u'sparse kpoints grid may miss in-between eigenvalues. E(j)-E(j\')[%.4f] < \u03B4E[%.4f]/2\n' %(self.error_dkpt,self.error)
+            self.error = max(self.error, self.error_dkpt * 2)
 
-        # check nedos
+        # nedos -> error
         if electron.grepen.is_doscar_usable:
-            self.log += u'all details between two DOS points are lost. 10/NEDOS[%.4f] < \u03B4[%.4f]/2\n' %(10.0/electron.grepen.nedos,self.de)
-            self.de = max(self.de, 10.0/float(electron.grepen.nedos) * 2)
+            self.log += u'all details between two DOS points are lost. 10/NEDOS[%.4f] < \u03B4[%.4f]/2\n' %(10.0/electron.grepen.nedos,self.error)
+            self.error = max(self.error, 10.0/float(electron.grepen.nedos) * 2)
 
-        # check nedos vs kpoints
-        if electron.grepen.is_kpoints_mesh and electron.grepen.is_doscar_usable:
-            self.log += 'DOS should not be so fine that kpoint mesh coarseness is obvious. 10/NEDOS[%.4f] > DE_KPOINTS[%.4f]\n' %(10.0/electron.grepen.nedos,self.de_dkpt)
-        elif not electron.grepen.is_kpoints_mesh and electron.grepen.is_doscar_usable:
-            self.log += 'DOS idea would break down when eigenvalue jump is obvious. 10/NEDOS[%.4f] > DE_KPOINTS[%.4f]\n' %(10.0/electron.grepen.nedos,self.de_dkpt)
+        # check DOS validity (nedos)
+        if electron.grepen.is_doscar_usable:
+            self.log += u'dos would break down when eigenvalue jump is obvious. 10/NEDOS[%.4f] > \u03B4E[%.4f]\n' %(10.0/electron.grepen.nedos, self.eigenvalue_jump)
 
-        # comparing against dirB
-        self.de_interpd = []
-        if not Bgrepen:
-            self.log += self.__class__.__name__ + ': skipped E(k) numerical error check, aka A <-> B_interp. purely numeric error should be smaller than 0.01 eV. \n'
-        else:
-            idx_spin = 0
-            self.log += self.__class__.__name__ + ': comparing idx_spin=0 only.\n'    # faciliate comparison between ncl and fm
-            if len(Bbands.bands[0]) != len(Abands.bands[0]):
-                raise shared.CustomError(self.__class__.__name__ + '.__init__: A and B bands have incompatible NBANDS')
-            if not Bbands.bandgaps[0] or not Abands.bandgaps[0]:
-                raise shared.CustomError(self.__class__.__name__ + '.__init__: bandgap not found for spin 0')
-            ZERO = (Bbands.bandgaps[idx_spin][1] - Bbands.bandgaps[idx_spin][0]) / 2
-            for idx_band, band in tqdm(enumerate(Bbands.bands[idx_spin]), leave=False, desc='interpolating Bbands for comparison'):
-                if any(Bbands.bandgaps[idx_spin][0] - ZERO < e < Bbands.bandgaps[idx_spin][0] + ZERO for e in Abands.bands[idx_spin][idx_band]):
-                    self.de_interpd.append( np.average( abs( np.float_(Abands.bands[idx_spin][idx_band]) - np.float_([Bbands.bands_interp()[idx_spin][idx_band](*kpt) for kpt in Abands.kpts]) ) ) )
-                    self.log += 'in band %d, between dirA and dirB, interpolation plus Cauchy error is %.5f.\n' %(idx_band, self.de_interpd[-1])
+        # check by comparing against backdrop
+        if electron.grepen.parse_if('backdrop !null'):
 
-            ## rule
-            self.log += 'smearing should be larger than numerical energy error: sigma[%.4f] > DE_INTERPD[%.4f]' %(Agrepen.sigma, np.average(self.de_interpd))
+            backdrop = Map().lookup(electron.grepen.getkw('backdrop'))
+            compare = Map().lookup(electron.grepen.getkw('compare')).split()
 
-        self.log += 'errors.py: you should expect an error around %.4f eV in dirA. \n' %(self.de)
+            # compare=band
+            # 1. backdrop mesh, electron mesh
+            # 2. backdrop not mesh, electron not mesh, same kpts
+            # 3. backdrop mesh, electron not mesh
+
+            if 'band' in compare:
+
+                #: preliminary checks
+                if not getattr(electron, 'bands', None) or not getattr(backdrop, 'bands', None):
+                    raise shared.CustomError(self.__class__.__name__ + '.compute: electron or backdrop does not have bands property.')
+                if not backdrop.grepen.is_kpoints_mesh and electron.grepen.is_kpoints_mesh:
+                    raise shared.CustomError(self.__class__.__name__ + '.compute: only these: i) both mesh ii) neither mesh iii) backdrop only mesh.')
+                if backdrop.bands.bands.shape[0] != electron.bands.bands.shape[0]:
+                    raise shared.CustomError(self.__class__.__name__ + '.compute: electron and backdrop bands have incompatible NBANDS')
+                #;
+
+                if backdrop.grepen.is_kpoints_mesh and electron.grepen.is_kpoints_mesh:
+
+                    error_interpd = []
+                    idx_spin = 0
+                    self.log += self.__class__.__name__ + ': comparing idx_spin=0 only.\n'    # faciliate comparison between ncl and fm
+
+                    for idx_band, band in tqdm(enumerate(backdrop.bands.bands[idx_spin]), leave=False, desc='interpolating backdrop.bands for comparison'):
+                            error_interpd.append( np.average( abs( np.float_(electron.bands.bands[idx_spin][idx_band]) - np.float_([backdrop.bands.bands_interp()[idx_spin][idx_band](*kpt) for kpt in electron.bands.kpts]) ) ) )
+                            self.log += 'in band %d, between self and backdrop, interpolation plus Cauchy error is %.5f.\n' %(idx_band, error_interpd[-1])
+
+                    ## rule
+                    self.log += u'smearing should be larger than numerical energy error: sigma[%.4f] > interpolation-correctable \u03B4E[%.4f]' %(electron.grepen.sigma, np.average(error_interpd))
+
+                elif not backdrop.grepen.is_kpoints_mesh and not electron.grepen.is_kpoints_mesh:
+
+                    #: preliminary checks
+                    if not np.array_equal(backdrop.bands.kpts, backdrop.bands.kpts):
+                        raise shared.CustomError(self.__class__.__name__ + '.compute: compare neither-mesh cases require same kpoints')
+                    #;
+                    idx_spin = 0
+                    self.log += u'average eigenvalue difference between self and backdrop is %s eV.\n' % np.average( abs(electron.bands.bands[idx_spin] - backdrop.bands.bands[idx_spin]).flatten() )
+
+                elif not electron.grepen.is_kpoints_mesh and backdrop.grepen.is_kpoints_mesh:
+
+                    raise shared.CustomError(self.__class__.__name__ + 'WARNING: non-mesh vs mesh feature has not been implemented!')
+
+            # compare=cell
+            # check cell shape is compatible
+
+            if 'cell' in compare:
+
+                #: preliminary checks
+                if not np.array_equal(electron.cell.stoichiometry, backdrop.cell.stoichiometry):
+                    raise shared.CustomError(self.__class__.__name__ + '.compute: cell stoichiometry are not the same, cannot compute')
+                #;
+
+                self.log += u'average base difference between self and backdrop is %s \u212B. \n' % np.average( abs(electorn.cell.base - backdrop.cell.base).flatten() )
+                self.log += u'average fractional coordinate difference between self and backdrop is %s \u212B. \n' % np.average( abs(electorn.cell.coordinates - backdrop.cell.coordinates).flatten() )
+
+
+        # wrap-up
+        self.log += 'errors.py: in short, you should expect an error around %.4f eV in dirA. \n' %(self.error)
 
 
 
@@ -1347,7 +1388,6 @@ class Electron(object):
         self.gen = node.gen
         self.path = node.path
         self.prev = node.prev
-
 
     def compute(self):
 
@@ -1364,24 +1404,19 @@ class Electron(object):
                     self.cell = Cell(infile.read())
 
             if self.gen.parse_if('grepen'):
-                self.grepen = Grepen(self.prev.gen)
+                self.grepen = Grepen(self)
 
             if self.gen.parse_if('dos'):
-                self.dos = Dos(self.grepen, self.cell)
+                self.dos = Dos(self)
 
             if self.gen.parse_if('bands'):
-                self.bands = Bands(self.grepen)
+                self.bands = Bands(self)
 
             if self.gen.parse_if('charge'):
-                self.charge = Charge(self.cell, self.grepen, self.dos)
+                self.charge = Charge(self)
 
             if self.gen.parse_if('errors'):
-                try:
-                    self.gen.getkw('cur')
-                    nodeB = Map().lookup(self.gen.getkw('cur'))
-                    self.errors = Errors(self.grepen, self.dos, self.bands, nodeB.electron.grepen, nodeB.electron.dos, nodeB.electron.bands)
-                except shared.DeferError:
-                    self.errors = Errors(self.grepen, self.dos, self.bands)
+                self.errors = Errors(self)
 
             self.log = ''
             for name in ['cell', 'grepen', 'dos', 'bands','charge', 'errors']:

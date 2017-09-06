@@ -112,6 +112,8 @@ ___if is_kpoints_mesh___
 
 # Errors
 
+__eigenvalue_jump__
+
 ___if is_kpoints_mesh___
 
     __min_kpt_dist__      smallest |k1-k2|
@@ -123,4 +125,4 @@ ___if is_kpoints_mesh___
     _deltaE_deltaKpt_flat_[]
     __de_dkpt__ dE(dkpt)
 
-__de__
+__error__

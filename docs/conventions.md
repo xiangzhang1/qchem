@@ -15,10 +15,14 @@ curve = [ x1    x2    y ],   curve[0],   curve[x1]
 
 np.float_ for all numeric arrays
 
-allow inherited attributes
+allow top-down inheritance.
+allow but not recommend data duplication.
+
 
 Convention
 ----------
+
+LBYL to avoid extra indentation.
 
 Use the `custom-fold` package for cross-platform editing.
 
