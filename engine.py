@@ -1381,14 +1381,14 @@ class Compare(object):
 
         if 'optimized_cell' in compare:
 
-            #: preliminary checks
             self.log += '-' * 130 + '\n'
-            if not np.array_equal(electron.cell.stoichiometry, backdrop.cell.stoichiometry):
-                raise shared.CustomError(self.__class__.__name__ + '.compute: cell stoichiometry are not the same, cannot compute')
-            #;
 
             eoc = electron_optimized_cell = electron.prev.vasp.optimized_cell
             boc = backdrop_optimized_cell = backdrop.vasp.optimized_cell
+            #:check
+            if not np.array_equal(eoc.stoichiometry, boc.stoichiometry):
+                raise shared.CustomError(self.__class__.__name__ + '.compute: cell stoichiometry are not the same, cannot compute')
+            #;
             self.log += u'<base difference> between self and backdrop is %s \u212B. \n' % ( np.average( abs(eoc.base - boc.base).flatten() ) )
             min_coor_dist = np.amin( spatial.distance.pdist(boc.coordinates) )       # same formalism as kpoints
             coors_nn = spatial.cKDTree( boc.coordinates )
