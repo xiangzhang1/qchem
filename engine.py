@@ -1330,7 +1330,7 @@ class Errors(object):
             # 2. backdrop not mesh, electron not mesh, same kpts
             # 3. backdrop mesh, electron not mesh
 
-            if 'band' in compare:
+            if 'bands' in compare:
 
                 #: preliminary checks
                 self.log += '-' * 130 + '\n'
@@ -1382,7 +1382,7 @@ class Errors(object):
                 eoc = electron_optimized_cell = electron.prev.vasp.optimized_cell
                 boc = backdrop_optimized_cell = backdrop.vasp.optimized_cell
                 self.log += u'average base difference between self and backdrop is %s \u212B. \n' % ( np.average( abs(eoc.base - boc.base).flatten() ) )
-                self.log += u'average fractional coordinate difference between self and backdrop is %s \u212B. \n' % ( np.average( abs(eoc.coordinates - boc.coordinates).flatten() ) * np.amax(abs(boc.base)) )
+                self.log += u'average cartesian coordinate difference between self and backdrop is %s \u212B. \n' % ( np.average( abs(eoc.coordinates - boc.coordinates).flatten() ) * np.amax(abs(boc.base)) )
 
 
         #: wrap-up
