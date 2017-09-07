@@ -36,17 +36,11 @@ functions
     条件不满足或冲突，则入栈循环
 检验
 	输入有效要求：
-		modname被提到过
-		kwname参与(被)require。这里应为被提到过，但不妨稍模糊化一下
-			# maintaining kw_legal_set, kw_internal_set, mod_legal_set:
-			# parse_require: if in input_ flow, add not. else, add.
-			# parse_if: if in input_ flow, add not. if in if flow, add kw not. else, add.
-			# self.moonphase=0(input_)|1(if)|2(require)|3(ready)
+		modname, kwname被提到过: kw_legal_set, modname_legal_set, kw_internal_set
 	唯一结果要求（意义列表）：
 		长度为1则合法，不在合法列表内则应无视，其他则为不唯一并报错
 
 
 Extras
 -------
-Input grammar is require grammar.
-Use npar and kpar, not ncore.
+input grammar is require grammar.
