@@ -473,6 +473,18 @@ class Cell(object):
             result += ' '.join(map(str,line))+'\n'
         return result
 
+    def reset(self):
+        result = self.name+'\n'
+        result += '1\n'
+        for line in self.base:
+            result += '\t'.join(map(str,line)) + '\n'
+        result += '  '.join(self.stoichiometry.keys()) + '\n'
+        result += '  '.join(map(str,self.stoichiometry.values())) + '\n'
+        result += 'Direct\n'
+        for line in self.coordinates:
+            result += ' '.join(map(str,line))+'\n'
+        self.__init__(result)
+
     def poscar4(self):
         result = str(self)
         result = '\n'.join( [x for i,x in enumerate(result.splitlines()) if i!=5] )

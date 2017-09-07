@@ -22,6 +22,8 @@ allow but not recommend data duplication.
 Convention
 ----------
 
+reset() method + debug_wrap for migration
+
 LBYL to avoid extra indentation.
 
 Use the `custom-fold` package for cross-platform editing.
