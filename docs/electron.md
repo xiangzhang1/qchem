@@ -131,7 +131,7 @@ __error__
 
 backdrop compare=band
 
-    _backdrop_
+    _backdrop_ (backdrop Electron object)
     _compare_
 
 backdrop compare=cell

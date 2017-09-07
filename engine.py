@@ -1322,7 +1322,7 @@ class Errors(object):
         # check by comparing against backdrop
         if electron.gen.parse_if('backdrop !null'):
 
-            backdrop = Map().lookup(electron.gen.getkw('backdrop'))
+            backdrop = Map().lookup(electron.gen.getkw('backdrop')).electron
             compare = electron.gen.getkw('compare').split()
 
             # compare=band
@@ -1335,7 +1335,7 @@ class Errors(object):
                 #: preliminary checks
                 self.log += '-' * 130 + '\n'
                 if not getattr(electron, 'bands', None) or not getattr(backdrop, 'bands', None):
-                    raise shared.CustomError(self.__class__.__name__ + '.compute: electron or backdrop does not have bands property.')
+                    raise shared.CustomError(self.__class__.__name__ + '.compute: electron or backdrop.electron does not have bands property. (Backdrop needs to be an engine=electron node)')
                 if not backdrop.grepen.is_kpoints_mesh and electron.grepen.is_kpoints_mesh:
                     raise shared.CustomError(self.__class__.__name__ + '.compute: only these: i) both mesh ii) neither mesh iii) backdrop only mesh.')
                 if backdrop.bands.bands.shape[0] != electron.bands.bands.shape[0]:
@@ -1380,7 +1380,7 @@ class Errors(object):
                 #;
 
                 eoc = electron_optimized_cell = electron.prev.vasp.optimized_cell
-                boc = backdrop_optimized_cell = backdrop.vasp.optimized_cell
+                boc = backdrop_optimized_cell = Map().lookup(electron.gen.getkw('backdrop')).vasp.optimized_cell
                 self.log += u'average base difference between self and backdrop is %s \u212B. \n' % ( np.average( abs(eoc.base - boc.base).flatten() ) )
                 self.log += u'average cartesian coordinate difference between self and backdrop is %s \u212B. \n' % ( np.average( abs(eoc.coordinates - boc.coordinates).flatten() ) * np.amax(abs(boc.base)) )
 
