@@ -460,6 +460,7 @@ class Cell(object):
         self.ccoor_kdtree = spatial.cKDTree( self.ccoor )
         self.ccoor_mindist = np.amin( spatial.distance.pdist(self.ccoor) )
 
+    @shared.debug_wrap
     def __str__(self):
         result = self.name+'\n'
         result += '1\n'
