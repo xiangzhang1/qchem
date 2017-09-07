@@ -1348,7 +1348,7 @@ class Compare(object):
             self.log += '-' * 130 + '\n'
             if not backdrop.grepen.is_kpoints_mesh and electron.grepen.is_kpoints_mesh:
                 raise shared.CustomError(self.__class__.__name__ + '.compute: only these: i) both mesh ii) neither mesh iii) backdrop only mesh.')
-            if backdrop.electron.bands.bands.shape[0] != electron.bands.bands.shape[0]:
+            if backdrop.bands.bands.shape[0] != electron.bands.bands.shape[0]:
                 raise shared.CustomError(self.__class__.__name__ + '.compute: electron and backdrop bands have incompatible NBANDS')
             #;
 
