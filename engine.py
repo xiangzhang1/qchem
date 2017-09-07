@@ -456,7 +456,7 @@ class Cell(object):
         # some computation
         self.nelectrons = sum( [self.stoichiometry[symbol] * shared.ELEMENTS[symbol].pot_zval for symbol in self.stoichiometry] )
 
-        self.ccoor = np.dot(self.base, self.fcoor)
+        self.ccoor = np.dot(self.fcoor, self.base)
         self.ccoor_kdtree = spatial.cKDTree( self.ccoor )
         self.ccoor_mindist = np.amin( spatial.distance.pdist(self.ccoor) )
 
