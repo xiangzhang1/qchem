@@ -1390,7 +1390,12 @@ class Compare(object):
             eoc = electron_optimized_cell = electron.prev.vasp.optimized_cell
             boc = backdrop_optimized_cell = backdrop.vasp.optimized_cell
             self.log += u'<base difference> between self and backdrop is %s \u212B. \n' % ( np.average( abs(eoc.base - boc.base).flatten() ) )
-            self.log += u'symmetrised coordinate difference between self and backdrop is %s \u212B. \n' % ( np.mean(abs(spatial.distance.pdist(eoc.coordinates) - spatial.distance.pdist(boc.coordinates))) * np.amax(abs(boc.base)) )
+            min_coor_dist = np.amin( spatial.distance.pdist(boc.coordinates) )       # same formalism as kpoints
+            coors_nn = spatial.cKDTree( boc.coordinates )
+            coors_nn_list = coors_nn.query_pairs(r=min_coor_dist*2, output_type='ndarray')
+            self.log += u'symmetrised coordinate difference between self and backdrop is %s \u212B. \n' % ( np.mean( abs(spatial.distance.pdist(boc.coordinates[coors_nn_list_])-spatial.distance.pdist(eoc.coordinates[coors_nn_list_])) \
+                                                                                                                     for coors_nn_list_ in coors_nn_list ) *\
+                                                                                                            np.amax(abs(boc.base)) )
 
 
 

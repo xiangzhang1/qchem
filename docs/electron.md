@@ -125,3 +125,5 @@ __de_dkpt__ dE(dkpt)
 
 gen.getkw('backdrop'), _backdrop_: node with compared property (optimized_cell, bands)
 gen.getkw('compare'), _compare_:
+
+    _min_coor_dist_, _coors_nn_, _coors_nn_list_
