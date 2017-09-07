@@ -112,26 +112,26 @@ ___if is_kpoints_mesh___
 
 # Errors
 
-## if is_kpoints_mesh
+if is_kpoints_mesh
 
-__min_kpt_dist__      smallest |k1-k2|
-_kpts_nn_           KDTree object storing nearest-neighbor information about __kpts__ array.
-_kpts_nn_list_[]    = [idx1_kpt, idx2_kpt] where |k1-k2|~min_kpt_dist
+    __min_kpt_dist__      smallest |k1-k2|
+    _kpts_nn_           KDTree object storing nearest-neighbor information about __kpts__ array.
+    _kpts_nn_list_[]    = [idx1_kpt, idx2_kpt] where |k1-k2|~min_kpt_dist
 
-<!-- neargap_bands deltaE_deltaKpt -->
-_de_dkpt_[idx_spin=0][ZERO==bandgap/2][idx_band===0][kpt_nn_list_====[0,1]] = E <!--doesnt actually exist -->
-_de_dkpt_flat_[]
-__de_dkpt__ dE(dkpt)
+    <!-- neargap_bands deltaE_deltaKpt -->
+    _de_dkpt_[idx_spin=0][ZERO==bandgap/2][idx_band===0][kpt_nn_list_====[0,1]] = E <!--doesnt actually exist -->
+    _de_dkpt_flat_[]
+    __de_dkpt__ dE(dkpt)
 
-## if not is_kpoints_mesh
+else
 
-__eigenvalue_jump__
+    __eigenvalue_jump__
 
 __error__
 
-## backdrop compare=band
+backdrop compare=band
 
-_backdrop_
-_compare_
+    _backdrop_
+    _compare_
 
-## backdrop compare=cell
+backdrop compare=cell
