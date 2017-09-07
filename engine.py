@@ -981,6 +981,7 @@ class Dummy(object):
 
 class Grepen(object):
 
+    @shared.debug_wrap
     @shared.log_wrap
     def __init__(self, electron):
 
@@ -1006,7 +1007,7 @@ class Grepen(object):
             self.temperature = float( eigenval[2][0] )
             self.nelectrons = int( eigenval[5][0] )
             self.nkpts = int( eigenval[5][1] )
-            if (self.nkpts != len(eigenval) / (self.nbands+2)):
+            if self.nkpts != (len(eigenval) - 6) / (self.nbands+2):
                 raise shared.CustomError(self.__class__.__name__ + '__init__: EIGENVAL file length not matching nkpts.')
 
         for name, value in vars(self).iteritems():
@@ -1442,7 +1443,7 @@ class Electron(object):
                 raise shared.CustomError(self.__class__.__name__ + ' compute: self.path {%s} taken' %self.path)
 
             if self.gen.parse_if('cell'):
-                
+
                 #: copy prev.path to self.path
                 print 'copying to prev.path to self.path...', ; sys.stdout.flush()
                 subprocess.Popen(['rsync', '--exclude=WAVECAR', '-ah', '%s/' %(self.prev.path), '%s/' %(self.path)], stdout=sys.stdout, stderr=sys.stderr).wait()
