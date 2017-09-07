@@ -433,25 +433,32 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
 class Cell(object):
 
     def __init__(self,lines):
+
         # basics
         if '\n' in lines:
             lines = lines.splitlines()
         self.name = lines[0]
         self.base = np.float32([ line.split() for line in lines[2:5] ]) * float(lines[1])
         self.stoichiometry = OrderedDict( zip(lines[5].split(), [int(x) for x in lines[6].split()]) )
+
         # fork parsing on Direct | Selective Dynamics
         if lines[7].startswith('Select') and all(all(sel=='T' for sel in line.split()[3:]) for line in lines[9:9+sum(self.stoichiometry.values())] ):
             print self.__class__.__name__ + '.__init__: Selective dynamics cell, all T. Converting to trivial cell...'
             lines.pop(7)
         if lines[7].startswith('D'):
-            self.coordinates = np.float32([ line.split()[:3] for line in lines[8:8+sum(self.stoichiometry.values())] ])
-            for coor in self.coordinates:
+            self.fcoor = np.float32([ line.split()[:3] for line in lines[8:8+sum(self.stoichiometry.values())] ])
+            for coor in self.fcoor:
                 if len(coor)!=3:
                     raise shared.CustomError(self.__class__.__name__+'__init__: bad format. Coordinate line {%s}' %coor)
         else:
             raise shared.CustomError(self.__class__.__name__+'__init__: unsupported POSCAR5 format. ')
+
         # some computation
         self.nelectrons = sum( [self.stoichiometry[symbol] * shared.ELEMENTS[symbol].pot_zval for symbol in self.stoichiometry] )
+
+        self.ccoor = np.dot(self.base, self.fcoor)
+        self.ccoor_kdtree = spatial.cKDTree( self.ccoor )
+        self.ccoor_mindist = np.amin( spatial.distance.pdist(self.ccoor) )
 
     def __str__(self):
         result = self.name+'\n'
@@ -461,7 +468,7 @@ class Cell(object):
         result += '  '.join(self.stoichiometry.keys()) + '\n'
         result += '  '.join(map(str,self.stoichiometry.values())) + '\n'
         result += 'Direct\n'
-        for line in self.coordinates:
+        for line in self.fcoor:
             result += ' '.join(map(str,line))+'\n'
         return result
 
@@ -1385,16 +1392,17 @@ class Compare(object):
 
             eoc = electron_optimized_cell = electron.prev.vasp.optimized_cell
             boc = backdrop_optimized_cell = backdrop.vasp.optimized_cell
+
             #:check
             if not np.array_equal(eoc.stoichiometry, boc.stoichiometry):
                 raise shared.CustomError(self.__class__.__name__ + '.compute: cell stoichiometry are not the same, cannot compute')
             #;
+
             self.log += u'<base difference> between self and backdrop is %s \u212B. \n' % ( np.average( abs(eoc.base - boc.base).flatten() ) )
-            min_coor_dist = np.amin( spatial.distance.pdist(boc.coordinates) )       # same formalism as kpoints
-            coors_nn = spatial.cKDTree( boc.coordinates )
-            coors_nn_list = coors_nn.query_pairs(r=min_coor_dist*2, output_type='ndarray')
-            self.log += u'<symmetrised cartesian coordinate difference> between self and backdrop is %s \u212B. \n' % ( np.mean([ abs(spatial.distance.pdist(boc.coordinates[coors_nn_list_])-spatial.distance.pdist(eoc.coordinates[coors_nn_list_])) \
-                                                                                                                     for coors_nn_list_ in coors_nn_list ]) * np.amax(abs(boc.base)) )
+
+            nnlist = eoc.ccoor_kdtree.query_pairs(r=eoc.ccoor_mindist*2, output_type='ndarray')
+            self.log += u'<symmetrised cartesian coordinate difference> between self and backdrop is %s \u212B. \n' % ( np.mean([ abs(spatial.distance.pdist(boc.ccoor[nn_])-spatial.distance.pdist(eoc.ccoor[nn_])) \
+                                                                                                                     for nn_ in nnlist ]) )
 
 
 
