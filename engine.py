@@ -1365,7 +1365,7 @@ class Errors(object):
                         raise shared.CustomError(self.__class__.__name__ + '.compute: compare neither-mesh cases require same kpoints')
                     #;
                     idx_spin = 0
-                    self.log += u'average eigenvalue difference between self and backdrop is %s eV.\n' % np.average( abs(electron.bands.bands[idx_spin] - backdrop.bands.bands[idx_spin]).flatten() )
+                    self.log += u'<eigenvalue difference> between self and backdrop (without offset) is %s eV.\n' % np.std( abs(electron.bands.bands[idx_spin] - backdrop.bands.bands[idx_spin]).flatten() )
 
                 elif not electron.grepen.is_kpoints_mesh and backdrop.grepen.is_kpoints_mesh:
 
@@ -1384,8 +1384,8 @@ class Errors(object):
 
                 eoc = electron_optimized_cell = electron.prev.vasp.optimized_cell
                 boc = backdrop_optimized_cell = Map().lookup(electron.gen.getkw('backdrop')).vasp.optimized_cell
-                self.log += u'average base difference between self and backdrop is %s \u212B. \n' % ( np.average( abs(eoc.base - boc.base).flatten() ) )
-                self.log += u'average cartesian coordinate difference between self and backdrop is %s \u212B. \n' % ( np.average( abs(eoc.coordinates - boc.coordinates).flatten() ) * np.amax(abs(boc.base)) )
+                self.log += u'<base difference> between self and backdrop is %s \u212B. \n' % ( np.average( abs(eoc.base - boc.base).flatten() ) )
+                self.log += u'symmetrised coordinate difference between self and backdrop is %s \u212B. \n' % ( np.mean(abs(spatial.distance.pdist(eoc.coordinates) - spatial.distance.pdist(boc.coordinates))) * np.amax(abs(boc.base)) )
 
 
         #: wrap-up
