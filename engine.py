@@ -462,8 +462,10 @@ class Cell(object):
 
     @shared.debug_wrap
     def __str__(self):
+        #: compat recompute
         if getattr(self, 'fcoor', None) is None:
-            self.reset()
+            self.recompute()
+        #;
         result = self.name+'\n'
         result += '1\n'
         for line in self.base:
@@ -475,7 +477,8 @@ class Cell(object):
             result += ' '.join(map(str,line))+'\n'
         return result
 
-    def reset(self):
+    def recompute(self):
+        #: compat recompute
         result = self.name+'\n'
         result += '1\n'
         for line in self.base:
@@ -486,6 +489,7 @@ class Cell(object):
         for line in self.coordinates:
             result += ' '.join(map(str,line))+'\n'
         self.__init__(result)
+        #;
 
     def poscar4(self):
         result = str(self)
@@ -1436,14 +1440,16 @@ class Electron(object):
         if not getattr(self, 'log', None):
             if os.path.isdir(self.path):
                 raise shared.CustomError(self.__class__.__name__ + ' compute: self.path {%s} taken' %self.path)
-            #: copy prev.path to self.path
-            print 'copying to prev.path to self.path...', ; sys.stdout.flush()
-            subprocess.Popen(['rsync', '--exclude=WAVECAR', '-ah', '%s/' %(self.prev.path), '%s/' %(self.path)], stdout=sys.stdout, stderr=sys.stderr).wait()
-            print '\r                                                 \r', ; sys.stdout.flush()
-            #;
-            os.chdir(self.path)
 
             if self.gen.parse_if('cell'):
+                
+                #: copy prev.path to self.path
+                print 'copying to prev.path to self.path...', ; sys.stdout.flush()
+                subprocess.Popen(['rsync', '--exclude=WAVECAR', '-ah', '%s/' %(self.prev.path), '%s/' %(self.path)], stdout=sys.stdout, stderr=sys.stderr).wait()
+                print '\r                                                 \r', ; sys.stdout.flush()
+                os.chdir(self.path)
+                #;
+
                 with open('POSCAR','r') as infile:
                     self.cell = Cell(infile.read())
 
