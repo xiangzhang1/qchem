@@ -1381,7 +1381,7 @@ class Compare(object):
                 raise shared.CustomError(self.__class__.__name__ + '.compute: electron and backdrop bands have incompatible NBANDS')
             #;
 
-                self.log += u'energy difference between self and backdrop is %s eV.\n' % ( abs(electron.grepen.energy - backdrop.grepen.energy) )
+            self.log += u'energy difference between self and backdrop is %s eV.\n' % ( abs(electron.grepen.energy - backdrop.grepen.energy) )
 
             if backdrop.grepen.is_kpoints_mesh and electron.grepen.is_kpoints_mesh:
 
