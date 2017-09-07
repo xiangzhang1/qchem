@@ -1362,6 +1362,8 @@ class Compare(object):
         backdrop = Map().lookup(electron.gen.getkw('backdrop'))
         compare = electron.gen.getkw('compare').split()
 
+        self.log += 'compare self(.prev) {%s} against backdrop(.prev) {%s} \n' %(electron.prev.name, backdrop.prev.name)
+
         # compare=band
         # 1. backdrop mesh, electron mesh
         # 2. backdrop not mesh, electron not mesh, same kpts
@@ -1378,6 +1380,8 @@ class Compare(object):
             if backdrop.bands.bands.shape[0] != electron.bands.bands.shape[0]:
                 raise shared.CustomError(self.__class__.__name__ + '.compute: electron and backdrop bands have incompatible NBANDS')
             #;
+
+                self.log += u'energy difference between self and backdrop is %s eV.\n' % ( abs(electron.grepen.energy - backdrop.grepen.energy) )
 
             if backdrop.grepen.is_kpoints_mesh and electron.grepen.is_kpoints_mesh:
 
