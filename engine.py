@@ -92,11 +92,11 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
                 raise shared.CustomError(self.__class__.__name__ + ' parse_require run=True error: parse_require results in empty set: kwname {%s}, value {%s}, required value {%s}' % (kwname, self.kw[kwname] if kwname in self.kw else 'null', kwvalset))
             if not run and not bool(result) and shared.DEBUG:
                 print self.__class__.__name__ + ' parse_require warning: parse_require results in empty set, deferred: kwname {%s}, value {%s}, required_value {%s}' %(kwname, self.kw[kwname] if kwname in self.kw else 'null', kwvalset)
-            if self.moonphase > 0:  self.kw_legal_set.add(kwname)
+            self.kw_legal_set.add(kwname)
             return bool(result)
         elif 'internal' in expression:      ## parse kwname internal
             kwname = re.sub('internal', '', expression).strip()
-            if self.moonphase > 0:  self.kw_internal_set.add(kwname)
+            self.kw_internal_set.add(kwname)
             return True
         elif not '(' in expression and not 'null' in expression:    ## parse !modname
             modname = re.sub('!', '', expression).strip()
@@ -106,7 +106,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
                 result = (self.mod[modname] if modname in self.mod else set()) | set([True])
             if run and bool(result):        ### output
                 self.mod[modname] = result
-            if self.moonphase > 0:  self.mod_legal_set.add(modname)
+            self.mod_legal_set.add(modname)
             return bool(result)
         else:                               ## parse if expression
             result = self.parse_if(expression)
@@ -140,7 +140,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             name = expression.split('=')[0].strip()
             val = expression.split('=')[1].strip()
             result = (name in self.kw and self.kw[name]==set([val]))
-            if self.moonphase==2 or (self.moonphase==1 and result):  self.kw_legal_set.add(name)
+            self.kw_legal_set.add(name)
             return result
         elif expression.startswith('(') and expression.endswith(')'):    ## parse (funcname)
             return self.evaluate(expression)
@@ -149,10 +149,10 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         elif 'null' in expression:              ## parse kwname null
             kwname = re.sub('null', '', expression).strip()
             result = not (kwname in self.kw and bool(self.kw[kwname]) )
-            if self.moonphase==2 or (self.moonphase==1 and result):  self.kw_legal_set.add(kwname)
+            self.kw_legal_set.add(kwname)
             return result
         else:                                   ## parse modname
-            if self.moonphase>0:    self.mod_legal_set.add(expression)
+            self.mod_legal_set.add(expression)
             if expression in self.mod and self.mod[expression]==set([True]):
                 return True
             else:  #not defined means not written, which means no
@@ -219,13 +219,11 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         self.kw_legal_set = set()
         self.kw_internal_set = set()
         self.mod_legal_set = set()
-        self.moonphase = 0
         input_ = [p.strip() for p in input_.split(',') if p.rstrip()]
         for item in input_:
             self.parse_require(item,True)
     # 执行require
         self.require = []
-        self.moonphase = 1
         if not [x for x in input_ if x.startswith('engine')]:
             raise shared.CustomError(self.__class__.__name__+': __init__: no engine=x found. Input_: {%s}' %input_)
         engine_name = [x for x in input_ if x.startswith('engine')][0].split('=')[1].strip()
@@ -238,7 +236,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
                 for part in [p.strip() for p in line[1].split(',') ]:
                     try:
                         if self.parse_if(line[0]) and self.parse_require(part,False):
-                            self.moonphase=2 ; self.parse_require(part,True) ; self.moonphase=1
+                            self.parse_require(part,True)
                         else:
                             self.require.append([line[0],part,line[2],line[3]])
                     except shared.DeferError:
@@ -250,7 +248,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             for line in self.require:
                 try:
                     if self.parse_if(line[0]) and self.parse_require(line[1],False):
-                        self.moonphase=2 ; self.parse_require(line[1],True) ; self.moonphase=1
+                        self.parse_require(line[1],True)
                         continue_flag = True
                         self.require.remove(line)
                 except shared.DeferError:
