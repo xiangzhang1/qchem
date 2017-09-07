@@ -462,6 +462,8 @@ class Cell(object):
 
     @shared.debug_wrap
     def __str__(self):
+        if not getattr(self, 'fcoor', None):
+            self.reset()
         result = self.name+'\n'
         result += '1\n'
         for line in self.base:
