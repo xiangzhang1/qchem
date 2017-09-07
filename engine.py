@@ -1498,4 +1498,3 @@ class Electron(object):
         if os.path.isdir(self.path):
             shutil.rmtree(self.path)
         #;
-e
