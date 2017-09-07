@@ -1267,7 +1267,7 @@ class Errors(object):
 
     @shared.debug_wrap
     @shared.log_wrap
-    def __init__(self, electron, backdrop=None):
+    def __init__(self, electron):
 
         self.error = 0
 
@@ -1322,76 +1322,78 @@ class Errors(object):
         if electron.grepen.is_doscar_usable:
             self.log += u'dos should not be so fine that energy granularity is obvious. 10/NEDOS[%.4f] > \u03B4E[%.4f]\n' %(10.0/electron.grepen.nedos, self.de_dkpt if electron.grepen.is_kpoints_mesh else np.mean(np.diff(electron.bands.bands[0].flatten())))
 
-        # check by comparing against backdrop
-        if electron.gen.parse_if('backdrop !null'):
-
-            backdrop = Map().lookup(electron.gen.getkw('backdrop')).electron
-            compare = electron.gen.getkw('compare').split()
-
-            # compare=band
-            # 1. backdrop mesh, electron mesh
-            # 2. backdrop not mesh, electron not mesh, same kpts
-            # 3. backdrop mesh, electron not mesh
-
-            if 'bands' in compare:
-
-                #: preliminary checks
-                self.log += '-' * 130 + '\n'
-                if not getattr(electron, 'bands', None) or not getattr(backdrop, 'bands', None):
-                    raise shared.CustomError(self.__class__.__name__ + '.compute: electron or backdrop.electron does not have bands property. (Backdrop needs to be an engine=electron node)')
-                if not backdrop.grepen.is_kpoints_mesh and electron.grepen.is_kpoints_mesh:
-                    raise shared.CustomError(self.__class__.__name__ + '.compute: only these: i) both mesh ii) neither mesh iii) backdrop only mesh.')
-                if backdrop.bands.bands.shape[0] != electron.bands.bands.shape[0]:
-                    raise shared.CustomError(self.__class__.__name__ + '.compute: electron and backdrop bands have incompatible NBANDS')
-                #;
-
-                if backdrop.grepen.is_kpoints_mesh and electron.grepen.is_kpoints_mesh:
-
-                    error_interpd = []
-                    idx_spin = 0
-                    self.log += self.__class__.__name__ + ': comparing idx_spin=0 only.\n'    # faciliate comparison between ncl and fm
-
-                    for idx_band, band in tqdm(enumerate(backdrop.bands.bands[idx_spin]), leave=False, desc='interpolating backdrop.bands for comparison'):
-                            error_interpd.append( np.average( abs( np.float_(electron.bands.bands[idx_spin][idx_band]) - np.float_([backdrop.bands.bands_interp()[idx_spin][idx_band](*kpt) for kpt in electron.bands.kpts]) ) ) )
-                            self.log += 'in band %d, between self and backdrop, interpolation plus Cauchy error is %.5f.\n' %(idx_band, error_interpd[-1])
-
-                    ## rule
-                    self.log += u'smearing should be larger than numerical energy error: sigma[%.4f] > interpolation-correctable \u03B4E[%.4f]' %(electron.grepen.sigma, np.average(error_interpd))
-
-                elif not backdrop.grepen.is_kpoints_mesh and not electron.grepen.is_kpoints_mesh:
-
-                    #: preliminary checks
-                    if not np.array_equal(backdrop.bands.kpts, backdrop.bands.kpts):
-                        raise shared.CustomError(self.__class__.__name__ + '.compute: compare neither-mesh cases require same kpoints')
-                    #;
-                    idx_spin = 0
-                    self.log += u'<eigenvalue difference> between self and backdrop (without offset) is %s eV.\n' % np.std( abs(electron.bands.bands[idx_spin] - backdrop.bands.bands[idx_spin]).flatten() )
-
-                elif not electron.grepen.is_kpoints_mesh and backdrop.grepen.is_kpoints_mesh:
-
-                    raise shared.CustomError(self.__class__.__name__ + 'WARNING: non-mesh vs mesh feature has not been implemented!')
-
-            # compare=cell
-            # check cell shape is compatible
-
-            if 'cell' in compare:
-
-                #: preliminary checks
-                self.log += '-' * 130 + '\n'
-                if not np.array_equal(electron.cell.stoichiometry, backdrop.cell.stoichiometry):
-                    raise shared.CustomError(self.__class__.__name__ + '.compute: cell stoichiometry are not the same, cannot compute')
-                #;
-
-                eoc = electron_optimized_cell = electron.prev.vasp.optimized_cell
-                boc = backdrop_optimized_cell = Map().lookup(electron.gen.getkw('backdrop')).vasp.optimized_cell
-                self.log += u'<base difference> between self and backdrop is %s \u212B. \n' % ( np.average( abs(eoc.base - boc.base).flatten() ) )
-                self.log += u'symmetrised coordinate difference between self and backdrop is %s \u212B. \n' % ( np.mean(abs(spatial.distance.pdist(eoc.coordinates) - spatial.distance.pdist(boc.coordinates))) * np.amax(abs(boc.base)) )
-
-
         #: wrap-up
         self.log += '-' * 130 + '\n'
         #;
         self.log += 'errors.py: in short, you should expect an error around %.4f eV in dirA. \n' %(self.error)
+
+
+class Compare(object):
+
+    @shared.debug_wrap
+    @shared.log_wrap
+    def __init__(self, electron):
+
+        backdrop = Map().lookup(electron.gen.getkw('backdrop'))
+        compare = electron.gen.getkw('compare').split()
+
+        # compare=band
+        # 1. backdrop mesh, electron mesh
+        # 2. backdrop not mesh, electron not mesh, same kpts
+        # 3. backdrop mesh, electron not mesh
+
+        if 'bands' in compare:
+
+            backdrop = backdrop.electron
+
+            #: preliminary checks
+            self.log += '-' * 130 + '\n'
+            if not backdrop.grepen.is_kpoints_mesh and electron.grepen.is_kpoints_mesh:
+                raise shared.CustomError(self.__class__.__name__ + '.compute: only these: i) both mesh ii) neither mesh iii) backdrop only mesh.')
+            if backdrop.electron.bands.bands.shape[0] != electron.bands.bands.shape[0]:
+                raise shared.CustomError(self.__class__.__name__ + '.compute: electron and backdrop bands have incompatible NBANDS')
+            #;
+
+            if backdrop.grepen.is_kpoints_mesh and electron.grepen.is_kpoints_mesh:
+
+                error_interpd = []
+                idx_spin = 0
+                self.log += self.__class__.__name__ + ': comparing idx_spin=0 only.\n'    # faciliate comparison between ncl and fm
+
+                for idx_band, band in tqdm(enumerate(backdrop.bands.bands[idx_spin]), leave=False, desc='interpolating backdrop.bands for comparison'):
+                        error_interpd.append( np.average( abs( np.float_(electron.bands.bands[idx_spin][idx_band]) - np.float_([backdrop.bands.bands_interp()[idx_spin][idx_band](*kpt) for kpt in electron.bands.kpts]) ) ) )
+                        self.log += 'in band %d, between self and backdrop, post-interpolation Cauchy eigenvalue difference is %.5f.\n' %(idx_band, error_interpd[-1])
+
+                self.log += u'smearing should be larger than numerical energy error: sigma[%.4f] > post-interpolation \u03B4E[%.4f]' %(electron.grepen.sigma, np.average(error_interpd))
+
+            elif not backdrop.grepen.is_kpoints_mesh and not electron.grepen.is_kpoints_mesh:
+
+                #: preliminary checks
+                if not np.array_equal(backdrop.bands.kpts, backdrop.bands.kpts):
+                    raise shared.CustomError(self.__class__.__name__ + '.compute: compare neither-mesh cases require same kpoints')
+                #;
+                idx_spin = 0
+                self.log += u'<eigenvalue difference> between self and backdrop (without offset) is %s eV.\n' % np.std( abs(electron.bands.bands[idx_spin] - backdrop.bands.bands[idx_spin]).flatten() )
+
+            elif not electron.grepen.is_kpoints_mesh and backdrop.grepen.is_kpoints_mesh:
+
+                raise shared.CustomError(self.__class__.__name__ + 'WARNING: non-mesh vs mesh feature has not been implemented!')
+
+        # compare=optimized_cell
+
+        if 'optimized_cell' in compare:
+
+            #: preliminary checks
+            self.log += '-' * 130 + '\n'
+            if not np.array_equal(electron.cell.stoichiometry, backdrop.cell.stoichiometry):
+                raise shared.CustomError(self.__class__.__name__ + '.compute: cell stoichiometry are not the same, cannot compute')
+            #;
+
+            eoc = electron_optimized_cell = electron.prev.vasp.optimized_cell
+            boc = backdrop_optimized_cell = backdrop.vasp.optimized_cell
+            self.log += u'<base difference> between self and backdrop is %s \u212B. \n' % ( np.average( abs(eoc.base - boc.base).flatten() ) )
+            self.log += u'symmetrised coordinate difference between self and backdrop is %s \u212B. \n' % ( np.mean(abs(spatial.distance.pdist(eoc.coordinates) - spatial.distance.pdist(boc.coordinates))) * np.amax(abs(boc.base)) )
+
 
 
 
@@ -1435,8 +1437,11 @@ class Electron(object):
             if self.gen.parse_if('errors'):
                 self.errors = Errors(self)
 
+            if self.gen.parse_if('compare !null'):
+                self.compare = Compare(self)
+
             self.log = ''
-            for name in ['cell', 'grepen', 'dos', 'bands','charge', 'errors']:
+            for name in ['cell', 'grepen', 'dos', 'bands','charge', 'errors', 'compare']:
                 if getattr(self, name, None) and getattr(getattr(self, name),'log', None):
                     self.log += getattr(getattr(self, name), 'log').encode('utf-8')
 
