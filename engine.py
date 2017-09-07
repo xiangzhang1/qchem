@@ -1379,8 +1379,10 @@ class Errors(object):
                     raise shared.CustomError(self.__class__.__name__ + '.compute: cell stoichiometry are not the same, cannot compute')
                 #;
 
-                self.log += u'average base difference between self and backdrop is %s \u212B. \n' % np.average( abs(electron.optimized_cell.base - backdrop.optimized_cell.base).flatten() )
-                self.log += u'average fractional coordinate difference between self and backdrop is %s \u212B. \n' % np.average( abs(electron.optimized_cell.coordinates - backdrop.optimized_cell.coordinates).flatten() )
+                eoc = electron_optimized_cell = electron.prev.vasp.optimized_cell
+                boc = backdrop_optimized_cell = backdrop.vasp.optimized_cell
+                self.log += u'average base difference between self and backdrop is %s \u212B. \n' % np.average( abs(eoc.base - boc.base).flatten() )
+                self.log += u'average fractional coordinate difference between self and backdrop is %s \u212B. \n' % np.average( abs(eoc.coordinates - boc.coordinates).flatten() ) * np.amax(abs(boc.base))
 
 
         #: wrap-up
