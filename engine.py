@@ -1208,7 +1208,10 @@ class Charge(object):
         self.log += "\n\nBader charge. Boundaries are defined as zero-flux surfaces. Note that certain flags should be set (e.g. LAECHG) for this to be reasonable.\n"
         #: run bader
         print 'running bader...', ; sys.stdout.flush()
-        os.popen('bader CHGCAR').read()
+        if not os.path.isfile('AECCAR0') or not os.path.isfile('AECCAR2'):
+            raise shared.CustomError(self.__class__.__name__ + '.__init__: no AECCAR found. You forgot to add LAECHG-tag. Bader will not run reliably.')
+        os.popen('chgsum.pl AECCAR0 AECCAR2').read()
+        os.popen('bader CHGCAR_sum').read()
         print '\r                 \r', ; sys.stdout.flush()
         #;
         with open('ACF.dat','r') as f:
