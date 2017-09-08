@@ -1418,8 +1418,15 @@ class Compare(object):
                 raise shared.CustomError(self.__class__.__name__ + '.compute: cell stoichiometry are not the same, cannot compute')
             #;
 
+            # base
             self.log += u'<base difference> between self and backdrop is %s \u212B. \n' % ( np.average( abs(eoc.base - boc.base).flatten() ) )
+            self.log += '-' * 130 + '\n'
 
+            # simple difference, not allowing translation or rotation
+            self.log += u'<simple cartesian difference> (no translation or rotation allowed) between self and backdrop is  %s \u212B. \n' % ( np.abs(eoc.ccoor - boc.ccoor).mean() )
+            self.log += '-' * 130 + '\n'
+
+            # bijective-representation difference (congruent testing), allowing large-scale rotation (where did feature A happen)
             b = np.array([ [i, j, np.linalg.norm(boc.ccoor[i]-boc.ccoor[j])] for i in range(boc.natoms) for j in range(boc.natoms) if i!=j ])
             b = b[ b[:,2].argsort() ]
             e = np.array([ [i, j, np.linalg.norm(eoc.ccoor[i]-eoc.ccoor[j])] for i in range(eoc.natoms) for j in range(eoc.natoms) if i!=j ])
