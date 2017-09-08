@@ -1454,6 +1454,11 @@ class Compare(object):
             self.log += u'    max difference: backdrop_pdist [%2d(%s)-%2d(%s)=%.3f] - electron_pdist [%2d(%s)-%2d(%s)=%.3f] = %f \u212B. \n' %(b[idx_max][0], boc.ccoor[int(b[idx_max][0])], b[idx_max][1], boc.ccoor[int(b[idx_max][1])], b[idx_max,2],
                                                                                                                                            e[idx_max][0], eoc.ccoor[int(e[idx_max][0])], e[idx_max][1], eoc.ccoor[int(e[idx_max][1])], e[idx_max,2],
                                                                                                                                            np.abs(b-e)[:,2].max())
+            self.log += '-' * 130 + '\n'
+
+            # are they the same cell?
+            eoc_idxs_atom = np.zeros(eoc.natoms)
+
 
 
 class Electron(object):
