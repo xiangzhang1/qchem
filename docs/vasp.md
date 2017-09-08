@@ -5,6 +5,7 @@ __cell__ warning: data duplication necessated by modularity
 __path__
 __prev__
 
+__name__
 
 # clerical
 

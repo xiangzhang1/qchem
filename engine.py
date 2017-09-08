@@ -36,6 +36,9 @@ from scipy.interpolate import interp1d
 from scipy.optimize import minimize
 from scipy import spatial
 
+import string
+import random
+
 import shared
 
 
@@ -737,6 +740,7 @@ class Vasp(object):
         self.cell = node.cell
         self.path = node.path
         self.prev = node.prev
+        self.name = node.name
 
 
     def compute(self):
@@ -777,7 +781,7 @@ class Vasp(object):
                 print self.__class__.__name__ + ': vasp_gpu'
             else:
                 flavor = 'std'
-            self.remote_folder_name = self.path.split('/')[-2] + '_' + self.path.split('/')[-1] + '_' + hashlib.md5(self.path).hexdigest()[:5] + '_' + str(time.time())
+            self.remote_folder_name = ''.join(e for e in self.name if e.isalnum()) + ''.join(random.sample(string.ascii_lowercase,4))
             # write scripts and instructions
             # subfile actually runs vasp. wrapper submits the subfile to system.
             self.wrapper = '#!/bin/bash\n' ; self.subfile = '#!/bin/bash\necho $PWD `date` start\necho -------------------------\n'
@@ -876,7 +880,7 @@ class Vasp(object):
                 #;
                 ssh.load_system_host_keys()
                 ssh.connect(self.gen.getkw('platform'), username='xzhang1')
-                ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command("squeue -n %s" %self.remote_folder_name)
+                ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command("squeue -n '%s'" %self.remote_folder_name)
                 result = ssh_stdout.read().strip()
                 vasp_is_running = ( len(result.splitlines()) > 1 )
             else:
@@ -1425,8 +1429,7 @@ class Compare(object):
             self.log += u'<base difference> between self and backdrop is %s \u212B. \n' % ( np.average( abs(eoc.base - boc.base).flatten() ) )
 
             nnlist = eoc.ccoor_kdtree.query_pairs(r=eoc.ccoor_mindist*2, output_type='ndarray')
-            self.log += u'<symmetrised cartesian coordinate difference> between self and backdrop is %s \u212B. \n' % ( np.mean([ abs(spatial.distance.pdist(boc.ccoor[nn_])-spatial.distance.pdist(eoc.ccoor[nn_])) \
-                                                                                                                     for nn_ in nnlist ]) )
+            self.log += u'<symmetrised cartesian coordinate difference> between self and backdrop is %s \u212B. \n' % ( np.mean([ abs(spatial.distance.pdist(boc.ccoor[nn_])-spatial.distance.pdist(eoc.ccoor[nn_])) for nn_ in nnlist ]) )
 
 
 
