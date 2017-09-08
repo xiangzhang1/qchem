@@ -1420,9 +1420,9 @@ class Compare(object):
 
             self.log += u'<base difference> between self and backdrop is %s \u212B. \n' % ( np.average( abs(eoc.base - boc.base).flatten() ) )
 
-            b = np.float_([ [i, j, np.linalg.norm(boc.ccoor[i]-boc.ccoor[j])] for i in range(boc.natoms) for j in range(boc.natoms) ])
+            b = np.array([ [i, j, np.linalg.norm(boc.ccoor[i]-boc.ccoor[j])] for i in range(boc.natoms) for j in range(boc.natoms) ])
             b = b[ b[:,2].argsort() ]
-            e = np.float_([ [i, j, np.linalg.norm(boc.ccoor[i]-eoc.ccoor[j])] for i in range(eoc.natoms) for j in range(eoc.natoms) ])
+            e = np.array([ [i, j, np.linalg.norm(eoc.ccoor[i]-eoc.ccoor[j])] for i in range(eoc.natoms) for j in range(eoc.natoms) ])
             b = e[ e[:,2].argsort() ]
             self.log += u'<arbitrary-order bijective-representation difference> between self and backdrop is: \n'
             idx_min = abs(b-e)[:2].argmin()
