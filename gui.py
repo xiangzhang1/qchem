@@ -394,8 +394,8 @@ def edit_vars():
     j = request.get_json(force=True)
     n = engine.Map().lookup(j.pop('cur'))
     for name,value in j.iteritems():
-        if name == 'name' and '.' in value:
-            raise shared.CustomError('dot . cannot be in name, because it is used in cur. ')
+        if name == 'name' and ('.' in value or ',' in value):
+            raise shared.CustomError('dot and comma cannot be in name, because it is used in cur. ')
         if name not in shared.READABLE_ATTR_LIST:
             continue
         if getattr(engine, name.title(), None):
