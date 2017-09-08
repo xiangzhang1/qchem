@@ -1426,12 +1426,23 @@ class Compare(object):
             self.log += u'<simple cartesian difference> (no translation or rotation allowed) between self and backdrop is  %s \u212B. \n' % ( np.abs(eoc.ccoor - boc.ccoor).mean() )
             self.log += '-' * 130 + '\n'
 
-            # bijective-representation difference (congruent testing), allowing large-scale rotation (where did feature A happen)
+            # bijective-representation difference (congruent testing), allowing rotation and translation
             b = np.array([ [i, j, np.linalg.norm(boc.ccoor[i]-boc.ccoor[j])] for i in range(boc.natoms) for j in range(boc.natoms) if i!=j ])
-            b = b[ b[:,2].argsort() ]
             e = np.array([ [i, j, np.linalg.norm(eoc.ccoor[i]-eoc.ccoor[j])] for i in range(eoc.natoms) for j in range(eoc.natoms) if i!=j ])
+            self.log += u'<fixed-order bijective-representation difference> (allowing translation and rotation) between self and backdrop is: \n'
+            idx_min = np.abs(b-e)[:,2].argmin()
+            self.log += u'    min difference: backdrop_pdist [%2d(%s)-%2d(%s)=%.3f] - electron_pdist [%2d(%s)-%2d(%s)=%.3f] = %f \u212B. \n' %(b[idx_min][0], boc.ccoor[int(b[idx_min][0])], b[idx_min][1], boc.ccoor[int(b[idx_min][1])], b[idx_min,2],
+                                                                                                                                                       e[idx_min][0], eoc.ccoor[int(e[idx_min][0])], e[idx_min][1], eoc.ccoor[int(e[idx_min][1])], b[idx_min,2],
+                                                                                                                                                       np.abs(b-e)[:,2].min())
+            self.log += u'    avg difference: %s \u212B. \n' %(abs(b-e)[:,2].mean())
+            idx_max = abs(b-e)[:,2].argmax()
+            self.log += u'    max difference: backdrop_pdist [%2d(%s)-%2d(%s)=%.3f] - electron_pdist [%2d(%s)-%2d(%s)=%.3f] = %f \u212B. \n' %(b[idx_max][0], boc.ccoor[int(b[idx_max][0])], b[idx_max][1], boc.ccoor[int(b[idx_max][1])], b[idx_max,2],
+                                                                                                                                           e[idx_max][0], eoc.ccoor[int(e[idx_max][0])], e[idx_max][1], eoc.ccoor[int(e[idx_max][1])], b[idx_max,2],
+                                                                                                                                           np.abs(b-e)[:,2].max())
+           # bijective-representation difference (congruent testing), allowing physical phenomena relocation
+            b = b[ b[:,2].argsort() ]
             e = e[ e[:,2].argsort() ]
-            self.log += u'<arbitrary-order bijective-representation difference> between self and backdrop is: \n'
+            self.log += u'<arbitrary-order bijective-representation difference> (allowing physical phenomena relocation) between self and backdrop is: \n'
             idx_min = np.abs(b-e)[:,2].argmin()
             self.log += u'    min difference: backdrop_pdist [%2d(%s)-%2d(%s)=%.3f] - electron_pdist [%2d(%s)-%2d(%s)=%.3f] = %f \u212B. \n' %(b[idx_min][0], boc.ccoor[int(b[idx_min][0])], b[idx_min][1], boc.ccoor[int(b[idx_min][1])], b[idx_min,2],
                                                                                                                                                        e[idx_min][0], eoc.ccoor[int(e[idx_min][0])], e[idx_min][1], eoc.ccoor[int(e[idx_min][1])], b[idx_min,2],
