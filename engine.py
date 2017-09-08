@@ -572,7 +572,7 @@ def compare_cell_grow(eoc, boc):
             if [idx for idx in range(len(perm[0])) if perm[0][idx]==perm2[0][idx] and perm[1][idx]!=perm2[1][idx]]:
                 pass
 
-            if np.abs(eoc.cdist[np.ix_(perm[0], perm2[0])] - boc.cdist[np.ix_(perm[1], perm2[1])].mean() < ZERO:
+            if np.abs(eoc.cdist[np.ix_(perm[0], perm2[0])] - boc.cdist[np.ix_(perm[1], perm2[1])]).mean() < ZERO:
                 bowl.remove(perm)
                 bowl.remove(perm2)
                 bowl.append([f7(perm[0]+perm2[0]),f7(perm[1]+perm2[1])])
