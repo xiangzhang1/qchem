@@ -12,6 +12,7 @@ __fcoor__
 __ccoor__
     __ccoor_kdtree__
     __ccoor_mindist__
+    __cdist__
 
 __nelectrons__ # of electrons involved in computation (POTCAR ZVAL)
 __natoms__

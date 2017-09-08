@@ -43,10 +43,10 @@ import random
 import shared
 
 
-def powerset(iterable):
-    "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
-    s = list(iterable)
-    return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
+def f7(seq):
+    seen = set()
+    seen_add = seen.add
+    return [x for x in seq if not (x in seen or seen_add(x))]
 
 # ====================================================
 
@@ -473,6 +473,8 @@ class Cell(object):
         self.ccoor_kdtree = spatial.cKDTree( self.ccoor )
         self.ccoor_mindist = np.amin( spatial.distance.pdist(self.ccoor) )
 
+        self.cdist = spatial.distance.squareform(spatial.distance.pdist(self.ccoor))
+
     @shared.debug_wrap
     def __str__(self):
         #: compat recompute
@@ -540,45 +542,46 @@ def compare_cell_bijective(eoc, boc):
     return report
 
 
-def compare_cell_remap(eoc, boc):
+def compare_cell_grow(eoc, boc):
 
     ZERO = 0.03
+    COUNT = 4
+    bowl = []
 
-    b = spatial.distance.squareform(spatial.distance.pdist(boc.ccoor))
-    e = spatial.distance.squareform(spatial.distance.pdist(boc.ccoor))
+    for perm_eoc, perm_boc in itertools.product(itertools.permutations(range(eoc.natoms), COUNT), itertools.permutations(range(boc.natoms), COUNT)):
 
-    bi = []
-    ei = []
+        if np.abs(eoc.cdist[np.ix_(perm_eoc, perm_eoc)] - boc.cdist[np.ix_(perm_boc, perm_boc)]).mean() < ZERO:
 
-    while set(range(boc.natoms)) - set(bi) or set(range(eoc.natoms)) - set(ei):
+            bowl.append([perm_eoc, perm_boc])
 
-        champion = []
+    # 养蛊
 
-        for idx_boc, idx_eoc in itertools.product( set(range(boc.natoms))-set(bi), set(range(eoc.natoms))-set(ei) ):
+    continue_flag = True
 
-            idx_boc_environment1 = b[idx_boc, bi]   # fixed part
-            idx_boc_environment2 = b[idx_boc, np.asarray(set(range(boc.natoms))-set(bi))]   # mystery part
+    while (continue_flag):
+        continue_flag = False
 
-            idx_eoc_environment1 = e[idx_eoc, ei]   # fixed part
-            idx_eoc_environment2 = e[idx_eoc, np.asarray(set(range(eoc.natoms))-set(ei))]   # mystery part
+        for perm, perm2 in itertools.product(bowl, bowl):
 
-            diff = norm(idx_boc_environment1 - idx_eoc_environment1, 1) + norm(idx_boc_environment1.sort() - idx_eoc_environment1.sort(), 1)
-            diff /= boc.natoms
+            if len(perm[0]) < len(perm[1]):     # run over twice
+                pass
 
-            champion.append([idx_boc, idx_eoc, diff])
+            if set(perm[0]) >= set(perm2[0]):
+                bowl.remove(perm2)
 
-        champion = np.array(champion)
+            if [idx for idx in range(len(perm[0])) if perm[0][idx]==perm2[0][idx] and perm[1][idx]!=perm2[1][idx]]:
+                pass
 
-        if len(champion) and champion[:,2].min() > ZERO:
+            if np.abs(eoc.cdist[np.ix_(perm[0], perm2[0])] - boc.cdist[np.ix_(perm[1], perm2[1])].mean() < ZERO:
+                bowl.remove(perm)
+                bowl.remove(perm2)
+                bowl.append([f7(perm[0]+perm2[0]),f7(perm[1]+perm2[1])])
+                continue_flag = True
 
-            # light up
+    return bowl
 
-            bi.append(champion[champion.argmin()][0])
-            ei.append(champion[champion.argmin()][1])
 
-        else:
 
-            # detached part
 
 
 # ===========================================================================
