@@ -1428,9 +1428,9 @@ class Compare(object):
             idx_min = abs(b-e)[:2].argmin()
             self.log += u'    min difference: boc(%s) - eoc(%s) = %s \u212B. \n' %(b[idx_min], e[idx_min], abs(b-e)[:2].min())
             self.log += u'    avg difference: %s \u212B. \n' %(abs(b-e)[:2].mean())
-            idx_min = abs(b-e)[:2].argmax()
-            self.log += u'    min difference: boc(%s) - eoc(%s) = %s \u212B. \n' %(b[idx_min], e[idx_min], abs(b-e)[:2].min())
-
+            idx_max = abs(b-e)[:2].argmax()
+            self.log += u'    max difference: boc(%s) - eoc(%s) = %s \u212B. \n' %(b[idx_max], e[idx_max], abs(b-e)[:2].max())
+            IPython.embed()
 
 
 class Electron(object):
