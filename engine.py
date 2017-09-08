@@ -1362,7 +1362,7 @@ class Compare(object):
         backdrop = Map().lookup(electron.gen.getkw('backdrop'))
         compare = electron.gen.getkw('compare').split()
 
-        self.log += 'compare self(.prev) {%s} against backdrop(.prev) {%s} \n' %(electron.prev.name, backdrop.prev.name)
+        self.log += 'compare prev {%s} against backdrop {%s} \n' %(electron.prev.name, backdrop.name)
 
         # compare=band
         # 1. backdrop mesh, electron mesh
@@ -1449,11 +1449,13 @@ class Electron(object):
             if self.gen.parse_if('cell'):
 
                 #: copy prev.path to self.path
-                print 'copying to prev.path to self.path...', ; sys.stdout.flush()
-                subprocess.Popen(['rsync', '--exclude=WAVECAR', '-ah', '%s/' %(self.prev.path), '%s/' %(self.path)], stdout=sys.stdout, stderr=sys.stderr).wait()
-                print '\r                                                 \r', ; sys.stdout.flush()
-                os.chdir(self.path)
+                # print 'copying to prev.path to self.path...', ; sys.stdout.flush()
+                # subprocess.Popen(['rsync', '--exclude=WAVECAR', '-ah', '%s/' %(self.prev.path), '%s/' %(self.path)], stdout=sys.stdout, stderr=sys.stderr).wait()
+                # print '\r                                                 \r', ; sys.stdout.flush()
+                # os.chdir(self.path)
                 #;
+                print self.__class__.__name__ + '.compute: using previous path'
+                os.chdir(self.prev.path)
 
                 with open('POSCAR','r') as infile:
                     self.cell = Cell(infile.read())
