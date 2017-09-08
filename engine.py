@@ -1431,7 +1431,9 @@ class Compare(object):
                                                                                                                                                        np.abs(b-e)[:,2].min())
             self.log += u'    avg difference: %s \u212B. \n' %(abs(b-e)[:2].mean())
             idx_max = abs(b-e)[:,2].argmax()
-            self.log += u'    max difference: backdrop_pdist(%s) - electron_pdist(%s) = %s \u212B. \n' %(b[idx_max], e[idx_max], abs(b-e)[:,2].max())
+            self.log += u'    max difference: backdrop_pdist [%2d(%s)-%2d(%s)=%.3f] - electron_pdist [%2d(%s)-%2d(%s)=%.3f] = %f \u212B. \n' %(b[idx_max][0], boc.ccoor[int(b[idx_max][0])], b[idx_max][1], boc.ccoor[int(b[idx_max][1])], b[idx_max,2],
+                                                                                                                                           e[idx_max][0], eoc.ccoor[int(e[idx_max][0])], e[idx_max][1], eoc.ccoor[int(e[idx_max][1])], b[idx_max,2],
+                                                                                                                                           np.abs(b-e)[:,2].max())
             IPython.embed()
 
 
