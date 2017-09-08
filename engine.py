@@ -1429,7 +1429,7 @@ class Compare(object):
             self.log += u'<base difference> between self and backdrop is %s \u212B. \n' % ( np.average( abs(eoc.base - boc.base).flatten() ) )
 
             nnlist = eoc.ccoor_kdtree.query_pairs(r=eoc.ccoor_mindist*2, output_type='ndarray')
-            self.log += u'<symmetrised cartesian coordinate difference> between self and backdrop is %s \u212B. \n' % ( np.mean([ abs(spatial.distance.pdist(boc.ccoor[nn_])-spatial.distance.pdist(eoc.ccoor[nn_])) for nn_ in nnlist ]) )
+            self.log += u'<arbitrary-order bijective-representation difference> between self and backdrop is %s - %s \u212B. \n' % (np.amin(abs( spatial.distance.pdist(boc.ccoor).sort()-spatial.distance.pdist(eoc.ccoor).sort() )) , np.amax(abs( spatial.distance.pdist(boc.ccoor).sort()-spatial.distance.pdist(eoc.ccoor).sort() )))
 
 
 
