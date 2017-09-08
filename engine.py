@@ -1420,16 +1420,16 @@ class Compare(object):
 
             self.log += u'<base difference> between self and backdrop is %s \u212B. \n' % ( np.average( abs(eoc.base - boc.base).flatten() ) )
 
-            b = np.array([ [i, j, np.linalg.norm(boc.ccoor[i]-boc.ccoor[j])] for i in range(boc.natoms) for j in range(boc.natoms) ])
+            b = np.array([ [i, j, np.linalg.norm(boc.ccoor[i]-boc.ccoor[j])] for i in range(boc.natoms) for j in range(boc.natoms) if i!=j ])
             b = b[ b[:,2].argsort() ]
-            e = np.array([ [i, j, np.linalg.norm(eoc.ccoor[i]-eoc.ccoor[j])] for i in range(eoc.natoms) for j in range(eoc.natoms) ])
+            e = np.array([ [i, j, np.linalg.norm(eoc.ccoor[i]-eoc.ccoor[j])] for i in range(eoc.natoms) for j in range(eoc.natoms) if i!=j ])
             e = e[ e[:,2].argsort() ]
             self.log += u'<arbitrary-order bijective-representation difference> between self and backdrop is: \n'
-            idx_min = abs(b-e)[:2].argmin()
-            self.log += u'    min difference: boc(%s) - eoc(%s) = %s \u212B. \n' %(b[idx_min], e[idx_min], abs(b-e)[:2].min())
+            idx_min = abs(b-e)[:,2].argmin()
+            self.log += u'    min difference: backdrop_pdist(%s) - electron_pdist(%s) = %s \u212B. \n' %(b[idx_min], e[idx_min], abs(b-e)[:,2].min())
             self.log += u'    avg difference: %s \u212B. \n' %(abs(b-e)[:2].mean())
-            idx_max = abs(b-e)[:2].argmax()
-            self.log += u'    max difference: boc(%s) - eoc(%s) = %s \u212B. \n' %(b[idx_max], e[idx_max], abs(b-e)[:2].max())
+            idx_max = abs(b-e)[:,2].argmax()
+            self.log += u'    max difference: backdrop_pdist(%s) - electron_pdist(%s) = %s \u212B. \n' %(b[idx_max], e[idx_max], abs(b-e)[:,2].max())
             IPython.embed()
 
 
