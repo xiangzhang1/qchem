@@ -19,7 +19,7 @@ from filecmp import dircmp
 from collections import OrderedDict
 import paramiko
 import IPython
-from itertools import groupby
+from itertools import groupby, chain, combinations
 
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
@@ -35,11 +35,20 @@ from scipy.interpolate import Rbf
 from scipy.interpolate import interp1d
 from scipy.optimize import minimize
 from scipy import spatial
+from scipy.linalg import norm
 
 import string
 import random
 
 import shared
+
+
+def powerset(iterable):
+    "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
+    s = list(iterable)
+    return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
+
+# ====================================================
 
 
 class Gen(object):  # Stores the logical structure of keywords and modules. A unique construct deserving a name.
@@ -492,77 +501,85 @@ class Cell(object):
         return result
 
 
-# ARCHAIC
-class Poscar(object):
-    # The old, broken Poscar.
-    # reads poscar, and generates 3*3*3 mirror for all kinds of purposes.
-    def __init__(self):
-        self.log = ''
-        #0.parameters:
-        #exclude_dist, exlude_pair, truncate_dist_at, exclude_ele_pair
-        #1.get system parameters
-        f=open("POSCAR","r")
-        self.lines=f.readlines()
-        self.cell=[self.lines[i].split() for i in range(2,5)]
-        self.base=[self.lines[i].split()[0:3] for i in range(8,len(self.lines))]
-        self.elements = self.lines[5].split()
-        self.nelements = len(self.elements)
-        self.atomcounts = np.int_(self.lines[6].split())
-        self.natoms = sum(self.atomcounts)
-        if len(self.base[-1])==0:
-         print 'poscar.py warning: last line of POSCAR should not be empty, watch it! Removing the last line...'
-         self.base.pop(-1)
-        if len(self.base[-1])==0:
-         print 'poscar.py error: last line of POSCAR still empty! '
-         exit(-1)
-        if any(len(x.strip())==0 for x in self.lines):
-            print  'poscar.py error: no empty lines allowed in POSCAR. that is , second half of poscar is not allowed.'
-            exit(-1)
-        self.cell=np.float64(self.cell)
-        self.base=np.float64(self.base)
-        #2.image to supercell
-        self.pos_imaged=[]
-        self.rpos_imaged=[]
-        for i in [0,1,-1]:
-         for j in [0,1,-1]:
-          for k in [0,1,-1]:
-           tmp_image_shift=np.float64([i,j,k])
-           for id_base in range(len(self.base)):
-            ele_pos_imaged=tmp_image_shift+self.base[id_base]
-            self.rpos_imaged.append(ele_pos_imaged)
-            ele_pos_imaged=np.dot(ele_pos_imaged,self.cell)
-            self.pos_imaged.append(ele_pos_imaged)
-        self.pos_imaged=np.float64(self.pos_imaged)
-        self.rpos_imaged=np.float64(self.rpos_imaged)
-        self.pos_original=np.dot(self.base,self.cell)
-        self.pos_original=np.float64(self.pos_original)
-        #3.calculate distances
-        #calculate dist_qui. this is the quintuplet [id1_pos_imaged, id2_pos_imaged, id1_base, id2_base, tmp_dist]
-        self.dist_qui=[]
-        changefromto=[]
-        for id1_base in range(len(self.base)):
-         for id2_base in range(len(self.base)):
-          for id2_pos_imaged in [id2_base+tmp_image_shift*len(self.base) for tmp_image_shift in range(27)]:
-           tmp_dist=np.linalg.norm(self.pos_original[id1_base]-self.pos_imaged[id2_pos_imaged])
-           if abs(tmp_dist)<0.1:
-            continue
-           # add 0.4 to distances when necessary, to separate say Pb from S.
-           # i is the index of first atom, starting from 0. j is that of the second. k is the index of imaged second atom.
-           #if i>1 and j>1:
-            #dist=dis`t+0.4
-           id1_pos_imaged=id1_base
-           self.dist_qui.append([id1_pos_imaged,id2_pos_imaged,id1_base,id2_base,tmp_dist])
-        self.dist_qui=np.float64(self.dist_qui)
-        self.dist_qui=self.dist_qui[np.argsort(self.dist_qui[:,4])]
-        #get the excluded distances using exclude_ele_pair
-        self.exclude_pairs = []
-        self.exclude_dists = []
-        for ele_exclude_pair in self.exclude_pairs:
-            ele_exclude_pair=np.float64(ele_exclude_pair)
-            exclude_quis=[ele_dist_qui for ele_dist_qui in self.dist_qui if ele_dist_qui[2]==ele_exclude_pair[0] and ele_dist_qui[3]==ele_exclude_pair[1]]
-            if exclude_quis != []:
-                self.exclude_dists.append(exclude_quis[0][4])
-        self.exclude_dists = np.float64(self.exclude_dists)
+
+def compare_cell_bijective(eoc, boc):
+
+    report = ''
+
+    # bijective-representation difference (congruent testing), allowing rotation and translation
+    b = np.array([ [i, j, np.linalg.norm(boc.ccoor[i]-boc.ccoor[j])] for i in range(boc.natoms) for j in range(boc.natoms) if i!=j ])
+    e = np.array([ [i, j, np.linalg.norm(eoc.ccoor[i]-eoc.ccoor[j])] for i in range(eoc.natoms) for j in range(eoc.natoms) if i!=j ])
+    report += u'<fixed-order bijective-representation difference> (allowing translation and rotation) between self and backdrop is: \n'
+    idx_min = np.abs(b-e)[:,2].argmin()
+    report += u'    min difference: backdrop_pdist [%2d(%s)-%2d(%s)=%.3f] - electron_pdist [%2d(%s)-%2d(%s)=%.3f] = %f \u212B. \n' %(b[idx_min][0], boc.ccoor[int(b[idx_min][0])], b[idx_min][1], boc.ccoor[int(b[idx_min][1])], b[idx_min,2],
+                                                                                                                                               e[idx_min][0], eoc.ccoor[int(e[idx_min][0])], e[idx_min][1], eoc.ccoor[int(e[idx_min][1])], b[idx_min,2],
+                                                                                                                                               np.abs(b-e)[:,2].min())
+    report += u'    avg difference: %s \u212B. \n' %(abs(b-e)[:,2].mean())
+    idx_max = abs(b-e)[:,2].argmax()
+    report += u'    max difference: backdrop_pdist [%2d(%s)-%2d(%s)=%.3f] - electron_pdist [%2d(%s)-%2d(%s)=%.3f] = %f \u212B. \n' %(b[idx_max][0], boc.ccoor[int(b[idx_max][0])], b[idx_max][1], boc.ccoor[int(b[idx_max][1])], b[idx_max,2],
+                                                                                                                                   e[idx_max][0], eoc.ccoor[int(e[idx_max][0])], e[idx_max][1], eoc.ccoor[int(e[idx_max][1])], e[idx_max,2],
+                                                                                                                                   np.abs(b-e)[:,2].max())
+    report += '-' * 130 + '\n'
+
+    # bijective-representation difference (congruent testing), allowing physical phenomena relocation
+    b = b[ b[:,2].argsort() ]
+    e = e[ e[:,2].argsort() ]
+    report += u'<arbitrary-order bijective-representation difference> (allowing physical phenomena relocation) between self and backdrop is: \n'
+    idx_min = np.abs(b-e)[:,2].argmin()
+    report += u'    min difference: backdrop_pdist [%2d(%s)-%2d(%s)=%.3f] - electron_pdist [%2d(%s)-%2d(%s)=%.3f] = %f \u212B. \n' %(b[idx_min][0], boc.ccoor[int(b[idx_min][0])], b[idx_min][1], boc.ccoor[int(b[idx_min][1])], b[idx_min,2],
+                                                                                                                                               e[idx_min][0], eoc.ccoor[int(e[idx_min][0])], e[idx_min][1], eoc.ccoor[int(e[idx_min][1])], e[idx_min,2],
+                                                                                                                                               np.abs(b-e)[:,2].min())
+    report += u'    avg difference: %s \u212B. \n' %(abs(b-e)[:,2].mean())
+    bijective_representation_difference_allow_physical = abs(b-e)[:,2].mean()
+    idx_max = abs(b-e)[:,2].argmax()
+    report += u'    max difference: backdrop_pdist [%2d(%s)-%2d(%s)=%.3f] - electron_pdist [%2d(%s)-%2d(%s)=%.3f] = %f \u212B. \n' %(b[idx_max][0], boc.ccoor[int(b[idx_max][0])], b[idx_max][1], boc.ccoor[int(b[idx_max][1])], b[idx_max,2],
+                                                                                                                                   e[idx_max][0], eoc.ccoor[int(e[idx_max][0])], e[idx_max][1], eoc.ccoor[int(e[idx_max][1])], e[idx_max,2],
+                                                                                                                                   np.abs(b-e)[:,2].max())
+    report += '-' * 130 + '\n'
+
+    return report
+
+
+def compare_cell_remap(eoc, boc):
+
+    ZERO = 0.03
+
+    b = spatial.distance.squareform(spatial.distance.pdist(boc.ccoor))
+    e = spatial.distance.squareform(spatial.distance.pdist(boc.ccoor))
+
+    bi = []
+    ei = []
+
+    while set(range(boc.natoms)) - set(bi) or set(range(eoc.natoms)) - set(ei):
+
+        champion = []
+
+        for idx_boc, idx_eoc in itertools.product( set(range(boc.natoms))-set(bi), set(range(eoc.natoms))-set(ei) ):
+
+            idx_boc_environment1 = b[idx_boc, bi]   # fixed part
+            idx_boc_environment2 = b[idx_boc, np.asarray(set(range(boc.natoms))-set(bi))]   # mystery part
+
+            idx_eoc_environment1 = e[idx_eoc, ei]   # fixed part
+            idx_eoc_environment2 = e[idx_eoc, np.asarray(set(range(eoc.natoms))-set(ei))]   # mystery part
+
+            diff = norm(idx_boc_environment1 - idx_eoc_environment1, 1) + norm(idx_boc_environment1.sort() - idx_eoc_environment1.sort(), 1)
+            diff /= boc.natoms
+
+            champion.append([idx_boc, idx_eoc, diff])
+
+        champion = np.array(champion)
+
+        if len(champion) and champion[:,2].min() > ZERO:
+
+            # light up
+
+            bi.append(champion[champion.argmin()][0])
+            ei.append(champion[champion.argmin()][1])
+
+        else:
+
+            # detached part
+
 
 # ===========================================================================
 
@@ -1426,38 +1443,19 @@ class Compare(object):
             self.log += u'<simple cartesian difference> (no translation or rotation allowed) between self and backdrop is  %s \u212B. \n' % ( np.abs(eoc.ccoor - boc.ccoor).mean() )
             self.log += '-' * 130 + '\n'
 
-            # bijective-representation difference (congruent testing), allowing rotation and translation
-            b = np.array([ [i, j, np.linalg.norm(boc.ccoor[i]-boc.ccoor[j])] for i in range(boc.natoms) for j in range(boc.natoms) if i!=j ])
-            e = np.array([ [i, j, np.linalg.norm(eoc.ccoor[i]-eoc.ccoor[j])] for i in range(eoc.natoms) for j in range(eoc.natoms) if i!=j ])
-            self.log += u'<fixed-order bijective-representation difference> (allowing translation and rotation) between self and backdrop is: \n'
-            idx_min = np.abs(b-e)[:,2].argmin()
-            self.log += u'    min difference: backdrop_pdist [%2d(%s)-%2d(%s)=%.3f] - electron_pdist [%2d(%s)-%2d(%s)=%.3f] = %f \u212B. \n' %(b[idx_min][0], boc.ccoor[int(b[idx_min][0])], b[idx_min][1], boc.ccoor[int(b[idx_min][1])], b[idx_min,2],
-                                                                                                                                                       e[idx_min][0], eoc.ccoor[int(e[idx_min][0])], e[idx_min][1], eoc.ccoor[int(e[idx_min][1])], b[idx_min,2],
-                                                                                                                                                       np.abs(b-e)[:,2].min())
-            self.log += u'    avg difference: %s \u212B. \n' %(abs(b-e)[:,2].mean())
-            idx_max = abs(b-e)[:,2].argmax()
-            self.log += u'    max difference: backdrop_pdist [%2d(%s)-%2d(%s)=%.3f] - electron_pdist [%2d(%s)-%2d(%s)=%.3f] = %f \u212B. \n' %(b[idx_max][0], boc.ccoor[int(b[idx_max][0])], b[idx_max][1], boc.ccoor[int(b[idx_max][1])], b[idx_max,2],
-                                                                                                                                           e[idx_max][0], eoc.ccoor[int(e[idx_max][0])], e[idx_max][1], eoc.ccoor[int(e[idx_max][1])], e[idx_max,2],
-                                                                                                                                           np.abs(b-e)[:,2].max())
-            self.log += '-' * 130 + '\n'
-
-            # bijective-representation difference (congruent testing), allowing physical phenomena relocation
-            b = b[ b[:,2].argsort() ]
-            e = e[ e[:,2].argsort() ]
-            self.log += u'<arbitrary-order bijective-representation difference> (allowing physical phenomena relocation) between self and backdrop is: \n'
-            idx_min = np.abs(b-e)[:,2].argmin()
-            self.log += u'    min difference: backdrop_pdist [%2d(%s)-%2d(%s)=%.3f] - electron_pdist [%2d(%s)-%2d(%s)=%.3f] = %f \u212B. \n' %(b[idx_min][0], boc.ccoor[int(b[idx_min][0])], b[idx_min][1], boc.ccoor[int(b[idx_min][1])], b[idx_min,2],
-                                                                                                                                                       e[idx_min][0], eoc.ccoor[int(e[idx_min][0])], e[idx_min][1], eoc.ccoor[int(e[idx_min][1])], e[idx_min,2],
-                                                                                                                                                       np.abs(b-e)[:,2].min())
-            self.log += u'    avg difference: %s \u212B. \n' %(abs(b-e)[:,2].mean())
-            idx_max = abs(b-e)[:,2].argmax()
-            self.log += u'    max difference: backdrop_pdist [%2d(%s)-%2d(%s)=%.3f] - electron_pdist [%2d(%s)-%2d(%s)=%.3f] = %f \u212B. \n' %(b[idx_max][0], boc.ccoor[int(b[idx_max][0])], b[idx_max][1], boc.ccoor[int(b[idx_max][1])], b[idx_max,2],
-                                                                                                                                           e[idx_max][0], eoc.ccoor[int(e[idx_max][0])], e[idx_max][1], eoc.ccoor[int(e[idx_max][1])], e[idx_max,2],
-                                                                                                                                           np.abs(b-e)[:,2].max())
-            self.log += '-' * 130 + '\n'
+            # unordered bijective differences
+            self.log += compare_cell_bijective(eoc, boc)
 
             # are they the same cell?
-            eoc_idxs_atom = np.zeros(eoc.natoms)
+
+
+
+
+
+
+
+
+
 
 
 
