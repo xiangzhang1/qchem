@@ -1426,8 +1426,8 @@ class Compare(object):
             e = e[ e[:,2].argsort() ]
             self.log += u'<arbitrary-order bijective-representation difference> between self and backdrop is: \n'
             idx_min = abs(b-e)[:,2].argmin()
-            self.log += u'    min difference: backdrop_pdist [%2d(%s)-%2d(%s)=%.3f] - electron_pdist [%2d(%.3f)-%2d(%.3f)=%.3f] = %f \u212B. \n' %(b[idx_min][0], boc.ccoor[int(b[idx_min][0])], b[idx_min][1], boc.ccoor[int(b[idx_min][1])],
-                                                                                                                                                       e[idx_min][0], eoc.ccoor[int(e[idx_min][0])], e[idx_min][1], eoc.ccoor[int(e[idx_min][1])],
+            self.log += u'    min difference: backdrop_pdist [%2d(%s)-%2d(%s)=%.3f] - electron_pdist [%2d(%.3f)-%2d(%.3f)=%.3f] = %f \u212B. \n' %(b[idx_min][0], boc.ccoor[int(b[idx_min][0])], b[idx_min][1], boc.ccoor[int(b[idx_min][1])], b[idx_min][2],
+                                                                                                                                                       e[idx_min][0], eoc.ccoor[int(e[idx_min][0])], e[idx_min][1], eoc.ccoor[int(e[idx_min][1])], b[idx_min][2],
                                                                                                                                                        abs(b-e)[:,2].min())
             self.log += u'    avg difference: %s \u212B. \n' %(abs(b-e)[:2].mean())
             idx_max = abs(b-e)[:,2].argmax()
