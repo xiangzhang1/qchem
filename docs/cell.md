@@ -14,3 +14,4 @@ __ccoor__
     __ccoor_mindist__
 
 __nelectrons__ # of electrons involved in computation (POTCAR ZVAL)
+__natoms__

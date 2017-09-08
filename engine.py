@@ -457,6 +457,7 @@ class Cell(object):
             raise shared.CustomError(self.__class__.__name__+'__init__: unsupported POSCAR5 format. ')
 
         # some computation
+        self.natoms = sum( self.stoichiometry.values() )
         self.nelectrons = sum( [self.stoichiometry[symbol] * shared.ELEMENTS[symbol].pot_zval for symbol in self.stoichiometry] )
 
         self.ccoor = np.dot(self.fcoor, self.base)
@@ -466,7 +467,7 @@ class Cell(object):
     @shared.debug_wrap
     def __str__(self):
         #: compat recompute
-        if getattr(self, 'fcoor', None) is None:
+        if getattr(self, 'natoms', None) is None:
             self.recompute()
         #;
         result = self.name+'\n'
@@ -1428,9 +1429,16 @@ class Compare(object):
 
             self.log += u'<base difference> between self and backdrop is %s \u212B. \n' % ( np.average( abs(eoc.base - boc.base).flatten() ) )
 
-            nnlist = eoc.ccoor_kdtree.query_pairs(r=eoc.ccoor_mindist*2, output_type='ndarray')
-            self.log += u'<arbitrary-order bijective-representation difference> between self and backdrop is %s - %s - %s \u212B. \n' % (np.amin(abs( np.sort(spatial.distance.pdist(boc.ccoor))-np.sort(spatial.distance.pdist(eoc.ccoor)) )) , np.mean(abs( np.sort(spatial.distance.pdist(boc.ccoor))-np.sort(spatial.distance.pdist(eoc.ccoor)) )), np.amax(abs( np.sort(spatial.distance.pdist(boc.ccoor))-np.sort(spatial.distance.pdist(eoc.ccoor)) )))
-
+            b = np.float_([ [i, j, np.linalg.norm(boc.ccoor[i]-boc.ccoor[j])] for i in range(boc.natoms) for j in range(boc.natoms) ])
+            b = b[ b[:,2].argsort() ]
+            e = np.float_([ [i, j, np.linalg.norm(boc.ccoor[i]-eoc.ccoor[j])] for i in range(eoc.natoms) for j in range(eoc.natoms) ])
+            b = e[ e[:,2].argsort() ]
+            self.log += u'<arbitrary-order bijective-representation difference> between self and backdrop is: \n'
+            idx_min = abs(b-e)[:2].argmin()
+            self.log += u'    min difference: boc(%s) - eoc(%s) = %s \u212B. \n' %(b[idx_min], e[idx_min], abs(b-e)[:2].min())
+            self.log += u'    avg difference: %s \u212B. \n' %(abs(b-e)[:2].mean())
+            idx_min = abs(b-e)[:2].argmax()
+            self.log += u'    min difference: boc(%s) - eoc(%s) = %s \u212B. \n' %(b[idx_min], e[idx_min], abs(b-e)[:2].min())
 
 
 

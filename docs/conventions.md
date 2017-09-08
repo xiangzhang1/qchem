@@ -22,7 +22,9 @@ allow but not recommend data duplication.
 Convention
 ----------
 
-reset() method + debug_wrap for migration
+don't over-optimize.
+
+recompute() method + debug_wrap for migration
 
 LBYL to avoid extra indentation.
 
