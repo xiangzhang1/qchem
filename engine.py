@@ -478,7 +478,7 @@ class Cell(object):
     @shared.debug_wrap
     def __str__(self):
         #: compat recompute
-        if getattr(self, 'natoms', None) is None:
+        if getattr(self, 'cdist', None) is None:
             self.recompute()
         #;
         result = self.name+'\n'
@@ -494,7 +494,11 @@ class Cell(object):
 
     def recompute(self):
         #: compat recompute
-        self.natoms = sum( self.stoichiometry.values() )
+        self.ccoor = np.dot(self.fcoor, self.base)
+        self.ccoor_kdtree = spatial.cKDTree( self.ccoor )
+        self.ccoor_mindist = np.amin( spatial.distance.pdist(self.ccoor) )
+
+        self.cdist = spatial.distance.squareform(spatial.distance.pdist(self.ccoor))
         #;
 
     def poscar4(self):
