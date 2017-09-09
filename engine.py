@@ -505,7 +505,8 @@ class Cell(object):
 
 
 def compare_cell_bijective(eoc, boc):
-
+    import itertools
+    import numpy as np
     report = ''
 
     # bijective-representation difference (congruent testing), allowing rotation and translation
@@ -539,48 +540,96 @@ def compare_cell_bijective(eoc, boc):
                                                                                                                                    np.abs(b-e)[:,2].max())
     report += '-' * 130 + '\n'
 
-    return report
+    print report
 
 
 def compare_cell_grow(eoc, boc):
-
+    # great idea. pity that computational power is no match.
     ZERO = 0.03
-    COUNT = 4
+    COUNT = 1
     bowl = []
-
-    for perm_eoc, perm_boc in itertools.product(itertools.permutations(range(eoc.natoms), COUNT), itertools.permutations(range(boc.natoms), COUNT)):
-
+    # 初始化
+    for perm_eoc, perm_boc in tqdm(itertools.product(itertools.permutations(range(eoc.natoms), COUNT), itertools.permutations(range(boc.natoms), COUNT))):
         if np.abs(eoc.cdist[np.ix_(perm_eoc, perm_eoc)] - boc.cdist[np.ix_(perm_boc, perm_boc)]).mean() < ZERO:
-
             bowl.append([perm_eoc, perm_boc])
-
     # 养蛊
-
     continue_flag = True
-
     while (continue_flag):
         continue_flag = False
-
         for perm, perm2 in itertools.product(bowl, bowl):
-
             if len(perm[0]) < len(perm[1]):     # run over twice
                 pass
-
             if set(perm[0]) >= set(perm2[0]):
                 bowl.remove(perm2)
-
             if [idx for idx in range(len(perm[0])) if perm[0][idx]==perm2[0][idx] and perm[1][idx]!=perm2[1][idx]]:
                 pass
-
             if np.abs(eoc.cdist[np.ix_(perm[0], perm2[0])] - boc.cdist[np.ix_(perm[1], perm2[1])]).mean() < ZERO:
                 bowl.remove(perm)
                 bowl.remove(perm2)
                 bowl.append([f7(perm[0]+perm2[0]),f7(perm[1]+perm2[1])])
                 continue_flag = True
-
     return bowl
 
 
+@shared.debug_wrap
+def compare_cell(eoc,boc, ZERO=0.05*2, rs=[10, 6.5, 6.5]):
+    '''
+    eoc就是新的cell。
+    新的cell里面，原子根据自身的环境，感应到旧cell的相应位置，一个一个的亮了起来，形成一簇。
+        加入已有的簇，必须与已有簇的位置匹配，而不论出身。
+        当然，全新的簇就需要与未知簇的位置做无序匹配。
+    有子簇分裂出去，那就是第二个core。
+
+    （环境，要求局部化，免疫平移旋转，只能用pdist。）
+    '''
+    import itertools
+    import numpy as np
+    report=''
+    sreport=''
+
+    cores = []  #eoc|boc, idx_core_atom
+    remainder = [range(eoc.natoms),range(boc.natoms)]
+
+    for r in rs:
+        core = [[],[]]
+        while remainder:
+            for idx_eoc, idx_boc in itertools.product(remainder[0], remainder[1]):      # 对照
+                if idx_eoc in remainder[0] and idx_boc in remainder[1]:                 #
+                    if not core[0] or any(eoc.cdist[idx_core_atom, idx_eoc]<r for idx_core_atom in core[0]):            #
+                        eoc_dist1 = eoc.cdist[idx_eoc,core[0]]                                                          # 比较已经对照出的core
+                        boc_dist1 = boc.cdist[idx_boc,core[1]]
+                        if not core[0] or abs(eoc_dist1-boc_dist1).mean() < ZERO:                                       # 比较未对照出的remainder，仅限r半径内
+                            eoc_adj_idx = [idx_atom for idx_atom in remainder[0] if eoc.cdist[idx_atom,idx_eoc]<r]
+                            eoc_adj = eoc.cdist[idx_eoc,eoc_adj_idx]
+                            boc_adj_idx = [idx_atom for idx_atom in remainder[1] if boc.cdist[idx_atom,idx_boc]<r]
+                            boc_adj = boc.cdist[idx_boc,boc_adj_idx]
+                            l = min(len(eoc_adj), len(boc_adj))
+                            if abs(np.sort(eoc_adj[:l])-np.sort(boc_adj[:l])).mean() < ZERO:
+                                core[0].append(idx_eoc)
+                                core[1].append(idx_boc)
+                                remainder[0].remove(idx_eoc)
+                                remainder[1].remove(idx_boc)
+                                continue
+                            else:
+                                report += '%s, %s aborted because adj remainder atom dist difference %s is too large:\n' %(idx_eoc, idx_boc, abs(np.sort(eoc_adj[:l])-np.sort(boc_adj[:l])).mean())
+                                report += '    %s -> %s\n' %(np.sort(eoc_adj[:l]), np.sort(boc_adj[:l]))
+                        else:
+                            report += '%s, %s aborted because eoc-core dist difference %s is too large\n' %(idx_eoc, idx_boc, abs(eoc_dist1-boc_dist1).mean() < ZERO)
+                    else:
+                        report += '%s, %s aborted because no available adj core atom is near %s\n' %(idx_eoc, idx_boc, idx_eoc)
+            break
+        cores.append(core)
+
+    sreport += '-' * 130 + '\n'
+    sreport += 'cores: %s' %(cores)
+    sreport += '-' * 130 + '\n'
+    sreport += 'remainder: %s\n' %(remainder)
+
+    with open('/home/xzhang1/compare_cell.log','w') as f:
+        f.write(report)
+        f.write(sreport)
+
+    return '-' * 130 + '\ncompare_cell report has been written under home directory. short report:\n' + sreport
 
 
 
@@ -1451,13 +1500,7 @@ class Compare(object):
 
             # are they the same cell?
 
-
-
-
-
-
-
-
+            self.log += compare_cell(eoc, boc)
 
 
 
