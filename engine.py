@@ -576,7 +576,7 @@ def compare_cell_grow(eoc, boc):
 
 
 @shared.debug_wrap
-def compare_cell(eoc,boc, ZERO=0.05*2, rs=[10, 6.5, 6.5]):
+def compare_cell(eoc,boc, ZERO=0.1*2, rs=[10, 6.5, 6.5]):
     '''
     eoc就是新的cell。
     新的cell里面，原子根据自身的环境，感应到旧cell的相应位置，一个一个的亮了起来，形成一簇。
@@ -625,8 +625,8 @@ def compare_cell(eoc,boc, ZERO=0.05*2, rs=[10, 6.5, 6.5]):
         cores.append(core)
 
     sreport += '-' * 130 + '\n'
-    sreport += 'cores: %s' %(cores)
-    sreport += '-' * 130 + '\n'
+    sreport += 'cores: %s\n' %(cores)
+    sreport += '-' * 60 + '\n'
     sreport += 'remainder: %s\n' %(remainder)
 
     with open('/home/xzhang1/compare_cell.log','w') as f:
@@ -1504,7 +1504,7 @@ class Compare(object):
 
             # are they the same cell?
 
-            self.log += compare_cell(eoc, boc)
+            self.log += compare_cell(eoc, boc, ZERO=float(electron.gen.getkw('zero')))
 
 
 
