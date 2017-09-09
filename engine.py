@@ -540,7 +540,7 @@ def compare_cell_bijective(eoc, boc):
                                                                                                                                    np.abs(b-e)[:,2].max())
     report += '-' * 130 + '\n'
 
-    print report
+    return report
 
 
 def compare_cell_grow(eoc, boc):
