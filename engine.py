@@ -450,7 +450,7 @@ class Cell(object):
         if '\n' in lines:
             lines = lines.splitlines()
         self.name = lines[0]
-        self.base = np.float_([ line.split() for line in lines[2:5] ]) * float(lines[1])
+        self.base = np.float32([ line.split() for line in lines[2:5] ]) * float(lines[1])
         self.stoichiometry = OrderedDict( zip(lines[5].split(), [int(x) for x in lines[6].split()]) )
 
         # fork parsing on Direct | Selective Dynamics
@@ -458,7 +458,7 @@ class Cell(object):
             print self.__class__.__name__ + '.__init__: Selective dynamics cell, all T. Converting to trivial cell...'
             lines.pop(7)
         if lines[7].startswith('D'):
-            self.fcoor = np.float_([ line.split()[:3] for line in lines[8:8+sum(self.stoichiometry.values())] ])
+            self.fcoor = np.float32([ line.split()[:3] for line in lines[8:8+sum(self.stoichiometry.values())] ])
             for coor in self.fcoor:
                 if len(coor)!=3:
                     raise shared.CustomError(self.__class__.__name__+'__init__: bad format. Coordinate line {%s}' %coor)
@@ -514,8 +514,8 @@ def compare_cell_bijective(eoc, boc):
     report = ''
 
     # bijective-representation difference (congruent testing), allowing rotation and translation
-    b = np.float_([ [i, j, np.linalg.norm(boc.ccoor[i]-boc.ccoor[j])] for i in range(boc.natoms) for j in range(boc.natoms) if i!=j ])
-    e = np.float_([ [i, j, np.linalg.norm(eoc.ccoor[i]-eoc.ccoor[j])] for i in range(eoc.natoms) for j in range(eoc.natoms) if i!=j ])
+    b = np.float32([ [i, j, np.linalg.norm(boc.ccoor[i]-boc.ccoor[j])] for i in range(boc.natoms) for j in range(boc.natoms) if i!=j ])
+    e = np.float32([ [i, j, np.linalg.norm(eoc.ccoor[i]-eoc.ccoor[j])] for i in range(eoc.natoms) for j in range(eoc.natoms) if i!=j ])
     report += u'<fixed-order bijective-representation difference> (allowing translation and rotation) between self and backdrop is: \n'
     idx_min = np.abs(b-e)[:,2].argmin()
     report += u'    min difference: backdrop_pdist [%2d(%s)-%2d(%s)=%.3f] - electron_pdist [%2d(%s)-%2d(%s)=%.3f] = %f \u212B. \n' %(b[idx_min][0], boc.ccoor[int(b[idx_min][0])], b[idx_min][1], boc.ccoor[int(b[idx_min][1])], b[idx_min,2],
@@ -576,7 +576,7 @@ def compare_cell_grow(eoc, boc):
 
 
 @shared.debug_wrap
-def compare_cell(eoc,boc, ZERO=0.02, rs=[10, 6.5, 6.5]):    # ZERO: relative difference. rs: 子簇大小。
+def compare_cell(eoc,boc, ZERO=0.02, rs=[10, 6.5, 6.5], is_verbose=False):    # ZERO: relative difference. rs: 子簇大小。
     '''
     eoc就是新的cell。
     新的cell里面，原子根据自身的环境，感应到旧cell的相应位置，一个一个的亮了起来，形成一簇。
@@ -594,12 +594,12 @@ def compare_cell(eoc,boc, ZERO=0.02, rs=[10, 6.5, 6.5]):    # ZERO: relative dif
     cores = []  #eoc|boc, idx_core_atom
     remainder = [range(eoc.natoms),range(boc.natoms)]
 
-    print '*' * 65 + ' cell comparison ' + '*' * 65 + '\n'
     for r in rs:    # 附录：考虑remainder里面分为多个派系的情况。做全排列太慢，只能进行局域性讨论。
-        print '-' * 65 + ' r = %s ' %r + '-' * 65 + '\n'
+        if is_verbose:  print '-' * 65 + ' r = %s ' %r + '-' * 65 + '\n'
         core = [[],[]]
         is_remainder_edited = True
         while is_remainder_edited and remainder[0] and remainder[1]:
+            is_remainder_edited = False
             for idx_eoc in remainder[0]:        # 对照
                 boc_winners = []
                 for idx_boc in remainder[1]:
@@ -613,27 +613,28 @@ def compare_cell(eoc,boc, ZERO=0.02, rs=[10, 6.5, 6.5]):    # ZERO: relative dif
                     boc_dist2 = boc.cdist[idx_boc,boc_dist2_adjidx]
                     l = min(len(eoc_dist2), len(boc_dist2))
                     # 选举最match的
-                    ## 意外情况：core是空的（修复），remainder在r半径内是空的（报错好了），分母有0（无需修复），分子分母同时为0（修复）
-                    delta1 = np.divide(np.float_(eoc_dist1-boc_dist1), np.float_(boc_dist1))
-                    delta1[np.isnan(delta1)] = 0    ## 意外情况修复
-                    delta1 = np.max(np.abs(delta1))
-                    delta2 = np.divide(np.float_(eoc_dist2[:l]-boc_dist2[:l]), np.float_(boc_dist2[:l]))
-                    delta2[np.isnan(delta1)] = 0
-                    delta2 = np.max(np.abs(delta2))
-                    boc_winnners.append(idx_eoc, idx_boc, delta1, delta2)
-                boc_winners = np.float_(boc_winners)
+                    ## 意外情况：core是空的（不空修复），remainder在r半径内是空的（delta2最终修复），分母有0（允许np.infty），分子分母同时为0（perfect match赋0）
+                    with np.errstate(divide='ignore', invalid='ignore'):
+                        delta1 = np.divide(np.float32(eoc_dist1)-np.float32(boc_dist1), np.float32(boc_dist1))
+                        delta1[np.isnan(delta1)] = 0    ## 意外情况修复
+                        delta1 = np.max(np.abs(delta1))
+                        delta2 = np.divide(np.float32(eoc_dist2[:l])-np.float32(boc_dist2[:l]), np.float32(boc_dist2[:l]))
+                        delta2[np.isnan(delta2)] = 0
+                        delta2 = np.max(np.abs(delta2)) if delta2.size else 0 if core[0] else np.infty
+                        boc_winners.append([idx_eoc, idx_boc, delta1, delta2])
+                boc_winners = np.float32(boc_winners)
                 if np.all(boc_winners[:,2] > ZERO):
-                    print 'idx_eoc = %s: core match not found.' %idx_eoc
+                    if is_verbose:  print 'idx_eoc = %s: core match not found.' %idx_eoc
                 elif np.all(boc_winners[:,3] > ZERO):
-                    print 'idx_eoc = %s: remainder match not found.' %idx_eoc
+                    if is_verbose:  print 'idx_eoc = %s: remainder match not found.' %idx_eoc
                 else:
                     idx_winnerslist = np.argmin(boc_winners[:,2] + boc_winners[:,3])
-                    idx_boc_winner = boc_winnners[idx_winnerslist]
-                    idx_eoc_winner = eoc_winnners[idx_winnerslist]
-                    core[0].append(idx_eoc_winner)
-                    core[1].append(idx_boc_winner)
-                    remainder.remove(idx_eoc_winner)
-                    remainder.remove(idx_boc_winner)
+                    idx_eoc_winner = boc_winners[idx_winnerslist][0]
+                    idx_boc_winner = boc_winners[idx_winnerslist][1]
+                    core[0].append(int(idx_eoc_winner))
+                    core[1].append(int(idx_boc_winner))
+                    remainder[0].remove(int(idx_eoc_winner))
+                    remainder[1].remove(int(idx_boc_winner))
                     is_remainder_edited = True
                     break
         cores.append(core)
@@ -642,7 +643,6 @@ def compare_cell(eoc,boc, ZERO=0.02, rs=[10, 6.5, 6.5]):    # ZERO: relative dif
     report += 'cores: %s\n' %(cores)
     report += '-' * 60 + '\n'
     report += 'remainder: %s\n' %(remainder)
-
     return report
 
 
@@ -1079,7 +1079,7 @@ class Grepen(object):
 
         with open('KPOINTS','r') as kpoints_file:
             kpoints = electron.prev.gen.getkw('kpoints').split()
-            self.is_kpoints_mesh = ( kpoints[0] in 'GM' and np.prod(np.float_(kpoints[1:]))>4 and len(kpoints_file.readlines())<7 )
+            self.is_kpoints_mesh = ( kpoints[0] in 'GM' and np.prod(np.float32(kpoints[1:]))>4 and len(kpoints_file.readlines())<7 )
 
         with open("EIGENVAL","r") as eigenval_file:
             eigenval = [ x.split() for x in eigenval_file.readlines() ]
@@ -1246,7 +1246,7 @@ class Bands(object):
                                                                    bounds = [[x-self.min_kpt_dist*0.5,x+self.min_kpt_dist*0.5] for x in kpt],
                                                                    tol=1e-6).fun
                                 kptes.append([kpt[0],kpt[1],kpt[2],e])
-                kptes = np.float_(kptes)
+                kptes = np.float32(kptes)
                 # self.bandgaps_interp
                 vbm = np.amax([kpte[3] for kpte in kptes if self.bandgaps[idx_spin][0]-ZERO<kpte[3]<self.bandgaps[idx_spin][0]+ZERO])
                 cbm = np.amin([kpte[3] for kpte in kptes if self.bandgaps[idx_spin][1]-ZERO<kpte[3]<self.bandgaps[idx_spin][1]+ZERO])
@@ -1469,7 +1469,7 @@ class Compare(object):
                 self.log += self.__class__.__name__ + ': comparing idx_spin=0 only.\n'    # faciliate comparison between ncl and fm
 
                 for idx_band, band in tqdm(enumerate(backdrop.bands.bands[idx_spin]), leave=False, desc='interpolating backdrop.bands for comparison'):
-                        error_interpd.append( np.average( abs( np.float_(electron.bands.bands[idx_spin][idx_band]) - np.float_([backdrop.bands.bands_interp()[idx_spin][idx_band](*kpt) for kpt in electron.bands.kpts]) ) ) )
+                        error_interpd.append( np.average( abs( np.float32(electron.bands.bands[idx_spin][idx_band]) - np.float32([backdrop.bands.bands_interp()[idx_spin][idx_band](*kpt) for kpt in electron.bands.kpts]) ) ) )
                         self.log += 'in band %d, between self and backdrop, post-interpolation Cauchy eigenvalue difference is %.5f.\n' %(idx_band, error_interpd[-1])
 
                 self.log += u'smearing should be larger than numerical energy error: sigma[%.4f] > post-interpolation \u03B4E[%.4f]' %(electron.grepen.sigma, np.average(error_interpd))

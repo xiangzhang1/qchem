@@ -13,7 +13,7 @@ parse ↑ loop by pre-allocation and popping
 
 curve = [ x1    x2    y ],   curve[0],   curve[x1]
 
-np.float_ for all numeric arrays
+np.float32 for all numeric arrays, because np.float_ may convert array to number (!).
 
 allow top-down inheritance.
 allow but not recommend data duplication.
