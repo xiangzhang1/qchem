@@ -603,20 +603,20 @@ def compare_cell(eoc,boc, ZERO=0.1*2, rs=[10, 6.5, 6.5]):
                         eoc_dist1 = eoc.cdist[idx_eoc,core[0]]                                                          # 比较已经对照出的core
                         boc_dist1 = boc.cdist[idx_boc,core[1]]
                         if not core[0] or abs(eoc_dist1-boc_dist1).mean() < ZERO:                                       # 比较未对照出的remainder，仅限r半径内
-                            eoc_adj_idx = [idx_atom for idx_atom in remainder[0] if eoc.cdist[idx_atom,idx_eoc]<r]
-                            eoc_adj = eoc.cdist[idx_eoc,eoc_adj_idx]
-                            boc_adj_idx = [idx_atom for idx_atom in remainder[1] if boc.cdist[idx_atom,idx_boc]<r]
-                            boc_adj = boc.cdist[idx_boc,boc_adj_idx]
-                            l = min(len(eoc_adj), len(boc_adj))
-                            if abs(np.sort(eoc_adj[:l])-np.sort(boc_adj[:l])).mean() < ZERO:
+                            eoc_dist2_adjidx = [idx_atom for idx_atom in remainder[0] if eoc.cdist[idx_atom,idx_eoc]<r]
+                            eoc_dist2 = eoc.cdist[idx_eoc,eoc_dist2_adjidx]
+                            boc_dist2_adjidx = [idx_atom for idx_atom in remainder[1] if boc.cdist[idx_atom,idx_boc]<r]
+                            boc_dist2 = boc.cdist[idx_boc,boc_dist2_adjidx]
+                            l = min(len(eoc_dist2), len(boc_dist2))
+                            if abs(np.sort(eoc_dist2[:l])-np.sort(boc_dist2[:l])).mean() < ZERO:
                                 core[0].append(idx_eoc)
                                 core[1].append(idx_boc)
                                 remainder[0].remove(idx_eoc)
                                 remainder[1].remove(idx_boc)
                                 continue
                             else:
-                                report += '%s, %s aborted because adj remainder atom dist difference %s is too large:\n' %(idx_eoc, idx_boc, abs(np.sort(eoc_adj[:l])-np.sort(boc_adj[:l])).mean())
-                                report += '    %s -> %s\n' %(np.sort(eoc_adj[:l]), np.sort(boc_adj[:l]))
+                                report += '%s, %s aborted because adj remainder atom dist difference %s is too large:\n' %(idx_eoc, idx_boc, abs(np.sort(eoc_dist2[:l])-np.sort(boc_dist2[:l])).mean())
+                                report += '    %s -> %s\n' %(np.sort(eoc_dist2[:l]), np.sort(boc_dist2[:l]))
                         else:
                             report += '%s, %s aborted because eoc-core dist difference %s is too large\n' %(idx_eoc, idx_boc, abs(eoc_dist1-boc_dist1).mean() < ZERO)
                     else:
