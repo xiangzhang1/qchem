@@ -450,7 +450,7 @@ class Cell(object):
         if '\n' in lines:
             lines = lines.splitlines()
         self.name = lines[0]
-        self.base = np.float32([ line.split() for line in lines[2:5] ]) * float(lines[1])
+        self.base = np.float_([ line.split() for line in lines[2:5] ]) * float(lines[1])
         self.stoichiometry = OrderedDict( zip(lines[5].split(), [int(x) for x in lines[6].split()]) )
 
         # fork parsing on Direct | Selective Dynamics
@@ -458,7 +458,7 @@ class Cell(object):
             print self.__class__.__name__ + '.__init__: Selective dynamics cell, all T. Converting to trivial cell...'
             lines.pop(7)
         if lines[7].startswith('D'):
-            self.fcoor = np.float32([ line.split()[:3] for line in lines[8:8+sum(self.stoichiometry.values())] ])
+            self.fcoor = np.float_([ line.split()[:3] for line in lines[8:8+sum(self.stoichiometry.values())] ])
             for coor in self.fcoor:
                 if len(coor)!=3:
                     raise shared.CustomError(self.__class__.__name__+'__init__: bad format. Coordinate line {%s}' %coor)
@@ -514,8 +514,8 @@ def compare_cell_bijective(eoc, boc):
     report = ''
 
     # bijective-representation difference (congruent testing), allowing rotation and translation
-    b = np.array([ [i, j, np.linalg.norm(boc.ccoor[i]-boc.ccoor[j])] for i in range(boc.natoms) for j in range(boc.natoms) if i!=j ])
-    e = np.array([ [i, j, np.linalg.norm(eoc.ccoor[i]-eoc.ccoor[j])] for i in range(eoc.natoms) for j in range(eoc.natoms) if i!=j ])
+    b = np.float_([ [i, j, np.linalg.norm(boc.ccoor[i]-boc.ccoor[j])] for i in range(boc.natoms) for j in range(boc.natoms) if i!=j ])
+    e = np.float_([ [i, j, np.linalg.norm(eoc.ccoor[i]-eoc.ccoor[j])] for i in range(eoc.natoms) for j in range(eoc.natoms) if i!=j ])
     report += u'<fixed-order bijective-representation difference> (allowing translation and rotation) between self and backdrop is: \n'
     idx_min = np.abs(b-e)[:,2].argmin()
     report += u'    min difference: backdrop_pdist [%2d(%s)-%2d(%s)=%.3f] - electron_pdist [%2d(%s)-%2d(%s)=%.3f] = %f \u212B. \n' %(b[idx_min][0], boc.ccoor[int(b[idx_min][0])], b[idx_min][1], boc.ccoor[int(b[idx_min][1])], b[idx_min,2],
@@ -576,7 +576,7 @@ def compare_cell_grow(eoc, boc):
 
 
 @shared.debug_wrap
-def compare_cell(eoc,boc, ZERO=0.1*2, rs=[10, 6.5, 6.5]):
+def compare_cell(eoc,boc, ZERO=0.02, rs=[10, 6.5, 6.5]):    # ZERO: relative difference. rs: 子簇大小。
     '''
     eoc就是新的cell。
     新的cell里面，原子根据自身的环境，感应到旧cell的相应位置，一个一个的亮了起来，形成一簇。
@@ -594,46 +594,56 @@ def compare_cell(eoc,boc, ZERO=0.1*2, rs=[10, 6.5, 6.5]):
     cores = []  #eoc|boc, idx_core_atom
     remainder = [range(eoc.natoms),range(boc.natoms)]
 
-    for r in rs:
+    print '*' * 65 + ' cell comparison ' + '*' * 65 + '\n'
+    for r in rs:    # 附录：考虑remainder里面分为多个派系的情况。做全排列太慢，只能进行局域性讨论。
+        print '-' * 65 + ' r = %s ' %r + '-' * 65 + '\n'
         core = [[],[]]
-        while remainder:
-            for idx_eoc, idx_boc in itertools.product(remainder[0], remainder[1]):      # 对照
-                if idx_eoc in remainder[0] and idx_boc in remainder[1]:                 #
-                    if not core[0] or any(eoc.cdist[idx_core_atom, idx_eoc]<r for idx_core_atom in core[0]):            #
-                        eoc_dist1 = eoc.cdist[idx_eoc,core[0]]                                                          # 比较已经对照出的core
-                        boc_dist1 = boc.cdist[idx_boc,core[1]]
-                        if not core[0] or abs(eoc_dist1-boc_dist1).mean() < ZERO:                                       # 比较未对照出的remainder，仅限r半径内
-                            eoc_dist2_adjidx = [idx_atom for idx_atom in remainder[0] if eoc.cdist[idx_atom,idx_eoc]<r]
-                            eoc_dist2 = eoc.cdist[idx_eoc,eoc_dist2_adjidx]
-                            boc_dist2_adjidx = [idx_atom for idx_atom in remainder[1] if boc.cdist[idx_atom,idx_boc]<r]
-                            boc_dist2 = boc.cdist[idx_boc,boc_dist2_adjidx]
-                            l = min(len(eoc_dist2), len(boc_dist2))
-                            if abs(np.sort(eoc_dist2[:l])-np.sort(boc_dist2[:l])).mean() < ZERO:
-                                core[0].append(idx_eoc)
-                                core[1].append(idx_boc)
-                                remainder[0].remove(idx_eoc)
-                                remainder[1].remove(idx_boc)
-                                continue
-                            else:
-                                report += '%s, %s aborted because adj remainder atom dist difference %s is too large:\n' %(idx_eoc, idx_boc, abs(np.sort(eoc_dist2[:l])-np.sort(boc_dist2[:l])).mean())
-                                report += '    %s -> %s\n' %(np.sort(eoc_dist2[:l]), np.sort(boc_dist2[:l]))
-                        else:
-                            report += '%s, %s aborted because eoc-core dist difference %s is too large\n' %(idx_eoc, idx_boc, abs(eoc_dist1-boc_dist1).mean() < ZERO)
-                    else:
-                        report += '%s, %s aborted because no available adj core atom is near %s\n' %(idx_eoc, idx_boc, idx_eoc)
-            break
+        is_remainder_edited = True
+        while is_remainder_edited and remainder[0] and remainder[1]:
+            for idx_eoc in remainder[0]:        # 对照
+                boc_winners = []
+                for idx_boc in remainder[1]:
+                    # 比较已经对照出的core
+                    eoc_dist1 = eoc.cdist[idx_eoc,core[0]] if core[0] else [0]      ## 意外情况修复
+                    boc_dist1 = boc.cdist[idx_boc,core[1]] if core[1] else [0]
+                    # 比较未对照出的remainder，仅限r半径内
+                    eoc_dist2_adjidx = [idx_atom for idx_atom in remainder[0] if 0<eoc.cdist[idx_atom,idx_eoc]<r]
+                    eoc_dist2 = eoc.cdist[idx_eoc,eoc_dist2_adjidx]
+                    boc_dist2_adjidx = [idx_atom for idx_atom in remainder[1] if 0<boc.cdist[idx_atom,idx_boc]<r]
+                    boc_dist2 = boc.cdist[idx_boc,boc_dist2_adjidx]
+                    l = min(len(eoc_dist2), len(boc_dist2))
+                    # 选举最match的
+                    ## 意外情况：core是空的（修复），remainder在r半径内是空的（报错好了），分母有0（无需修复），分子分母同时为0（修复）
+                    delta1 = np.divide(np.float_(eoc_dist1-boc_dist1), np.float_(boc_dist1))
+                    delta1[np.isnan(delta1)] = 0    ## 意外情况修复
+                    delta1 = np.max(np.abs(delta1))
+                    delta2 = np.divide(np.float_(eoc_dist2[:l]-boc_dist2[:l]), np.float_(boc_dist2[:l]))
+                    delta2[np.isnan(delta1)] = 0
+                    delta2 = np.max(np.abs(delta2))
+                    boc_winnners.append(idx_eoc, idx_boc, delta1, delta2)
+                boc_winners = np.float_(boc_winners)
+                if np.all(boc_winners[:,2] > ZERO):
+                    print 'idx_eoc = %s: core match not found.' %idx_eoc
+                elif np.all(boc_winners[:,3] > ZERO):
+                    print 'idx_eoc = %s: remainder match not found.' %idx_eoc
+                else:
+                    idx_winnerslist = np.argmin(boc_winners[:,2] + boc_winners[:,3])
+                    idx_boc_winner = boc_winnners[idx_winnerslist]
+                    idx_eoc_winner = eoc_winnners[idx_winnerslist]
+                    core[0].append(idx_eoc_winner)
+                    core[1].append(idx_boc_winner)
+                    remainder.remove(idx_eoc_winner)
+                    remainder.remove(idx_boc_winner)
+                    is_remainder_edited = True
+                    break
         cores.append(core)
 
-    sreport += '-' * 130 + '\n'
-    sreport += 'cores: %s\n' %(cores)
-    sreport += '-' * 60 + '\n'
-    sreport += 'remainder: %s\n' %(remainder)
+    report += '-' * 130 + '\n'
+    report += 'cores: %s\n' %(cores)
+    report += '-' * 60 + '\n'
+    report += 'remainder: %s\n' %(remainder)
 
-    with open('/home/xzhang1/compare_cell.log','w') as f:
-        f.write(report)
-        f.write(sreport)
-
-    return '-' * 130 + '\ncompare_cell report has been written under home directory. short report:\n' + sreport
+    return report
 
 
 
@@ -1069,7 +1079,7 @@ class Grepen(object):
 
         with open('KPOINTS','r') as kpoints_file:
             kpoints = electron.prev.gen.getkw('kpoints').split()
-            self.is_kpoints_mesh = ( kpoints[0] in 'GM' and np.prod(np.float32(kpoints[1:]))>4 and len(kpoints_file.readlines())<7 )
+            self.is_kpoints_mesh = ( kpoints[0] in 'GM' and np.prod(np.float_(kpoints[1:]))>4 and len(kpoints_file.readlines())<7 )
 
         with open("EIGENVAL","r") as eigenval_file:
             eigenval = [ x.split() for x in eigenval_file.readlines() ]
@@ -1236,7 +1246,7 @@ class Bands(object):
                                                                    bounds = [[x-self.min_kpt_dist*0.5,x+self.min_kpt_dist*0.5] for x in kpt],
                                                                    tol=1e-6).fun
                                 kptes.append([kpt[0],kpt[1],kpt[2],e])
-                kptes = np.float32(kptes)
+                kptes = np.float_(kptes)
                 # self.bandgaps_interp
                 vbm = np.amax([kpte[3] for kpte in kptes if self.bandgaps[idx_spin][0]-ZERO<kpte[3]<self.bandgaps[idx_spin][0]+ZERO])
                 cbm = np.amin([kpte[3] for kpte in kptes if self.bandgaps[idx_spin][1]-ZERO<kpte[3]<self.bandgaps[idx_spin][1]+ZERO])
