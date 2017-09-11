@@ -1489,7 +1489,7 @@ class Compare(object):
                     delta = []
                     for idx_start_electron in range(0, electron.grepen.nbands-nbands+1):
                         for idx_start_backdrop in range(0, backdrop.grepen.nbands-nbands+1):
-                            delta.append(np.std(abs(electron.bands.bands[idx_spin,:,idx_start_electron:idx_start_electron + nbands] - backdrop.bands.bands[idx_spin,:,idx_start_backdrop:idx_start_backdrop + nbands])))
+                            delta.append(np.std(abs(electron.bands.bands[idx_spin, idx_start_electron:idx_start_electron + nbands, :] - backdrop.bands.bands[idx_spin, idx_start_backdrop:idx_start_backdrop + nbands, :])))
                     self.log += u'<eigenvalue difference std> between self and backdrop (removing offset, guessed) is %s eV.\n' %min(delta)
 
             elif not electron.grepen.is_kpoints_mesh and backdrop.grepen.is_kpoints_mesh:
