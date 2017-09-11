@@ -1487,8 +1487,8 @@ class Compare(object):
                     self.log += u'electron.grepen.nbands %s and backdrop.grepen.nbands %s does not match. trying to guess...\n' %(electron.grepen.nbands, backdrop.grepen.nbands)
                     nbands = min(electron.grepen.nbands, backdrop.grepen.nbands)
                     delta = []
-                    for idx_start_electron in range(0, len(electron.grepen.nbands)-nbands+1):
-                        for idx_start_backdrop in range(0, len(backdrop.grepen.nbands-nbands)+1):
+                    for idx_start_electron in range(0, electron.grepen.nbands-nbands+1):
+                        for idx_start_backdrop in range(0, backdrop.grepen.nbands-nbands+1):
                             delta.append(np.std(abs(electron.bands.bands[idx_spin,:,idx_start_electron:idx_start_electron + nbands] - backdrop.bands.bands[idx_spin,:,idx_start_backdrop:idx_start_backdrop + nbands])))
                     self.log += u'<eigenvalue difference std> between self and backdrop (removing offset, guessed) is %s eV.\n' %min(delta)
 
