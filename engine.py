@@ -347,6 +347,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
 
     def nbands(self):
         print self.__class__.__name__ + ' warning: nbands may not be that reliable'
+        # extracted from vasp source code
         if self.parse_if('spin=ncl'):
             nbands = ( self.cell.nelectrons * 3 / 5 + sum(self.cell.stoichiometry.values()) * 3 / 2 ) * 2
         elif self.parse_if('spin=para'):
@@ -355,10 +356,8 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             nbands = self.cell.nelectrons / 2 + sum(self.cell.stoichiometry.values()) / 2
         else:
             raise shared.CustomError(self.__class__.__name__+'spin variable is not fm, afm or para, cannot compute nbands')
-        # hse case when hse mod is not even defined. for ref, i think. hiya, later self.
-        if self.parse_if('hse|prehf'):
-            npar = int(self.getkw('npar'))
-            nbands = (nbands + npar -1 ) / npar * npar
+        # nbands change based on parallel
+        nbands = math.ceil(nbands / int(self.getkw('npar'))) * int(self.getkw('npar'))
         return str(nbands)
 
     def lmaxmix(self):
@@ -1481,7 +1480,17 @@ class Compare(object):
                     raise shared.CustomError(self.__class__.__name__ + '.compute: compare neither-mesh cases require same kpoints')
                 #;
                 idx_spin = 0
-                self.log += u'<eigenvalue difference> between self and backdrop (without offset) is %s eV.\n' % np.std( abs(electron.bands.bands[idx_spin] - backdrop.bands.bands[idx_spin]).flatten() )
+                if electron.grepen.nbands == backdrop.grepen.nbands:
+                    delta = np.std( abs(electron.bands.bands[idx_spin] - backdrop.bands.bands[idx_spin]).flatten() )
+                    self.log += u'<eigenvalue difference std> between self and backdrop (removing offset) is %s eV.\n' %delta
+                elif abs(electron.grepen.nbands - backdrop.grepen.nbands) < backdrop.grepen.nbands / 5:     # arbitrary
+                    self.log += u'electron.grepen.nbands %s and backdrop.grepen.nbands %s does not match. trying to guess...\n' %(electron.grepen.nbands, backdrop.grepen.nbands)
+                    nbands = min(electron.grepen.nbands, backdrop.grepen.nbands)
+                    delta = []
+                    for idx_start_electron in range(0, len(electron.grepen.nbands-nbands)+1):
+                        for idx_start_backdrop in range(0, len(backdrop.grepen.nbands-nbands)+1):
+                            delta.append(np.std(abs(electron.bands.bands[idx_spin,:,idx_start_electron:idx_start_electron + nbands] - backdrop.bands.bands[idx_spin,:,idx_start_backdrop:idx_start_backdrop + nbands])))
+                    self.log += u'<eigenvalue difference std> between self and backdrop (removing offset, guessed) is %s eV.\n' %min(delta)
 
             elif not electron.grepen.is_kpoints_mesh and backdrop.grepen.is_kpoints_mesh:
 
