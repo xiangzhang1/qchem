@@ -895,7 +895,7 @@ class Vasp(object):
             os.chdir(self.path)
             # download folder
             if self.gen.parse_if('platform=nanaimo|platform=irmik|platform=hodduk'):
-                print '%s.moonphase: copying remote folder {%s} back to self.path {%s}' %(self.__class__.__name__, self.remote_folder_name, self.path)
+                print '%s.compute: copying remote folder {%s} back to self.path {%s}' %(self.__class__.__name__, self.remote_folder_name, self.path)
                 subprocess.Popen(['rsync', '-a', '-h', '--info=progress2', '%s:%s/' %(self.gen.getkw('platform'),self.remote_folder_name), '%s'%self.path], stdout=sys.stdout, stderr=sys.stderr).wait()
                 #os.system('scp -r /home/xzhang1/Shared/%s/%s/ %s' %(self.gen.getkw('platform'), self.remote_folder_name, self.path))
                 print self.__class__.__name__ + '.compute: copy complete.'
@@ -1487,7 +1487,7 @@ class Compare(object):
                     self.log += u'electron.grepen.nbands %s and backdrop.grepen.nbands %s does not match. trying to guess...\n' %(electron.grepen.nbands, backdrop.grepen.nbands)
                     nbands = min(electron.grepen.nbands, backdrop.grepen.nbands)
                     delta = []
-                    for idx_start_electron in range(0, len(electron.grepen.nbands-nbands)+1):
+                    for idx_start_electron in range(0, len(electron.grepen.nbands)-nbands+1):
                         for idx_start_backdrop in range(0, len(backdrop.grepen.nbands-nbands)+1):
                             delta.append(np.std(abs(electron.bands.bands[idx_spin,:,idx_start_electron:idx_start_electron + nbands] - backdrop.bands.bands[idx_spin,:,idx_start_backdrop:idx_start_backdrop + nbands])))
                     self.log += u'<eigenvalue difference std> between self and backdrop (removing offset, guessed) is %s eV.\n' %min(delta)
