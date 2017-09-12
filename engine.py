@@ -584,6 +584,8 @@ def compare_cell(eoc,boc, ZERO=0.02, rs=[10, 6.5, 6.5], is_verbose=False):    # 
     有子簇分裂出去，那就是第二个core。
 
     （环境，要求局部化，免疫平移旋转，只能用pdist。）
+
+    "What you want probably does not exist on this earth. --hackhands."
     '''
     import itertools
     import numpy as np
@@ -638,7 +640,7 @@ def compare_cell(eoc,boc, ZERO=0.02, rs=[10, 6.5, 6.5], is_verbose=False):    # 
                     break
         cores.append(core)
 
-    report += '-' * 130 + '\n'
+    report += '-' * 60 + ' max allowed relative difference = %s '%ZERO + '-' * 60 + '\n'
     report += 'cores: %s\n' %(cores)
     report += '-' * 60 + '\n'
     report += 'remainder: %s\n' %(remainder)
@@ -1523,7 +1525,8 @@ class Compare(object):
 
             # are they the same cell?
 
-            self.log += compare_cell(eoc, boc, ZERO=float(electron.gen.getkw('zero')))
+            for ZERO in [0.01, 0.02, 0.04, 0.06, 0.10]:
+                self.log += compare_cell(eoc, boc, ZERO=ZERO)
 
 
 
