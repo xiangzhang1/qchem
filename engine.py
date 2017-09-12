@@ -1525,7 +1525,7 @@ class Compare(object):
 
             # are they the same cell?
 
-            for ZERO in [0.01, 0.02, 0.04, 0.06, 0.10]:
+            for ZERO in [0.01, 0.05, 0.1, 0.3]:
                 self.log += compare_cell(eoc, boc, ZERO=ZERO)
 
 
