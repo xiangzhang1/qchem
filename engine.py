@@ -840,6 +840,10 @@ class Vasp(object):
                 setattr(self, 'cell', self.prev.vasp.optimized_cell)
                 setattr(Map().rlookup(attr_list={'vasp':self}, unique=True, parent=False), 'cell', self.prev.vasp.optimized_cell)   # burden of data duplication
                 print self.__class__.__name__ + '.compute: prev.vasp.optimized_cell overwrites self.cell.'
+            # NOT SURE IF THIS IS GOOD.
+            elif getattr(self, 'prev', None) and getattr(self.prev, 'cell', None):
+                setattr(self, 'cell', self.prev.cell)
+                print self.__class__.__name__ + '.compute: prev.vasp.cell overwrites self.cell.'
             # write incar etc. Relies on inheritance.
             os.chdir(self.path)
             self.gen.write_incar_kpoints()
