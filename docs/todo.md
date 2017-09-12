@@ -1,5 +1,7 @@
 is_kpoints_mesh support
 
+automation!
+
 -------
 
 parallelization
