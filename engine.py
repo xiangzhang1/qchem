@@ -37,6 +37,8 @@ from scipy.optimize import minimize
 from scipy import spatial
 from scipy.linalg import norm
 
+import math
+
 import string
 import random
 
