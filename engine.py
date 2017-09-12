@@ -360,7 +360,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             raise shared.CustomError(self.__class__.__name__+'spin variable is not fm, afm or para, cannot compute nbands')
         # nbands change based on parallel
         nbands = math.ceil(nbands / int(self.getkw('npar'))) * int(self.getkw('npar'))
-        return str(nbands)
+        return str(int(nbands))
 
     def lmaxmix(self):
         b_l_map = { 's': 2, 'p': 2, 'd': 4, 'f': 6, 'g': 8 }
