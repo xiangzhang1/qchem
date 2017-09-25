@@ -917,7 +917,7 @@ class Vasp(object):
                 print self.__class__.__name__ + '.compute: copy complete.'
             # log
             l = os.listdir(self.path)
-            filename = [x for x in l if x.startswith(('slurm-','run.log','OSZICAR'))][0]
+            filename = ([x for x in l if x.startswith('slurm-')] + [x for x in l if x.startswith('run.log')] + [x for x in l if x.startswith('OSZICAR')])[0]
             with open(filename,'r') as if_:
                 self.log = if_.read()
             # write parent cell if opt
