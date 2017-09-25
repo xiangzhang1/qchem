@@ -860,12 +860,12 @@ class Vasp(object):
             ncore_total = str(  int(self.gen.getkw('nnode')) * int(self.gen.getkw('ncore_node'))  )
             if self.gen.parse_if('spin=ncl'):   # vasp flavor
                 flavor = 'ncl'
-            elif self.gen.getkw('kpoints').split()[0] in 'GM' and all([int(x)==1 for x in self.gen.getkw('kpoints').split()[1:]]):
-                flavor = 'gam'
             elif self.gen.getkw('nnode') == '0':
                 ncore_total = 1
                 flavor = 'gpu'
                 print self.__class__.__name__ + ': vasp_gpu'
+            elif self.gen.getkw('kpoints').split()[0] in 'GM' and all([int(x)==1 for x in self.gen.getkw('kpoints').split()[1:]]):
+                flavor = 'gam'
             else:
                 flavor = 'std'
             self.remote_folder_name = ''.join(e for e in self.name if e.isalnum()) + ''.join(random.sample(string.ascii_lowercase,4))
