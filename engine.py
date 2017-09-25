@@ -833,6 +833,7 @@ class Vasp(object):
             os.makedirs(self.path)
             os.chdir(self.path)
             if self.gen.parse_if('icharg=1|icharg=11'):
+                shutil.copyfile(self.prev.path+'/CHG', self.path+'/CHG')
                 shutil.copyfile(self.prev.path+'/CHGCAR', self.path+'/CHGCAR')
             if self.gen.parse_if('icharg=0|icharg=10|istart=1|istart=2'):
                 shutil.copyfile(self.prev.path+'/WAVECAR', self.path+'/WAVECAR')
@@ -840,7 +841,7 @@ class Vasp(object):
                 setattr(self, 'cell', self.prev.vasp.optimized_cell)
                 setattr(Map().rlookup(attr_list={'vasp':self}, unique=True, parent=False), 'cell', self.prev.vasp.optimized_cell)   # burden of data duplication
                 print self.__class__.__name__ + '.compute: prev.vasp.optimized_cell overwrites self.cell.'
-            # NOT SURE IF THIS IS GOOD.
+            # ALWAYS INHERIT CELL IF POSSIBLE. NOT SURE IF THIS IS GOOD.
             elif getattr(self, 'prev', None) and getattr(self.prev, 'cell', None):
                 setattr(self, 'cell', self.prev.cell)
                 print self.__class__.__name__ + '.compute: prev.vasp.cell overwrites self.cell.'
