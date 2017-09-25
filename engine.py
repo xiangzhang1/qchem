@@ -898,9 +898,13 @@ class Vasp(object):
                 with open('subfile','w') as of_:
                     of_.write(self.subfile)
                 os.system('chmod +x subfile')
-            if shared.DEBUG <= 0: os.system('./wrapper')
-            if shared.DEBUG >= 1: print '-'*50
-            print self.__class__.__name__ + ': wrapper generated at   %s   , waiting for filesystem update. ' %self.path
+            if shared.DEBUG <= 0:
+                os.system('./wrapper')
+                print self.__class__.__name__ + ': computation started. local path   %s   . waiting for filesystem update. ' %self.path
+            else:
+                if shared.DEBUG >= 1: print '-'*50
+                print self.__class__.__name__ + ': wrapper generated at   %s   . waiting for filesystem update. ' %self.path
+
 
         # no log but invoked, only possible from moonphase. write parent.
         elif not getattr(self,'log',None):
