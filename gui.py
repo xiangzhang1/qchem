@@ -29,7 +29,7 @@ from shared import ELEMENTS
 
 # logging
 import logging
-if shared.DEBUG >= 1:
+if shared.DEBUG <= 1:
     log = logging.getLogger('werkzeug')
     log.setLevel(logging.ERROR)
 # logging.basicConfig(filename='error.log',level=logging.DEBUG)
