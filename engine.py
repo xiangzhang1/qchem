@@ -898,7 +898,7 @@ class Vasp(object):
                 with open('subfile','w') as of_:
                     of_.write(self.subfile)
                 os.system('chmod +x subfile')
-            if shared.DEBUG <= 0:
+            if shared.DEBUG <= -1:
                 os.system('./wrapper')
                 print self.__class__.__name__ + ': computation started. local path   %s   . waiting for filesystem update. ' %self.path
             else:
