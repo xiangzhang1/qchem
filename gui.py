@@ -46,7 +46,7 @@ app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
 def patch_through(func):
     @wraps(func)
     def wrapped(*args, **kwargs):
-        if shared.DEBUG <= -1:
+        if shared.DEBUG >= 0:
             func(*args, **kwargs)
             return jsonify( {'status':'debug'} )
         else:
@@ -66,7 +66,7 @@ def patch_through(func):
 def return_through(func):
     @wraps(func)
     def wrapped(*args, **kwargs):
-        if shared.DEBUG <= -1 :
+        if shared.DEBUG >= 0 :
             return func(*args, **kwargs)
         else:
             try:
