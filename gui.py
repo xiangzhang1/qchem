@@ -364,8 +364,19 @@ def duplicate_node():
     n = engine.Map().lookup(j['cur']+'.'+j['name'])
     new_node = qchem.Node('# newnode')
     for attr in vars(n):
-        if attr in ['name','path']:
-            setattr(new_node, attr, getattr(n,attr) + '_1')
+        if attr == 'name':  # test1 -> test2
+            number = int(re.search(r'\d+$', n.name).group(0)) if re.search(r'\d+$', n.name) else 0
+            text = re.sub(r'\d+$', '', n.name)
+            while True:
+                try:
+                    engine.Map().lookup(j['cur'] + '.' + text + str(number))
+                except LookupError:
+                    break
+                else:
+                    number += 1
+            new_node.name = text + str(number)
+        elif attr == 'path':
+            pass
         elif attr in shared.READABLE_ATTR_LIST:
             setattr(new_node, attr, getattr(n,attr))
     parent_n.map.add_node(new_node)

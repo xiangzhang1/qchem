@@ -22,7 +22,7 @@ import traceback, sys, code
 # DEBUG option, SCRIPT_DIR, HOME_DIR
 # NODES, Fragile lists
 # ELEMENTS
-# CustomError, DeferError
+# CustomError, DeferError, [LookupError]
 # MySFTPClient
 # @MWT
 # @moonphase_wrap

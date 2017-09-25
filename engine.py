@@ -691,7 +691,7 @@ class Map(object):
         elif '.' in name:
             return self.lookup('.'.join(name.split('.')[:-1])).map.lookup(name.split('.')[-1])
         else:
-            raise shared.CustomError(self.__class__.__name__ + ' lookup: Node %s not found' %name)
+            raise LookupError(self.__class__.__name__ + ' lookup: Node %s not found' %name)
 
     def prev(self, node):
         l = [x for x in self._dict if node in self._dict[x]]
