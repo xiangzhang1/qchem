@@ -37,8 +37,8 @@ import traceback, sys, code
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 HOME_DIR = os.path.expanduser(os.path.expanduser("~"))
 
-DEBUG = 1
-#DEBUG = 0
+DEBUG = 1       # -1: print nothing. 0: concise (recommended). 1: debug (slightly untidy). 2: disaster (code error)
+DEBUG = 0
 
 # Nodes
 # ===========================================================================
@@ -330,11 +330,11 @@ class MWT(object):
             key = (args, tuple(kw))
             try:
                 v = self.cache[key]
-                if DEBUG==2:    print "cache"
+                if DEBUG>=2:    print "cache"
                 if (time.time() - v[1]) > self.timeout:
                     raise KeyError
             except KeyError:
-                if DEBUG==2:    print "new"
+                if DEBUG>=2:    print "new"
                 v = self.cache[key] = f(*args,**kwargs),time.time()
             return v[0]
         func.func_name = f.func_name
@@ -397,7 +397,7 @@ class bcolors:
 def debug_wrap(func):
     @wraps(func)
     def wrapped(*args, **kwargs):
-        if DEBUG > 0:
+        if DEBUG >= 1:
             try:
                 return func(*args, **kwargs)    # the important part
             except:

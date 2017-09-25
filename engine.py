@@ -99,12 +99,12 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             if run and bool(result):
                 self.kw[kwname] = result
                 #:debug
-                if shared.DEBUG:
+                if shared.DEBUG >= 1:
                     print self.__class__.__name__ + ' parse_require: gave kw {%s} value {%s}' % (kwname, result)
                 #;
             if run and not bool(result):
                 raise shared.CustomError(self.__class__.__name__ + ' parse_require run=True error: parse_require results in empty set: kwname {%s}, value {%s}, required value {%s}' % (kwname, self.kw[kwname] if kwname in self.kw else 'null', kwvalset))
-            if not run and not bool(result) and shared.DEBUG:
+            if not run and not bool(result) and shared.DEBUG >= 1:
                 print self.__class__.__name__ + ' parse_require warning: parse_require results in empty set, deferred: kwname {%s}, value {%s}, required_value {%s}' %(kwname, self.kw[kwname] if kwname in self.kw else 'null', kwvalset)
             self.kw_legal_set.add(kwname)
             return bool(result)
@@ -125,7 +125,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         else:                               ## parse if expression
             result = self.parse_if(expression)
             #:debug
-            if not run and not result and shared.DEBUG:
+            if not run and not result and shared.DEBUG >= 1:
                     print self.__class__.__name__ + ' parse_require warning: parse_require results in empty set, deferred: expression {%s}' %(expression)
             #;
             return result
@@ -403,6 +403,10 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             raise shared.CustomError(self.__class__.__name__ + '.kpointscheck: kpoints format wrong. ')
         if kpoints[0] == 'M':
             print self.__class__.__name__ + '.kpointscheck warning: In general, for low-symmetry cells it is sometimes difficult to symmetrize the k-mesh if it is not centered on Gamma. For hexagonal cell, it becomes indeed impossible.'
+        return True
+
+    def qdoptwarning(self):
+        print self.__class__.__name__ + '.qdoptwarning: 认为存在一个半稳定点，和轻微平凡异构，需要小心。'
         return True
 
     def nkred_divide(self):
@@ -824,7 +828,7 @@ class Vasp(object):
     def compute(self):
 
         #:debug msg
-        if shared.DEBUG==2:    print 'calling %s(%s).compute' %(self.__class__.__name__, getattr(self,'path',''))
+        if shared.DEBUG>=2:    print 'calling %s(%s).compute' %(self.__class__.__name__, getattr(self,'path',''))
         #;
 
         if not getattr(self, 'wrapper', None):
@@ -927,7 +931,7 @@ class Vasp(object):
     @shared.moonphase_wrap
     def moonphase(self):
         #:debug benchmark msg
-        if shared.DEBUG==2:    print 'calling %s(%s).moonphase' %(self.__class__.__name__, getattr(self,'path',''))
+        if shared.DEBUG>=2:    print 'calling %s(%s).moonphase' %(self.__class__.__name__, getattr(self,'path',''))
         #;
 
         if not getattr(self, 'wrapper', None):
@@ -949,7 +953,7 @@ class Vasp(object):
                     vasp_is_running = False
             elif self.gen.parse_if('platform=nanaimo|platform=irmik'):
                 #:debug msg
-                if shared.DEBUG==2: print self.__class__.__name__ + '.moonphase: asking %s for status of {%s}' %(self.gen.getkw('platform'), self.path)
+                if shared.DEBUG>=2: print self.__class__.__name__ + '.moonphase: asking %s for status of {%s}' %(self.gen.getkw('platform'), self.path)
                 #;
                 ssh = paramiko.SSHClient()
                 #:paramiko config

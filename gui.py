@@ -28,14 +28,15 @@ from shared import ELEMENTS
 
 
 # logging
-#import logging
-#log = logging.getLogger('werkzeug')
-#log.setLevel(logging.ERROR)
-#logging.basicConfig(filename='error.log',level=logging.DEBUG)
-#class NoParsingFilter(logging.Filter):
+import logging
+if shared.DEBUG >= 1:
+    log = logging.getLogger('werkzeug')
+    log.setLevel(logging.ERROR)
+# logging.basicConfig(filename='error.log',level=logging.DEBUG)
+# class NoParsingFilter(logging.Filter):
 #    def filter(self, record):
 #        return not '/make_connection' in record.getMessage()
-#log.addFilter(NoParsingFilter())
+# log.addFilter(NoParsingFilter())
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
@@ -45,7 +46,7 @@ app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
 def patch_through(func):
     @wraps(func)
     def wrapped(*args, **kwargs):
-        if shared.DEBUG:
+        if shared.DEBUG <= -1:
             func(*args, **kwargs)
             return jsonify( {'status':'debug'} )
         else:
@@ -65,7 +66,7 @@ def patch_through(func):
 def return_through(func):
     @wraps(func)
     def wrapped(*args, **kwargs):
-        if shared.DEBUG:
+        if shared.DEBUG <= -1 :
             return func(*args, **kwargs)
         else:
             try:
@@ -316,9 +317,9 @@ def get_dumps_list():
 def request_():  # either merge json, or use shared.NODES['master']     # yep, this is the magic function.
     if request.method == 'POST':
         old_json = request.get_json(force=True)
-        if shared.DEBUG==2: print 'before to_json' + '*'*70
+        if shared.DEBUG >= 2: print 'before to_json' + '*'*70
         new_json = to_json(engine.Map().lookup('master'))
-        if shared.DEBUG==2: print 'after to_json' + '*'*70
+        if shared.DEBUG >= 2: print 'after to_json' + '*'*70
         new_json = combine_json(new_json, old_json)
         return jsonify( new_json )
 
