@@ -491,7 +491,7 @@ def copy_remote_folder_name():
     n = engine.Map().lookup(j['cur'])
     try:
         return jsonify({'remote_folder_name': n.vasp.remote_folder_name})
-    except AttributeError, shared.DeferError:
+    except:
         return jsonify({'remote_folder_name':'remote_folder_name_not_assigned'})
 
 @app.route('/copy_path', methods=['POST'])
@@ -502,7 +502,7 @@ def copy_path():
     n = engine.Map().lookup(j['cur'])
     try:
         return jsonify({'path': n.path})
-    except AttributeError:
+    except:
         return jsonify({'path':'path_not_assigned'})
 
 
