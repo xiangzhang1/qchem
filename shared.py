@@ -268,7 +268,12 @@ ELEMENTS.import_()
 class CustomError(Exception):
     pass
 
+
 class DeferError(Exception):
+    pass
+
+
+class DeferrError(Exception):
     pass
 
 # ===========================================================================
