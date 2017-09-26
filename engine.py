@@ -59,9 +59,9 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
     # ---------
     def getkw(self, kwname):
         if kwname not in self.kw:
-            raise shared.DeferrError(self.__class__.__name__ + '. getkw: keyword {%s} not found, DeferrError raised' %kwname)
+            raise shared.DeferError(self.__class__.__name__ + '. getkw: keyword {%s} not found, DeferError raised' %kwname)
         if len(self.kw[kwname]) != 1:
-            raise shared.DeferrError(self.__class__.__name__ + '.getkw: self.kw[%s] does not have 1 unique value {%s}, DeferrError raised' %(kwname, self.kw[kwname]))
+            raise shared.DeferError(self.__class__.__name__ + '.getkw: self.kw[%s] does not have 1 unique value {%s}, DeferError raised' %(kwname, self.kw[kwname]))
         if not isinstance(next(iter(self.kw[kwname])), basestring):
             raise shared.CustomError(self.__class__.__name__ + '.getkw: value {%s} of kw {%s} is not string' % (next(iter(self.kw[kwname])), kwname))
         return next(iter(self.kw[kwname]))
@@ -253,7 +253,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
                             self.parse_require(part,True)
                         else:
                             self.require.append([line[0],part,line[2],line[3]])
-                    except shared.DeferrError:
+                    except shared.DeferError:
                             self.require.append([line[0],part,line[2],line[3]])
         ## round 2+: got a 'no' in first round
         continue_flag = True
@@ -265,7 +265,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
                         self.parse_require(line[1],True)
                         continue_flag = True
                         self.require.remove(line)
-                except shared.DeferrError:
+                except shared.DeferError:
                     pass
         ## round last: the 'no' is final
         for line in self.require:

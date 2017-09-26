@@ -22,7 +22,7 @@ import traceback, sys, code
 # DEBUG option, SCRIPT_DIR, HOME_DIR
 # NODES, Fragile lists
 # ELEMENTS
-# CustomError, DeferrError, [LookupError]
+# CustomError, DeferError, [LookupError]
 # MySFTPClient
 # @MWT
 # @moonphase_wrap
@@ -268,7 +268,11 @@ ELEMENTS.import_()
 class CustomError(Exception):
     pass
 
-class DeferrError(Exception):   # DeferError name seems to conflict
+
+class Custom2Error(Exception):
+    pass
+
+class DeferError(Exception):   # DeferError name seems to conflict
     pass
 
 # ===========================================================================
