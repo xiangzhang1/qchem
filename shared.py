@@ -269,9 +269,6 @@ class CustomError(Exception):
     pass
 
 
-class Custom2Error(Exception):
-    pass
-
 class DeferError(Exception):   # DeferError name seems to conflict
     pass
 
