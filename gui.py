@@ -456,7 +456,7 @@ def make_connection():
         statuscolor = shared.COLOR_PALETTE[2]
     else:
         statuscolor = shared.COLOR_PALETTE[-1]
-    return jsonify({'statuscolor':statuscolor, 'ALL_ATTR_LIST': shared.ALL_ATTR_LIST, 'READABLE_ATTR_LIST': shared.READABLE_ATTR_LIST})
+    return jsonify({'statuscolor':statuscolor, 'ALL_ATTR_LIST': shared.ALL_ATTR_LIST, 'READABLE_ATTR_LIST': shared.READABLE_ATTR_LIST, 'DEBUG': DEBUG})
 
 @app.route('/paste_ref', methods=['POST'])
 @patch_through
