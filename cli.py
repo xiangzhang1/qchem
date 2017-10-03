@@ -1,5 +1,7 @@
 #!/usr/bin/python
-'''CLI, as a backup option during downtime'''
+'''Deprecate; not maintained any more.
+
+CLI, as a backup option during downtime'''
 
 # flask
 from flask import Flask, request, jsonify, session, Response

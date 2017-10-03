@@ -2,6 +2,8 @@ is_kpoints_mesh support
 
 automation!
 
+debug=0 seems buggy
+
 -------
 
 parallelization

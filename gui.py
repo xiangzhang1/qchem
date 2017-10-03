@@ -17,6 +17,7 @@ import time
 from pprint import pprint
 import IPython
 import re
+import threading
 
 from cStringIO import StringIO
 from fuzzywuzzy import process
@@ -388,6 +389,22 @@ def duplicate_node():
 def compute_node():
     j = request.get_json(force=True)
     engine.Map().lookup(j['cur']).compute(proposed_name=j['name'])  #delegate to parent, suggest compute name
+
+@app.route('/setinterval_compute_node', methods=['POST'])
+@patch_through
+@login_required
+def setinterval_compute_node():
+    def setinterval_compute_node_base(j=request.get_json(force=True)):
+        print j['cur'], '8' * 100
+        shared.timer = threading.Timer(6, setinterval_compute_node)
+        shared.timer.start()
+    setinterval_compute_node_base()
+
+@app.route('/stop_setinterval_compute_node', methods=['GET'])
+@patch_through
+@login_required
+def setinterval_compute_node():
+    shared.timer.stop()
 
 @app.route('/get_text', methods=['POST'])
 @return_through

@@ -168,7 +168,19 @@ class Node(object):
             if not getattr(self, 'cell', None) or not getattr(self, 'phase', None):
                 raise shared.CustomError(self.__class__.__name__ + '.compute: cell or phase is missing. Either make sure parent has something you can inherit, or enter them.')
             if not getattr(self, 'path', None):
-                self.path = raw_input('Provide path for node {%s} >:' %self.name)    # counterpart implemented in sigmajs
+                if shared.DEBUG >=1:
+                    self.path = raw_input('Provide path for node {%s} >:' %self.name)    # counterpart implemented in sigmajs
+                else:   # silent mode
+                    self.path = self.default_path()
+                    if os.path.exists(self.path):
+                        number = int(re.search(r'\d+$', self.path).group(0)) if re.search(r'\d+$', self.path) else 0
+                        text = re.sub(r'\d+$', '', self.path)
+                        while True:
+                            if os.path.exists(text + str(number)):
+                                number += 1
+                            else:
+                                self.path = text + str(number)
+                                break
             if not getattr(self, 'gen', None):
                 self.gen = engine.Gen(self)
             if not getattr(self, self.gen.getkw('engine'), None):
@@ -189,3 +201,10 @@ class Node(object):
         for node in engine.Map().lookup('master').map.traverse():
             if getattr(node,'map',None):
                 node.map.del_node(self)
+
+    def default_path(self):
+        if engine.Map().lookup('master') == self:
+            return 'master'
+        else:
+            parent_node = engine.rlookup(node_list = [self], parent=True, unique=False)     # if none found, an error would have been raised
+            return parent_node.default_path() + '.' + re.sub(r"\s+", '_', self.name)

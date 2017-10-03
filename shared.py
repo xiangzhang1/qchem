@@ -30,6 +30,7 @@ import traceback, sys, code
 # @log_wrap
 # bcolors (different from Fragile lists)
 # @debug_wrap
+# timer
 
 #
 # ===========================================================================
@@ -37,7 +38,7 @@ import traceback, sys, code
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 HOME_DIR = os.path.expanduser(os.path.expanduser("~"))
 
-DEBUG = 1       # -1: print nothing. 0: concise (recommended). 1: debug (slightly untidy). 2: disaster (code error)
+DEBUG = 1
 DEBUG = 0
 
 # Nodes
@@ -418,3 +419,7 @@ def debug_wrap(func):
 
 
 # ===========================================================================
+
+# timer
+
+timer = None

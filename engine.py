@@ -45,11 +45,7 @@ import random
 import shared
 
 
-def f7(seq):
-    seen = set()
-    seen_add = seen.add
-    return [x for x in seq if not (x in seen or seen_add(x))]
-
+# ====================================================
 # ====================================================
 
 
@@ -552,33 +548,6 @@ def compare_cell_bijective(eoc, boc):
     return report
 
 
-def compare_cell_grow(eoc, boc):
-    # great idea. pity that computational power is no match.
-    ZERO = 0.03
-    COUNT = 1
-    bowl = []
-    # 初始化
-    for perm_eoc, perm_boc in tqdm(itertools.product(itertools.permutations(range(eoc.natoms), COUNT), itertools.permutations(range(boc.natoms), COUNT))):
-        if np.abs(eoc.cdist[np.ix_(perm_eoc, perm_eoc)] - boc.cdist[np.ix_(perm_boc, perm_boc)]).mean() < ZERO:
-            bowl.append([perm_eoc, perm_boc])
-    # 养蛊
-    continue_flag = True
-    while (continue_flag):
-        continue_flag = False
-        for perm, perm2 in itertools.product(bowl, bowl):
-            if len(perm[0]) < len(perm[1]):     # run over twice
-                pass
-            if set(perm[0]) >= set(perm2[0]):
-                bowl.remove(perm2)
-            if [idx for idx in range(len(perm[0])) if perm[0][idx]==perm2[0][idx] and perm[1][idx]!=perm2[1][idx]]:
-                pass
-            if np.abs(eoc.cdist[np.ix_(perm[0], perm2[0])] - boc.cdist[np.ix_(perm[1], perm2[1])]).mean() < ZERO:
-                bowl.remove(perm)
-                bowl.remove(perm2)
-                bowl.append([f7(perm[0]+perm2[0]),f7(perm[1]+perm2[1])])
-                continue_flag = True
-    return bowl
-
 
 @shared.debug_wrap
 def compare_cell(eoc,boc, ZERO=0.02, rs=[10, 6.5, 6.5], is_verbose=False):    # ZERO: relative difference. rs: 子簇大小。
@@ -659,14 +628,15 @@ def compare_cell(eoc,boc, ZERO=0.02, rs=[10, 6.5, 6.5], is_verbose=False):    # 
 
 class Map(object):
 
-    def rlookup(self, attr_list={}, node_list=[], parent=False, unique=True):
+    def rlookup(self, attr_dict={}, node_list=[], parent=False, unique=True):
+        ''' reverse lookup. find the node specified by attr_dict and is in node_list. if parent=True, find their common parent. '''
         l = self.lookup('master').map.traverse()
-        # find the node specifiied by attr_list OR node_list
+        # find the node specifiied by attr_dict OR node_list
         children = set()
         for n in l:
             if node_list and n in node_list:
                 children.add(n)
-            if attr_list and all( [getattr(n,key,None)==attr_list[key] for key in attr_list] ):
+            if attr_dict and all( [getattr(n,key,None)==attr_dict[key] for key in attr_dict] ):
                 children.add(n)
         # find their common parents
         parents = set()
@@ -676,7 +646,7 @@ class Map(object):
         # post-process
         result = parents if parent else children
         if unique and len(result)>1:
-            raise shared.CustomError('RLookup: result is not unique. Criterion is: attr_list:{%s} node_list:{%s}' %(attr_list, [x.name for x in node_list]))
+            raise shared.CustomError('RLookup: result is not unique. Criterion is: attr_dict:{%s} node_list:{%s}' %(attr_dict, [x.name for x in node_list]))
         return next(iter(result)) if unique else result
 
 
@@ -843,7 +813,7 @@ class Vasp(object):
                 shutil.copyfile(self.prev.path+'/WAVECAR', self.path+'/WAVECAR')
             if getattr(self, 'prev', None) and getattr(self.prev, 'vasp', None) and getattr(self.prev.vasp, 'optimized_cell', None):
                 setattr(self, 'cell', self.prev.vasp.optimized_cell)
-                setattr(Map().rlookup(attr_list={'vasp':self}, unique=True, parent=False), 'cell', self.prev.vasp.optimized_cell)   # burden of data duplication
+                setattr(Map().rlookup(attr_dict={'vasp':self}, unique=True, parent=False), 'cell', self.prev.vasp.optimized_cell)   # burden of data duplication
                 print self.__class__.__name__ + '.compute: prev.vasp.optimized_cell overwrites self.cell.'
             # ALWAYS INHERIT CELL IF POSSIBLE. NOT SURE IF THIS IS GOOD.
             elif getattr(self, 'prev', None) and getattr(self.prev, 'cell', None):
@@ -921,7 +891,7 @@ class Vasp(object):
             with open(filename,'r') as if_:
                 self.log = if_.read()
             # write parent cell if opt
-            parent_node = Map().rlookup(attr_list={'vasp':self}, unique=True, parent=True)
+            parent_node = Map().rlookup(attr_dict={'vasp':self}, unique=True, parent=True)
             if getattr(self, 'gen', None) and self.gen.parse_if('opt'):
                 with open('CONTCAR','r') as infile:
                     text = infile.read()
