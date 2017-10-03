@@ -38,7 +38,7 @@ import traceback, sys, code
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 HOME_DIR = os.path.expanduser(os.path.expanduser("~"))
 
-DEBUG = 1
+DEBUG = 2
 #DEBUG = 0
 
 # Nodes
