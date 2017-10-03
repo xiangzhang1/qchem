@@ -84,6 +84,7 @@ def login_required(func):
         # auth
         auth = request.authorization
         if not auth or auth.username!='xzhang1' or auth.password!='5vRPz7Ngm8rNS3Sg':
+            print 'bad username/pswd detected: %s | %s' %(auth.username, auth.password)
             return Response('Bad username/pswd', 403, {'WWW-Authenticate': 'Basic realm="Need login."'})
         else:
             return func(*args, **kwargs)
