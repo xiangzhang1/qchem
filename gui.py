@@ -403,7 +403,7 @@ def setinterval_compute_node():
 @app.route('/stop_setinterval_compute_node', methods=['GET'])
 @patch_through
 @login_required
-def setinterval_compute_node():
+def stop_setinterval_compute_node():
     shared.timer.stop()
 
 @app.route('/get_text', methods=['POST'])
