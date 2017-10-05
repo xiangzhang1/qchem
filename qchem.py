@@ -144,7 +144,7 @@ class Node(object):
     def compute(self, proposed_name=None):
 
         if shared.DEBUG >= 0:
-            print 'computing node {%s}' %(self.name)
+            print 'computing node {%s}' %(self.default_path())
 
         if getattr(self, 'map', None):
             # next to calculate
