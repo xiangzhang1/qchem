@@ -4,6 +4,7 @@
 from flask import Flask, request, jsonify, session, Response
 from flask_cors import CORS, cross_origin
 from functools import wraps
+from flask_compress import Compress
 
 # common libraries
 import sys
@@ -48,6 +49,7 @@ if shared.DEBUG <= 0:
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
+Compress(app)
 
 
 # cron server using apscheduler
