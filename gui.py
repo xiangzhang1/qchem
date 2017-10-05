@@ -408,21 +408,15 @@ def compute_node():
 @login_required
 def setinterval_compute_node():
 
-    def print_date_time():
-        print time.strftime("%A, %d. %B %Y %I:%M:%S %p")
+    def setinterval_compute_node_base(j=request.get_json(force=True)):
+        print 'this time we compute ', j['cur']
 
     scheduler.add_job(
-        func=print_date_time,
+        func=setinterval_compute_node_base,
         trigger=IntervalTrigger(seconds=5),
-        id='printing_job',
-        name='Print date and time every five seconds',
+        id='setinterval_compute_job',
+        name='Compute node every five seconds',
         replace_existing=True)
-
-    # def setinterval_compute_node_base(): # j=request.get_json(force=True)
-    #     # print j['cur'], '8' * 100
-    #     print 'this time'
-    #     shared.timer = threading.Timer(6, setinterval_compute_node_base)
-    #     shared.timer.start()
 
 @app.route('/stop_setinterval_compute_node', methods=['GET'])
 @patch_through
