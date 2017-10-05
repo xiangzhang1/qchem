@@ -1,4 +1,8 @@
+performance updates - things are taking up too much space
 
+after deleting folders, nodes no longer disappear?
+
+debug
 
 -------
 
