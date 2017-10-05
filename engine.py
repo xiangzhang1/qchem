@@ -647,7 +647,9 @@ class Map(object):
         result = parents if parent else children
         if unique and len(result)>1:
             raise shared.CustomError('RLookup: result is not unique. Criterion is: attr_dict:{%s} node_list:{%s}' %(attr_dict, [x.name for x in node_list]))
-        return next(iter(result))   # if unique else result
+        if len(result) == 0:
+            raise shared.CustomError('RLookup: result not found. Criterion is: attr_dict:{%s} node_list:{%s}' %(attr_dict, [x.name for x in node_list]))
+        return next(iter(result))   # if unique else result     # not good, always return one result is good.
 
 
     def lookup(self, name):
