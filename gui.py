@@ -395,11 +395,14 @@ def compute_node():
 @patch_through
 @login_required
 def setinterval_compute_node():
-    def setinterval_compute_node_base(j=request.get_json(force=True)):
-        print j['cur'], '8' * 100
-        shared.timer = threading.Timer(6, setinterval_compute_node)
-        shared.timer.start()
-    setinterval_compute_node_base()
+    with app.app_context():
+        def setinterval_compute_node_base(): # j=request.get_json(force=True)
+            with app.app_context():
+                # print j['cur'], '8' * 100
+                print 'this time'
+                shared.timer = threading.Timer(6, setinterval_compute_node_base)
+                shared.timer.start()
+        setinterval_compute_node_base()
 
 @app.route('/stop_setinterval_compute_node', methods=['GET'])
 @patch_through
