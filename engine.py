@@ -794,6 +794,7 @@ class Vasp(object):
         self.gen = node.gen
         self.cell = node.cell
         self.path = node.path
+        print 'node path is %s' %(node.path)
         self.prev = node.prev
         self.name = node.name
 
