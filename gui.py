@@ -49,7 +49,7 @@ if shared.DEBUG <= 0:
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
-Compress(app)
+Compress(app)   # compress response
 
 
 # cron server using apscheduler

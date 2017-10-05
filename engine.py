@@ -630,7 +630,8 @@ class Map(object):
 
     def rlookup(self, attr_dict={}, node_list=[], parent=False, unique=True):
         ''' reverse lookup. find the node specified by attr_dict and is in node_list. if parent=True, find their common parent. '''
-        l = self.lookup('master').map.traverse() | set((self.lookup('master')))
+        l = self.lookup('master').map.traverse()
+        l.add(self.lookup('master'))
         # find the node specifiied by attr_dict OR node_list
         children = set()
         for n in l:
