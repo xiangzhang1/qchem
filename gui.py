@@ -22,6 +22,11 @@ import threading
 from cStringIO import StringIO
 from fuzzywuzzy import process
 
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
+
+import atexit
+
 # qchem package
 import qchem
 import shared
@@ -43,6 +48,13 @@ if shared.DEBUG <= 0:
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
+
+
+# cron server using apscheduler
+scheduler = BackgroundScheduler()
+scheduler.start()
+atexit.register(lambda: scheduler.shutdown()) # Shut down the scheduler when exiting the app
+
 
 # patches output and expected CustomError through; login security
 def patch_through(func):
@@ -395,14 +407,22 @@ def compute_node():
 @patch_through
 @login_required
 def setinterval_compute_node():
-    with app.app_context():
-        def setinterval_compute_node_base(): # j=request.get_json(force=True)
-            with app.app_context():
-                # print j['cur'], '8' * 100
-                print 'this time'
-                shared.timer = threading.Timer(6, setinterval_compute_node_base)
-                shared.timer.start()
-        setinterval_compute_node_base()
+
+    def print_date_time():
+        print time.strftime("%A, %d. %B %Y %I:%M:%S %p")
+
+    scheduler.add_job(
+        func=print_date_time,
+        trigger=IntervalTrigger(seconds=5),
+        id='printing_job',
+        name='Print date and time every five seconds',
+        replace_existing=True)
+
+    # def setinterval_compute_node_base(): # j=request.get_json(force=True)
+    #     # print j['cur'], '8' * 100
+    #     print 'this time'
+    #     shared.timer = threading.Timer(6, setinterval_compute_node_base)
+    #     shared.timer.start()
 
 @app.route('/stop_setinterval_compute_node', methods=['GET'])
 @patch_through
