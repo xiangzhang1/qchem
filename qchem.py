@@ -206,5 +206,5 @@ class Node(object):
         if engine.Map().lookup('master') == self:
             return 'master'
         else:
-            parent_node = engine.Map().rlookup(node_list = [self], parent=True, unique=False)     # if none found, an error would have been raised
+            parent_node = engine.Map().rlookup(node_list = [self], parent=True, unique=False)[0]     # if none found, an error would have been raised
             return parent_node.default_path() + '.' + re.sub(r"\s+", '_', self.name)
