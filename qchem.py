@@ -207,5 +207,4 @@ class Node(object):
             return 'master'
         else:
             parent_node = engine.Map().rlookup(node_list = [self], parent=True, unique=False)     # if none found, an error would have been raised
-            parent_node = next(iter(parent_node))
             return parent_node.default_path() + '.' + re.sub(r"\s+", '_', self.name)
