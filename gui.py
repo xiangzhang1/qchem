@@ -409,20 +409,22 @@ def compute_node():
 def setinterval_compute_node():
 
     def setinterval_compute_node_base(j=request.get_json(force=True)):
-        print 'this time we compute ', j['cur']
+        cur = j['cur'] + '.' + j['name']
+        print 'setinterval job, computing {%s}' %(cur)
+        engine.Map().lookup(cur).compute()
 
     scheduler.add_job(
         func=setinterval_compute_node_base,
-        trigger=IntervalTrigger(seconds=5),
+        trigger=IntervalTrigger(seconds=600),
         id='setinterval_compute_job',
-        name='Compute node every five seconds',
+        name='Compute node every 600 seconds',
         replace_existing=True)
 
 @app.route('/stop_setinterval_compute_node', methods=['GET'])
 @patch_through
 @login_required
 def stop_setinterval_compute_node():
-    shared.timer.stop()
+    scheduler.remove_job('setinterval_compute_job')
 
 @app.route('/get_text', methods=['POST'])
 @return_through

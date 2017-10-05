@@ -30,7 +30,6 @@ import traceback, sys, code
 # @log_wrap
 # bcolors (different from Fragile lists)
 # @debug_wrap
-# timer
 
 #
 # ===========================================================================
@@ -416,10 +415,3 @@ def debug_wrap(func):
         else:
             return func(*args, **kwargs)
     return wrapped
-
-
-# ===========================================================================
-
-# timer
-
-timer = None
