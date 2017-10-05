@@ -1,10 +1,16 @@
-performance updates - things are taking up too much space
 
-after deleting folders, nodes no longer disappear?
 
-debug
+
 
 -------
+
+performance updates - things are taking up too much space
+> don't leave any electron module finished - bands take up space
+> text can take easily 10s of MB's. 
+> 25 pure static nodes can take 5 MB of space.
+
+after deleting folders, nodes no longer disappear?
+> tested, no such a thing
 
 parallelization
 > too much overhead
