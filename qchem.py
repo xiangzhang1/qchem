@@ -143,6 +143,9 @@ class Node(object):
 
     def compute(self, proposed_name=None):
 
+        if shared.DEBUG >= 0:
+            print 'computing node {%s}' %(self.name)
+
         if getattr(self, 'map', None):
             # next to calculate
             l = [x for x in self.map if x.moonphase()==0 and (not self.map.prev(x) or self.map.prev(x).moonphase()==2) ]
