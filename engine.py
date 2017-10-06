@@ -1553,7 +1553,7 @@ class Movie(object):
             fig = plt.figure()
             ax = fig.add_subplot(111, projection='3d')
             xs, ys, zs = list(ccoor[:,0]), list(ccoor[:,1]), list(ccoor[:,2])
-            ax.scatter(xs, ys, zs, s=15)
+            ax.scatter([1,2,3], [1,2,3], [1,2,3], s=15)
             ax.set_axis_off()
             plt.savefig(electron.path+'/%s.png' %(istep) )
         # movie
