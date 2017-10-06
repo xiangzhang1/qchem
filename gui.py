@@ -417,7 +417,7 @@ def setinterval_compute_node():
 
     scheduler.add_job(
         func=setinterval_compute_node_base,
-        trigger=IntervalTrigger(seconds=400),
+        trigger=IntervalTrigger(seconds=60),
         id='setinterval_compute_job',
         name='Compute node every 0.5 h',
         replace_existing=True)

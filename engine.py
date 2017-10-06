@@ -24,6 +24,8 @@ from itertools import groupby, chain, combinations
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import time
+import xml.etree.ElementTree as ET
+
 
 from tqdm import tqdm, trange
 
@@ -1517,6 +1519,47 @@ class Compare(object):
 
 
 
+class Movie(object):
+
+    def __init__(self, electron):
+
+        # parse vasprun.xml
+        os.chdir(electron.prev.path)
+        tree = ET.parse('vasprun.xml')
+        root = tree.getroot()
+        # each step
+        istep = 0
+        for ionicstep in root.findall('calculation'):
+            structure = ionicstep.find('structure')
+            # base
+            base = []
+            basis = structure.find('crystal').find("varray[@name='basis']")
+            for a in basis.findall('v'):
+                base.append(a.text.split())
+            base = np.float_(base)
+            # fcoor
+            fcoor = []
+            positions = structure.find("varray[@name='positions']")
+            for x in positions.findall('v'):
+                fcoor.append(x.text.split())
+            fcoor = np.float_(fcoor)
+            # ccoor
+            ccoor = np.dot(fcoor, base)
+            # draw movie frame
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection='3d')
+            xs, ys, zs = ccoor[:,0], ccoor[:,1], ccoor[:,2]
+            ax.scatter(xs, ys, zs, s=15)
+            ax.set_axis_off()
+            plt.savefig(electron.path+'/%s_%i.png' %(istep, electron.path.split('/')[-1]) )
+        # movie
+        os.system('ffmpeg -f image2 -r 1 -i %s_%%d.png -vcodec mpeg4 -y %s_movie.mp4' %(electron.path.split('/')[-1], electron.path.split('/')[-1]) )
+        print 'movie.mp4 generated at     %s    ' %(electron.path)
+
+    def __str__(self):
+        return ''
+
+
 
 class Electron(object):
     '''the big boss'''
@@ -1564,6 +1607,9 @@ class Electron(object):
 
             if self.gen.parse_if('compare !null'):
                 self.compare = Compare(self)
+
+            if self.gen.parse_if('movie'):
+                self.movie = Movie(self)
 
             self.log = ''
             for name in ['cell', 'grepen', 'dos', 'bands','charge', 'errors', 'compare']:
