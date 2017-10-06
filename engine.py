@@ -1558,7 +1558,7 @@ class Movie(object):
             plt.savefig(electron.path+'/%s.png' %(istep) )
         # movie
         os.chdir(electron.path)
-        os.system('avconv -f image2 -r 1 -i %%d.png -vcodec mpeg4 -y movie.mp4')
+        os.system('avconv -f image2 -r 1 -i %d.png -vcodec mpeg4 -y movie.mp4')
         print 'movie.mp4 generated at     %s    ' %(electron.path)
 
     def __str__(self):
