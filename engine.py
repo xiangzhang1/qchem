@@ -1587,8 +1587,8 @@ class Movie(object):
         def update_lines(num, dataLines, lines):
             for line, data in zip(lines, dataLines):
                 # NOTE: there is no .set_data() for 3 dim data...
-                line.set_data(data[:num, 0:2])
-                line.set_3d_properties(data[:num, 2])
+                line.set_data(data[:num, 0:2].T)
+                line.set_3d_properties(data[:num, 2].T)
             return lines
 
         # Attaching 3D axis to the figure
