@@ -1088,7 +1088,7 @@ class Grepen(object):
 
         for name, value in vars(self).iteritems():
             if name != 'log':
-                self.log += '%s: %s\n' % (name, value)
+                print '%s: %s\n' % (name, value)
 
 
 
@@ -1114,8 +1114,8 @@ class Dos(object):
         self.nspins_dos = {'para':1, 'fm':2, 'ncl':1}[electron.grepen.spin]
         self.nspins_pdos = {'para':1, 'fm':2, 'ncl':4}[electron.grepen.spin]
         for name in ['nspins_dos', 'nspins_pdos']:
-            self.log += '%s: %s\n' % (name, getattr(self, name, None))
-        self.log += '-' * 130 + '\n'
+            print '%s: %s\n' % (name, getattr(self, name, None))
+        print '-' * 130
 
         if not electron.grepen.is_doscar_usable:
             raise shared.CustomError(self.__class__.__name__ + '.__init__: DOSCAR is not usable.')
@@ -1147,7 +1147,7 @@ class Dos(object):
             while abs(self.dos[idx_spin, j, 1]) < ZERO:
                 j += 1
             self.bandgap[idx_spin] = [] if i == j else [self.dos[idx_spin, i, 0], self.dos[idx_spin, j, 0]]
-            self.log += "spin %s: VBM %s, CBM %s, bandgap %.5f eV\n" % (idx_spin, self.bandgap[idx_spin][0], self.bandgap[idx_spin][1], self.bandgap[idx_spin][1]-self.bandgap[idx_spin][0]) \
+            print "spin %s: VBM %s, CBM %s, bandgap %.5f eV\n" % (idx_spin, self.bandgap[idx_spin][0], self.bandgap[idx_spin][1], self.bandgap[idx_spin][1]-self.bandgap[idx_spin][0]) \
                   if i != j else "spin %s: no bandgap\n" % (idx_spin)
 
         # pdos
@@ -1182,8 +1182,8 @@ class Bands(object):
     def __init__(self, electron):
         ZERO = 0.01
         self.nspins_bands = {'para':1, 'fm':2, 'ncl':1}[electron.grepen.spin]
-        self.log += 'nspins_bands: %s\n' % (self.nspins_bands)
-        self.log += '-' * 130 + '\n'
+        print 'nspins_bands: %s\n' % (self.nspins_bands)
+        print '-' * 130
 
         # bands
         with open("EIGENVAL","r") as f:
@@ -1213,13 +1213,13 @@ class Bands(object):
             cbm = min([e for e in tqdm(np.nditer(self.bands[idx_spin]), leave=False) if e>=electron.grepen.efermi + ZERO])    # np.nditer is an iterator looping over all dimensions of an array.
                                                                                                # the array itself is an iterator looping normally by outmost dimension.
             self.bandgaps[idx_spin] = [vbm, cbm] if cbm > vbm + ZERO else []
-            self.log += "spin %s: VBM %s at %s, CBM %s at %s, kpoint-independent bandgap %.5f eV\n" \
+            print "spin %s: VBM %s at %s, CBM %s at %s, kpoint-independent bandgap %.5f eV\n" \
                   % (idx_spin, vbm, self.kpts[ np.where(self.bands[idx_spin]==vbm)[1][0] ], cbm, self.kpts[ np.where(self.bands[idx_spin]==cbm)[1][0] ], cbm-vbm) \
                   if cbm > vbm + ZERO else "spin %s: no bandgap\n" % (idx_spin)     # only first instance is printed.
-        self.log += '-' * 130 + '\n'
+        print '-' * 130
 
         #: interpolated bandgap
-        self.log += 'bandgap is often between interpolated and raw bandgap. \n'
+        print 'bandgap is often between interpolated and raw bandgap.'
         #;
         if electron.grepen.is_kpoints_mesh:
             self.bandgaps_interp = [ [] for idx_spin in range(self.nspins_bands) ]
@@ -1228,9 +1228,9 @@ class Bands(object):
                 #:relevant parameters exist
                 ZERO = 0.01
                 if not self.bandgaps[idx_spin]: # conductor
-                    self.log += 'spin %s: no bandgap, bandgaps_interp skipped.\n' % ( idx_spin ) ; continue
+                    print 'spin %s: no bandgap, bandgaps_interp skipped.\n' % ( idx_spin ) ; continue
                 if [idx2_spin for idx2_spin in range(idx_spin) if self.bandgaps[idx2_spin] and np.linalg.norm(np.subtract(self.bandgaps[idx_spin], self.bandgaps[idx2_spin])) < ZERO]:    # repetitive
-                    self.log += 'spin %s: repetitive, bandgaps_interp skipped.\n' % ( idx_spin ) ; continue
+                    print 'spin %s: repetitive, bandgaps_interp skipped.\n' % ( idx_spin ) ; continue
                 #;
                 kptes = []
                 ZERO = abs(np.subtract(*self.bandgaps[idx_spin])) / 2.5
@@ -1248,7 +1248,7 @@ class Bands(object):
                 vbm = np.amax([kpte[3] for kpte in kptes if self.bandgaps[idx_spin][0]-ZERO<kpte[3]<self.bandgaps[idx_spin][0]+ZERO])
                 cbm = np.amin([kpte[3] for kpte in kptes if self.bandgaps[idx_spin][1]-ZERO<kpte[3]<self.bandgaps[idx_spin][1]+ZERO])
                 self.bandgaps_interp[idx_spin] = [vbm, cbm] if cbm>vbm else []
-                self.log += "spin %s, interpolated: VBM %s near %s , CBM %s near %s, bandgap %.5f eV\n" \
+                print "spin %s, interpolated: VBM %s near %s , CBM %s near %s, bandgap %.5f eV\n" \
                       % (idx_spin, vbm, kptes[np.where(kptes[:,3]==vbm)[0][0],:3], cbm, kptes[np.where(kptes[:,3]==cbm)[0][0],:3], cbm-vbm) \
                       if cbm > vbm else "spin %s, interpolated: no bandgap\n" % (idx_spin)
 
@@ -1283,30 +1283,30 @@ class Charge(object):
 
         # let's start!
         # pristine electronic configuration
-        self.log += 'ground-state electron configurations:\n'   # a good idea is to indent within header
+        print 'ground-state electron configurations:\n'   # a good idea is to indent within header
         for element in electron.cell.stoichiometry:
-            self.log += "%s: %s\n" %(element, shared.ELEMENTS[element].eleconfig)
-        self.log += '-' * 130 + '\n'
+            print "%s: %s\n" %(element, shared.ELEMENTS[element].eleconfig)
+        print '-' * 130
 
         # integrate pdos scaled
-        self.log += 'Integrated PDOS. Each orbital is normalized to 1. If ONE is too small, -INT is returned.\n'
+        print 'Integrated PDOS. Each orbital is normalized to 1. If ONE is too small, -INT is returned.\n'
         idx_atom = 0
         for symbol, natoms in electron.cell.stoichiometry.iteritems():
             for idx_atom in range(idx_atom, idx_atom + natoms):
                 for idx_spin in range(electron.dos.nspins_pdos):
-                    self.log += "%5s%2s: " % ( symbol + str(idx_atom), shared.ELEMENTS.spins[electron.dos.nspins_pdos][idx_spin] )
+                    print "%5s%2s: " % ( symbol + str(idx_atom), shared.ELEMENTS.spins[electron.dos.nspins_pdos][idx_spin] )
                     for idx_orbital in range(electron.dos.norbitals_pdos):
                         INFINITY = np.argmax( electron.dos.pdos[idx_spin, idx_atom, idx_orbital, :, 0 ] > electron.grepen.efermi+5 )
                         ONE = np.trapz( electron.dos.pdos[idx_spin, idx_atom, idx_orbital, :INFINITY, 1 ] , \
                                                     x = electron.dos.pdos[idx_spin, idx_atom, idx_orbital, :INFINITY, 0 ] )
                         integrated_pdos = np.trapz( electron.dos.pdos[idx_spin, idx_atom, idx_orbital, :electron.dos.idx_fermi, 1 ] , \
                                                     x = electron.dos.pdos[idx_spin, idx_atom, idx_orbital, :electron.dos.idx_fermi, 0 ] )
-                        self.log += '%7s %5.2f' % (shared.ELEMENTS.orbitals[idx_orbital], abs(integrated_pdos / ONE) if abs(ONE) > 0.4 else -abs(integrated_pdos) )
-                    self.log += '\n'
-        self.log += '-' * 130 + '\n'
+                        print '%7s %5.2f' % (shared.ELEMENTS.orbitals[idx_orbital], abs(integrated_pdos / ONE) if abs(ONE) > 0.4 else -abs(integrated_pdos) )
+                    print '\n'
+        print '-' * 130
 
         # Bader charge
-        self.log += "\n\nBader charge. Boundaries are defined as zero-flux surfaces. Note that certain flags should be set (e.g. LAECHG) for this to be reasonable.\n"
+        print "\n\nBader charge. Boundaries are defined as zero-flux surfaces. Note that certain flags should be set (e.g. LAECHG) for this to be reasonable.\n"
         #: run bader
         print 'running bader...', ; sys.stdout.flush()
         if not os.path.isfile('AECCAR0') or not os.path.isfile('AECCAR2'):
@@ -1318,49 +1318,49 @@ class Charge(object):
         with open('ACF.dat','r') as f:
             lines = f.readlines()
         for idx_element, element in enumerate(electron.cell.stoichiometry.keys()):
-            self.log += element + ' '
+            print element + ' '
             for idx_atom in range(sum(electron.cell.stoichiometry.values()[0:idx_element]),sum(electron.cell.stoichiometry.values()[0:idx_element+1])):
                 nline = idx_atom + 2
-                self.log += lines[nline].split()[4] + ' '
-            self.log += '\n'
-        self.log += '-' * 130 + '\n'
+                print lines[nline].split()[4] + ' '
+            print '\n'
+        print '-' * 130
 
         # OUTCAR RWIGS [decomposed] charge
-        self.log += "Total charge inside the Wigner-Seitz Radius in OUTCAR\n"
+        print "Total charge inside the Wigner-Seitz Radius in OUTCAR\n"
         with open('OUTCAR','r') as f:
             lines = f.readlines()
             for idx_line,line in enumerate(lines):
                 if '# of ion' in line: # this is only an anchor. that particular line doesn't matter.
                     break
             for idx2_line in range(idx_line ,idx_line + 4 + sum(electron.cell.stoichiometry.values())):
-                self.log += lines[idx2_line]
-        self.log += '-' * 130 + '\n'
+                print lines[idx2_line]
+        print '-' * 130
 
         # Bader magnetic moment
         if electron.grepen.spin == 'fm' or electron.grepen.spin == 'afm':
-            self.log += "An oversimplified version of Bader magnetic moment.\n"
+            print "An oversimplified version of Bader magnetic moment.\n"
             os.popen('chgsplit.sh CHGCAR').read()
             os.popen('bader cf2').read()
             for idx_element, element in enumerate(electron.cell.stoichiometry.keys()):
-                self.log += element + ' '
+                print element + ' '
                 for idx_atom in range(sum(electron.cell.stoichiometry.values()[0:idx_element]),sum(electron.cell.stoichiometry.values()[0:idx_element+1])):
                     nline = idx_atom + 2
                     with open('ACF.dat','r') as f:
                         lines = f.readlines()
-                        self.log += lines[nline].split()[4]
-                self.log += '\n'
-        self.log += '-' * 130 + '\n'
+                        print lines[nline].split()[4]
+                print '\n'
+        print '-' * 130
 
         # OUTCAR RWIGS magnetic moment
         if electron.grepen.spin == 'fm' or electron.grepen.spin == 'afm':
-            self.log += "Magnetization (x) [total magnetic moment inside the Wigner-Seitz Radius] in OUTCAR\n"
+            print "Magnetization (x) [total magnetic moment inside the Wigner-Seitz Radius] in OUTCAR\n"
             with open('OUTCAR','r') as f:
                 lines = f.readlines()
                 for idx_line,line in enumerate(lines):
                     if 'magnetization (x)' in line: # this is only an anchor. that particular line doesn't matter.
                         break
                 for idx2_line in range(idx_line + 2,idx_line + 6 + sum(electron.cell.stoichiometry.values())):
-                    self.log += lines[idx2_line]
+                    print lines[idx2_line]
 
 
 
@@ -1377,7 +1377,7 @@ class Errors(object):
             self.min_kpt_dist = np.amin( spatial.distance.pdist(electron.bands.kpts, metric='Euclidean'), axis=None )   # spatial.distance.pdist() produces a list of distances. amin() produces minimum for flattened input
             kpts_nn = spatial.cKDTree( electron.bands.kpts )                                                        # returns a KDTree object, which has interface for querying nearest neighbors of any kpt
             kpts_nn_list = kpts_nn.query_pairs(r=self.min_kpt_dist*1.5, output_type='ndarray')           # gets all nearest-neighbor idx_kpt pairs
-            self.log += u"kpoint mesh precision \u0394k = %.5f 2\u03C0/a.\n" %(self.min_kpt_dist)
+            print u"kpoint mesh precision \u0394k = %.5f 2\u03C0/a.\n" %(self.min_kpt_dist)
 
         # neargap bands, de_dkpt
         # calculate DeltaE_KPOINTS by grabbing average E diff / average E diff near bandgap from EIGENVAL.
@@ -1386,11 +1386,11 @@ class Errors(object):
             for idx_spin in range(electron.bands.nspins_bands):
                 ZERO = 0.01
                 if not electron.bands.bandgaps[idx_spin]: # conductor
-                    self.log += u'spin %s: no bandgap, \u3B4E skipped.\n' % idx_spin ; continue
+                    print u'spin %s: no bandgap, \u3B4E skipped.\n' % idx_spin ; continue
                 if [idx2_spin for idx2_spin in range(idx_spin) if electron.bands.bandgaps[idx2_spin] and np.linalg.norm(np.subtract(electron.bands.bandgaps[idx_spin], electron.bands.bandgaps[idx2_spin])) < ZERO]:    # repetitive
-                    self.log += u'spin %s: repetitive, \u3B4E skipped. \n' % ( idx_spin ) ; continue
+                    print u'spin %s: repetitive, \u3B4E skipped.' % ( idx_spin ) ; continue
                 # specify neargap criterion ZERO
-                self.log += u'spin %s, nearest neighbor \u03B4E:\n' % (idx_spin)
+                print u'spin %s, nearest neighbor \u03B4E:\n' % (idx_spin)
                 bandgap = abs(np.subtract(*electron.bands.bandgaps[idx_spin]))
                 for ZERO in tqdm([bandgap, bandgap/2, bandgap/4], leave=False, position=0, desc='calculating de_dkpt in neargap bands'):
                     de_dkpt_flat = []
@@ -1399,34 +1399,34 @@ class Errors(object):
                         for kpts_nn_list_ in kpts_nn_list:  # kpts_nn_list_ = [ idx1_kpt idx2_kpt ]
                             if all(electron.bands.bandgaps[idx_spin][0]-ZERO < electron.bands.bands[idx_spin][idx_band][idx_kpt] < electron.bands.bandgaps[idx_spin][1]+ZERO for idx_kpt in kpts_nn_list_):    # is near gap
                                 de_dkpt_flat.append( abs(electron.bands.bands[idx_spin][idx_band][kpts_nn_list_[0]] - electron.bands.bands[idx_spin][idx_band][kpts_nn_list_[1]]) )
-                    self.log += u'  CBM/VBM +- %.2f eV: \u03B4E = %.5f eV, # of kpts = %d.\n' %( ZERO, np.mean(de_dkpt_flat), len(de_dkpt_flat) ) \
+                    print u'  CBM/VBM +- %.2f eV: \u03B4E = %.5f eV, # of kpts = %d.\n' %( ZERO, np.mean(de_dkpt_flat), len(de_dkpt_flat) ) \
                                 if de_dkpt_flat else u'  CBM/VBM +- %.2f eV: # of kpts = 0.\n' %( ZERO )
                     if de_dkpt_flat :   self.de_dkpt = np.mean(de_dkpt_flat)    # for Errors
-            self.log += '-' * 130 + '\n'
+            print '-' * 130
 
         # ismear -> error
         if electron.grepen.ismear == 0:
-            self.log += u'gaussian smearing smoothes out irregularities with size sigma: sigma[%.4f] < \u03B4E[%.4f]/2\n' %(electron.grepen.sigma,self.error)
+            print u'gaussian smearing smoothes out irregularities with size sigma: sigma[%.4f] < \u03B4E[%.4f]/2\n' %(electron.grepen.sigma,self.error)
             self.error = max(self.error, electron.grepen.sigma * 2)
 
         # de_dkpt -> error
         if electron.grepen.is_kpoints_mesh:
-            self.log += u'sparse kpoints grid may miss in-between eigenvalues. E(j)-E(j\')[%.4f] < \u03B4E[%.4f]/2\n' %(self.de_dkpt, self.error)
+            print u'sparse kpoints grid may miss in-between eigenvalues. E(j)-E(j\')[%.4f] < \u03B4E[%.4f]/2\n' %(self.de_dkpt, self.error)
             self.error = max(self.error, self.de_dkpt * 2)
 
         # nedos -> error
         if electron.grepen.is_doscar_usable:
-            self.log += u'all details between two DOS points are lost. 10/NEDOS[%.4f] < \u03B4[%.4f]/2\n' %(10.0/electron.grepen.nedos, self.error)
+            print u'all details between two DOS points are lost. 10/NEDOS[%.4f] < \u03B4[%.4f]/2\n' %(10.0/electron.grepen.nedos, self.error)
             self.error = max(self.error, 10.0/float(electron.grepen.nedos) * 2)
 
         # check DOS validity (nedos)
         if electron.grepen.is_doscar_usable:
-            self.log += u'dos should not be so fine that energy granularity is obvious. 10/NEDOS[%.4f] > \u03B4E[%.4f]\n' %(10.0/electron.grepen.nedos, self.de_dkpt if electron.grepen.is_kpoints_mesh else np.mean(np.diff(electron.bands.bands[0].flatten())))
+            print u'dos should not be so fine that energy granularity is obvious. 10/NEDOS[%.4f] > \u03B4E[%.4f]\n' %(10.0/electron.grepen.nedos, self.de_dkpt if electron.grepen.is_kpoints_mesh else np.mean(np.diff(electron.bands.bands[0].flatten())))
 
         #: wrap-up
-        self.log += '-' * 130 + '\n'
+        print '-' * 130
         #;
-        self.log += 'errors.py: in short, you should expect an error around %.4f eV in dirA. \n' %(self.error)
+        print 'errors.py: in short, you should expect an error around %.4f eV in dirA.' %(self.error)
 
 
 class Compare(object):
@@ -1438,7 +1438,7 @@ class Compare(object):
         backdrop = Map().lookup(electron.gen.getkw('backdrop'))
         compare = electron.gen.getkw('compare').split()
 
-        self.log += 'compare prev {%s} against backdrop {%s} \n' %(electron.prev.name, backdrop.name)
+        print 'compare prev {%s} against backdrop {%s}' %(electron.prev.name, backdrop.name)
 
         # compare=band
         # 1. backdrop mesh, electron mesh
@@ -1450,26 +1450,26 @@ class Compare(object):
             backdrop = backdrop.electron
 
             #: preliminary checks
-            self.log += '-' * 130 + '\n'
+            print '-' * 130
             if not backdrop.grepen.is_kpoints_mesh and electron.grepen.is_kpoints_mesh:
                 raise shared.CustomError(self.__class__.__name__ + '.compute: only these: i) both mesh ii) neither mesh iii) backdrop only mesh.')
             if backdrop.bands.bands.shape[0] != electron.bands.bands.shape[0]:
                 raise shared.CustomError(self.__class__.__name__ + '.compute: electron and backdrop bands have incompatible NBANDS')
             #;
 
-            self.log += u'energy difference between self and backdrop is %s eV.\n' % ( abs(electron.grepen.energy - backdrop.grepen.energy) )
+            print u'energy difference between self and backdrop is %s eV.\n' % ( abs(electron.grepen.energy - backdrop.grepen.energy) )
 
             if backdrop.grepen.is_kpoints_mesh and electron.grepen.is_kpoints_mesh:
 
                 error_interpd = []
                 idx_spin = 0
-                self.log += self.__class__.__name__ + ': comparing idx_spin=0 only.\n'    # faciliate comparison between ncl and fm
+                print self.__class__.__name__ + ': comparing idx_spin=0 only.\n'    # faciliate comparison between ncl and fm
 
                 for idx_band, band in tqdm(enumerate(backdrop.bands.bands[idx_spin]), leave=False, desc='interpolating backdrop.bands for comparison'):
                         error_interpd.append( np.average( abs( np.float32(electron.bands.bands[idx_spin][idx_band]) - np.float32([backdrop.bands.bands_interp()[idx_spin][idx_band](*kpt) for kpt in electron.bands.kpts]) ) ) )
-                        self.log += 'in band %d, between self and backdrop, post-interpolation Cauchy eigenvalue difference is %.5f.\n' %(idx_band, error_interpd[-1])
+                        print 'in band %d, between self and backdrop, post-interpolation Cauchy eigenvalue difference is %.5f.\n' %(idx_band, error_interpd[-1])
 
-                self.log += u'smearing should be larger than numerical energy error: sigma[%.4f] > post-interpolation \u03B4E[%.4f]' %(electron.grepen.sigma, np.average(error_interpd))
+                print u'smearing should be larger than numerical energy error: sigma[%.4f] > post-interpolation \u03B4E[%.4f]' %(electron.grepen.sigma, np.average(error_interpd))
 
             elif not backdrop.grepen.is_kpoints_mesh and not electron.grepen.is_kpoints_mesh:
 
@@ -1480,15 +1480,15 @@ class Compare(object):
                 idx_spin = 0
                 if electron.grepen.nbands == backdrop.grepen.nbands:
                     delta = np.std( abs(electron.bands.bands[idx_spin] - backdrop.bands.bands[idx_spin]).flatten() )
-                    self.log += u'<eigenvalue difference std> between self and backdrop (removing offset) is %s eV.\n' %delta
+                    print u'<eigenvalue difference std> between self and backdrop (removing offset) is %s eV.\n' %delta
                 elif abs(electron.grepen.nbands - backdrop.grepen.nbands) < backdrop.grepen.nbands / 5:     # arbitrary
-                    self.log += u'electron.grepen.nbands %s and backdrop.grepen.nbands %s does not match. trying to guess...\n' %(electron.grepen.nbands, backdrop.grepen.nbands)
+                    print u'electron.grepen.nbands %s and backdrop.grepen.nbands %s does not match. trying to guess...\n' %(electron.grepen.nbands, backdrop.grepen.nbands)
                     nbands = min(electron.grepen.nbands, backdrop.grepen.nbands)
                     delta = []
                     for idx_start_electron in range(0, electron.grepen.nbands-nbands+1):
                         for idx_start_backdrop in range(0, backdrop.grepen.nbands-nbands+1):
                             delta.append(np.std(abs(electron.bands.bands[idx_spin, idx_start_electron:idx_start_electron + nbands, :] - backdrop.bands.bands[idx_spin, idx_start_backdrop:idx_start_backdrop + nbands, :])))
-                    self.log += u'<eigenvalue difference std> between self and backdrop (removing offset, guessed) is %s eV.\n' %min(delta)
+                    print u'<eigenvalue difference std> between self and backdrop (removing offset, guessed) is %s eV.\n' %min(delta)
 
             elif not electron.grepen.is_kpoints_mesh and backdrop.grepen.is_kpoints_mesh:
 
@@ -1498,7 +1498,7 @@ class Compare(object):
 
         if 'optimized_cell' in compare:
 
-            self.log += '-' * 130 + '\n'
+            print '-' * 130
 
             eoc = electron_optimized_cell = electron.prev.vasp.optimized_cell
             boc = backdrop_optimized_cell = backdrop.vasp.optimized_cell
@@ -1509,19 +1509,19 @@ class Compare(object):
             #;
 
             # base
-            self.log += u'<base difference> between self and backdrop is %s \u212B. \n' % ( np.average( abs(eoc.base - boc.base).flatten() ) )
-            self.log += '-' * 130 + '\n'
+            print u'<base difference> between self and backdrop is %s \u212B.' % ( np.average( abs(eoc.base - boc.base).flatten() ) )
+            print '-' * 130
 
             # simple difference, not allowing translation or rotation
-            self.log += u'<simple cartesian difference> (no translation or rotation allowed) between self and backdrop is  %s \u212B. \n' % ( np.abs(eoc.ccoor - boc.ccoor).mean() )
-            self.log += '-' * 130 + '\n'
+            print u'<simple cartesian difference> (no translation or rotation allowed) between self and backdrop is  %s \u212B.' % ( np.abs(eoc.ccoor - boc.ccoor).mean() )
+            print '-' * 130
 
             # unordered bijective differences
-            self.log += compare_cell_bijective(eoc, boc)
+            print compare_cell_bijective(eoc, boc)
 
             # are they the same cell?
             for ZERO in [0.01, 0.05, 0.1, 0.3]:
-                self.log += compare_cell(eoc, boc, ZERO=ZERO)
+                print compare_cell(eoc, boc, ZERO=ZERO)
 
 
 
@@ -1530,7 +1530,7 @@ class Movie(object):
     def __init__(self, electron):
 
         # parse vasprun.xml and establish a 'data' nparray, to be used for movie-making
-        self.log += "parsing vasprun.xml for trajectory...\n"
+        print "parsing vasprun.xml for trajectory...\n"
         os.chdir(electron.prev.path)
         tree = ET.parse('vasprun.xml')
         root = tree.getroot()
@@ -1560,7 +1560,7 @@ class Movie(object):
         Simple 3D animation. https://matplotlib.org/examples/animation/simple_3danim.html
         Data structure of data is data [idx_traj] [idx_dim] [idx_step]
         """
-        self.log += "creating movie from trajectory...\n"
+        print "creating movie from trajectory...\n"
         # def Gen_RandLine(length, dims=2):
         #     """
         #     Create a line using a random walk algorithm
@@ -1676,7 +1676,7 @@ class Electron(object):
             self.log = ''
             for name in ['cell', 'grepen', 'dos', 'bands','charge', 'errors', 'compare', 'movie']:  # you've got to change this every time.
                 if getattr(self, name, None) and getattr(getattr(self, name),'log', None):
-                    self.log += getattr(getattr(self, name), 'log').encode('utf-8')
+                    print getattr(getattr(self, name), 'log').encode('utf-8')
 
         else:
             raise shared.CustomError(self.__class__.__name__ + ' compute: moonphase is 2. why are you here?')

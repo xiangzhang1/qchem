@@ -365,14 +365,31 @@ def moonphase_wrap(func):
 
 # @log_wrap
 
+class Logger(object):
+    def __init__(self):
+        self.terminal = sys.stdout
+        self.log = ''
+
+    def write(self, message):
+        self.terminal.write(message)
+        self.log.write(message)
+
+    def getvalue(self):
+        return self.log
+
 def log_wrap(func):
     @wraps(func)
     def wrapped(self, *args, **kwargs):
-        print '\n\n'
-        self.log += '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n'
+        # change stdout to dual-pipe
+        sys.stdout = Logger()
+        # pipe to both stdout and sys.stdout.log->self.log
+        print '\n'
+        print '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30
         result = func(self, *args, **kwargs)    # the important part
-        self.log += '*' * len('*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n\n') + '\n'   #matching length
-        print self.log
+        print '*' * len('*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n\n')
+        self.log = sys.stdout.getvalue()
+        # change stdout back
+        sys.stdout = sys.__stdout__
         return result
     return wrapped
 
