@@ -1555,11 +1555,11 @@ class Movie(object):
             xs, ys, zs = list(ccoor[:,0]), list(ccoor[:,1]), list(ccoor[:,2])
             ax.scatter([1,2,3], [1,2,3], [1,2,3], s=15)
             ax.set_axis_off()
-            plt.savefig(electron.path+'/%s.png' %(istep) )
-        # movie
-        os.chdir(electron.path)
-        os.system('avconv -f image2 -r 1 -i %d.png -vcodec mpeg4 -y movie.mp4')
-        print 'movie.mp4 generated at     %s    ' %(electron.path)
+        #     plt.savefig(electron.path+'/%s.png' %(istep) )
+        # # movie
+        # os.chdir(electron.path)
+        # os.system('avconv -f image2 -r 1 -i %d.png -vcodec mpeg4 -y movie.mp4')
+        # print 'movie.mp4 generated at     %s    ' %(electron.path)
 
     def __str__(self):
         return ''
