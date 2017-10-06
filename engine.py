@@ -874,12 +874,7 @@ class Vasp(object):
                     of_.write(self.subfile)
                 os.system('chmod +x subfile')
             if shared.DEBUG <= 0:
-                pid = os.fork()
-                if pid==0:
-                    os.system(self.wrapper)
-                    exit()
-                # with open(os.devnull, 'r+b', 0) as DEVNULL:
-                #     subprocess.Popen(['bash', './wrapper'],stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL, preexec_fn=os.setpgrp)
+                os.system('./wrapper')
                 print self.__class__.__name__ + ': computation started. local path   %s   . waiting for filesystem update. ' %self.path
             else:
                 if shared.DEBUG >= 1: print '-'*50
