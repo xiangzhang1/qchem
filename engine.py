@@ -1600,7 +1600,7 @@ class Movie(object):
 
         # Creating fifty line objects.
         # NOTE: Can't pass empty arrays into 3d version of plot()
-        lines = [ax.plot(dat[0:1, 0], dat[0:1, 1], dat[0:2, 2])[0] for dat in data]
+        lines = [ax.plot(dat[0:1, 0], dat[0:1, 1], dat[0:1, 2])[0] for dat in data]
 
         # Setting the axes properties
         ax.set_xlim3d([0.0, 1.0])
