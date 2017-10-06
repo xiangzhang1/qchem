@@ -1527,6 +1527,7 @@ class Movie(object):
     def __init__(self, electron):
 
         # parse vasprun.xml
+        os.mkdir(electron.path)
         os.chdir(electron.prev.path)
         tree = ET.parse('vasprun.xml')
         root = tree.getroot()
