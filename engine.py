@@ -1530,86 +1530,82 @@ class Movie(object):
 
     def __init__(self, electron):
 
-        # # parse vasprun.xml
-        # os.mkdir(electron.path)
-        # os.chdir(electron.prev.path)
-        # tree = ET.parse('vasprun.xml')
-        # root = tree.getroot()
-        # # each step
-        # for istep, ionicstep in enumerate(root.findall('calculation')):
-        #     structure = ionicstep.find('structure')
-        #     # base
-        #     base = []
-        #     basis = structure.find('crystal').find("varray[@name='basis']")
-        #     for a in basis.findall('v'):
-        #         base.append(a.text.split())
-        #     base = np.float_(base)
-        #     # fcoor
-        #     fcoor = []
-        #     positions = structure.find("varray[@name='positions']")
-        #     for x in positions.findall('v'):
-        #         fcoor.append(x.text.split())
-        #     fcoor = np.float_(fcoor)
-        #     # ccoor
-        #     ccoor = np.dot(fcoor, base)
-        #     # draw movie frame
-        #     fig = plt.figure()
-        #     ax = fig.add_subplot(111, projection='3d')
-        #     xs, ys, zs = list(ccoor[:,0]), list(ccoor[:,1]), list(ccoor[:,2])
-        #     ax.scatter(xs, ys, zs, s=15)
-        #     ax.set_axis_off()
-        #     plt.savefig(electron.path+'/%s.png' %(istep) )
-        # # movie
-        # os.chdir(electron.path)
-        # os.system('avconv -f image2 -r 1 -i %d.png -vcodec mpeg4 -y movie.mp4')
-        # print 'movie.mp4 generated at     %s    ' %(electron.path)
+        # parse vasprun.xml and establish a 'data' nparray, to be used for movie-making
+        os.chdir(electron.prev.path)
+        tree = ET.parse('vasprun.xml')
+        root = tree.getroot()
+        data = np.zeros(( electron.prev.cell.natoms, 3, len(root.findall('calculation')) ))
+        # each step
+        for idx_step, ionicstep in enumerate(root.findall('calculation')):
+            structure = ionicstep.find('structure')
+            # base
+            base = []
+            basis = structure.find('crystal').find("varray[@name='basis']")
+            for a in basis.findall('v'):
+                base.append(a.text.split())
+            base = np.float_(base)
+            # fcoor
+            fcoor = []
+            positions = structure.find("varray[@name='positions']")
+            for x in positions.findall('v'):
+                fcoor.append(x.text.split())
+            fcoor = np.float_(fcoor)
+            # ccoor
+            ccoor = np.dot(fcoor, base)
+            for idx_traj, c in enumerate(fcoor):
+                data[idx_traj, :, idx_step] = c[:]
 
 
-        def Gen_RandLine(length, dims=2):
-            """
-            Create a line using a random walk algorithm
-
-            length is the number of points for the line.
-            dims is the number of dimensions the line has.
-            """
-            lineData = np.empty((length, dims))
-            lineData[0, :] = np.random.rand(dims)
-            for index in range(1, length):
-                # scaling the random numbers by 0.1 so
-                # movement is small compared to position.
-                # subtraction by 0.5 is to change the range to [-0.5, 0.5]
-                # to allow a line to move backwards.
-                step = ((np.random.rand(dims) - 0.5) * 0.1)
-                lineData[index, :] = lineData[index - 1, :] + step
-
-            return lineData
+        """
+        Simple 3D animation. https://matplotlib.org/examples/animation/simple_3danim.html
+        Data structure of data is data [idx_traj] [idx_dim] [idx_step]
+        """
+        # def Gen_RandLine(length, dims=2):
+        #     """
+        #     Create a line using a random walk algorithm
+        #
+        #     length is the number of points for the line.
+        #     dims is the number of dimensions the line has.
+        #     """
+        #     lineData = np.empty((dims, length))
+        #     lineData[:, 0] = np.random.rand(dims)
+        #     for index in range(1, length):
+        #         # scaling the random numbers by 0.1 so
+        #         # movement is small compared to position.
+        #         # subtraction by 0.5 is to change the range to [-0.5, 0.5]
+        #         # to allow a line to move backwards.
+        #         step = ((np.random.rand(dims) - 0.5) * 0.1)
+        #         lineData[:, index] = lineData[:, index - 1] + step
+        #
+        #     return lineData
 
         def update_lines(num, dataLines, lines):
             for line, data in zip(lines, dataLines):
                 # NOTE: there is no .set_data() for 3 dim data...
-                line.set_data(data[:num, 0:2].T)
-                line.set_3d_properties(data[:num, 2].T)
+                line.set_data(data[0:2, :num])
+                line.set_3d_properties(data[2, :num])
             return lines
 
         # Attaching 3D axis to the figure
         fig = plt.figure()
         ax = p3.Axes3D(fig)
 
-        # Fifty lines of random 3-D lines
-        data = [Gen_RandLine(25, 3) for index in range(50)]
+        # Fifty lines of random 3-D line
+        # Modified: data is generated before
+        # data = [Gen_RandLine(25, 3) for index in range(50)]
 
         # Creating fifty line objects.
         # NOTE: Can't pass empty arrays into 3d version of plot()
-        lines = [ax.plot(dat[0:1, 0], dat[0:1, 1], dat[0:1, 2])[0] for dat in data]
+        lines = [ax.plot(dat[0, 0:1], dat[1, 0:1], dat[2, 0:1])[0] for dat in data]
 
         # Setting the axes properties
-        ax.set_xlim3d([0.0, 1.0])
+        # ax.set_xlim3d([0.0, 1.0])
         ax.set_xlabel('X')
 
-        ax.set_ylim3d([0.0, 1.0])
+        # ax.set_ylim3d([0.0, 1.0])
         ax.set_ylabel('Y')
 
-        ax.set_zlim3d([0.0, 1.0])
+        # ax.set_zlim3d([0.0, 1.0])
         ax.set_zlabel('Z')
 
         ax.set_title('3D Test')
@@ -1619,6 +1615,7 @@ class Movie(object):
                                            interval=50, blit=False)
 
         plt.show()
+
 
     def __str__(self):
         return ''
