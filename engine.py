@@ -1553,14 +1553,9 @@ class Movie(object):
             fig = plt.figure()
             ax = fig.add_subplot(111, projection='3d')
             xs, ys, zs = list(ccoor[:,0]), list(ccoor[:,1]), list(ccoor[:,2])
-            pprint(xs)
-            print 0
             ax.scatter(xs, ys, zs, s=15)
-            print 1
             ax.set_axis_off()
-            print 2
             plt.savefig(electron.path+'/%s.png' %(istep) )
-            print 3
         # movie
         os.chdir(electron.path)
         os.system('avconv -f image2 -r 1 -i %%d.png -vcodec mpeg4 -y movie.mp4')
