@@ -413,11 +413,11 @@ def setinterval_compute_node():
     def setinterval_compute_node_base(j=request.get_json(force=True)):
         cur = j['cur'] + '.' + j['name']
         print 'setinterval job, computing {%s}' %(cur)
-        engine.Map().lookup(cur).compute()
+        # engine.Map().lookup(cur).compute()
 
     scheduler.add_job(
         func=setinterval_compute_node_base,
-        trigger=IntervalTrigger(seconds=60),
+        trigger=IntervalTrigger(seconds=5),
         id='setinterval_compute_job',
         name='Compute node every 0.5 h',
         replace_existing=True)
