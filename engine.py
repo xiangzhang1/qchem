@@ -1532,8 +1532,7 @@ class Movie(object):
         tree = ET.parse('vasprun.xml')
         root = tree.getroot()
         # each step
-        istep = 0
-        for ionicstep in root.findall('calculation'):
+        for istep, ionicstep in enumerate(root.findall('calculation')):
             structure = ionicstep.find('structure')
             # base
             base = []
