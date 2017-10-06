@@ -876,7 +876,7 @@ class Vasp(object):
             if shared.DEBUG <= 0:
                 pid = os.fork()
                 if pid==0:
-                    os.system('./wrapper')
+                    os.system(self.wrapper)
                     exit()
                 # with open(os.devnull, 'r+b', 0) as DEVNULL:
                 #     subprocess.Popen(['bash', './wrapper'],stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL, preexec_fn=os.setpgrp)
