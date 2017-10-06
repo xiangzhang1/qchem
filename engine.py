@@ -1572,7 +1572,7 @@ class Movie(object):
             length is the number of points for the line.
             dims is the number of dimensions the line has.
             """
-            lineData = np.empty((length, dim))
+            lineData = np.empty((length, dims))
             lineData[0, :] = np.random.rand(dims)
             for index in range(1, length):
                 # scaling the random numbers by 0.1 so
