@@ -1552,10 +1552,15 @@ class Movie(object):
             # draw movie frame
             fig = plt.figure()
             ax = fig.add_subplot(111, projection='3d')
-            xs, ys, zs = ccoor[:,0], ccoor[:,1], ccoor[:,2]
+            xs, ys, zs = list(ccoor[:,0]), list(ccoor[:,1]), list(ccoor[:,2])
+            pprint(xs)
+            print 0
             ax.scatter(xs, ys, zs, s=15)
+            print 1
             ax.set_axis_off()
+            print 2
             plt.savefig(electron.path+'/%s_%s.png' %(istep, electron.path.split('/')[-1]) )
+            print 3
         # movie
         os.system('ffmpeg -f image2 -r 1 -i %s_%%d.png -vcodec mpeg4 -y %s_movie.mp4' %(electron.path.split('/')[-1], electron.path.split('/')[-1]) )
         print 'movie.mp4 generated at     %s    ' %(electron.path)
