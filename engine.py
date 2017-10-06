@@ -1520,7 +1520,6 @@ class Compare(object):
             self.log += compare_cell_bijective(eoc, boc)
 
             # are they the same cell?
-
             for ZERO in [0.01, 0.05, 0.1, 0.3]:
                 self.log += compare_cell(eoc, boc, ZERO=ZERO)
 
@@ -1531,6 +1530,7 @@ class Movie(object):
     def __init__(self, electron):
 
         # parse vasprun.xml and establish a 'data' nparray, to be used for movie-making
+        self.log += "parsing vasprun.xml for trajectory...\n"
         os.chdir(electron.prev.path)
         tree = ET.parse('vasprun.xml')
         root = tree.getroot()
@@ -1560,6 +1560,7 @@ class Movie(object):
         Simple 3D animation. https://matplotlib.org/examples/animation/simple_3danim.html
         Data structure of data is data [idx_traj] [idx_dim] [idx_step]
         """
+        self.log += "creating movie from trajectory...\n"
         # def Gen_RandLine(length, dims=2):
         #     """
         #     Create a line using a random walk algorithm
@@ -1618,7 +1619,7 @@ class Movie(object):
 
 
     def __str__(self):
-        return ''
+        return getattr(self,'log',None)
 
 
 
@@ -1673,7 +1674,7 @@ class Electron(object):
                 self.movie = Movie(self)
 
             self.log = ''
-            for name in ['cell', 'grepen', 'dos', 'bands','charge', 'errors', 'compare']:
+            for name in ['cell', 'grepen', 'dos', 'bands','charge', 'errors', 'compare', 'movie']:  # you've got to change this every time.
                 if getattr(self, name, None) and getattr(getattr(self, name),'log', None):
                     self.log += getattr(getattr(self, name), 'log').encode('utf-8')
 

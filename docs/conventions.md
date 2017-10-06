@@ -18,6 +18,9 @@ np.float32 for all numeric arrays, because np.float_ may convert array to number
 allow top-down inheritance.
 allow but not recommend data duplication.
 
+no duplicate refs. rlookup must always hold.
+1 solid link, 1 virtual link. prev must always hold.
+
 
 Convention
 ----------
