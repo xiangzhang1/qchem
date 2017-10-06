@@ -1534,6 +1534,7 @@ class Movie(object):
         # each step
         istep = 0
         for ionicstep in root.findall('calculation'):
+            print 'loopstart,',
             structure = ionicstep.find('structure')
             # base
             base = []
@@ -1550,16 +1551,23 @@ class Movie(object):
             # ccoor
             ccoor = np.dot(fcoor, base)
             # draw movie frame
+            print 'loop1,',
             fig = plt.figure()
+            print 'loop2,',
             ax = fig.add_subplot(111, projection='3d')
+            print 'loop3,',
             xs, ys, zs = list(ccoor[:,0]), list(ccoor[:,1]), list(ccoor[:,2])
+            print 'loop4,',
             ax.scatter([1,2,3], [1,2,3], [1,2,3], s=15)
+            print 'loop5,',
             ax.set_axis_off()
-        #     plt.savefig(electron.path+'/%s.png' %(istep) )
-        # # movie
-        # os.chdir(electron.path)
-        # os.system('avconv -f image2 -r 1 -i %d.png -vcodec mpeg4 -y movie.mp4')
-        # print 'movie.mp4 generated at     %s    ' %(electron.path)
+            print 'loop6,',
+            plt.savefig(electron.path+'/%s.png' %(istep) )
+            print 'loopend,'
+        # movie
+        os.chdir(electron.path)
+        os.system('avconv -f image2 -r 1 -i %d.png -vcodec mpeg4 -y movie.mp4')
+        print 'movie.mp4 generated at     %s    ' %(electron.path)
 
     def __str__(self):
         return ''
