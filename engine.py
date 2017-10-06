@@ -1554,7 +1554,7 @@ class Movie(object):
             xs, ys, zs = ccoor[:,0], ccoor[:,1], ccoor[:,2]
             ax.scatter(xs, ys, zs, s=15)
             ax.set_axis_off()
-            plt.savefig(electron.path+'/%s_%i.png' %(istep, electron.path.split('/')[-1]) )
+            plt.savefig(electron.path+'/%s_%s.png' %(istep, electron.path.split('/')[-1]) )
         # movie
         os.system('ffmpeg -f image2 -r 1 -i %s_%%d.png -vcodec mpeg4 -y %s_movie.mp4' %(electron.path.split('/')[-1], electron.path.split('/')[-1]) )
         print 'movie.mp4 generated at     %s    ' %(electron.path)
