@@ -38,15 +38,18 @@ from shared import ELEMENTS
 
 
 # logging
-if shared.DEBUG <= 0:
-    import logging
-    log = logging.getLogger('werkzeug')
-    log.setLevel(logging.ERROR)
+# if shared.DEBUG <= 0:
+#     import logging
+#     log = logging.getLogger('werkzeug')
+#     log.setLevel(logging.ERROR)
 # logging.basicConfig(filename='error.log',level=logging.DEBUG)
 # class NoParsingFilter(logging.Filter):
 #    def filter(self, record):
 #        return not '/make_connection' in record.getMessage()
 # log.addFilter(NoParsingFilter())
+# not quite sure what I should do...
+import logging
+logging.basicConfig()
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
@@ -419,7 +422,7 @@ def setinterval_compute_node():
 
     scheduler.add_job(
         func=setinterval_compute_node_base,
-        trigger=IntervalTrigger(minutes=1),
+        trigger=IntervalTrigger(minutes=10),
         id='setinterval_compute_job',
         name='setinterval compute job',
         replace_existing=True)
