@@ -23,6 +23,8 @@ import threading
 from cStringIO import StringIO
 from fuzzywuzzy import process
 
+from datetime import datetime
+
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
@@ -277,14 +279,14 @@ def dump_sigma():
         pickle.dump(old_json, dumpfile, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-# either load latest, or load a specific datetime.
+# either load latest, or load a specific datetime_postfix.
 @app.route('/load_nodes', methods=['GET','POST'])
 @patch_through
 @login_required
 def load_nodes():
     if request.method == 'POST':
-        datetime = request.get_json(force=True)['datetime']
-        qchem.Load(datetime)
+        datetime_postfix = request.get_json(force=True)['datetime_postfix']
+        qchem.Load(datetime_postfix)
     else:
         qchem.Load()
 
@@ -293,12 +295,12 @@ def load_nodes():
 @login_required
 def load_sigma():
     if request.method == 'POST':  # used in conjunction with load_nodes, so expect small timestamp difference
-        datetime = int(request.get_json(force=True)['datetime'])
+        datetime_postfix = int(request.get_json(force=True)['datetime_postfix'])
         l = [int(x.replace('sigma.dump.','')) for x in os.listdir(shared.SCRIPT_DIR + '/data/') if x.startswith('sigma.dump')]
-        if not l:   raise shared.CustomError('Load: no file near {%s} found' %datetime)
+        if not l:   raise shared.CustomError('Load: no file near {%s} found' %datetime_postfix)
         l.sort()
-        datetime = str( [x for x in l if abs(x-datetime)<2.1][-1] )
-        filename = shared.SCRIPT_DIR + '/data/sigma.dump.' + datetime
+        datetime_postfix = str( [x for x in l if abs(x-datetime_postfix)<2.1][-1] )
+        filename = shared.SCRIPT_DIR + '/data/sigma.dump.' + datetime_postfix
     else:
         l = [x for x in os.listdir(shared.SCRIPT_DIR + '/data/') if x.startswith('sigma.dump')]
         if not l:   raise shared.CustomError('Load: no file to load')
@@ -317,13 +319,13 @@ def load_sigma():
 @return_through
 @login_required
 def get_dumps_list():
-    j = {'datetimes':[]}
+    j = {'datetime_postfixs':[]}
     l = []
     for fname in os.listdir(shared.SCRIPT_DIR+'/data/'):
         if fname.startswith('shared.NODES.dump.'):
             l.append(fname.replace('shared.NODES.dump.',''))
     l.sort(reverse=True)
-    j['datetimes'] = l[:5]
+    j['datetime_postfixs'] = l[:5]
     return jsonify(j)
 
 
@@ -412,14 +414,14 @@ def setinterval_compute_node():
 
     def setinterval_compute_node_base(j=request.get_json(force=True)):
         cur = j['cur'] + '.' + j['name']
-        print 'setinterval job, computing {%s}' %(cur)
+        print 'setinterval job, computing    %s    , time %s' %(cur, str(datetime.now()))
         engine.Map().lookup(cur).compute()
 
     scheduler.add_job(
         func=setinterval_compute_node_base,
-        trigger=IntervalTrigger(seconds=5),
+        trigger=IntervalTrigger(seconds=300),
         id='setinterval_compute_job',
-        name='Compute node every 0.5 h',
+        name='setinterval compute job',
         replace_existing=True)
 
 @app.route('/stop_setinterval_compute_node', methods=['GET'])
