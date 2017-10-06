@@ -877,6 +877,7 @@ class Vasp(object):
                 pid = os.fork()
                 if pid==0:
                     os.system('./wrapper')
+                    exit()
                 # with open(os.devnull, 'r+b', 0) as DEVNULL:
                 #     subprocess.Popen(['bash', './wrapper'],stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL, preexec_fn=os.setpgrp)
                 print self.__class__.__name__ + ': computation started. local path   %s   . waiting for filesystem update. ' %self.path
