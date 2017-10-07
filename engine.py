@@ -1563,8 +1563,12 @@ class Compare(Dummy):
 
             print '-' * 130
 
-            eoc = enode.vasp.optimized_cell if self.gen.parse_if('etype=ocell') else enode.cell
-            boc = bnode.vasp.optimized_cell if self.gen.parse_if('btype=ocell') else bnode.cell
+            if not bnode and self.gen.parse_if('etype=ocell & btype=cell'):     # single-node case
+                eoc = enode.ocell
+                boc = enode.cell
+            else:
+                eoc = enode.vasp.optimized_cell if self.gen.parse_if('etype=ocell') else enode.cell
+                boc = bnode.vasp.optimized_cell if self.gen.parse_if('btype=ocell') else bnode.cell
 
             if not np.array_equal(eoc.stoichiometry, boc.stoichiometry):
                 raise shared.CustomError(self.__class__.__name__ + '.compute: cell stoichiometry are not the same, cannot compute')
