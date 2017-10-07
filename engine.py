@@ -563,8 +563,8 @@ class Map(object):
         elif prev2:
             prev2s = set()
             parent = Map().rlookup(node_list=list(primary), parent=True)
-            for n in parent.map._dict:
-                if parent.map._dict[n] and all([x in parent.map._dict[n] for x in primary]):
+            for n in parent.map._dict2:
+                if parent.map._dict2[n] and all([x in parent.map._dict2[n] for x in primary]):
                     prev2s.add(n)
             result = prev2s
         else:
