@@ -714,7 +714,7 @@ class Vasp(object):
         if shared.DEBUG>=2:    print 'calling %s(%s).compute' %(self.__class__.__name__, getattr(self,'path',''))
         #;
 
-        prev = Map().rlookup(attr_dict={'vasp':self, prev=True})
+        prev = Map().rlookup(attr_dict={'vasp':self}, prev=True)
 
         if not getattr(self, 'wrapper', None):
             if os.path.exists(self.path):
