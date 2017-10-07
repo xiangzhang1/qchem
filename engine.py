@@ -1507,7 +1507,7 @@ class Compare(Dummy):
 
         enode = Map().rlookup(attr_dict={'compare':self}, prev=True)
         bnode = Map().rlookup(attr_dict={'compare':self}, prev2=True)
-        print 'compare experimental node {%s} against backdrop node {%s}' %(enode.name, bnode.name)
+        print 'compare experimental node {%s} against backdrop node {%s}' %(enode.name if enode else None, bnode.name if bnode else None)
 
         if self.gen.parse_if('etype=bands'):    # etype=btype=bands
 
