@@ -15,7 +15,7 @@ from functools import wraps
 import paramiko
 import time
 import traceback, sys, code
-from CStringIO import StringIO
+from StringIO import StringIO
 
 
 # INDEX
