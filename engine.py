@@ -252,7 +252,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
                 #;
                 for part in [p.strip() for p in line[1].split(',') ]:
                     try:
-                        if self.parse_if(line[0]) and self.parse_require(part, run=False) and line[2]!='optional':
+                        if self.parse_if(line[0]) and self.parse_require(part, run=False) and line[2 ]!='optional':
                             self.parse_require(part, run=True)
                         else:
                             self.require.append([line[0],part,line[2],line[3]])
@@ -748,7 +748,7 @@ class Vasp(object):
             if self.gen.parse_if('gpu'):   # vasp flavor
                 print self.__class__.__name__ + ': vasp_gpu'
                 flavor = 'gpu'
-            if self.gen.parse_if('spin=ncl'):
+            elif self.gen.parse_if('spin=ncl'):
                 flavor = 'ncl'
             elif self.gen.getkw('kpoints').split()[0] in 'GM' and all([int(x)==1 for x in self.gen.getkw('kpoints').split()[1:]]):
                 flavor = 'gam'
