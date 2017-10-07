@@ -252,13 +252,13 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
                 #;
                 for part in [p.strip() for p in line[1].split(',') ]:
                     try:
-                        if self.parse_if(line[0]) and self.parse_require(part,False):
-                            self.parse_require(part,True)
+                        if self.parse_if(line[0]) and self.parse_require(part, run=False) and line[2]!='optional':
+                            self.parse_require(part, run=True)
                         else:
                             self.require.append([line[0],part,line[2],line[3]])
                     except shared.DeferError:
                             self.require.append([line[0],part,line[2],line[3]])
-        ## round 2+: got a 'no' in first round
+        ## round 2+: got a 'no' or 'optional' in first round
         continue_flag = True
         while continue_flag:
             continue_flag = False
