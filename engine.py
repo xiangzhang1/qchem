@@ -1564,7 +1564,7 @@ class Compare(Dummy):
             print '-' * 130
 
             if not bnode and self.gen.parse_if('etype=ocell & btype=cell'):     # single-node case
-                eoc = enode.ocell
+                eoc = enode.vasp.optimized_cell
                 boc = enode.cell
             else:
                 eoc = enode.vasp.optimized_cell if self.gen.parse_if('etype=ocell') else enode.cell
