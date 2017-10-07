@@ -524,6 +524,7 @@ class Cell(object):
 
 class Map(object):
 
+    @shared.debug_wrap
     def rlookup(self, attr_dict={}, node_list=[], parent=False, prev=False, prev2=False):
         '''
         reverse lookup. find the node specified by attr_dict and is in node_list.
