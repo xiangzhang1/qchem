@@ -556,22 +556,22 @@ class Map(object):
             prevs = set()
             parent = Map().rlookup(node_list=list(primary), parent=True)
             for n in parent.map._dict:
-                if all( [x in parent.map._dict[n] for x in node_list] ):
+                if parent.map._dict[n] and all([x in parent.map._dict[n] for x in primary]):
                     prevs.add(n)
             result = prevs
         # prev2=True: find prev with type-2 link
         elif prev2:
-            prevs = set()
+            prev2s = set()
             parent = Map().rlookup(node_list=list(primary), parent=True)
-            for n in parent.map._dict2:
-                if all( [x in parent.map._dict2[n] for x in node_list] ):
-                    prevs.add(n)
-            result = prevs
+            for n in parent.map._dict:
+                if parent.map._dict[n] and all([x in parent.map._dict[n] for x in primary]):
+                    prev2s.add(n)
+            result = prev2s
         else:
             pass
         # post-process
         if len(result)>1:
-            raise shared.CustomError('RLookup: result is not unique. Criterion is: attr_dict:{%s} node_list:{%s}' %(attr_dict, [x.name for x in node_list]))
+            raise shared.CustomError('RLookup: result is not unique. Criterion is: attr_dict: %s, node_list: %s, parent=%s, prev=%s, prev2=%s' %(attr_dict, [x.name for x in node_list]), parent, prev, prev2)
         return next(iter(result)) if result else None
 
     def lookup(self, name):
