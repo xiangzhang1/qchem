@@ -548,13 +548,13 @@ class Map(object):
         if parent:
             parents = set()
             for n in l:
-                if getattr(n,'map',None) and all( [x in n.map for x in primary] ):
+                if getattr(n,'map',None) and all([x in n.map for x in primary]):
                     parents.add(n)
             result = parents
         # prev=True: find prev
         elif prev:
             prevs = set()
-            parent = Map().rlookup(node_list=[primary], parent=True)
+            parent = Map().rlookup(node_list=list(primary), parent=True)
             for n in parent.map._dict:
                 if all( [x in parent.map._dict[n] for x in node_list] ):
                     prevs.add(n)
@@ -562,7 +562,7 @@ class Map(object):
         # prev2=True: find prev with type-2 link
         elif prev2:
             prevs = set()
-            parent = Map().rlookup(node_list=[primary], parent=True)
+            parent = Map().rlookup(node_list=list(primary), parent=True)
             for n in parent.map._dict2:
                 if all( [x in parent.map._dict2[n] for x in node_list] ):
                     prevs.add(n)
