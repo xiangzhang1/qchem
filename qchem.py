@@ -121,7 +121,8 @@ class Node(object):
             if min_moonphase > 0 or max_moonphase<1:
                 return min_moonphase
             else:   # complex scenario. 1->0 counts as 1.
-                if [x for x in self.map if x.moonphase()==0 and (not self.map.prev(x) or self.map.prev(x).moonphase()==2) ]:
+                prev = engine.Map().rlookup(node_list=[x], prev=True)
+                if [x for x in self.map if x.moonphase()==0 and (not prev or prev.moonphase()==2) ]:
                     return 0
                 else:
                     return 1
@@ -148,7 +149,7 @@ class Node(object):
 
         if getattr(self, 'map', None):
             # next to calculate
-            l = [x for x in self.map if x.moonphase()==0 and (not self.map.prev(x) or self.map.prev(x).moonphase()==2) ]
+            l = [x for x in self.map if x.moonphase()==0 and not [n for n in self.map if n.moonphase()!=2 and x in self.map[n]]]
             #: consider the proposed name
             if not l:
                 raise shared.CustomError( self.__class__.__name__ + ': nothing to compute in parent node {%s]' %self.name )
@@ -157,14 +158,13 @@ class Node(object):
                 if not tmp_l:
                     raise shared.CustomError( self.__class__.__name__ + '.compute: cannot found proposed_name {%s} in map' %proposed_name)
                 n = tmp_l[0]
-            #;
             else:
+            #;
                 n = l[0]
             # important inherits
             for vname in vars(self):
                 if vname in shared.INHERITABLE_ATTR_LIST and not getattr(n, vname, None):
                     setattr(n,vname,getattr(self,vname))
-            n.prev = self.map.prev(n)
             n.compute()
 
         elif getattr(self, 'property', None):
