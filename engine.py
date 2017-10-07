@@ -743,14 +743,13 @@ class Vasp(object):
                 f.write(str(self.cell))
             for symbol in self.cell.stoichiometry.keys():
                 self.pot(symbol)
-            # setting variables
+            # setting variables for wrapper
             ncore_total = str(  int(self.gen.getkw('nnode')) * int(self.gen.getkw('ncore_node'))  )
-            if self.gen.parse_if('spin=ncl'):   # vasp flavor
-                flavor = 'ncl'
-            elif self.gen.getkw('nnode') == '0':
-                ncore_total = 1
-                flavor = 'gpu'
+            if self.gen.parse_if('gpu'):   # vasp flavor
                 print self.__class__.__name__ + ': vasp_gpu'
+                flavor = 'gpu'
+            if self.gen.parse_if('spin=ncl'):
+                flavor = 'ncl'
             elif self.gen.getkw('kpoints').split()[0] in 'GM' and all([int(x)==1 for x in self.gen.getkw('kpoints').split()[1:]]):
                 flavor = 'gam'
             else:
