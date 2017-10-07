@@ -209,5 +209,5 @@ class Node(object):
         if engine.Map().lookup('master') == self:
             return '/home/xzhang1/run/master'
         else:
-            parent_node = engine.Map().rlookup(node_list = [self], parent=True, unique=False)     # if none found, an error would have been raised
+            parent_node = engine.Map().rlookup(node_list = [self], parent=True)     # if none found, an error would have been raised
             return parent_node.default_path() + '/' + re.sub(r"\s+", '_', self.name)

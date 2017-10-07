@@ -515,117 +515,7 @@ class Cell(object):
 
 
 
-def compare_cell_bijective(eoc, boc):
-    import itertools
-    import numpy as np
-    report = ''
 
-    # bijective-representation difference (congruent testing), allowing rotation and translation
-    b = np.float32([ [i, j, np.linalg.norm(boc.ccoor[i]-boc.ccoor[j])] for i in range(boc.natoms) for j in range(boc.natoms) if i!=j ])
-    e = np.float32([ [i, j, np.linalg.norm(eoc.ccoor[i]-eoc.ccoor[j])] for i in range(eoc.natoms) for j in range(eoc.natoms) if i!=j ])
-    report += u'<fixed-order bijective-representation difference> (allowing translation and rotation) between self and backdrop is: \n'
-    idx_min = np.abs(b-e)[:,2].argmin()
-    report += u'    min difference: backdrop_pdist [%2d(%s)-%2d(%s)=%.3f] - electron_pdist [%2d(%s)-%2d(%s)=%.3f] = %f \u212B. \n' %(b[idx_min][0], boc.ccoor[int(b[idx_min][0])], b[idx_min][1], boc.ccoor[int(b[idx_min][1])], b[idx_min,2],
-                                                                                                                                               e[idx_min][0], eoc.ccoor[int(e[idx_min][0])], e[idx_min][1], eoc.ccoor[int(e[idx_min][1])], b[idx_min,2],
-                                                                                                                                               np.abs(b-e)[:,2].min())
-    report += u'    avg difference: %s \u212B. \n' %(abs(b-e)[:,2].mean())
-    idx_max = abs(b-e)[:,2].argmax()
-    report += u'    max difference: backdrop_pdist [%2d(%s)-%2d(%s)=%.3f] - electron_pdist [%2d(%s)-%2d(%s)=%.3f] = %f \u212B. \n' %(b[idx_max][0], boc.ccoor[int(b[idx_max][0])], b[idx_max][1], boc.ccoor[int(b[idx_max][1])], b[idx_max,2],
-                                                                                                                                   e[idx_max][0], eoc.ccoor[int(e[idx_max][0])], e[idx_max][1], eoc.ccoor[int(e[idx_max][1])], e[idx_max,2],
-                                                                                                                                   np.abs(b-e)[:,2].max())
-    report += '-' * 130 + '\n'
-
-    # bijective-representation difference (congruent testing), allowing physical phenomena relocation
-    b = b[ b[:,2].argsort() ]
-    e = e[ e[:,2].argsort() ]
-    report += u'<arbitrary-order bijective-representation difference> (allowing physical phenomena relocation) between self and backdrop is: \n'
-    idx_min = np.abs(b-e)[:,2].argmin()
-    report += u'    min difference: backdrop_pdist [%2d(%s)-%2d(%s)=%.3f] - electron_pdist [%2d(%s)-%2d(%s)=%.3f] = %f \u212B. \n' %(b[idx_min][0], boc.ccoor[int(b[idx_min][0])], b[idx_min][1], boc.ccoor[int(b[idx_min][1])], b[idx_min,2],
-                                                                                                                                               e[idx_min][0], eoc.ccoor[int(e[idx_min][0])], e[idx_min][1], eoc.ccoor[int(e[idx_min][1])], e[idx_min,2],
-                                                                                                                                               np.abs(b-e)[:,2].min())
-    report += u'    avg difference: %s \u212B. \n' %(abs(b-e)[:,2].mean())
-    bijective_representation_difference_allow_physical = abs(b-e)[:,2].mean()
-    idx_max = abs(b-e)[:,2].argmax()
-    report += u'    max difference: backdrop_pdist [%2d(%s)-%2d(%s)=%.3f] - electron_pdist [%2d(%s)-%2d(%s)=%.3f] = %f \u212B. \n' %(b[idx_max][0], boc.ccoor[int(b[idx_max][0])], b[idx_max][1], boc.ccoor[int(b[idx_max][1])], b[idx_max,2],
-                                                                                                                                   e[idx_max][0], eoc.ccoor[int(e[idx_max][0])], e[idx_max][1], eoc.ccoor[int(e[idx_max][1])], e[idx_max,2],
-                                                                                                                                   np.abs(b-e)[:,2].max())
-    report += '-' * 130 + '\n'
-
-    return report
-
-
-
-@shared.debug_wrap
-def compare_cell(eoc,boc, ZERO=0.02, rs=[10, 6.5, 6.5], is_verbose=False):    # ZERO: relative difference. rs: 子簇大小。
-    '''
-    eoc就是新的cell。
-    新的cell里面，原子根据自身的环境，感应到旧cell的相应位置，一个一个的亮了起来，形成一簇。
-        加入已有的簇，必须与已有簇的位置匹配，而不论出身。
-        当然，全新的簇就需要与未知簇的位置做无序匹配。
-    有子簇分裂出去，那就是第二个core。
-
-    （环境，要求局部化，免疫平移旋转，只能用pdist。）
-
-    "What you want probably does not exist on this earth. --hackhands."
-    '''
-    import itertools
-    import numpy as np
-    report=''
-    sreport=''
-
-    cores = []  #eoc|boc, idx_core_atom
-    remainder = [range(eoc.natoms),range(boc.natoms)]
-
-    for r in rs:    # 附录：考虑remainder里面分为多个派系的情况。做全排列太慢，只能进行局域性讨论。
-        if is_verbose:  print '-' * 65 + ' r = %s ' %r + '-' * 65 + '\n'
-        core = [[],[]]
-        is_remainder_edited = True
-        while is_remainder_edited and remainder[0] and remainder[1]:
-            is_remainder_edited = False
-            for idx_eoc in remainder[0]:        # 对照
-                boc_winners = []
-                for idx_boc in remainder[1]:
-                    # 比较已经对照出的core
-                    eoc_dist1 = eoc.cdist[idx_eoc,core[0]] if core[0] else [0]      ## 意外情况修复
-                    boc_dist1 = boc.cdist[idx_boc,core[1]] if core[1] else [0]
-                    # 比较未对照出的remainder，仅限r半径内
-                    eoc_dist2_adjidx = [idx_atom for idx_atom in remainder[0] if 0<eoc.cdist[idx_atom,idx_eoc]<r]
-                    eoc_dist2 = eoc.cdist[idx_eoc,eoc_dist2_adjidx]
-                    boc_dist2_adjidx = [idx_atom for idx_atom in remainder[1] if 0<boc.cdist[idx_atom,idx_boc]<r]
-                    boc_dist2 = boc.cdist[idx_boc,boc_dist2_adjidx]
-                    l = min(len(eoc_dist2), len(boc_dist2))
-                    # 选举最match的
-                    ## 意外情况：core是空的（不空修复），remainder在r半径内是空的（delta2最终修复），分母有0（允许np.infty），分子分母同时为0（perfect match赋0）
-                    with np.errstate(divide='ignore', invalid='ignore'):
-                        delta1 = np.divide(np.float32(eoc_dist1)-np.float32(boc_dist1), np.float32(boc_dist1))
-                        delta1[np.isnan(delta1)] = 0    ## 意外情况修复
-                        delta1 = np.max(np.abs(delta1))
-                        delta2 = np.divide(np.float32(eoc_dist2[:l])-np.float32(boc_dist2[:l]), np.float32(boc_dist2[:l]))
-                        delta2[np.isnan(delta2)] = 0
-                        delta2 = np.max(np.abs(delta2)) if delta2.size else 0 if core[0] else np.infty
-                        boc_winners.append([idx_eoc, idx_boc, delta1, delta2])
-                boc_winners = np.float32(boc_winners)
-                if np.all(boc_winners[:,2] > ZERO):
-                    if is_verbose:  print 'idx_eoc = %s: core match not found.' %idx_eoc
-                elif np.all(boc_winners[:,3] > ZERO):
-                    if is_verbose:  print 'idx_eoc = %s: remainder match not found.' %idx_eoc
-                else:
-                    idx_winnerslist = np.argmin(boc_winners[:,2] + boc_winners[:,3])
-                    idx_eoc_winner = boc_winners[idx_winnerslist][0]
-                    idx_boc_winner = boc_winners[idx_winnerslist][1]
-                    core[0].append(int(idx_eoc_winner))
-                    core[1].append(int(idx_boc_winner))
-                    remainder[0].remove(int(idx_eoc_winner))
-                    remainder[1].remove(int(idx_boc_winner))
-                    is_remainder_edited = True
-                    break
-        cores.append(core)
-
-    report += '-' * 60 + ' max allowed relative difference = %s '%ZERO + '-' * 60 + '\n'
-    report += 'cores: %s\n' %(cores)
-    report += '-' * 60 + '\n'
-    report += 'remainder: %s\n' %(remainder)
-    return report
 
 
 
@@ -634,30 +524,54 @@ def compare_cell(eoc,boc, ZERO=0.02, rs=[10, 6.5, 6.5], is_verbose=False):    # 
 
 class Map(object):
 
-    def rlookup(self, attr_dict={}, node_list=[], parent=False, unique=True):
-        ''' reverse lookup. find the node specified by attr_dict and is in node_list. if parent=True, find their common parent. '''
+    def rlookup(self, attr_dict={}, node_list=[], parent=False, prev=False, prev2=False):
+        '''
+        reverse lookup. find the node specified by attr_dict and is in node_list.
+        if parent=True or prev=True or prev2=True, find their respective relatives.
+        end result is expected to be unique.
+        '''
         l = self.lookup('master').map.traverse()
         l.add(self.lookup('master'))
-        # find the node specifiied by attr_dict OR node_list
-        children = set()
+        # basic checks
+        if not attr_dict and not node_list:
+            raise shared.CustomError(self.__class__.__name__ + '.rlookup: empty attr_dict and node_list provided')
+        # find the node specified by attr_dict OR node_list
+        primary = set()
         for n in l:
             if node_list and n in node_list:
-                children.add(n)
+                primary.add(n)
             if attr_dict and all( [getattr(n,key,None)==attr_dict[key] for key in attr_dict] ):
-                children.add(n)
-        # find their common parents
-        parents = set()
-        for n in l:
-            if getattr(n,'map',None) and all( [x in n.map for x in children] ):
-                parents.add(n)
+                primary.add(n)
+        result = primary
+        # parent=True: find common parent
+        if parent:
+            parents = set()
+            for n in l:
+                if getattr(n,'map',None) and all( [x in n.map for x in primary] ):
+                    parents.add(n)
+            result = parents
+        # prev=True: find prev
+        elif prev:
+            prevs = set()
+            parent = Map().rlookup(node_list=[primary], parent=True)
+            for n in parent.map._dict:
+                if all( [x in parent.map._dict[n] for x in node_list] ):
+                    prevs.add(n)
+            result = prevs
+        # prev2=True: find prev with type-2 link
+        elif prev2:
+            prevs = set()
+            parent = Map().rlookup(node_list=[primary], parent=True)
+            for n in parent.map._dict2:
+                if all( [x in parent.map._dict2[n] for x in node_list] ):
+                    prevs.add(n)
+            result = prevs
+        else:
+            pass
         # post-process
-        result = parents if parent else children
-        if unique and len(result)>1:
+        if len(result)>1:
             raise shared.CustomError('RLookup: result is not unique. Criterion is: attr_dict:{%s} node_list:{%s}' %(attr_dict, [x.name for x in node_list]))
-        if len(result) == 0:
-            raise shared.CustomError('RLookup: result not found. Criterion is: attr_dict:{%s} node_list:{%s}' %(attr_dict, [x.name for x in node_list]))
-        return next(iter(result))   # if unique else result     # not good, always return one result is good.
-
+        return next(iter(result)) if result else None
 
     def lookup(self, name):
         if name == 'master':
@@ -671,15 +585,6 @@ class Map(object):
             return self.lookup('.'.join(name.split('.')[:-1])).map.lookup(name.split('.')[-1])
         else:
             raise LookupError(self.__class__.__name__ + ' lookup: Node %s not found' %name)
-
-    def prev(self, node):
-        l = [x for x in self._dict if node in self._dict[x]]
-        if len(l) > 1:
-            raise shared.CustomError(self.__class__.__name__ + ' prev: %s has more than 1 prev node. (wtf?)' %name)
-        elif len(l) == 1:
-            return l[0]
-        else:
-            return None
 
     def traverse(self):
         result = set([x for x in self])
@@ -800,7 +705,6 @@ class Vasp(object):
         self.gen = node.gen
         self.cell = node.cell
         self.path = node.path
-        self.prev = node.prev
         self.name = node.name
 
 
@@ -810,23 +714,25 @@ class Vasp(object):
         if shared.DEBUG>=2:    print 'calling %s(%s).compute' %(self.__class__.__name__, getattr(self,'path',''))
         #;
 
+        prev = Map().rlookup(attr_dict={'vasp':self, prev=True})
+
         if not getattr(self, 'wrapper', None):
             if os.path.exists(self.path):
                 raise shared.CustomError( self.__class__.__name__ + ' __init__: path {%s} already exists. enforcing strictly, you need to remove it manually.' %self.path )
             os.makedirs(self.path)
             os.chdir(self.path)
             if self.gen.parse_if('icharg=1|icharg=11'):
-                shutil.copyfile(self.prev.path+'/CHG', self.path+'/CHG')
-                shutil.copyfile(self.prev.path+'/CHGCAR', self.path+'/CHGCAR')
+                shutil.copyfile(prev.path+'/CHG', self.path+'/CHG')
+                shutil.copyfile(prev.path+'/CHGCAR', self.path+'/CHGCAR')
             if self.gen.parse_if('icharg=0|icharg=10|istart=1|istart=2'):
-                shutil.copyfile(self.prev.path+'/WAVECAR', self.path+'/WAVECAR')
-            if getattr(self, 'prev', None) and getattr(self.prev, 'vasp', None) and getattr(self.prev.vasp, 'optimized_cell', None):
-                setattr(self, 'cell', self.prev.vasp.optimized_cell)
-                setattr(Map().rlookup(attr_dict={'vasp':self}, unique=True, parent=False), 'cell', self.prev.vasp.optimized_cell)   # burden of data duplication
+                shutil.copyfile(prev.path+'/WAVECAR', self.path+'/WAVECAR')
+            if getattr(self, 'prev', None) and getattr(prev, 'vasp', None) and getattr(prev.vasp, 'optimized_cell', None):
+                setattr(self, 'cell', prev.vasp.optimized_cell)
+                setattr(Map().rlookup(attr_dict={'vasp':self}, parent=False), 'cell', prev.vasp.optimized_cell)   # burden of data duplication
                 print self.__class__.__name__ + '.compute: prev.vasp.optimized_cell overwrites self.cell.'
             # ALWAYS INHERIT CELL IF POSSIBLE. NOT SURE IF THIS IS GOOD.
-            elif getattr(self, 'prev', None) and getattr(self.prev, 'cell', None):
-                setattr(self, 'cell', self.prev.cell)
+            elif getattr(self, 'prev', None) and getattr(prev, 'cell', None):
+                setattr(self, 'cell', prev.cell)
                 print self.__class__.__name__ + '.compute: prev.vasp.cell overwrites self.cell.'
             # write incar etc. Relies on inheritance.
             os.chdir(self.path)
@@ -903,7 +809,7 @@ class Vasp(object):
             with open(filename,'r') as if_:
                 self.log = if_.read()
             # write parent cell if opt
-            parent_node = Map().rlookup(attr_dict={'vasp':self}, unique=True, parent=True)
+            parent_node = Map().rlookup(attr_dict={'vasp':self}, parent=True)
             if getattr(self, 'gen', None) and self.gen.parse_if('opt'):
                 with open('CONTCAR','r') as infile:
                     text = infile.read()
@@ -1020,35 +926,34 @@ class Vasp(object):
 
 #===========================================================================
 
+
 class Dummy(object):
 
     def __init__(self, node):
         self.path = node.path
-        os.mkdir(self.path)
+        self.gen = node.gen
 
     def compute(self):
-
+        os.mkdir(self.path)
+        prev = Map().rlookup(attr_dict={'dummy':self}, prev=True)
         if not os.path.isdir(self.path):
             os.mkdirs(self.path)
-        dcmp = dircmp(self.prev.path, self.path)
+        dcmp = dircmp(Map().rlookup('dummy',self).path, self.path)
         if dcmp.left_only or dcmp.right_only or dcmp.diff_files:
-            shutil.copytree(self.prev.path, self.path)
+            shutil.copytree(Map().rlookup('dummy',self).path, self.path)
 
     @shared.moonphase_wrap
     def moonphase(self):
-        if not os.path.isdir(self.path):
-            return 0
-        dcmp = dircmp(self.prev.path, self.path)
-        if dcmp.left_only or dcmp.right_only or dcmp.diff_files:
-            return 0
-        return 2
+        return 2 if getattr(self, 'log', None) else 0
+
+    def __str__(self):
+        return self.log if self.moonphase()==2 else 'moonphase is not 2, nothing here'
 
     def delete(self):
-        #: remove path
+        print 'removing folder {%s}' %self.path
         if os.path.isdir(self.path):
-            print 'removing self.path {%s}' %self.path
             shutil.rmtree(self.path)
-        #;
+
 
 #===========================================================================
 
@@ -1061,21 +966,23 @@ class Grepen(object):
     @shared.log_wrap
     def __init__(self, electron):
 
+        prev = Map().rlookup(attr_dict={'electron':electron}, prev=True)
+
         self.energy=float(os.popen('grep "energy without" OUTCAR | tail -1 | awk \'{print $5}\'').read())
         self.efermi=float(os.popen('grep "E-fermi" OUTCAR | tail -1 | awk \'{print $3}\'').read())
 
         self.nbands=int(os.popen('grep NBANDS OUTCAR | awk \'{print $15}\'').read())
         self.nedos=int(os.popen('grep NEDOS OUTCAR | awk \'{print $6}\'').read())
 
-        self.spin = electron.prev.gen.getkw('spin')
-        self.ismear = int(electron.prev.gen.getkw('ismear'))
-        self.sigma = 0 if self.ismear!=0 else float(electron.prev.gen.getkw('ismear'))
+        self.spin = prev.gen.getkw('spin')
+        self.ismear = int(prev.gen.getkw('ismear'))
+        self.sigma = 0 if self.ismear!=0 else float(prev.gen.getkw('ismear'))
 
         with open('DOSCAR','r') as doscar_file:
             self.is_doscar_usable = len(doscar_file.readlines()) > 7
 
         with open('KPOINTS','r') as kpoints_file:
-            kpoints = electron.prev.gen.getkw('kpoints').split()
+            kpoints = prev.gen.getkw('kpoints').split()
             self.is_kpoints_mesh = ( kpoints[0] in 'GM' and np.prod(np.float32(kpoints[1:]))>4 and len(kpoints_file.readlines())<7 )
 
         with open("EIGENVAL","r") as eigenval_file:
@@ -1429,210 +1336,13 @@ class Errors(object):
         print 'errors.py: in short, you should expect an error around %.4f eV in dirA.' %(self.error)
 
 
-class Compare(object):
 
-    @shared.debug_wrap
-    @shared.log_wrap
-    def __init__(self, electron):
-
-        backdrop = Map().lookup(electron.gen.getkw('backdrop'))
-        compare = electron.gen.getkw('compare').split()
-
-        print 'compare prev {%s} against backdrop {%s}' %(electron.prev.name, backdrop.name)
-
-        # compare=band
-        # 1. backdrop mesh, electron mesh
-        # 2. backdrop not mesh, electron not mesh, same kpts
-        # 3. backdrop mesh, electron not mesh
-
-        if 'bands' in compare:
-
-            backdrop = backdrop.electron
-
-            #: preliminary checks
-            print '-' * 130
-            if not backdrop.grepen.is_kpoints_mesh and electron.grepen.is_kpoints_mesh:
-                raise shared.CustomError(self.__class__.__name__ + '.compute: only these: i) both mesh ii) neither mesh iii) backdrop only mesh.')
-            if backdrop.bands.bands.shape[0] != electron.bands.bands.shape[0]:
-                raise shared.CustomError(self.__class__.__name__ + '.compute: electron and backdrop bands have incompatible NBANDS')
-            #;
-
-            print u'energy difference between self and backdrop is %s eV.\n' % ( abs(electron.grepen.energy - backdrop.grepen.energy) )
-
-            if backdrop.grepen.is_kpoints_mesh and electron.grepen.is_kpoints_mesh:
-
-                error_interpd = []
-                idx_spin = 0
-                print self.__class__.__name__ + ': comparing idx_spin=0 only.\n'    # faciliate comparison between ncl and fm
-
-                for idx_band, band in tqdm(enumerate(backdrop.bands.bands[idx_spin]), leave=False, desc='interpolating backdrop.bands for comparison'):
-                        error_interpd.append( np.average( abs( np.float32(electron.bands.bands[idx_spin][idx_band]) - np.float32([backdrop.bands.bands_interp()[idx_spin][idx_band](*kpt) for kpt in electron.bands.kpts]) ) ) )
-                        print 'in band %d, between self and backdrop, post-interpolation Cauchy eigenvalue difference is %.5f.\n' %(idx_band, error_interpd[-1])
-
-                print u'smearing should be larger than numerical energy error: sigma[%.4f] > post-interpolation \u03B4E[%.4f]' %(electron.grepen.sigma, np.average(error_interpd))
-
-            elif not backdrop.grepen.is_kpoints_mesh and not electron.grepen.is_kpoints_mesh:
-
-                #: preliminary checks
-                if not np.array_equal(backdrop.bands.kpts, backdrop.bands.kpts):
-                    raise shared.CustomError(self.__class__.__name__ + '.compute: compare neither-mesh cases require same kpoints')
-                #;
-                idx_spin = 0
-                if electron.grepen.nbands == backdrop.grepen.nbands:
-                    delta = np.std( abs(electron.bands.bands[idx_spin] - backdrop.bands.bands[idx_spin]).flatten() )
-                    print u'<eigenvalue difference std> between self and backdrop (removing offset) is %s eV.\n' %delta
-                elif abs(electron.grepen.nbands - backdrop.grepen.nbands) < backdrop.grepen.nbands / 5:     # arbitrary
-                    print u'electron.grepen.nbands %s and backdrop.grepen.nbands %s does not match. trying to guess...\n' %(electron.grepen.nbands, backdrop.grepen.nbands)
-                    nbands = min(electron.grepen.nbands, backdrop.grepen.nbands)
-                    delta = []
-                    for idx_start_electron in range(0, electron.grepen.nbands-nbands+1):
-                        for idx_start_backdrop in range(0, backdrop.grepen.nbands-nbands+1):
-                            delta.append(np.std(abs(electron.bands.bands[idx_spin, idx_start_electron:idx_start_electron + nbands, :] - backdrop.bands.bands[idx_spin, idx_start_backdrop:idx_start_backdrop + nbands, :])))
-                    print u'<eigenvalue difference std> between self and backdrop (removing offset, guessed) is %s eV.\n' %min(delta)
-
-            elif not electron.grepen.is_kpoints_mesh and backdrop.grepen.is_kpoints_mesh:
-
-                raise shared.CustomError(self.__class__.__name__ + 'WARNING: non-mesh vs mesh feature has not been implemented!')
-
-        # compare=optimized_cell
-
-        if 'optimized_cell' in compare:
-
-            print '-' * 130
-
-            eoc = electron_optimized_cell = electron.prev.vasp.optimized_cell
-            boc = backdrop_optimized_cell = backdrop.vasp.optimized_cell
-
-            #:check
-            if not np.array_equal(eoc.stoichiometry, boc.stoichiometry):
-                raise shared.CustomError(self.__class__.__name__ + '.compute: cell stoichiometry are not the same, cannot compute')
-            #;
-
-            # base
-            print u'<base difference> between self and backdrop is %s \u212B.' % ( np.average( abs(eoc.base - boc.base).flatten() ) )
-            print '-' * 130
-
-            # simple difference, not allowing translation or rotation
-            print u'<simple cartesian difference> (no translation or rotation allowed) between self and backdrop is  %s \u212B.' % ( np.abs(eoc.ccoor - boc.ccoor).mean() )
-            print '-' * 130
-
-            # unordered bijective differences
-            print compare_cell_bijective(eoc, boc)
-
-            # are they the same cell?
-            for ZERO in [0.01, 0.05, 0.1, 0.3]:
-                print compare_cell(eoc, boc, ZERO=ZERO)
-
-
-
-class Movie(object):
-
-    def __init__(self, electron):
-
-        # parse vasprun.xml and establish a 'data' nparray, to be used for movie-making
-        print "parsing vasprun.xml for trajectory...\n"
-        os.chdir(electron.prev.path)
-        tree = ET.parse('vasprun.xml')
-        root = tree.getroot()
-        data = np.zeros(( electron.prev.cell.natoms, 3, len(root.findall('calculation')) ))
-        # each step
-        for idx_step, ionicstep in enumerate(root.findall('calculation')):
-            structure = ionicstep.find('structure')
-            # base
-            base = []
-            basis = structure.find('crystal').find("varray[@name='basis']")
-            for a in basis.findall('v'):
-                base.append(a.text.split())
-            base = np.float_(base)
-            # fcoor
-            fcoor = []
-            positions = structure.find("varray[@name='positions']")
-            for x in positions.findall('v'):
-                fcoor.append(x.text.split())
-            fcoor = np.float_(fcoor)
-            # ccoor
-            ccoor = np.dot(fcoor, base)
-            for idx_traj, c in enumerate(fcoor):
-                data[idx_traj, :, idx_step] = c[:]
-
-
-        """
-        Simple 3D animation. https://matplotlib.org/examples/animation/simple_3danim.html
-        Data structure of data is data [idx_traj] [idx_dim] [idx_step]
-        """
-        print "creating movie from trajectory...\n"
-        # def Gen_RandLine(length, dims=2):
-        #     """
-        #     Create a line using a random walk algorithm
-        #
-        #     length is the number of points for the line.
-        #     dims is the number of dimensions the line has.
-        #     """
-        #     lineData = np.empty((dims, length))
-        #     lineData[:, 0] = np.random.rand(dims)
-        #     for index in range(1, length):
-        #         # scaling the random numbers by 0.1 so
-        #         # movement is small compared to position.
-        #         # subtraction by 0.5 is to change the range to [-0.5, 0.5]
-        #         # to allow a line to move backwards.
-        #         step = ((np.random.rand(dims) - 0.5) * 0.1)
-        #         lineData[:, index] = lineData[:, index - 1] + step
-        #
-        #     return lineData
-
-        def update_lines(num, dataLines, lines):
-            for line, data in zip(lines, dataLines):
-                # NOTE: there is no .set_data() for 3 dim data...
-                line.set_data(data[0:2, :num])
-                line.set_3d_properties(data[2, :num])
-            return lines
-
-        # Attaching 3D axis to the figure
-        fig = plt.figure()
-        ax = p3.Axes3D(fig)
-
-        # Fifty lines of random 3-D line
-        # Modified: data is generated before
-        # data = [Gen_RandLine(25, 3) for index in range(50)]
-
-        # Creating fifty line objects.
-        # NOTE: Can't pass empty arrays into 3d version of plot()
-        lines = [ax.plot(dat[0, 0:1], dat[1, 0:1], dat[2, 0:1])[0] for dat in data]
-
-        # Setting the axes properties
-        # ax.set_xlim3d([0.0, 1.0])
-        ax.set_xlabel('X')
-
-        # ax.set_ylim3d([0.0, 1.0])
-        ax.set_ylabel('Y')
-
-        # ax.set_zlim3d([0.0, 1.0])
-        ax.set_zlabel('Z')
-
-        ax.set_title('3D Test')
-
-        # Creating the Animation object
-        line_ani = animation.FuncAnimation(fig, update_lines, 25, fargs=(data, lines),
-                                           interval=50, blit=False)
-
-        plt.show()
-
-
-    def __str__(self):
-        return getattr(self,'log',None)
-
-
-
-class Electron(object):
+class Electron(Dummy):
     '''the big boss'''
 
-    def __init__(self, node):
-
-        self.gen = node.gen
-        self.path = node.path
-        self.prev = node.prev
-
     def compute(self):
+
+        prev = Map().rlookup(attr_dict={'electron':self}, prev=True)
 
         if not getattr(self, 'log', None):
             if os.path.isdir(self.path):
@@ -1640,14 +1350,8 @@ class Electron(object):
 
             if self.gen.parse_if('cell'):
 
-                #: copy prev.path to self.path
-                # print 'copying to prev.path to self.path...', ; sys.stdout.flush()
-                # subprocess.Popen(['rsync', '--exclude=WAVECAR', '-ah', '%s/' %(self.prev.path), '%s/' %(self.path)], stdout=sys.stdout, stderr=sys.stderr).wait()
-                # print '\r                                                 \r', ; sys.stdout.flush()
-                # os.chdir(self.path)
-                #;
                 print self.__class__.__name__ + '.compute: using previous path'
-                os.chdir(self.prev.path)
+                os.chdir(prev.path)
 
                 with open('POSCAR','r') as infile:
                     self.cell = Cell(infile.read())
@@ -1667,35 +1371,318 @@ class Electron(object):
             if self.gen.parse_if('errors'):
                 self.errors = Errors(self)
 
-            if self.gen.parse_if('compare !null'):
-                self.compare = Compare(self)
-
-            if self.gen.parse_if('movie'):
-                self.movie = Movie(self)
-
             self.log = ''
-            for name in ['cell', 'grepen', 'dos', 'bands','charge', 'errors', 'compare', 'movie']:  # you've got to change this every time.
+            for name in ['cell', 'grepen', 'dos', 'bands', 'charge', 'errors']:  # you've got to change this every time.
                 if getattr(self, name, None) and getattr(getattr(self, name),'log', None):
                     print getattr(getattr(self, name), 'log').encode('utf-8')
 
         else:
             raise shared.CustomError(self.__class__.__name__ + ' compute: moonphase is 2. why are you here?')
 
-    @shared.moonphase_wrap
-    def moonphase(self):
-        return 2 if getattr(self, 'log', None) else 0
 
-    def __str__(self):
-        #:return log
-        if getattr(self, 'log', None):
-            return self.log
-        else:
-            return 'moonphase is not 2, nothing here'
-        #;
 
-    def delete(self):
-        #:remove folder
-        print 'removing folder {%s}' %self.path
-        if os.path.isdir(self.path):
-            shutil.rmtree(self.path)
-        #;
+# =============
+
+# Compare
+
+def compare_cell_bijective(eoc, boc):
+    import itertools
+    import numpy as np
+    report = ''
+
+    # bijective-representation difference (congruent testing), allowing rotation and translation
+    b = np.float32([ [i, j, np.linalg.norm(boc.ccoor[i]-boc.ccoor[j])] for i in range(boc.natoms) for j in range(boc.natoms) if i!=j ])
+    e = np.float32([ [i, j, np.linalg.norm(eoc.ccoor[i]-eoc.ccoor[j])] for i in range(eoc.natoms) for j in range(eoc.natoms) if i!=j ])
+    report += u'<fixed-order bijective-representation difference> (allowing translation and rotation) between self and backdrop is: \n'
+    idx_min = np.abs(b-e)[:,2].argmin()
+    report += u'    min difference: backdrop_pdist [%2d(%s)-%2d(%s)=%.3f] - electron_pdist [%2d(%s)-%2d(%s)=%.3f] = %f \u212B. \n' %(b[idx_min][0], boc.ccoor[int(b[idx_min][0])], b[idx_min][1], boc.ccoor[int(b[idx_min][1])], b[idx_min,2],
+                                                                                                                                               e[idx_min][0], eoc.ccoor[int(e[idx_min][0])], e[idx_min][1], eoc.ccoor[int(e[idx_min][1])], b[idx_min,2],
+                                                                                                                                               np.abs(b-e)[:,2].min())
+    report += u'    avg difference: %s \u212B. \n' %(abs(b-e)[:,2].mean())
+    idx_max = abs(b-e)[:,2].argmax()
+    report += u'    max difference: backdrop_pdist [%2d(%s)-%2d(%s)=%.3f] - electron_pdist [%2d(%s)-%2d(%s)=%.3f] = %f \u212B. \n' %(b[idx_max][0], boc.ccoor[int(b[idx_max][0])], b[idx_max][1], boc.ccoor[int(b[idx_max][1])], b[idx_max,2],
+                                                                                                                                   e[idx_max][0], eoc.ccoor[int(e[idx_max][0])], e[idx_max][1], eoc.ccoor[int(e[idx_max][1])], e[idx_max,2],
+                                                                                                                                   np.abs(b-e)[:,2].max())
+    report += '-' * 130 + '\n'
+
+    # bijective-representation difference (congruent testing), allowing physical phenomena relocation
+    b = b[ b[:,2].argsort() ]
+    e = e[ e[:,2].argsort() ]
+    report += u'<arbitrary-order bijective-representation difference> (allowing physical phenomena relocation) between self and backdrop is: \n'
+    idx_min = np.abs(b-e)[:,2].argmin()
+    report += u'    min difference: backdrop_pdist [%2d(%s)-%2d(%s)=%.3f] - electron_pdist [%2d(%s)-%2d(%s)=%.3f] = %f \u212B. \n' %(b[idx_min][0], boc.ccoor[int(b[idx_min][0])], b[idx_min][1], boc.ccoor[int(b[idx_min][1])], b[idx_min,2],
+                                                                                                                                               e[idx_min][0], eoc.ccoor[int(e[idx_min][0])], e[idx_min][1], eoc.ccoor[int(e[idx_min][1])], e[idx_min,2],
+                                                                                                                                               np.abs(b-e)[:,2].min())
+    report += u'    avg difference: %s \u212B. \n' %(abs(b-e)[:,2].mean())
+    bijective_representation_difference_allow_physical = abs(b-e)[:,2].mean()
+    idx_max = abs(b-e)[:,2].argmax()
+    report += u'    max difference: backdrop_pdist [%2d(%s)-%2d(%s)=%.3f] - electron_pdist [%2d(%s)-%2d(%s)=%.3f] = %f \u212B. \n' %(b[idx_max][0], boc.ccoor[int(b[idx_max][0])], b[idx_max][1], boc.ccoor[int(b[idx_max][1])], b[idx_max,2],
+                                                                                                                                   e[idx_max][0], eoc.ccoor[int(e[idx_max][0])], e[idx_max][1], eoc.ccoor[int(e[idx_max][1])], e[idx_max,2],
+                                                                                                                                   np.abs(b-e)[:,2].max())
+    report += '-' * 130 + '\n'
+
+    return report
+
+
+
+def compare_cell(eoc,boc, ZERO=0.02, rs=[10, 6.5, 6.5], is_verbose=False):    # ZERO: relative difference. rs: 子簇大小。
+    '''
+    eoc就是新的cell。
+    新的cell里面，原子根据自身的环境，感应到旧cell的相应位置，一个一个的亮了起来，形成一簇。
+        加入已有的簇，必须与已有簇的位置匹配，而不论出身。
+        当然，全新的簇就需要与未知簇的位置做无序匹配。
+    有子簇分裂出去，那就是第二个core。
+
+    （环境，要求局部化，免疫平移旋转，只能用pdist。）
+
+    "What you want probably does not exist on this earth. --hackhands."
+    '''
+    import itertools
+    import numpy as np
+    report=''
+    sreport=''
+
+    cores = []  #eoc|boc, idx_core_atom
+    remainder = [range(eoc.natoms),range(boc.natoms)]
+
+    for r in rs:    # 附录：考虑remainder里面分为多个派系的情况。做全排列太慢，只能进行局域性讨论。
+        if is_verbose:  print '-' * 65 + ' r = %s ' %r + '-' * 65 + '\n'
+        core = [[],[]]
+        is_remainder_edited = True
+        while is_remainder_edited and remainder[0] and remainder[1]:
+            is_remainder_edited = False
+            for idx_eoc in remainder[0]:        # 对照
+                boc_winners = []
+                for idx_boc in remainder[1]:
+                    # 比较已经对照出的core
+                    eoc_dist1 = eoc.cdist[idx_eoc,core[0]] if core[0] else [0]      ## 意外情况修复
+                    boc_dist1 = boc.cdist[idx_boc,core[1]] if core[1] else [0]
+                    # 比较未对照出的remainder，仅限r半径内
+                    eoc_dist2_adjidx = [idx_atom for idx_atom in remainder[0] if 0<eoc.cdist[idx_atom,idx_eoc]<r]
+                    eoc_dist2 = eoc.cdist[idx_eoc,eoc_dist2_adjidx]
+                    boc_dist2_adjidx = [idx_atom for idx_atom in remainder[1] if 0<boc.cdist[idx_atom,idx_boc]<r]
+                    boc_dist2 = boc.cdist[idx_boc,boc_dist2_adjidx]
+                    l = min(len(eoc_dist2), len(boc_dist2))
+                    # 选举最match的
+                    ## 意外情况：core是空的（不空修复），remainder在r半径内是空的（delta2最终修复），分母有0（允许np.infty），分子分母同时为0（perfect match赋0）
+                    with np.errstate(divide='ignore', invalid='ignore'):
+                        delta1 = np.divide(np.float32(eoc_dist1)-np.float32(boc_dist1), np.float32(boc_dist1))
+                        delta1[np.isnan(delta1)] = 0    ## 意外情况修复
+                        delta1 = np.max(np.abs(delta1))
+                        delta2 = np.divide(np.float32(eoc_dist2[:l])-np.float32(boc_dist2[:l]), np.float32(boc_dist2[:l]))
+                        delta2[np.isnan(delta2)] = 0
+                        delta2 = np.max(np.abs(delta2)) if delta2.size else 0 if core[0] else np.infty
+                        boc_winners.append([idx_eoc, idx_boc, delta1, delta2])
+                boc_winners = np.float32(boc_winners)
+                if np.all(boc_winners[:,2] > ZERO):
+                    if is_verbose:  print 'idx_eoc = %s: core match not found.' %idx_eoc
+                elif np.all(boc_winners[:,3] > ZERO):
+                    if is_verbose:  print 'idx_eoc = %s: remainder match not found.' %idx_eoc
+                else:
+                    idx_winnerslist = np.argmin(boc_winners[:,2] + boc_winners[:,3])
+                    idx_eoc_winner = boc_winners[idx_winnerslist][0]
+                    idx_boc_winner = boc_winners[idx_winnerslist][1]
+                    core[0].append(int(idx_eoc_winner))
+                    core[1].append(int(idx_boc_winner))
+                    remainder[0].remove(int(idx_eoc_winner))
+                    remainder[1].remove(int(idx_boc_winner))
+                    is_remainder_edited = True
+                    break
+        cores.append(core)
+
+    report += '-' * 60 + ' max allowed relative difference = %s '%ZERO + '-' * 60 + '\n'
+    report += 'cores: %s\n' %(cores)
+    report += '-' * 60 + '\n'
+    report += 'remainder: %s\n' %(remainder)
+    return report
+
+
+
+
+class Compare(Dummy):
+
+    @shared.log_wrap
+    def compute(self):
+
+        enode = Map().rlookup(attr_dict={'compare':self}, prev=True)
+        bnode = Map().rlookup(attr_dict={'compare':self}, prev2=True)
+        print 'compare experimental node {%s} against backdrop node {%s}' %(enode.name, bnode.name)
+
+        if node.gen.parse_if('etype=bands'):    # etype=btype=bands
+
+            eelectron = enode.electron
+            belectron = bnode.electron
+
+            # preliminary checks
+            print '-' * 130
+            if not eelectron.grepen.is_kpoints_mesh and belectron.grepen.is_kpoints_mesh:
+                raise shared.CustomError(self.__class__.__name__ + '.compute: only these: i) both mesh ii) neither mesh iii) backdrop only mesh.')
+            if eelectron.bands.bands.shape[0] != blectron.bands.bands.shape[0]:
+                raise shared.CustomError(self.__class__.__name__ + '.compute: experiment and backdrop bands have incompatible NBANDS')
+
+            print u'energy difference between self and belectron is %s eV.\n' % ( abs(eelectron.grepen.energy - belectron.grepen.energy) )
+
+            if eelectron.grepen.is_kpoints_mesh and belectron.grepen.is_kpoints_mesh:
+
+                error_interpd = []
+                idx_spin = 0
+                print self.__class__.__name__ + ': comparing idx_spin=0 only.\n'    # faciliate comparison between ncl and fm
+
+                for idx_band, band in tqdm(enumerate(belectron.bands.bands[idx_spin]), leave=False, desc='interpolating belectron.bands for comparison'):
+                        error_interpd.append( np.average( abs( np.float32(eelectron.bands.bands[idx_spin][idx_band]) - np.float32([belectron.bands.bands_interp()[idx_spin][idx_band](*kpt) for kpt in eelectron.bands.kpts]) ) ) )
+                        print 'in band %d, between experiment and backdrop, post-interpolation Cauchy eigenvalue difference is %.5f.\n' %(idx_band, error_interpd[-1])
+
+                print u'smearing should be larger than numerical energy error: sigma[%.4f] > post-interpolation \u03B4E[%.4f]' %(eelectron.grepen.sigma, np.average(error_interpd))
+
+            elif not eelectron.grepen.is_kpoints_mesh and not belectron.grepen.is_kpoints_mesh:
+
+                if not np.array_equal(eelectron.bands.kpts, belectron.bands.kpts):
+                    raise shared.CustomError(self.__class__.__name__ + '.compute: compare neither-mesh cases require same kpoints')
+
+                idx_spin = 0
+                if eelectron.grepen.nbands == belectron.grepen.nbands:
+                    delta = np.std( abs(eelectron.bands.bands[idx_spin] - belectron.bands.bands[idx_spin]).flatten() )
+                    print u'<eigenvalue difference std> between self and belectron (removing offset) is %s eV.\n' %delta
+                elif abs(eelectron.grepen.nbands - belectron.grepen.nbands) < belectron.grepen.nbands / 5:     # arbitrary
+                    print u'eelectron.grepen.nbands %s and belectron.grepen.nbands %s does not match. trying to guess...\n' %(electron.grepen.nbands, belectron.grepen.nbands)
+                    nbands = min(eelectron.grepen.nbands, belectron.grepen.nbands)
+                    delta = []
+                    for idx_start_eelectron in range(0, eelectron.grepen.nbands-nbands+1):
+                        for idx_start_belectron in range(0, belectron.grepen.nbands-nbands+1):
+                            delta.append(np.std(abs(eelectron.bands.bands[idx_spin, idx_start_eelectron:idx_start_eelectron + nbands, :] - belectron.bands.bands[idx_spin, idx_start_belectron:idx_start_belectron + nbands, :])))
+                    print u'<eigenvalue difference std> between eelectron and belectron (removing offset, guessed) is %s eV.\n' %min(delta)
+
+            elif not eelectron.grepen.is_kpoints_mesh and belectron.grepen.is_kpoints_mesh:
+
+                raise shared.CustomError(self.__class__.__name__ + 'WARNING: non-mesh vs mesh feature has not been implemented!')
+
+        # compare=optimized_cell
+
+        if node.gen.parse_if('etype=cell | btype=cell | etype=ocell | btype=ocell'):
+
+            print '-' * 130
+
+            eoc = enode.vasp.optimized_cell if node.gen.parse_if('etype=ocell') else enode.cell
+            boc = bnode.vasp.optimized_cell if node.gen.parse_if('btype=ocell') else bnode.cell
+
+            if not np.array_equal(eoc.stoichiometry, boc.stoichiometry):
+                raise shared.CustomError(self.__class__.__name__ + '.compute: cell stoichiometry are not the same, cannot compute')
+
+            # base
+            print u'<base difference> between self and backdrop is %s \u212B.' % ( np.average( abs(eoc.base - boc.base).flatten() ) )
+            print '-' * 130
+
+            # simple difference, not allowing translation or rotation
+            print u'<simple cartesian difference> (no translation or rotation allowed) between self and backdrop is  %s \u212B.' % ( np.abs(eoc.ccoor - boc.ccoor).mean() )
+            print '-' * 130
+
+            # unordered bijective differences
+            print compare_cell_bijective(eoc, boc)
+
+            # are they the same cell?
+            for ZERO in [0.01, 0.05, 0.1, 0.3]:
+                print compare_cell(eoc, boc, ZERO=ZERO)
+
+
+
+# =============
+
+# Md
+
+
+class Md(Dummy):
+
+    @shared.log_wrap
+    def compute(self):
+
+        prev = Map().rlookup(attr_dict={'md':self}, prev=True)
+
+        if self.gen.parse_if('movie'):
+
+            # parse vasprun.xml and establish a 'data' nparray, to be used for movie-making
+            print "parsing vasprun.xml for trajectory...\n"
+            os.chdir(prev.path)
+            tree = ET.parse('vasprun.xml')
+            root = tree.getroot()
+            data = np.zeros(( prev.cell.natoms, 3, len(root.findall('calculation')) ))
+            # each step
+            for idx_step, ionicstep in enumerate(root.findall('calculation')):
+                structure = ionicstep.find('structure')
+                # base
+                base = []
+                basis = structure.find('crystal').find("varray[@name='basis']")
+                for a in basis.findall('v'):
+                    base.append(a.text.split())
+                base = np.float_(base)
+                # fcoor
+                fcoor = []
+                positions = structure.find("varray[@name='positions']")
+                for x in positions.findall('v'):
+                    fcoor.append(x.text.split())
+                fcoor = np.float_(fcoor)
+                # ccoor
+                ccoor = np.dot(fcoor, base)
+                for idx_traj, c in enumerate(fcoor):
+                    data[idx_traj, :, idx_step] = c[:]
+
+
+            """
+            Simple 3D animation. https://matplotlib.org/examples/animation/simple_3danim.html
+            Data structure of data is data [idx_traj] [idx_dim] [idx_step]
+            """
+            print "creating movie from trajectory...\n"
+            # def Gen_RandLine(length, dims=2):
+            #     """
+            #     Create a line using a random walk algorithm
+            #
+            #     length is the number of points for the line.
+            #     dims is the number of dimensions the line has.
+            #     """
+            #     lineData = np.empty((dims, length))
+            #     lineData[:, 0] = np.random.rand(dims)
+            #     for index in range(1, length):
+            #         # scaling the random numbers by 0.1 so
+            #         # movement is small compared to position.
+            #         # subtraction by 0.5 is to change the range to [-0.5, 0.5]
+            #         # to allow a line to move backwards.
+            #         step = ((np.random.rand(dims) - 0.5) * 0.1)
+            #         lineData[:, index] = lineData[:, index - 1] + step
+            #
+            #     return lineData
+
+            def update_lines(num, dataLines, lines):
+                for line, data in zip(lines, dataLines):
+                    # NOTE: there is no .set_data() for 3 dim data...
+                    line.set_data(data[0:2, :num])
+                    line.set_3d_properties(data[2, :num])
+                return lines
+
+            # Attaching 3D axis to the figure
+            fig = plt.figure()
+            ax = p3.Axes3D(fig)
+
+            # Fifty lines of random 3-D line
+            # Modified: data is generated before
+            # data = [Gen_RandLine(25, 3) for index in range(50)]
+
+            # Creating fifty line objects.
+            # NOTE: Can't pass empty arrays into 3d version of plot()
+            lines = [ax.plot(dat[0, 0:1], dat[1, 0:1], dat[2, 0:1])[0] for dat in data]
+
+            # Setting the axes properties
+            # ax.set_xlim3d([0.0, 1.0])
+            ax.set_xlabel('X')
+
+            # ax.set_ylim3d([0.0, 1.0])
+            ax.set_ylabel('Y')
+
+            # ax.set_zlim3d([0.0, 1.0])
+            ax.set_zlabel('Z')
+
+            ax.set_title('3D Test')
+
+            # Creating the Animation object
+            line_ani = animation.FuncAnimation(fig, update_lines, 25, fargs=(data, lines),
+                                               interval=50, blit=False)
+
+            plt.show()
