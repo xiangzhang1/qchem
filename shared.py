@@ -15,6 +15,7 @@ from functools import wraps
 import paramiko
 import time
 import traceback, sys, code
+from CStringIO import StringIO
 
 
 # INDEX
@@ -368,14 +369,11 @@ def moonphase_wrap(func):
 class Logger(object):
     def __init__(self):
         self.terminal = sys.stdout
-        self.log = ''
+        self.log = StringIO()
 
     def write(self, message):
         self.terminal.write(message)
         self.log.write(message)
-
-    def getvalue(self):
-        return self.log
 
 def log_wrap(func):
     @wraps(func)
@@ -387,7 +385,7 @@ def log_wrap(func):
         print '*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30
         result = func(self, *args, **kwargs)    # the important part
         print '*' * len('*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n\n')
-        self.log = sys.stdout.getvalue()
+        self.log = sys.stdout.log.getvalue()    # sys.stdout now is the Logger object.
         # change stdout back
         sys.stdout = sys.__stdout__
         return result
