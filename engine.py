@@ -1509,7 +1509,7 @@ class Compare(Dummy):
         bnode = Map().rlookup(attr_dict={'compare':self}, prev2=True)
         print 'compare experimental node {%s} against backdrop node {%s}' %(enode.name, bnode.name)
 
-        if node.gen.parse_if('etype=bands'):    # etype=btype=bands
+        if self.gen.parse_if('etype=bands'):    # etype=btype=bands
 
             eelectron = enode.electron
             belectron = bnode.electron
@@ -1559,12 +1559,12 @@ class Compare(Dummy):
 
         # compare=optimized_cell
 
-        if node.gen.parse_if('etype=cell | btype=cell | etype=ocell | btype=ocell'):
+        if self.gen.parse_if('etype=cell | btype=cell | etype=ocell | btype=ocell'):
 
             print '-' * 130
 
-            eoc = enode.vasp.optimized_cell if node.gen.parse_if('etype=ocell') else enode.cell
-            boc = bnode.vasp.optimized_cell if node.gen.parse_if('btype=ocell') else bnode.cell
+            eoc = enode.vasp.optimized_cell if self.gen.parse_if('etype=ocell') else enode.cell
+            boc = bnode.vasp.optimized_cell if self.gen.parse_if('btype=ocell') else bnode.cell
 
             if not np.array_equal(eoc.stoichiometry, boc.stoichiometry):
                 raise shared.CustomError(self.__class__.__name__ + '.compute: cell stoichiometry are not the same, cannot compute')

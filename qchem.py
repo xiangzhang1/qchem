@@ -190,6 +190,8 @@ class Node(object):
                 engine_class = getattr(engine, self.gen.getkw('engine').title())
                 engine_ = engine_class(self)
                 setattr(self, self.gen.getkw('engine'), engine_)
+            if shared.DEBUG >= 2:
+                print self.__class__.__name__ + '.compute: computing engine %s' %(self.gen.getkw('engine'))
             getattr(self, self.gen.getkw('engine')).compute()
 
         else:
