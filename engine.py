@@ -1400,7 +1400,7 @@ def compare_cell_bijective(eoc, boc):
     report += u'    min difference: backdrop_pdist [%2d%s-%2d%s=%.3f] - electron_pdist [%2d%s-%2d%s=%.3f] = %.2f %%. \n' %(b[idx_min][0], boc.ccoor[int(b[idx_min][0])], b[idx_min][1], boc.ccoor[int(b[idx_min][1])], b[idx_min,2],
                                                                                                                                                e[idx_min][0], eoc.ccoor[int(e[idx_min][0])], e[idx_min][1], eoc.ccoor[int(e[idx_min][1])], b[idx_min,2],
                                                                                                                                                np.abs(b-e)[idx_min,2] / np.abs(b)[idx_min,2] * 100)
-    report += u'    avg difference: %s A. \n' %(abs(b-e)[:,2].mean())
+    report += u'    avg difference: %s %%. \n' %(np.divide(abs(b-e)[:,2], abs(b)).mean() * 100)
     idx_max = abs(b-e)[:,2].argmax()
     report += u'    max difference: backdrop_pdist [%2d%s-%2d%s=%.3f] - electron_pdist [%2d%s-%2d%s=%.3f] = %.2f %%. \n' %(b[idx_max][0], boc.ccoor[int(b[idx_max][0])], b[idx_max][1], boc.ccoor[int(b[idx_max][1])], b[idx_max,2],
                                                                                                                                    e[idx_max][0], eoc.ccoor[int(e[idx_max][0])], e[idx_max][1], eoc.ccoor[int(e[idx_max][1])], e[idx_max,2],
@@ -1415,8 +1415,7 @@ def compare_cell_bijective(eoc, boc):
     report += u'    min difference: backdrop_pdist [%2d(%s)-%2d(%s)=%.3f] - electron_pdist [%2d(%s)-%2d(%s)=%.3f] = %.2f %%. \n' %(b[idx_min][0], boc.ccoor[int(b[idx_min][0])], b[idx_min][1], boc.ccoor[int(b[idx_min][1])], b[idx_min,2],
                                                                                                                                                e[idx_min][0], eoc.ccoor[int(e[idx_min][0])], e[idx_min][1], eoc.ccoor[int(e[idx_min][1])], e[idx_min,2],
                                                                                                                                                np.abs(b-e)[idx_min,2] / np.abs(b)[idx_min,2] * 100)
-    report += u'    avg difference: %s A. \n' %(abs(b-e)[:,2].mean())
-    bijective_representation_difference_allow_physical = abs(b-e)[:,2].mean()
+    report += u'    avg difference: %s %%. \n' %(np.divide(abs(b-e)[:,2], abs(b)).mean() * 100)
     idx_max = abs(b-e)[:,2].argmax()
     report += u'    max difference: backdrop_pdist [%2d(%s)-%2d(%s)=%.3f] - electron_pdist [%2d(%s)-%2d(%s)=%.3f] = %.2f %%. \n' %(b[idx_max][0], boc.ccoor[int(b[idx_max][0])], b[idx_max][1], boc.ccoor[int(b[idx_max][1])], b[idx_max,2],
                                                                                                                                    e[idx_max][0], eoc.ccoor[int(e[idx_max][0])], e[idx_max][1], eoc.ccoor[int(e[idx_max][1])], e[idx_max,2],
