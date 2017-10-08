@@ -321,6 +321,10 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             self.kw['lsorbit'] = ['.TRUE.']
         # calculate and read
         output = check_output([shared.SCRIPT_DIR + '/resource/makeparam']).splitlines()
+        if shared.DEBUG >= 1:
+            print '-' * 35 + ' start makeparam output ' + '-' * 35
+            print '\n'.join(output)
+            print '-' * 35 + ' end makeparam output ' + '-' * 35
         try:
             self.memory = {}
             self.memory['arraygrid'] = int( next(l for l in output if 'arrays on large grid' in l).split()[7] )
@@ -332,15 +336,15 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             raise shared.CustomError(self.__class__.__name__ + 'error: makeparam output illegal. Check POSCAR4 format and memory leak in script dir.')
         # parse and raise error
         if self.parse_if('hse'):
-            memory_required = ( (self.memory['projector_real'] + self.memory['projector_reciprocal'])*int(self.getkw('npar')) + 3*self.memory['wavefunction']*int(self.getkw('kpar')) )/1024/1024/1024 + int(self.getkw('nnode'))
+            memory_required = ( (self.memory['projector_real'] + self.memory['projector_reciprocal'])*int(self.getkw('npar')) + 3*self.memory['wavefunction']*float(self.getkw('kpar')) )/1024.0/1024/1024 + int(self.getkw('nnode'))*0.5
         else:
-            memory_required = ( (self.memory['projector_real'] + self.memory['projector_reciprocal'])*int(self.getkw('npar')) + self.memory['wavefunction']*int(self.getkw('kpar')) )/1024/1024/1024 + int(self.getkw('nnode'))*3/2
+            memory_required = ( (self.memory['projector_real'] + self.memory['projector_reciprocal'])*int(self.getkw('npar')) + self.memory['wavefunction']*float(self.getkw('kpar')) )/1024.0/1024/1024 + int(self.getkw('nnode'))*0.75
         memory_required *= multiplier
         memory_available = int(self.getkw('nnode')) * int(self.getkw('mem_node'))
         if memory_required > memory_available:
-            print self.__class__.__name__ + ' check_memory warning: insufficient memory. Mem required is {' + str(memory_required) + '} GB. Available mem is {' + str(memory_available) + '} GB.'
+            print self.__class__.__name__ + ' check_memory warning: insufficient memory. Mem required is {%s} GB. Available mem is {%s} GB.' %(memory_required, memory_available)
         else:
-            print self.__class__.__name__ + ' check_memory report: Mem required is {' + str(memory_required) + '} GB. Available mem is {' + str(memory_available) + '} GB.'
+            print self.__class__.__name__ + ' check_memory report: Mem required is {%s} GB. Available mem is {%s} GB.' %(memory_required, memory_available)
         # cleanup
         os.chdir(shared.SCRIPT_DIR)
         shutil.rmtree(tmp_path)
