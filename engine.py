@@ -299,7 +299,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             os.system('trash '+tmp_path)
         os.mkdir(tmp_path)
         os.chdir(tmp_path)
-        # alter and write
+        # temporarily wayback and write
         wayback = []
         multiplier = 1
         if self.parse_if('isym=-1'):
@@ -335,10 +335,9 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             print '\n'.join(output)
             raise shared.CustomError(self.__class__.__name__ + 'error: makeparam output illegal. Check POSCAR4 format and memory leak in script dir.')
         # parse and raise error
-        if self.parse_if('hse'):
-            memory_required = ( (self.memory['projector_real'] + self.memory['projector_reciprocal'])*int(self.getkw('npar')) + 3*self.memory['wavefunction']*float(self.getkw('kpar')) )/1024.0/1024/1024 + int(self.getkw('nnode'))*0.5
-        else:
-            memory_required = ( (self.memory['projector_real'] + self.memory['projector_reciprocal'])*int(self.getkw('npar')) + self.memory['wavefunction']*float(self.getkw('kpar')) )/1024.0/1024/1024 + int(self.getkw('nnode'))*0.75
+        memory_required = ( (self.memory['projector_real'] + self.memory['projector_reciprocal'])*int(self.getkw('npar')) + self.memory['wavefunction']*float(self.getkw('kpar')) )/1024.0/1024/1024 + int(self.getkw('nnode'))*0.7
+        with open("/home/xzhang1/m_cpu_config.log", "a") as of_:
+            of_.write('%s %s %s %s %s %s\n' %(self.memory['arraygrid'], self.memory['projector_real'], self.memory['projector_reciprocal'], self.getkw('npar'), self.getkw('kpar'), int(self.gen.getkw('nnode')) * int(self.gen.getkw('ncore_node')) ) ) 
         memory_required *= multiplier
         memory_available = int(self.getkw('nnode')) * int(self.getkw('mem_node'))
         if memory_required > memory_available:
