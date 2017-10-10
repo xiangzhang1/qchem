@@ -293,7 +293,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
 
     def check_memory(self):
         # make temporary dir
-        tmp_path = shared.SCRIPT_DIR + '/check_memory_tmp'
+        tmp_path = shared.SCRIPT_DIR + '/check_memory_tmp' + ''.join(random.sample(string.ascii_lowercase,4))
         if os.path.exists(tmp_path):
             #raise shared.CustomError('Folder {%s} already exists. Usually do not delete folder to avoid confusion.' %path)
             os.system('trash '+tmp_path)

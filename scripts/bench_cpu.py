@@ -72,6 +72,6 @@ for ncore_node in [8, 12, 16, 18]:
                                 mem = psutil.virtual_memory().used / 1000000.0 - basic_mem
                                 time1 = time.time()
                                 with open("/home/xzhang1/m_cpu_config.log", "a") as of_:
-                                    of_.write('%15s %s\n' %(mem, time1 - basic_time))
+                                    of_.write('%15s %15s\n' %(mem, time1 - basic_time))
                                 os.system('pkill vasp_std')
                                 break
