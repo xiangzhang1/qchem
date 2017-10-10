@@ -1,18 +1,5 @@
 #!/usr/bin/python
-'''Deprecate; not maintained any more.
-
-CLI, as a backup option during downtime'''
-
-# flask
-from flask import Flask, request, jsonify, session, Response
-from flask_cors import CORS, cross_origin
-from functools import wraps
-
-# flask over https
-from OpenSSL import SSL
-context = SSL.Context(SSL.SSLv23_METHOD)
-context.use_privatekey_file('cert/domain.key')
-context.use_certificate_file('cert/domain.crt')
+'''Eventually, you should use CLI, not the pretty GUI.'''
 
 # common libraries
 import sys
