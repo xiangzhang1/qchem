@@ -1598,7 +1598,7 @@ class Compare(Dummy):
 class Md(Dummy):
 
     @shared.log_wrap
-    def compute(self):
+    def compute(self, projection_):
 
         prev = Map().rlookup(attr_dict={'md':self}, prev=True)
 
@@ -1646,8 +1646,8 @@ class Md(Dummy):
 
             # Attaching 3D axis to the figure
             fig = plt.figure()
-            # ax = p3.Axes3D(fig)
-            ax = fig.add_subplot(678, projection='3d')
+            ax = p3.Axes3D(fig)
+            ax.view_init(30, 1)
 
             # This used to be how data is generated
             # data = [Gen_RandLine(25, 3) for index in range(50)]
