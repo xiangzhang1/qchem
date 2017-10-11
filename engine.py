@@ -1660,7 +1660,7 @@ class Md(Dummy):
             ax.set_xlabel('X')
             ax.set_ylabel('Y')
             ax.set_zlabel('Z')
-            ax.set_title(str(prev.cell).splitlines()[0])
+            ax.set_title(''.join(k+str(v) for k,v in prev.cell.stoichiometry.iteritems()))
 
             # Creating the Animation object
             line_ani = animation.FuncAnimation(fig, update_lines, 25, fargs=(data, lines),
