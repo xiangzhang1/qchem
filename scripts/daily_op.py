@@ -9,4 +9,4 @@ n = p.map.lookup('compare cell')
 
 n.reset()
 n.property = 'engine=md, movie'
-n.compute()
+n.compute(angle=1)
