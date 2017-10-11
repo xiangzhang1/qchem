@@ -1691,4 +1691,4 @@ class Md(Dummy):
                                                interval=50, blit=False)
 
             # plt.show()
-            line_ani.save('trajectory.mp4')
+            line_ani.save('traj.mp4', fps=20, writer="avconv", codec="libx264")
