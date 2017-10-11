@@ -8,5 +8,5 @@ p.map.add_edge('10alt -0_02 opt', 'compare cell')
 n = p.map.lookup('compare cell')
 
 n.reset()
-n.property = 'engine=md, movie'
-n.compute(angle=1)
+n.property = 'engine=md, movie, elev=30, angle=1'
+n.compute()
