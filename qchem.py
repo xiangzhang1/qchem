@@ -2,6 +2,7 @@ import dill as pickle   # dill requires citation
 import re
 import os
 import time
+import shutil
 
 import engine
 import shared

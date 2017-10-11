@@ -3,7 +3,7 @@ import numpy as np
 import os
 import time
 import psutil
-
+import shutil
 import itertools
 
 def factor1(n):
@@ -15,6 +15,8 @@ def factor1(n):
     return factors
 
 def GenCh100(nx, ny, nz, padding, a=3.007083725):
+    import numpy as np
+    import itertools
     # base
     cellar = np.diag([a, a, a])
     base = np.diag([nx-1, ny-1, nz-1]) * cellar
@@ -58,14 +60,14 @@ for ncore_node in [18, 16, 12]:
             with open("/home/xzhang1/oa.txt","r") as if_:
                 for line in if_.readlines()[1:]:
                     # nx, ny, nz, padding
-                    nx, ny, nz, padding = map(float, line.split())
+                    nx, ny, nz, padding = map(int, line.split())
 
                     n.property = '''
                     eigenfunction, engine=vasp, spin=para,
                     ediff=1E-3, isym=2, ismear=0, sigma=0.02,
                     ncore=%s, ncore_node=%s, prec=%s, encut=200, lreal=False, kpoints=G 1 1 1, kpar=1,
                     read=n, platform=dellpc
-                    ''' %(ncore, ncore_node, prec, lreal, kpar)
+                    ''' %(ncore, ncore_node, prec)
                     n.phase = 'pbs, qd'
                     n.cell = engine.Cell(GenCh100(nx, ny, nz, padding))
 
