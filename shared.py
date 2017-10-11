@@ -60,7 +60,8 @@ READABLE_ATTR_LIST = ['name','phase','cell','property','map','comment','path']
 
 #  for the inherit feature.
 #  - qchem.Node.compute
-INHERITABLE_ATTR_LIST = ['phase','cell']
+INHERITABLE_ATTR_LIST = ['phase']   # , 'cell': cell is inherited from prev
+PREV_INHERITABLE_ATTR_LIST = ['cell']
 
 
 # UI-specific behavior

@@ -94,7 +94,7 @@ class Node(object):
 
 
     def reset(self):
-        #: reset moonphase = 1. remove all non-readable attributes.
+        # reset moonphase = 1. remove all non-readable attributes.
         # remove engine
         if getattr(self, 'gen', None):
             engine_name = self.gen.getkw('engine')
@@ -106,11 +106,10 @@ class Node(object):
             if varname not in shared.READABLE_ATTR_LIST:
                 delattr(self, varname)
                 print self.__class__.__name__ + '.reset: attribute {%s} deleted' %varname
-        foldername = self.path + '/.moonphase'
-        if os.path.isdir(foldername):
-            shutil.rmtree(foldername)
-            print self.__class__.__name__ + '.reset: removed directory {%s}' %foldername
-        #;
+        if getattr(self, 'path', None):
+            if os.path.isdir(self.path):
+                shutil.rmtree(self.path)
+                print self.__class__.__name__ + '.reset: removed directory {%s}' %self.path
 
 
     @shared.moonphase_wrap
@@ -161,13 +160,19 @@ class Node(object):
             else:
             #;
                 n = l[0]
-            # important inherits
-            for vname in vars(self):
-                if vname in shared.INHERITABLE_ATTR_LIST and not getattr(n, vname, None):
-                    setattr(n,vname,getattr(self,vname))
             n.compute()
 
         elif getattr(self, 'property', None):
+            # important inherits
+            parent = engine.Map().rlookup(node_list=[self], parent=True)
+            for vname in vars(parent):
+                if vname in shared.INHERITABLE_ATTR_LIST and not getattr(self, vname, None):
+                    setattr(self, vname, getattr(parent,vname))
+            prev = engine.Map().rlookup(node_list=[self], prev=True)
+            if prev:
+                for vname in vars(prev):
+                    if vname in shared.PREV_INHERITABLE_ATTR_LIST and not getattr(self, vname, None):
+                        setattr(self, vname, getattr(prev,vname))
             if not getattr(self, 'cell', None) or not getattr(self, 'phase', None):
                 raise shared.CustomError(self.__class__.__name__ + '.compute: cell or phase is missing. Either make sure parent has something you can inherit, or enter them.')
             if not getattr(self, 'path', None):
