@@ -1636,24 +1636,6 @@ class Md(Dummy):
             Data structure of data is data [idx_traj] [idx_dim] [idx_step]
             """
             print "creating movie from trajectory...\n"
-            # def Gen_RandLine(length, dims=2):
-            #     """
-            #     Create a line using a random walk algorithm
-            #
-            #     length is the number of points for the line.
-            #     dims is the number of dimensions the line has.
-            #     """
-            #     lineData = np.empty((dims, length))
-            #     lineData[:, 0] = np.random.rand(dims)
-            #     for index in range(1, length):
-            #         # scaling the random numbers by 0.1 so
-            #         # movement is small compared to position.
-            #         # subtraction by 0.5 is to change the range to [-0.5, 0.5]
-            #         # to allow a line to move backwards.
-            #         step = ((np.random.rand(dims) - 0.5) * 0.1)
-            #         lineData[:, index] = lineData[:, index - 1] + step
-            #
-            #     return lineData
 
             def update_lines(num, dataLines, lines):
                 for line, data in zip(lines, dataLines):
@@ -1664,10 +1646,10 @@ class Md(Dummy):
 
             # Attaching 3D axis to the figure
             fig = plt.figure()
-            ax = p3.Axes3D(fig)
+            # ax = p3.Axes3D(fig)
+            ax = fig.add_subplot(111, projection='3d')
 
-            # Fifty lines of random 3-D line
-            # Modified: data is generated before
+            # This used to be how data is generated
             # data = [Gen_RandLine(25, 3) for index in range(50)]
 
             # Creating fifty line objects.
@@ -1675,15 +1657,9 @@ class Md(Dummy):
             lines = [ax.plot(dat[0, 0:1], dat[1, 0:1], dat[2, 0:1])[0] for dat in data]
 
             # Setting the axes properties
-            # ax.set_xlim3d([0.0, 1.0])
             ax.set_xlabel('X')
-
-            # ax.set_ylim3d([0.0, 1.0])
             ax.set_ylabel('Y')
-
-            # ax.set_zlim3d([0.0, 1.0])
             ax.set_zlabel('Z')
-
             ax.set_title('3D Test')
 
             # Creating the Animation object
