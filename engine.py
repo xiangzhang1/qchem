@@ -1668,4 +1668,4 @@ class Md(Dummy):
 
             # plt.show()
             print 'movied saved at   %s    .' %prev.path
-            line_ani.save('traj_%s.mp4' %(re.sub(r'\d+$', '', prev.name)), fps=5, writer="avconv", codec="libx264")
+            line_ani.save('traj_%s.mp4' %(re.sub(r'\W+$', '', prev.name)), fps=5, writer="avconv", codec="libx264")
