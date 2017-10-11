@@ -1647,7 +1647,7 @@ class Md(Dummy):
             # Attaching 3D axis to the figure
             fig = plt.figure()
             # ax = p3.Axes3D(fig)
-            ax = fig.add_subplot(111, projection='3d')
+            ax = fig.add_subplot(678, projection='3d')
 
             # This used to be how data is generated
             # data = [Gen_RandLine(25, 3) for index in range(50)]
