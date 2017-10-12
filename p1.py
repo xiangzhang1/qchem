@@ -23,6 +23,8 @@ import shared
 import engine
 from shared import ELEMENTS
 
+sys.stdout = sys.stderr = open(__file__+'.log', "w")
+
 qchem.Load()
 
 def get_error(x):
