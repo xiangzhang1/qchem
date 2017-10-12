@@ -512,7 +512,7 @@ class Cell(object):
         delattr(self, 'natoms')
         delattr(self, 'nelectrons')
         for name in vars(new_cell):
-            setattr(self, name, getattr(new_cell, name, None)))
+            setattr(self, name, getattr(new_cell, name, None))
 
     def poscar4(self):
         result = str(self)
