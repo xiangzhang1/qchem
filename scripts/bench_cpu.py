@@ -54,7 +54,7 @@ def GenCh100(nx, ny, nz, padding, a=3.007083725):
 
 n = engine.Map().lookup('master.PbS QD.bare qd testing.Q0 Test convergence.Pb55S38.static0')
 
-for ncore_node in [18, 16, 12]:
+for ncore_node in [18, 16, 14, 12]:
     for ncore in set(factor1(ncore_node)):
         for prec in ['Normal','Low']:
             with open("/home/xzhang1/oa.txt","r") as if_:
@@ -65,7 +65,7 @@ for ncore_node in [18, 16, 12]:
                     n.property = '''
                     eigenfunction, engine=vasp, spin=para,
                     ediff=1E-3, isym=2, ismear=0, sigma=0.02,
-                    ncore=%s, ncore_node=%s, prec=%s, encut=200, lreal=False, kpoints=G 1 1 1, kpar=1,
+                    ncore=%s, ncore_node=%s, prec=%s, encut=200, lreal=On, kpoints=G 1 1 1, kpar=1,
                     read=n, platform=dellpc
                     ''' %(ncore, ncore_node, prec)
                     n.phase = 'pbs, qd'
@@ -75,24 +75,24 @@ for ncore_node in [18, 16, 12]:
                     n.compute()
 
                     # write part 1
-                    with open("/home/xzhang1/m_cpu_config.log", "r") as if_:
+                    with open("/home/xzhang1/m_cpu_config.log", "a+") as if_:
                         attempt_line = '%15s %15s %15s %15s %15s %15s %15s %15s %15s ' %(
                             n.gen.memory['projector_real'],
                             n.gen.memory['projector_reciprocal'],
                             n.gen.memory['wavefunction'],
                             n.gen.memory['arraygrid'],
-                            n.cell.natoms,
-                            np.dot(np.cross(cell.base[0], cell.base[1]), cell.base[2]),
+                            n.cell.natoms(),
+                            np.dot(np.cross(n.cell.base[0], n.cell.base[1]), n.cell.base[2]),
                             n.gen.getkw('npar'),
                             n.gen.getkw('ncore_node') ,
                             ((n.gen.memory['projector_real'] + n.gen.memory['projector_reciprocal']) * float(n.gen.getkw('npar')) + n.gen.memory['wavefunction'] * float(n.gen.getkw('kpar'))) /1024.0/1024 + 700)
                         if any( [attempt_line in line for line in if_.readlines()] ):
                             continue
                         else:
-                            of_.write(attempt_line)
+                            if_.write(attempt_line)
 
                     # write part 2
-                    os.system('pkill vasp_std')
+                    os.system('pkill vasp')
                     basic_mem = psutil.virtual_memory().used / 1000000.0
                     basic_time = time.time()
                     os.chdir(n.path)
@@ -100,10 +100,11 @@ for ncore_node in [18, 16, 12]:
                     while True:
                         time.sleep(1)
                         with open("run.log","r") as if_:
-                            if if_.readlines()[-1].startswith("DAV:"):
+                            lines = if_.readlines()
+                            if len(lines)>1 and lines[-1].startswith("DAV:") or len(lines)>2 and lines[-2].strip().endswith("end"):
                                 mem = psutil.virtual_memory().used / 1000000.0 - basic_mem
                                 time1 = time.time()
                                 with open("/home/xzhang1/m_cpu_config.log", "a") as of_:
                                     of_.write('%15s %15s\n' %(mem, time1 - basic_time))
-                                os.system('pkill vasp_std')
+                                os.system('pkill vasp')
                                 break

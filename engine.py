@@ -355,11 +355,11 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         print self.__class__.__name__ + ' warning: nbands may not be that reliable'
         # extracted from vasp source code
         if self.parse_if('spin=ncl'):
-            nbands = ( self.cell.nelectrons * 3 / 5 + sum(self.cell.stoichiometry.values()) * 3 / 2 ) * 2
+            nbands = ( self.cell.nelectrons() * 3 / 5 + sum(self.cell.stoichiometry.values()) * 3 / 2 ) * 2
         elif self.parse_if('spin=para'):
-            nbands = self.cell.nelectrons * 3 / 5 + sum(self.cell.stoichiometry.values()) * 1 / 2
+            nbands = self.cell.nelectrons() * 3 / 5 + sum(self.cell.stoichiometry.values()) * 1 / 2
         elif self.parse_if('spin=afm|spin=fm'):
-            nbands = self.cell.nelectrons / 2 + sum(self.cell.stoichiometry.values()) / 2
+            nbands = self.cell.nelectrons() / 2 + sum(self.cell.stoichiometry.values()) / 2
         else:
             raise shared.CustomError(self.__class__.__name__+'spin variable is not fm, afm or para, cannot compute nbands')
         # nbands change based on parallel
@@ -467,22 +467,28 @@ class Cell(object):
             print self.__class__.__name__ + '.__init__: Selective dynamics cell, all T. Converting to trivial cell...'
             lines.pop(7)
         if lines[7].startswith('D'):
-            self.fcoor = np.float32([ line.split()[:3] for line in lines[8:8+sum(self.stoichiometry.values())] ])
-            for coor in self.fcoor:
-                if len(coor)!=3:
-                    raise shared.CustomError(self.__class__.__name__+'__init__: bad format. Coordinate line {%s}' %coor)
+            fcoor = np.float32([ line.split()[:3] for line in lines[8:8+sum(self.stoichiometry.values())] ])
+            self.ccoor = np.dot(fcoor, self.base)
+            for fcoor_ in fcoor:
+                if len(fcoor_)!=3:
+                    raise shared.CustomError(self.__class__.__name__+'__init__: bad format. Coordinate line {%s}' %fcoor_)
         else:
             raise shared.CustomError(self.__class__.__name__+'__init__: unsupported POSCAR5 format. ')
 
-        # some computation
-        self.natoms = sum( self.stoichiometry.values() )
-        self.nelectrons = sum( [self.stoichiometry[symbol] * shared.ELEMENTS[symbol].pot_zval for symbol in self.stoichiometry] )
+    def cdist(self):
+        return spatial.distance.squareform(spatial.distance.pdist(self.ccoor))
 
-        self.ccoor = np.dot(self.fcoor, self.base)
-        self.ccoor_kdtree = spatial.cKDTree( self.ccoor )
-        self.ccoor_mindist = np.amin( spatial.distance.pdist(self.ccoor) )
+    def ccoor_mindist(self):
+        return np.amin( spatial.distance.pdist(self.ccoor) )
 
-        self.cdist = spatial.distance.squareform(spatial.distance.pdist(self.ccoor))
+    def ccoor_kdtree(self):
+        spatial.cKDTree( self.ccoor )
+
+    def natoms(self):
+        return sum( self.stoichiometry.values() )
+
+    def nelectrons(self):
+        return sum( [self.stoichiometry[symbol] * shared.ELEMENTS[symbol].pot_zval for symbol in self.stoichiometry] )
 
     @shared.debug_wrap
     def __str__(self):
@@ -497,17 +503,17 @@ class Cell(object):
         result += '  '.join(self.stoichiometry.keys()) + '\n'
         result += '  '.join(map(str,self.stoichiometry.values())) + '\n'
         result += 'Direct\n'
-        for line in self.fcoor:
+        for line in self.fcoor():
             result += ' '.join(map(str,line))+'\n'
         return result
 
     def recompute(self):
         #: compat recompute
-        self.ccoor = np.dot(self.fcoor, self.base)
-        self.ccoor_kdtree = spatial.cKDTree( self.ccoor )
-        self.ccoor_mindist = np.amin( spatial.distance.pdist(self.ccoor) )
+        self.ccoor = np.dot(self.fcoor(), self.base)
+        self.ccoor_kdtree() = spatial.cKDTree( self.ccoor )
+        self.ccoor_mindist() = np.amin( spatial.distance.pdist(self.ccoor) )
 
-        self.cdist = spatial.distance.squareform(spatial.distance.pdist(self.ccoor))
+        self.cdist() = spatial.distance.squareform(spatial.distance.pdist(self.ccoor))
         #;
 
     def poscar4(self):
@@ -990,7 +996,7 @@ class Grepen(object):
         with open("EIGENVAL","r") as eigenval_file:
             eigenval = [ x.split() for x in eigenval_file.readlines() ]
             self.temperature = float( eigenval[2][0] )
-            self.nelectrons = int( eigenval[5][0] )
+            self.nelectrons() = int( eigenval[5][0] )
             self.nkpts = int( eigenval[5][1] )
             if self.nkpts != (len(eigenval) - 6) / (self.nbands+2):
                 raise shared.CustomError(self.__class__.__name__ + '__init__: EIGENVAL file length not matching nkpts.')
@@ -1387,42 +1393,47 @@ class Electron(Dummy):
 
 # Compare
 
-def compare_cell_bijective(eoc, boc):
+def compare_cell_bijective(eoc, boc, suppress_output = False):
     import itertools
     import numpy as np
-    report = ''
+    import os
+
+    if suppress_output: sys.stdout = open(os.devnull,"w")
 
     # bijective-representation difference (congruent testing), allowing rotation and translation
-    b = np.float32([ [i, j, np.linalg.norm(boc.ccoor[i]-boc.ccoor[j])] for i in range(boc.natoms) for j in range(boc.natoms) if i!=j ])
-    e = np.float32([ [i, j, np.linalg.norm(eoc.ccoor[i]-eoc.ccoor[j])] for i in range(eoc.natoms) for j in range(eoc.natoms) if i!=j ])
-    report += u'<fixed-order bijective-representation difference> (allowing translation and rotation) between self and backdrop is: \n'
-    report += u'    avg difference: %.2f %%,  %.4f A.\n' %(np.divide(abs(b-e)[:,2], abs(b)[:,2]).mean() * 100, abs(b-e)[:,2].mean())
+    b = np.float32([ [i, j, np.linalg.norm(boc.ccoor[i]-boc.ccoor[j])] for i in range(boc.natoms()) for j in range(boc.natoms()) if i!=j ])
+    e = np.float32([ [i, j, np.linalg.norm(eoc.ccoor[i]-eoc.ccoor[j])] for i in range(eoc.natoms()) for j in range(eoc.natoms()) if i!=j ])
+    print u'<fixed-order bijective-representation difference> (allowing translation and rotation) between self and backdrop is: '
+    print u'    avg difference: %.2f %%,  %.4f A.' %(np.divide(abs(b-e)[:,2], abs(b)[:,2]).mean() * 100, abs(b-e)[:,2].mean())
+    result = np.divide(abs(b-e)[:,2], abs(b)[:,2]).mean() * 100
     idx_min = np.abs(b-e)[:,2].argmin()
-    report += u'    min difference: backdrop_pdist [%2d%s-%2d%s=%.3f] - electron_pdist [%2d%s-%2d%s=%.3f] = %.2f %%. \n' %(b[idx_min][0], boc.ccoor[int(b[idx_min][0])], b[idx_min][1], boc.ccoor[int(b[idx_min][1])], b[idx_min,2],
+    print u'    min difference: backdrop_pdist [%2d%s-%2d%s=%.3f] - electron_pdist [%2d%s-%2d%s=%.3f] = %.2f %%. ' %(b[idx_min][0], boc.ccoor[int(b[idx_min][0])], b[idx_min][1], boc.ccoor[int(b[idx_min][1])], b[idx_min,2],
                                                                                                                                    e[idx_min][0], eoc.ccoor[int(e[idx_min][0])], e[idx_min][1], eoc.ccoor[int(e[idx_min][1])], b[idx_min,2],
                                                                                                                                    np.abs(b-e)[idx_min,2] / np.abs(b)[idx_min,2] * 100)
     idx_max = abs(b-e)[:,2].argmax()
-    report += u'    max difference: backdrop_pdist [%2d%s-%2d%s=%.3f] - electron_pdist [%2d%s-%2d%s=%.3f] = %.2f %%. \n' %(b[idx_max][0], boc.ccoor[int(b[idx_max][0])], b[idx_max][1], boc.ccoor[int(b[idx_max][1])], b[idx_max,2],
+    print u'    max difference: backdrop_pdist [%2d%s-%2d%s=%.3f] - electron_pdist [%2d%s-%2d%s=%.3f] = %.2f %%. ' %(b[idx_max][0], boc.ccoor[int(b[idx_max][0])], b[idx_max][1], boc.ccoor[int(b[idx_max][1])], b[idx_max,2],
                                                                                                                                    e[idx_max][0], eoc.ccoor[int(e[idx_max][0])], e[idx_max][1], eoc.ccoor[int(e[idx_max][1])], e[idx_max,2],
                                                                                                                                    np.abs(b-e)[idx_max,2] / np.abs(b)[idx_max,2] * 100)
-    report += '-' * 130 + '\n'
+    print '-' * 130 + '\n'
 
     # bijective-representation difference (congruent testing), allowing physical phenomena relocation
     b = b[ b[:,2].argsort() ]
     e = e[ e[:,2].argsort() ]
-    report += u'<arbitrary-order bijective-representation difference> (allowing physical phenomena relocation) between self and backdrop is: \n'
-    report += u'    avg difference: %.2f %%,  %.4f A.\n' %(np.divide(abs(b-e)[:,2], abs(b)[:,2]).mean() * 100, abs(b-e)[:,2].mean())
+    print u'<arbitrary-order bijective-representation difference> (allowing physical phenomena relocation) between self and backdrop is: '
+    print u'    avg difference: %.2f %%,  %.4f A.' %(np.divide(abs(b-e)[:,2], abs(b)[:,2]).mean() * 100, abs(b-e)[:,2].mean())
     idx_min = np.abs(b-e)[:,2].argmin()
-    report += u'    min difference: backdrop_pdist [%2d(%s)-%2d(%s)=%.3f] - electron_pdist [%2d(%s)-%2d(%s)=%.3f] = %.2f %%. \n' %(b[idx_min][0], boc.ccoor[int(b[idx_min][0])], b[idx_min][1], boc.ccoor[int(b[idx_min][1])], b[idx_min,2],
+    print u'    min difference: backdrop_pdist [%2d(%s)-%2d(%s)=%.3f] - electron_pdist [%2d(%s)-%2d(%s)=%.3f] = %.2f %%. ' %(b[idx_min][0], boc.ccoor[int(b[idx_min][0])], b[idx_min][1], boc.ccoor[int(b[idx_min][1])], b[idx_min,2],
                                                                                                                                    e[idx_min][0], eoc.ccoor[int(e[idx_min][0])], e[idx_min][1], eoc.ccoor[int(e[idx_min][1])], e[idx_min,2],
                                                                                                                                    np.abs(b-e)[idx_min,2] / np.abs(b)[idx_min,2] * 100)
     idx_max = abs(b-e)[:,2].argmax()
-    report += u'    max difference: backdrop_pdist [%2d(%s)-%2d(%s)=%.3f] - electron_pdist [%2d(%s)-%2d(%s)=%.3f] = %.2f %%. \n' %(b[idx_max][0], boc.ccoor[int(b[idx_max][0])], b[idx_max][1], boc.ccoor[int(b[idx_max][1])], b[idx_max,2],
+    print u'    max difference: backdrop_pdist [%2d(%s)-%2d(%s)=%.3f] - electron_pdist [%2d(%s)-%2d(%s)=%.3f] = %.2f %%. ' %(b[idx_max][0], boc.ccoor[int(b[idx_max][0])], b[idx_max][1], boc.ccoor[int(b[idx_max][1])], b[idx_max,2],
                                                                                                                                    e[idx_max][0], eoc.ccoor[int(e[idx_max][0])], e[idx_max][1], eoc.ccoor[int(e[idx_max][1])], e[idx_max,2],
                                                                                                                                    np.abs(b-e)[idx_max,2] / np.abs(b)[idx_max,2] * 100)
-    report += '-' * 130 + '\n'
+    print '-' * 130
 
-    return report
+    sys.stdout = sys.__stdout__
+
+    return result
 
 
 
@@ -1444,7 +1455,7 @@ def compare_cell(eoc,boc, ZERO=0.02, rs=[10, 6.5, 6.5], is_verbose=False):    # 
     sreport=''
 
     cores = []  #eoc|boc, idx_core_atom
-    remainder = [range(eoc.natoms),range(boc.natoms)]
+    remainder = [range(eoc.natoms()),range(boc.natoms())]
 
     for r in rs:    # 附录：考虑remainder里面分为多个派系的情况。做全排列太慢，只能进行局域性讨论。
         if is_verbose:  print '-' * 65 + ' r = %s ' %r + '-' * 65 + '\n'
@@ -1456,13 +1467,13 @@ def compare_cell(eoc,boc, ZERO=0.02, rs=[10, 6.5, 6.5], is_verbose=False):    # 
                 boc_winners = []
                 for idx_boc in remainder[1]:
                     # 比较已经对照出的core
-                    eoc_dist1 = eoc.cdist[idx_eoc,core[0]] if core[0] else [0]      ## 意外情况修复
-                    boc_dist1 = boc.cdist[idx_boc,core[1]] if core[1] else [0]
+                    eoc_dist1 = eoc.cdist()[idx_eoc,core[0]] if core[0] else [0]      ## 意外情况修复
+                    boc_dist1 = boc.cdist()[idx_boc,core[1]] if core[1] else [0]
                     # 比较未对照出的remainder，仅限r半径内
-                    eoc_dist2_adjidx = [idx_atom for idx_atom in remainder[0] if 0<eoc.cdist[idx_atom,idx_eoc]<r]
-                    eoc_dist2 = eoc.cdist[idx_eoc,eoc_dist2_adjidx]
-                    boc_dist2_adjidx = [idx_atom for idx_atom in remainder[1] if 0<boc.cdist[idx_atom,idx_boc]<r]
-                    boc_dist2 = boc.cdist[idx_boc,boc_dist2_adjidx]
+                    eoc_dist2_adjidx = [idx_atom for idx_atom in remainder[0] if 0<eoc.cdist()[idx_atom,idx_eoc]<r]
+                    eoc_dist2 = eoc.cdist()[idx_eoc,eoc_dist2_adjidx]
+                    boc_dist2_adjidx = [idx_atom for idx_atom in remainder[1] if 0<boc.cdist()[idx_atom,idx_boc]<r]
+                    boc_dist2 = boc.cdist()[idx_boc,boc_dist2_adjidx]
                     l = min(len(eoc_dist2), len(boc_dist2))
                     # 选举最match的
                     ## 意外情况：core是空的（不空修复），remainder在r半径内是空的（delta2最终修复），分母有0（允许np.infty），分子分母同时为0（perfect match赋0）
@@ -1491,10 +1502,10 @@ def compare_cell(eoc,boc, ZERO=0.02, rs=[10, 6.5, 6.5], is_verbose=False):    # 
                     break
         cores.append(core)
 
-    report += '-' * 60 + ' max allowed relative difference = %s '%ZERO + '-' * 60 + '\n'
-    report += 'cores: %s\n' %(cores)
-    report += '-' * 60 + '\n'
-    report += 'remainder: %s\n' %(remainder)
+    print '-' * 60 + ' max allowed relative difference = %s '%ZERO + '-' * 60 + '\n'
+    print 'cores: %s\n' %(cores)
+    print '-' * 60 + '\n'
+    print 'remainder: %s\n' %(remainder)
     return report
 
 
@@ -1582,7 +1593,7 @@ class Compare(Dummy):
             print '-' * 130
 
             # unordered bijective differences
-            print compare_cell_bijective(eoc, boc)
+            compare_cell_bijective(eoc, boc)
 
             # are they the same cell?
             for ZERO in [0.01, 0.05, 0.1, 0.3]:
@@ -1609,7 +1620,7 @@ class Md(Dummy):
             os.chdir(prev.path)
             tree = ET.parse('vasprun.xml')
             root = tree.getroot()
-            data = np.zeros(( prev.cell.natoms, 3, len(root.findall('calculation')) ))
+            data = np.zeros(( prev.cell.natoms(), 3, len(root.findall('calculation')) ))
             # each step
             for idx_step, ionicstep in enumerate(root.findall('calculation')):
                 structure = ionicstep.find('structure')

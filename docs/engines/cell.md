@@ -7,12 +7,11 @@ __base__ [0] = [ a_x    a_y    a_z ]
 
 __stoichiometry__ = {  _symbol_   :   _natoms_   }
 
-__coordinates__ [ _idx_atom_ ] =  [ r_x    r_y    r_z ]
-__fcoor__
 __ccoor__
-    __ccoor_kdtree__
-    __ccoor_mindist__
-    __cdist__
+    __ccoor_kdtree()__
+    __ccoor_mindist()__
+    __cdist()__
+__fcoor()__
 
-__nelectrons__ # of electrons involved in computation (POTCAR ZVAL)
-__natoms__
+__nelectrons()__ # of electrons involved in computation (POTCAR ZVAL)
+__natoms()__
