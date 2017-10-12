@@ -11,22 +11,14 @@ def get_error(x):
     import numpy as np
 
     def pre_optimize_regular(cell, a, b, c, d, e, f):     # start ccoor, parameters
-
         sc = cell.ccoor
         ec = np.copy(sc)
-
         for i, j in np.ndindex(len(sc), len(sc)):
-
             if i==j: continue
-
             x = sc[j] - sc[i]
             r = np.linalg.norm(x)
-
             ec[i] += x / r * a * np.exp(-b * r) * (c * r + d + e / r + f / r**2 )
-
         cell.ccoor = ec
-
-
 
     cur_list = [['master.PbS QD.bare qd testing.Q0 Test convergence.Pb55S38.start - regular grid | end - -0_02 | omg i forgot isym0','master.PbS QD.bare qd testing.Q0 Test convergence.Pb55S38.start - regular grid | end - -0_02 | omg i forgot isym0'],
                 ['master.PbS QD.bare qd testing.Q0 Test convergence.Pb55S38.start - perturbed | end - -0_02','master.PbS QD.bare qd testing.Q0 Test convergence.Pb55S38.start - perturbed | end - -0_02'],
@@ -44,7 +36,6 @@ def get_error(x):
                 ['master.PbS QD.bare qd testing.crunchit.7 opt','master.PbS QD.bare qd testing.crunchit.7 opt'] ]
 
     a,b,c,d,e,f = x
-
     error = 0
 
     for p in cur_list:
@@ -53,14 +44,10 @@ def get_error(x):
        scell.recompute()
        ecell = engine.Map().lookup(p[1]).vasp.optimized_cell
        ecell.recompute()
-
        pre_optimize_regular(scell, a, b, c, d, e, f)
-
        error += engine.compare_cell_bijective(scell, ecell)
 
     return error
-
-
 
 
 

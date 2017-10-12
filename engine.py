@@ -495,10 +495,7 @@ class Cell(object):
 
     @shared.debug_wrap
     def __str__(self):
-        #: compat recompute
-        if getattr(self, 'cdist', None) is None:
-            self.recompute()
-        #;
+
         result = self.name+'\n'
         result += '1\n'
         for line in self.base:
@@ -506,14 +503,14 @@ class Cell(object):
         result += '  '.join(self.stoichiometry.keys()) + '\n'
         result += '  '.join(map(str,self.stoichiometry.values())) + '\n'
         result += 'Direct\n'
-        for line in self.fcoor():
+        for line in np.dot(self.ccoor, np.linalg.inv(self.base)):
             result += ' '.join(map(str,line))+'\n'
         return result
 
     def recompute(self):
-        self.natoms = lambda self: sum( self.stoichiometry.values() )
-        self.fcoor = lambda self: np.dot(self.ccoor, np.linalg.inv(self.base))
-        self.nelectrons = lambda self: sum( [self.stoichiometry[symbol] * shared.ELEMENTS[symbol].pot_zval for symbol in self.stoichiometry] )
+        new_cell = Cell(str(self))
+        for name in vars(new_cell):
+            setattr(self, name, getattr(new_cell, name, None))
 
     def poscar4(self):
         result = str(self)
