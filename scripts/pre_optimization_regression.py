@@ -1,14 +1,11 @@
 #!/usr/bin/python
 import numpy as np
 from scipy.optimize import minimize
-
-
-
+qchem.Load()
 
 def get_error(x):
 
     import numpy as np
-
 
     def pre_optimize_regular(cell, a, b, c, d, e, f):     # start ccoor, parameters
         sc = cell.ccoor
