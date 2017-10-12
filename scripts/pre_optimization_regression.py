@@ -8,14 +8,16 @@ def get_error(x):
     import numpy as np
 
     def pre_optimize_regular(cell, a, b, c, d, e, f):     # start ccoor, parameters
-        sc = cell.ccoor
+        ecell = engine.Cell(str(cell))
+        sc = ecell.ccoor
         ec = np.copy(sc)
         for i, j in np.ndindex(len(sc), len(sc)):
             if i==j: continue
             x = sc[j] - sc[i]
             r = np.linalg.norm(x)
             ec[i] += x / r * a * np.exp(-b * r) * (c * r + d + e / r + f / r**2 )
-        cell.ccoor = ec
+        ecell.ccoor = ec
+        return ecell
 
     cur_list = [['master.PbS QD.bare qd testing.Q0 Test convergence.Pb55S38.start - regular grid | end - -0_02 | omg i forgot isym0','master.PbS QD.bare qd testing.Q0 Test convergence.Pb55S38.start - regular grid | end - -0_02 | omg i forgot isym0'],
                 # ['master.PbS QD.bare qd testing.Q0 Test convergence.Pb55S38.start - perturbed | end - -0_02','master.PbS QD.bare qd testing.Q0 Test convergence.Pb55S38.start - perturbed | end - -0_02'],
@@ -40,8 +42,9 @@ def get_error(x):
 
        scell = engine.Map().lookup(p[0]).cell
        ecell = engine.Map().lookup(p[1]).vasp.optimized_cell
-       pre_optimize_regular(scell, a, b, c, d, e, f)
-       error += engine.compare_cell_bijective(scell, ecell, suppress_output=True)
+       scell.recompute()
+       ecell.recompute()
+       error += engine.compare_cell_bijective(pre_optimize_regular(scell, a, b, c, d, e, f), ecell, suppress_output=True)
 
     print a, b, c, d, e, f, error
     return error
