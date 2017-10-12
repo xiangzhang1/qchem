@@ -475,6 +475,9 @@ class Cell(object):
         else:
             raise shared.CustomError(self.__class__.__name__+'__init__: unsupported POSCAR5 format. ')
 
+    def fcoor(self):
+        return np.dot(self.ccoor, np.linalg.inv(self.base))
+
     def cdist(self):
         return spatial.distance.squareform(spatial.distance.pdist(self.ccoor))
 
@@ -482,7 +485,7 @@ class Cell(object):
         return np.amin( spatial.distance.pdist(self.ccoor) )
 
     def ccoor_kdtree(self):
-        spatial.cKDTree( self.ccoor )
+        return spatial.cKDTree( self.ccoor )
 
     def natoms(self):
         return sum( self.stoichiometry.values() )
@@ -508,7 +511,9 @@ class Cell(object):
         return result
 
     def recompute(self):
-        self.ccoor = np.dot(self.fcoor(), self.base)
+        self.natoms = lambda self: sum( self.stoichiometry.values() )
+        self.fcoor = lambda self: np.dot(self.ccoor, np.linalg.inv(self.base))
+        self.nelectrons = lambda self: sum( [self.stoichiometry[symbol] * shared.ELEMENTS[symbol].pot_zval for symbol in self.stoichiometry] )
 
     def poscar4(self):
         result = str(self)
