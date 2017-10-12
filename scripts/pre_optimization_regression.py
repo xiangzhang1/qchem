@@ -4,10 +4,10 @@ from scipy.optimize import minimize
 qchem.Load()
 
 def get_error(x):
-
     import numpy as np
 
     def pre_optimize_regular(cell, a, b, c, d, e, f):     # start ccoor, parameters
+
         ecell = engine.Cell(str(cell))
         sc = ecell.ccoor
         ec = np.copy(sc)
@@ -49,5 +49,4 @@ def get_error(x):
     print a, b, c, d, e, f, error
     return error
 
-
-print minimize(get_error, x0=[0.04, 0.3, 0.1, 0.2, 0.3, 0.5])
+print minimize(get_error, x0=[0.03, 0.3, 0.1, 0.2, 0.3, 0.5])

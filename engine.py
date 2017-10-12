@@ -508,11 +508,12 @@ class Cell(object):
         return result
 
     def recompute(self):
-        new_cell = Cell(str(self))
-        delattr(self, 'natoms')
-        delattr(self, 'nelectrons')
-        for name in vars(new_cell):
-            setattr(self, name, getattr(new_cell, name, None))
+        if isinstance(self.natoms, int):
+            new_cell = Cell(str(self))
+            delattr(self, 'natoms')
+            delattr(self, 'nelectrons')
+            for name in vars(new_cell):
+                setattr(self, name, getattr(new_cell, name, None))
 
     def poscar4(self):
         result = str(self)
