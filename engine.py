@@ -508,13 +508,7 @@ class Cell(object):
         return result
 
     def recompute(self):
-        #: compat recompute
         self.ccoor = np.dot(self.fcoor(), self.base)
-        self.ccoor_kdtree() = spatial.cKDTree( self.ccoor )
-        self.ccoor_mindist() = np.amin( spatial.distance.pdist(self.ccoor) )
-
-        self.cdist() = spatial.distance.squareform(spatial.distance.pdist(self.ccoor))
-        #;
 
     def poscar4(self):
         result = str(self)
@@ -996,7 +990,7 @@ class Grepen(object):
         with open("EIGENVAL","r") as eigenval_file:
             eigenval = [ x.split() for x in eigenval_file.readlines() ]
             self.temperature = float( eigenval[2][0] )
-            self.nelectrons() = int( eigenval[5][0] )
+            self.nelectrons = int( eigenval[5][0] )
             self.nkpts = int( eigenval[5][1] )
             if self.nkpts != (len(eigenval) - 6) / (self.nbands+2):
                 raise shared.CustomError(self.__class__.__name__ + '__init__: EIGENVAL file length not matching nkpts.')
