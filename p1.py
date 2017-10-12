@@ -23,8 +23,6 @@ import shared
 import engine
 from shared import ELEMENTS
 
-sys.stdout = sys.stderr = open(__file__+'.log', "w")
-
 qchem.Load()
 
 def get_error(x):
@@ -68,9 +66,11 @@ def get_error(x):
        ecell.recompute()
        error += engine.compare_cell_bijective(pre_optimize_regular(scell, a, b, c, d, e, f), ecell, suppress_output=True)
 
-    print a, b, c, d, e, f, error
+    with open(__file__+'.log', "a") as of:
+        of.write('%s %s %s %s %s %s %s\n' %(a, b, c, d, e, f, error))
     return error
 
-print minimize(get_error, method='Powell', x0=[  6.155e-01,   1.783e+00,  -6.703e+01,   3.578e+01,   9.838e+02, -7.022e+02])
+with open(__file__+'.log', "a") as of:
+    of.write('%s\n' %(minimize(get_error, method='Powell', x0=[  6.155e-01,   1.783e+00,  -6.703e+01,   3.578e+01,   9.838e+02, -7.022e+02])))
 #[0.03, 0.3, 0.1, 0.2, 0.3, 0.5]
 #[  6.155e-01,   1.783e+00,  -6.703e+01,   3.578e+01,   9.838e+02, -7.022e+02]
