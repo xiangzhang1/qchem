@@ -25,7 +25,7 @@ def pre_optimize_regular(cell, a, b, c, d, e, f):     # start ccoor, parameters
 
 
 
-def get_pars(a, b, c, d, e, f):
+def get_error(a, b, c, d, e, f):
 
     cur_list = [
                 ['master.PbS QD.bare qd testing.Q0 Test convergence.Pb55S38.start - regular grid | end - -0_02 | omg i forgot isym0','master.PbS QD.bare qd testing.Q0 Test convergence.Pb55S38.start - regular grid | end - -0_02 | omg i forgot isym0'],
@@ -51,6 +51,14 @@ def get_pars(a, b, c, d, e, f):
            scell = engine.Map().lookup(p[0]).cell
            ecell = engine.Map().lookup(p[1]).vasp.optimized_cell
 
-           pre_optimize_regular(scell)
+           pre_optimize_regular(scell, a, b, c, d, e, f)
 
            error += engine.compare_cell_bijective(scell, ecell)
+
+       return error
+
+
+
+
+
+print minimize(get_error, x0=[0.07, 0.3, 0.1, 0.2, 0.3, 0.5])
