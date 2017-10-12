@@ -1,6 +1,28 @@
 #!/usr/bin/python
 import numpy as np
 from scipy.optimize import minimize
+
+# common libraries
+import sys
+import os
+import shutil
+import random
+import string
+import dill as pickle
+import time
+from pprint import pprint
+import IPython
+
+from cStringIO import StringIO
+from fuzzywuzzy import process
+
+
+# qchem package
+import qchem
+import shared
+import engine
+from shared import ELEMENTS
+
 qchem.Load()
 
 def get_error(x):

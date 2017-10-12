@@ -1,27 +1,4 @@
 #!/usr/bin/python
-# common libraries
-import sys
-import os
-import shutil
-import random
-import string
-import dill as pickle
-import time
-from pprint import pprint
-import IPython
-
-from cStringIO import StringIO
-from fuzzywuzzy import process
-
-
-# qchem package
-import qchem
-import shared
-import engine
-from shared import ELEMENTS
-
-
-
 import numpy as np
 import sys
 import os
