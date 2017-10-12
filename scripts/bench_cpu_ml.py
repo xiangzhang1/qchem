@@ -1,4 +1,27 @@
 #!/usr/bin/python
+# common libraries
+import sys
+import os
+import shutil
+import random
+import string
+import dill as pickle
+import time
+from pprint import pprint
+import IPython
+
+from cStringIO import StringIO
+from fuzzywuzzy import process
+
+
+# qchem package
+import qchem
+import shared
+import engine
+from shared import ELEMENTS
+
+
+
 import numpy as np
 import sys
 import os
@@ -22,12 +45,13 @@ data = np.float_(data)
 
 
 # training
-MAX = 550
+MAX = 950
+TEST = 70
 X_train = data[:MAX, :-3]
 Y_train = data[:MAX, -1]
-X_test = data[MAX:MAX+50, :-3]
-Y_test = data[MAX:MAX+50, -1]
-# Y_test_poly = data[MAX:MAX+50, -3]
+X_test = data[MAX:MAX+TEST, :-3]
+Y_test = data[MAX:MAX+TEST, -1]
+# Y_test_poly = data[MAX:MAX+TEST, -3]
 
 # data = preprocessing.normalize(data, norm='l2', axis=0)
 # data[:, (0,1,3,5)] /= 1000000000
@@ -40,7 +64,7 @@ Y_train = Y_train.reshape(-1, 1)
 Y_scaler = preprocessing.StandardScaler().fit(Y_train)
 Y_train = Y_scaler.transform(Y_train)
 
-svr = SVR(kernel='poly',degree=3)
+svr = SVR(kernel='rbf')
 svr.fit(X_train, Y_train)
 
 
