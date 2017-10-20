@@ -1427,7 +1427,8 @@ def compare_cell_bijective(eoc, boc, suppress_output = False):
                                                                                                                                    np.abs(b-e)[idx_max,2] / np.abs(b)[idx_max,2] * 100)
     print '-' * 130
 
-    sys.stdout = orig_sys_stdout
+    if suppress_output:
+        sys.stdout = orig_sys_stdout
 
     return result
 
