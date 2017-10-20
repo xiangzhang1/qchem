@@ -10,7 +10,26 @@ n.reset()
 n.compute()
 
 
+
+
+
+
+
+# when upgrading versions, data structure can change. use the __str__ feature to upgrade the data structure smoothly.
+def upgrade_recompute(node):
+    '''
+    This version is for recomputing cell.
+    Note that both node.cell and vasp.optimized_cell must be recomputed.
+    '''
+    try:
+        node.cell = engine.Cell(str(node.cell))
+    except AttributeError:
+        pass
+    try:
+        node.vasp.optimized_cell = engine.Cell(str(node.vasp.optimized_cell))
+    except AttributeError:
+        pass
+
 l = engine.Map().lookup('master').map.traverse()
 for n in l:
-    if getattr(n, 'cell', None):
-        engine.upgrade_recompute(n)
+    engine.upgrade_recompute(n)

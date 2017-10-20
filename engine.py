@@ -55,14 +55,6 @@ import shared
 # ====================================================
 
 
-# when upgrading versions, data structure can change. use the __str__ feature to upgrade the data structure smoothly.
-def upgrade_recompute(node):
-    '''
-    This version is for recomputing cell.
-    '''
-    node.cell = Cell(str(node.cell))
-
-
 # ====================================================
 
 
