@@ -63,7 +63,16 @@ scheduler.start()
 atexit.register(lambda: scheduler.shutdown()) # Shut down the scheduler when exiting the app
 
 
+
+
+
+
+
+
+# ======================================================================
 # patches output and expected CustomError through; login security
+# ======================================================================
+
 def patch_through(func):
     @wraps(func)
     def wrapped(*args, **kwargs):
@@ -218,7 +227,20 @@ def combine_json(new_json, old_json=None):
             tmp['read_cam0:y'] = 250 * tmp['y']
     return new_json
 
+
+
+
+
+
+
+
+
+
+
+# ======================================================================
 # clericals: docs, execute python function
+# ======================================================================
+
 @app.route('/get_docs_list', methods=['GET'])
 @return_through
 @login_required
@@ -247,7 +269,24 @@ def ipython():
     IPython.embed()
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+# ======================================================================
 # the real qchem functions
+# ======================================================================
+
+
 @app.route('/reset_NODES', methods=['GET'])
 @patch_through
 @login_required
@@ -368,14 +407,6 @@ def del_node():
 def reset_node():
     j = request.get_json(force=True)
     engine.Map().lookup(j['cur']).reset()
-
-@app.route('/copy_ref', methods=['POST'])
-@patch_through
-@login_required
-def copy_ref():
-    j = request.get_json(force=True)
-    n = engine.Map().lookup(j['cur'])
-    shared.NODES[n.name] = n
 
 @app.route('/duplicate_node', methods=['POST'])
 @patch_through
@@ -502,14 +533,32 @@ def make_connection():
         statuscolor = shared.COLOR_PALETTE[-1]
     return jsonify({'statuscolor':statuscolor, 'ALL_ATTR_LIST': shared.ALL_ATTR_LIST, 'READABLE_ATTR_LIST': shared.READABLE_ATTR_LIST, 'DEBUG': shared.DEBUG})
 
+
+@app.route('/cut_ref', methods=['POST'])
+@patch_through
+@login_required
+def cut_ref():
+    j = request.get_json(force=True)
+    n = engine.Map().lookup(j['cur']+'.'+j['name'])
+    p = engine.Map().lookup(j['cur'])
+    shared.NODES[n.name] = n
+    p.map.del_node(n)
+
 @app.route('/paste_ref', methods=['POST'])
 @patch_through
 @login_required
 def paste_ref():
     j = request.get_json(force=True)
-    n = engine.Map().lookup(j['cur'])
-    shared.NODES[j['name']] = n.map.lookup(j['name'])
-    n.map.add_node(n.map.lookup(j['name']))
+    p = engine.Map().lookup(j['cur'])
+    l = [n for n in shared.NODES if n!=engine.Map().lookup('master')]
+    if not l:
+        raise shared.CustomError('paste_ref error: shared.NODES only contains master. nothing pastable')
+    if len(l) > 1:
+        print 'paste_ref warning: more than one nodes pastable. pastable nodes are [%s]' %([n.name for n in l])
+    n = l[0]
+    print 'paste_ref: adding node {%s}' %n.name
+    p.map.add_node(n)
+
 
 @app.route('/add_edge', methods=['POST'])
 @patch_through
