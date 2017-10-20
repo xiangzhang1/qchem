@@ -53,8 +53,6 @@ import shared
 
 
 # ====================================================
-
-
 # ====================================================
 
 
@@ -480,12 +478,15 @@ class Cell(object):
     def fcoor(self):
         return np.dot(self.ccoor, np.linalg.inv(self.base))
 
+    @shared.MWT(timeout=2592000)
     def cdist(self):
         return spatial.distance.squareform(spatial.distance.pdist(self.ccoor))
 
+    @shared.MWT(timeout=2592000)
     def ccoor_mindist(self):
         return np.amin( spatial.distance.pdist(self.ccoor) )
 
+    @shared.MWT(timeout=2592000)
     def ccoor_kdtree(self):
         return spatial.cKDTree( self.ccoor )
 

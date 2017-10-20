@@ -32,4 +32,4 @@ def upgrade_recompute(node):
 
 l = engine.Map().lookup('master').map.traverse()
 for n in l:
-    engine.upgrade_recompute(n)
+    upgrade_recompute(n)
