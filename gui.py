@@ -550,7 +550,7 @@ def cut_ref():
 def paste_ref():
     j = request.get_json(force=True)
     p = engine.Map().lookup(j['cur'])
-    l = [n for n in shared.NODES if n!=engine.Map().lookup('master')]
+    l = [n for n in shared.NODES.values() if n!=engine.Map().lookup('master')]
     if not l:
         raise shared.CustomError('paste_ref error: shared.NODES only contains master. nothing pastable')
     if len(l) > 1:
