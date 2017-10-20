@@ -56,14 +56,11 @@ import shared
 
 
 # when upgrading versions, data structure can change. use the __str__ feature to upgrade the data structure smoothly.
-def upgrade_recompute(cell):
-    new_cell = Cell(str(cell))
-    if getattr(cell, 'natoms', None):
-        delattr(cell, 'natoms')
-    if getattr(cell, 'nelectrons', None):
-        delattr(cell, 'nelectrons')
-    for name in vars(new_cell):
-        setattr(cell, name, getattr(new_cell, name, None))
+def upgrade_recompute(node):
+    '''
+    This version is for recomputing cell.
+    '''
+    node.cell = Cell(str(node.cell))
 
 
 # ====================================================
