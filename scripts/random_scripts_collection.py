@@ -13,4 +13,4 @@ n.compute()
 l = engine.Map().lookup('master').map.traverse()
 for n in l:
     if getattr(n, 'cell', None):
-        n.cell.recompute()
+        engine.upgrade_recompute(cell)
