@@ -11,5 +11,6 @@ n.compute()
 
 
 l = engine.Map().lookup('master').map.traverse()
-if getattr(l, 'cell', None):
-    l.cell.recompute()
+for n in l:
+    if getattr(n, 'cell', None):
+        n.cell.recompute()

@@ -509,8 +509,10 @@ class Cell(object):
 
     def recompute(self):
         new_cell = Cell(str(self))
-        delattr(self, 'natoms')
-        delattr(self, 'nelectrons')
+        if getattr(self, 'natoms', None):
+            delattr(self, 'natoms')
+        if getattr(self, 'nelectrons', None):
+            delattr(self, 'nelectrons')
         for name in vars(new_cell):
             setattr(self, name, getattr(new_cell, name, None))
 
