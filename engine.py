@@ -1392,7 +1392,9 @@ def compare_cell_bijective(eoc, boc, suppress_output = False):
     import numpy as np
     import os
 
-    if suppress_output: sys.stdout = open(os.devnull,"w")
+    if suppress_output:
+        orig_sys_stdout = sys.stdout
+        sys.stdout = open(os.devnull,"w")
 
     # bijective-representation difference (congruent testing), allowing rotation and translation
     b = np.float32([ [i, j, np.linalg.norm(boc.ccoor[i]-boc.ccoor[j])] for i in range(boc.natoms()) for j in range(boc.natoms()) if i!=j ])
@@ -1425,7 +1427,7 @@ def compare_cell_bijective(eoc, boc, suppress_output = False):
                                                                                                                                    np.abs(b-e)[idx_max,2] / np.abs(b)[idx_max,2] * 100)
     print '-' * 130
 
-    sys.stdout = sys.__stdout__
+    sys.stdout = orig_sys_stdout
 
     return result
 
@@ -1497,9 +1499,9 @@ def compare_cell(eoc,boc, ZERO=0.02, rs=[10, 6.5, 6.5], is_verbose=False):    # 
         cores.append(core)
 
     print '-' * 60 + ' max allowed relative difference = %s '%ZERO + '-' * 60
-    print 'cores: %s\n' %(cores)
+    print 'cores: %s' %(cores)
     print '-' * 60
-    print 'remainder: %s\n' %(remainder)
+    print 'remainder: %s' %(remainder)
     return report
 
 

@@ -376,6 +376,9 @@ class Logger(object):
         self.terminal.write(message)
         self.log.write(message)
 
+    def flush(self):
+        sys.stdout.flush()
+
 def log_wrap(func):
     @debug_wrap
     @wraps(func)
