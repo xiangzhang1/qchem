@@ -1408,7 +1408,7 @@ def compare_cell_bijective(eoc, boc, suppress_output = False):
     print u'    max difference: backdrop_pdist [%2d%s-%2d%s=%.3f] - electron_pdist [%2d%s-%2d%s=%.3f] = %.2f %%. ' %(b[idx_max][0], boc.ccoor[int(b[idx_max][0])], b[idx_max][1], boc.ccoor[int(b[idx_max][1])], b[idx_max,2],
                                                                                                                                    e[idx_max][0], eoc.ccoor[int(e[idx_max][0])], e[idx_max][1], eoc.ccoor[int(e[idx_max][1])], e[idx_max,2],
                                                                                                                                    np.abs(b-e)[idx_max,2] / np.abs(b)[idx_max,2] * 100)
-    print '-' * 130 + '\n'
+    print '-' * 130
 
     # bijective-representation difference (congruent testing), allowing physical phenomena relocation
     b = b[ b[:,2].argsort() ]
@@ -1452,7 +1452,7 @@ def compare_cell(eoc,boc, ZERO=0.02, rs=[10, 6.5, 6.5], is_verbose=False):    # 
     remainder = [range(eoc.natoms()),range(boc.natoms())]
 
     for r in rs:    # 附录：考虑remainder里面分为多个派系的情况。做全排列太慢，只能进行局域性讨论。
-        if is_verbose:  print '-' * 65 + ' r = %s ' %r + '-' * 65 + '\n'
+        if is_verbose:  print '-' * 65 + ' r = %s ' %r + '-' * 65
         core = [[],[]]
         is_remainder_edited = True
         while is_remainder_edited and remainder[0] and remainder[1]:
@@ -1496,9 +1496,9 @@ def compare_cell(eoc,boc, ZERO=0.02, rs=[10, 6.5, 6.5], is_verbose=False):    # 
                     break
         cores.append(core)
 
-    print '-' * 60 + ' max allowed relative difference = %s '%ZERO + '-' * 60 + '\n'
+    print '-' * 60 + ' max allowed relative difference = %s '%ZERO + '-' * 60
     print 'cores: %s\n' %(cores)
-    print '-' * 60 + '\n'
+    print '-' * 60
     print 'remainder: %s\n' %(remainder)
     return report
 

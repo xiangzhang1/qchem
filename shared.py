@@ -377,6 +377,7 @@ class Logger(object):
         self.log.write(message)
 
 def log_wrap(func):
+    @debug_wrap
     @wraps(func)
     def wrapped(self, *args, **kwargs):
         # change stdout to dual-pipe
