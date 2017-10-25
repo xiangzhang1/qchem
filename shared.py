@@ -35,8 +35,8 @@ from StringIO import StringIO
 #
 # ===========================================================================
 
-SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-HOME_DIR = os.path.expanduser(os.path.expanduser("~"))
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__)) + '/'
+HOME_DIR = os.path.expanduser(os.path.expanduser("~")) + '/'
 
 DEBUG = 1
 # DEBUG = 0
