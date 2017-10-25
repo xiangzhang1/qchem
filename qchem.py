@@ -51,14 +51,14 @@ def _Dump(obj, middlename, is_keras=False):
 def _Load(middlename, datetime=None, is_keras=False):
     if not is_keras:
         # load
-        filepath = shared.SCRIPT_DIR + sorted([x for x in os.listdir(shared.SCRIPT_DIR + '/data/') if x.startswith('shared.%s.pickle.%s'%(middlename, datetime if datetime else ''))])[-1]
+        filepath = shared.SCRIPT_DIR + '/data/' + sorted([x for x in os.listdir(shared.SCRIPT_DIR + '/data/') if x.startswith('shared.%s.pickle.%s'%(middlename, datetime if datetime else ''))])[-1]
         with open(filepath, 'rb') as f:
             return pickle.load(f)
     else:
         # regular load the rest
         obj = _Load(middlename, datetime, is_keras=False)
         # keras-load the model
-        filepath = shared.SCRIPT_DIR + sorted([x for x in os.listdir(shared.SCRIPT_DIR + '/data/') if x.startswith('shared.%s.model.keras.%s'%(middlename, datetime if datetime else ''))])[-1]
+        filepath = shared.SCRIPT_DIR + '/data/' + sorted([x for x in os.listdir(shared.SCRIPT_DIR + '/data/') if x.startswith('shared.%s.model.keras.%s'%(middlename, datetime if datetime else ''))])[-1]
         obj.model = load_model(filepath)
         return obj
 
