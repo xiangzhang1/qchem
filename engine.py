@@ -508,9 +508,9 @@ class Ml_vasp_memory(object):
                             makeparam.wavefunction,
                             makeparam.arraygrid,
                             gen.cell.natoms(),
-                            np.dot(np.cross(node.cell.base[0], node.cell.base[1]), node.cell.base[2]),
-                            node.gen.getkw('npar'),
-                            node.gen.ncore_total()
+                            np.dot(np.cross(gen.cell.base[0], gen.cell.base[1]), gen.cell.base[2]),
+                            gen.getkw('npar'),
+                            gen.ncore_total()
                          ])
         # scale
         X_test[:, (0,2,3)] /= 10**9 # in GB
