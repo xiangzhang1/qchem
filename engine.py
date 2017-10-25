@@ -284,7 +284,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
                 raise shared.CustomError( self.__class__.__name__+' error: non-unique output. Kw[%s]={%s} has not been restricted to 1 value.' %(name,self.kw[name]) )
         if self.parse_if('engine=vasp'):
             print Map().rlookup(attr_dict={'gen':self}).name
-            memory_predicted_gb = shared.ML_VASP_MEMORY.predict(Map().rlookup(attr_dict={'gen':self})) / 10**9 # in GB now
+            memory_predicted_gb = shared.ML_VASP_MEMORY.predict(gen) / 10**9 # in GB now
             memory_available_gb = int(node.gen.getkw('nnode')) * int(node.gen.getkw('mem_node'))
             print self.__class__.__name__ + ' memory usage %s: %s GB used out of %s GB' %('prediction' if memory_available_gb>memory_predicted_gb else 'WARNING', memory_predicted_gb, memory_available_gb)
 
@@ -499,9 +499,9 @@ class Ml_vasp_memory(object):
         # train
         self.model.fit(X_train, Y_train, epochs=30, verbose=0)
 
-    def predict(self, node):
+    def predict(self, gen):
         # initialize data
-        makeparam = Makeparam(node.gen)
+        makeparam = Makeparam(gen)
         X_test = np.float_([
                             makeparam.memory['projector_real'],
                             makeparam.memory['projector_reciprocal'],
