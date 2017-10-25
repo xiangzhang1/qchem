@@ -21,7 +21,7 @@ from StringIO import StringIO
 # INDEX
 # =====
 # DEBUG option, SCRIPT_DIR, HOME_DIR
-# NODES, Fragile lists, ML_X
+# NODES, Fragile lists, ML_VASP_MEMORY
 # ELEMENTS
 # CustomError, DeferError, [LookupError]
 # MySFTPClient

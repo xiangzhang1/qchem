@@ -283,7 +283,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             if len(self.kw[name]) != 1:
                 raise shared.CustomError( self.__class__.__name__+' error: non-unique output. Kw[%s]={%s} has not been restricted to 1 value.' %(name,self.kw[name]) )
         if self.parse_if('engine=vasp'):
-            memory_predicted_gb = ml_vasp_memory.predict(engine.Map().rlookup(attr_dict={'gen':self})) / 10**9 # in GB now
+            memory_predicted_gb = shared.ML_VASP_MEMORY.predict(engine.Map().rlookup(attr_dict={'gen':self})) / 10**9 # in GB now
             memory_available_gb = int(node.gen.getkw('nnode')) * int(node.gen.getkw('mem_node'))
             print self.__class__.__name__ + ' memory usage %s: %s GB used out of %s GB' %('prediction' if memory_available_gb>memory_predicted_gb else 'WARNING', memory_predicted_gb, memory_available_gb)
 
