@@ -65,16 +65,16 @@ def Dump():
     if 'master' not in shared.NODES:
         raise shared.CustomError('Dump: NODES is empty. You really should not dump.')
     _Dump(shared.NODES, 'NODES', is_keras=False)
-    _Dump(shared.ML_VASP_MEMORY, 'ML_VASP_MEMORY', is_keras=False)
     _Dump(shared.ML_VASP_MEMORY.model, 'ML_VASP_MEMORY.model', is_keras=True)
+    shared.ML_VASP_MEMORY.model = None
+    _Dump(shared.ML_VASP_MEMORY, 'ML_VASP_MEMORY', is_keras=False)
     print 'Dump complete.'
 
 def Load(datetime=None):
-    shared.NODES = _Load('NODES', datetime=datetime, is_keras=False)
-    shared.ML_VASP_MEMORY.model = _Load('ML_VASP_MEMORY.model', datetime=datetime, is_keras=True)
-    shared.ML_VASP_MEMORY.model = None
-    shared.ML_VASP_MEMORY = _Load('ML_VASP_MEMORY', datetime=datetime, is_keras=False)
-    # shared.ML_VASP_MEMORY = engine.Ml_vasp_memory()
+    # shared.NODES = _Load('NODES', datetime=datetime, is_keras=False)
+    # shared.ML_VASP_MEMORY = _Load('ML_VASP_MEMORY', datetime=datetime, is_keras=False)
+    # shared.ML_VASP_MEMORY.model = _Load('ML_VASP_MEMORY.model', datetime=datetime, is_keras=True)
+    shared.ML_VASP_MEMORY = engine.Ml_vasp_memory()
     print 'Load complete.'
 
 
