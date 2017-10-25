@@ -513,8 +513,10 @@ class Ml_vasp_memory(object):
                             gen.ncore_total()
                          ])
         # scale
-        X_test[(0,2,3)] /= 10**9 # in GB
-        X_test[(5)] /= 1000 # in 1000A^3
+        X_test[0] /= 10**9 # in GB
+        X_test[2] /= 10**9
+        X_test[3] /= 10**9
+        X_test[5] /= 1000 # in 1000A^3
         # predict
         Y_test_pred = self.model.predict(X_test)
         # reverse scale
