@@ -34,34 +34,47 @@ import shared
 #         #;
 #         shared.NODES[n.name] = n
 
+def _Dump(obj, middlename, is_keras=False):
+    filepath = shared.SCRIPT_DIR + '/data/shared.%s.dump.'%(middlename)+time.strftime('%Y%m%d%H%M%S')
+    if is_keras:
+        obj.save(filepath)
+    else:
+        with open(filepath,'wb') as dumpfile:
+            pickle.dump(obj, dumpfile)
+
+def _Load(middlename, datetime=None, is_keras=False):
+    if datetime:
+        filepath = shared.SCRIPT_DIR + '/data/shared.%s.dump.'%(middlename) + datetime
+    else:
+        l = [x for x in os.listdir(shared.SCRIPT_DIR + '/data/') if x.startswith('shared.%s.dump'%(middlename))]
+        if not l:   raise shared.CustomError('Load: no file to load')
+        l.sort()
+        filepath = shared.SCRIPT_DIR + '/data/' + l[-1]
+    if os.path.exists(filepath):
+        if is_keras:
+            return load_model(filepath)
+        else:
+            with open(filepath,'rb') as dumpfile:
+                return pickle.load(dumpfile)
+    else:
+        raise shared.CustomError('File {%s} not found' %filepath)
+
 def Dump():
     # distinguish data source by prefix: shared.NODES.dump, shared.NODES.markdown, sigma.dump
     # distinguish datetime by postfix: 20170803094500
     if 'master' not in shared.NODES:
         raise shared.CustomError('Dump: NODES is empty. You really should not dump.')
-    with open(shared.SCRIPT_DIR + '/data/shared.NODES.dump.'+time.strftime('%Y%m%d%H%M%S'),'wb') as dumpfile:
-        pickle.dump({'NODES':shared.NODES, 'ML_VASP_MEMORY':shared.ML_VASP_MEMORY}, dumpfile) #, protocol=pickle.HIGHEST_PROTOCOL)  # save all objects
-        shared.ML_VASP_MEMORY.model.save(shared.SCRIPT_DIR + '/data/shared.ML_VASP_MEMORY.dump.'+time.strftime('%Y%m%d%H%M%S'))     # save ml models
+    _Dump(shared.NODES, 'NODES', is_keras=False)
+    _Dump(shared.ML_VASP_MEMORY, 'ML_VASP_MEMORY', is_keras=False)
+    _Dump(shared.ML_VASP_MEMORY.model, 'ML_VASP_MEMORY.model', is_keras=True)
     print 'Dump complete.'
 
-
 def Load(datetime=None):
-    if datetime:
-        filename = shared.SCRIPT_DIR + '/data/shared.NODES.dump.' + datetime
-    else:
-        l = [x for x in os.listdir(shared.SCRIPT_DIR + '/data/') if x.startswith('shared.NODES.dump')]
-        if not l:   raise shared.CustomError('Load: no file to load')
-        l.sort()
-        filename = shared.SCRIPT_DIR + '/data/' + l[-1]
-    if os.path.isfile(filename):
-        with open(filename,'rb') as dumpfile:
-            DICT = pickle.load(dumpfile)
-            shared.NODES = DICT['NODES']
-            shared.ML_VASP_MEMORY = DICT['ML_VASP_MEMORY']
-            shared.ML_VASP_MEMORY.model = load_model(shared.SCRIPT_DIR + '/data/shared.ML_VASP_MEMORY.dump.'+time.strftime('%Y%m%d%H%M%S'))
-        print 'Load complete.'
-    else:
-        raise shared.CustomError('File {%s} not found' %filename)
+    shared.NODES = _Load('NODES', datetime=datetime, is_keras=False)
+    # shared.ML_VASP_MEMORY = _Load('ML_VASP_MEMORY', datetime=datetime, is_keras=False)
+    # shared.ML_VASP_MEMORY.model = _Load('ML_VASP_MEMORY.model', datetime=datetime, is_keras=True)
+    shared.ML_VASP_MEMORY = engine.Ml_vasp_memory()
+    print 'Load complete.'
 
 
 class Node(object):
