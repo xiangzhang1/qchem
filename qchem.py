@@ -36,31 +36,32 @@ import shared
 
 def _Dump(obj, middlename, is_keras=False):
     if is_keras:
+        # keras-save the model
         filepath = shared.SCRIPT_DIR + '/data/shared.%s.model.keras.'%(middlename) + time.strftime('%Y%m%d%H%M%S')
         obj.model.save(filepath)
         delattr(obj, 'model')
+        # regular save the rest
         _Dump(obj, middlename, is_keras=False)
     else:
+        # dump
         filepath = shared.SCRIPT_DIR + '/data/shared.%s.pickle.'%(middlename) + time.strftime('%Y%m%d%H%M%S')
         with open(filepath,'wb') as dumpfile:
             pickle.dump(obj, dumpfile)
 
 def _Load(middlename, datetime=None, is_keras=False):
-    if datetime:
-        filepath = shared.SCRIPT_DIR + '/data/shared.%s.dump.'%(middlename) + datetime
+    if not is_keras:
+        # load
+        filepath = sorted([x for x in os.listdir(shared.SCRIPT_DIR + '/data/') if x.startswith('shared.%s.pickle.%s'%(middlename, datetime if datetime else ''))])[-1]
+        with open(filepath, 'rb') as f:
+            return pickle.load(f)
     else:
-        l = [x for x in os.listdir(shared.SCRIPT_DIR + '/data/') if x.startswith('shared.%s.dump'%(middlename))]
-        if not l:   raise shared.CustomError('Load: no file to load')
-        l.sort()
-        filepath = shared.SCRIPT_DIR + '/data/' + l[-1]
-    if os.path.exists(filepath):
-        if is_keras:
-            return load_model(filepath)
-        else:
-            with open(filepath,'rb') as dumpfile:
-                return pickle.load(dumpfile)
-    else:
-        raise shared.CustomError('File {%s} not found' %filepath)
+        # regular load the rest
+        obj = _Load(middlename, datetime, is_keras=False)
+        # keras-load the model
+        filepath = sorted([x for x in os.listdir(shared.SCRIPT_DIR + '/data/') if x.startswith('shared.%s.model.keras.%s'%(middlename, datetime if datetime else ''))])[-1]
+        obj.model = load_model(filepath)
+        return obj
+
 
 def Dump():
     # distinguish data source by prefix: shared.NODES.dump, shared.NODES.markdown, sigma.dump
@@ -73,8 +74,7 @@ def Dump():
 
 def Load(datetime=None):
     shared.NODES = _Load('NODES', datetime=datetime, is_keras=False)
-    shared.ML_VASP_MEMORY = _Load('ML_VASP_MEMORY', datetime=datetime, is_keras=False)
-    shared.ML_VASP_MEMORY.model = _Load('ML_VASP_MEMORY.model', datetime=datetime, is_keras=True)
+    shared.ML_VASP_MEMORY = _Load('ML_VASP_MEMORY', datetime=datetime, is_keras=True)
     print 'Load complete.'
 
 
