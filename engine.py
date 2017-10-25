@@ -421,7 +421,7 @@ class Makeparam(object):
             print '\n'.join(output)
             raise shared.CustomError(tmp_gen.__class__.__name__ + 'error: makeparam output illegal. Check POSCAR4 format and memory leak in script dir.')
         # cleanup
-        shutil.rmtree(shared.SCRIPT_DIR + '/' + tmp_path)
+        os.system('trash %s' %tmp_path)
 
 
 
