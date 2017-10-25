@@ -458,7 +458,6 @@ class Ml_vasp_memory(object):
 
     def __init__(self):
         self.model = Sequential([
-            BatchNormalization(),
             Dense(8, activation='relu', input_dim=8),
             Dropout(0.05),
             Dense(4, activation='relu'),
