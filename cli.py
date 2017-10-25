@@ -23,6 +23,4 @@ import shared
 import engine
 from shared import ELEMENTS
 
-print 'Simple wrapper. Initializing data... '
-qchem.Load()
-IPython.embed()
+print 'Welcome. Libraries loaded. '
