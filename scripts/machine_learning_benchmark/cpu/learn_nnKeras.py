@@ -14,7 +14,7 @@ from keras.layers import Dense, Activation, Dropout, BatchNormalization
 from sklearn.preprocessing import StandardScaler
 
 data = []
-with open("m_cpu_config.log", "r") as if_:
+with open("/home/xzhang1/m_cpu_config.log", "r") as if_:
     lines = if_.readlines()
     for line in lines:
         if line and not line.startswith('#') and len(line.split())==len(lines[1].split()):

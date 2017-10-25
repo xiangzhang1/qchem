@@ -457,6 +457,7 @@ def Ssh_and_run(platform, pseudo_command, jobname=None):
 class Ml_vasp_memory(object):
 
     def __init__(self):
+        # initialize model
         self.model = Sequential([
             Dense(8, activation='relu', input_dim=8),
             Dropout(0.05),
@@ -470,7 +471,7 @@ class Ml_vasp_memory(object):
         self.Y = np.float_([])
 
     def commit(self, node): # commit data to self
-        # data
+        # initialize data
         makeparam = Makeparam(node.gen)
         input_ = np.float_([
                             makeparam.memory['projector_real'],
@@ -488,14 +489,17 @@ class Ml_vasp_memory(object):
         self.Y = np.append(self.Y, label, axis=0)
 
     def train(self):
+        # scale
         X_train = self.X
         Y_train = self.Y
         X_train[:, (0,2,3)] /= 10**9 # in GB
         X_train[:, (5)] /= 1000 # in 1000A^3
         Y_train /= 10**9 # in GB
-        model.fit(X_train, Y_train, epochs=30, verbose=0)
+        # train
+        self.model.fit(X_train, Y_train, epochs=30, verbose=0)
 
     def predict(self, node):
+        # initialize data
         makeparam = Makeparam(node.gen)
         X_test = np.float_([
                             makeparam.memory['projector_real'],
@@ -507,9 +511,12 @@ class Ml_vasp_memory(object):
                             node.gen.getkw('npar'),
                             node.gen.ncore_total()
                          ])
+        # scale
         X_test[:, (0,2,3)] /= 10**9 # in GB
         X_test[:, (5)] /= 1000 # in 1000A^3
-        Y_test_pred = model.predict(X_test)
+        # predict
+        Y_test_pred = self.model.predict(X_test)
+        # reverse scale
         return Y_test_pred * 10**9
 
     def predict_old(self, node):

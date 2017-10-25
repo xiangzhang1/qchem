@@ -12,6 +12,7 @@ import dill as pickle
 import time
 from pprint import pprint
 import IPython
+import numpy as np
 
 from cStringIO import StringIO
 from fuzzywuzzy import process
