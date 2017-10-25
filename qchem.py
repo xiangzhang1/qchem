@@ -71,10 +71,10 @@ def Dump():
 
 def Load(datetime=None):
     shared.NODES = _Load('NODES', datetime=datetime, is_keras=False)
-    # shared.ML_VASP_MEMORY.model = _Load('ML_VASP_MEMORY.model', datetime=datetime, is_keras=True)
-    # shared.ML_VASP_MEMORY.model = None
-    # shared.ML_VASP_MEMORY = _Load('ML_VASP_MEMORY', datetime=datetime, is_keras=False)
-    shared.ML_VASP_MEMORY = engine.Ml_vasp_memory()
+    shared.ML_VASP_MEMORY.model = _Load('ML_VASP_MEMORY.model', datetime=datetime, is_keras=True)
+    shared.ML_VASP_MEMORY.model = None
+    shared.ML_VASP_MEMORY = _Load('ML_VASP_MEMORY', datetime=datetime, is_keras=False)
+    # shared.ML_VASP_MEMORY = engine.Ml_vasp_memory()
     print 'Load complete.'
 
 
