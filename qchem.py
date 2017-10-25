@@ -53,8 +53,9 @@ def Load(datetime=None):
         filename = shared.SCRIPT_DIR + '/data/' + l[-1]
     if os.path.isfile(filename):
         with open(filename,'rb') as dumpfile:
-            shared.NODES = pickle.load(dumpfile)
-            shared.ML_VASP_MEMORY = engine.Ml_vasp_memory()
+            DICT = pickle.load(dumpfile)
+            shared.NODES = DICT['NODES']
+            shared.ML_VASP_MEMORY = DICT['ML_VASP_MEMORY']
         print 'Load complete.'
     else:
         raise shared.CustomError('File {%s} not found' %filename)
