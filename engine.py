@@ -1002,7 +1002,7 @@ class Vasp(object):
                 return None
             return float(str.replace('K','000',output[-1]))
         else:
-            raise shared.CustomError(self.__class__.__name__ + '.memory_used': platform not supported)
+            raise shared.CustomError(self.__class__.__name__ + '.memory_used: platform not supported)
 
 
 #===========================================================================
