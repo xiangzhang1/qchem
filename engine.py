@@ -518,8 +518,8 @@ class Ml_vasp_memory(object):
         X_test[3] /= 10**9
         X_test[5] /= 1000 # in 1000A^3
         # predict
-        Y_test_pred = self.model.predict(np.float_([X_test]).T)
         IPython.embed()
+        Y_test_pred = self.model.predict(np.float_([X_test]).T)
         # reverse scale
         return Y_test_pred * 10**9
 
