@@ -24,4 +24,5 @@ import shared
 import engine
 from shared import ELEMENTS
 
-IPython.embed(banner1='Welcome. Libraries loaded. ')
+print bcolors.FAIL + 'Welcome to qchem. Libraries loaded.' + bcolors.ENDC
+IPython.embed(banner1='')
