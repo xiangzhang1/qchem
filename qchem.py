@@ -1,12 +1,12 @@
 import dill as pickle   # dill requires citation
 import re
 import os
-# os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
-# os.environ["CUDA_VISIBLE_DEVICES"] = ''
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
+os.environ["CUDA_VISIBLE_DEVICES"] = ''
 import time
 import shutil
 
-# from keras.models import load_model
+from keras.models import load_model
 
 import engine
 import shared
@@ -40,6 +40,7 @@ def Dump():
         raise shared.CustomError('Dump: NODES is empty. You really should not dump.')
     with open(shared.SCRIPT_DIR + '/data/shared.NODES.dump.'+time.strftime('%Y%m%d%H%M%S'),'wb') as dumpfile:
         pickle.dump({'NODES':shared.NODES, 'ML_VASP_MEMORY':shared.ML_VASP_MEMORY}, dumpfile) #, protocol=pickle.HIGHEST_PROTOCOL)
+        shared.ML_VASP_MEMORY.model.save(shared.SCRIPT_DIR + '/data/shared.ML_VASP_MEMORY.dump.'+time.strftime('%Y%m%d%H%M%S')
     print 'Dump complete.'
 
 
@@ -55,7 +56,9 @@ def Load(datetime=None):
         with open(filename,'rb') as dumpfile:
             DICT = pickle.load(dumpfile)
             shared.NODES = DICT['NODES']
-            shared.ML_VASP_MEMORY = DICT['ML_VASP_MEMORY']
+            # shared.ML_VASP_MEMORY = DICT['ML_VASP_MEMORY']
+            # shared.ML_VASP_MEMORY.model = load_model(shared.SCRIPT_DIR + '/data/shared.ML_VASP_MEMORY.dump.'+time.strftime('%Y%m%d%H%M%S')
+            shared.ML_VASP_MEMORY = engine.Ml_vasp_memory()
         print 'Load complete.'
     else:
         raise shared.CustomError('File {%s} not found' %filename)
