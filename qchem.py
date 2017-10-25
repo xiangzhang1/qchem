@@ -40,7 +40,7 @@ def Dump():
         raise shared.CustomError('Dump: NODES is empty. You really should not dump.')
     with open(shared.SCRIPT_DIR + '/data/shared.NODES.dump.'+time.strftime('%Y%m%d%H%M%S'),'wb') as dumpfile:
         pickle.dump({'NODES':shared.NODES, 'ML_VASP_MEMORY':shared.ML_VASP_MEMORY}, dumpfile) #, protocol=pickle.HIGHEST_PROTOCOL)
-    print 'Dump complete'.
+    print 'Dump complete.'
 
 
 def Load(datetime=None):
