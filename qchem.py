@@ -35,10 +35,13 @@ import shared
 #         shared.NODES[n.name] = n
 
 def _Dump(obj, middlename, is_keras=False):
-    filepath = shared.SCRIPT_DIR + '/data/shared.%s.dump.'%(middlename)+time.strftime('%Y%m%d%H%M%S')
     if is_keras:
+        filepath = shared.SCRIPT_DIR + '/data/shared.%s.model.keras.'%(middlename) + time.strftime('%Y%m%d%H%M%S')
         obj.save(filepath)
+        delattr(obj, 'model')
+        _Dump(obj, middlename, is_keras=False)
     else:
+        filepath = shared.SCRIPT_DIR + '/data/shared.%s.pickle.'%(middlename) + time.strftime('%Y%m%d%H%M%S')
         with open(filepath,'wb') as dumpfile:
             pickle.dump(obj, dumpfile)
 
@@ -65,16 +68,13 @@ def Dump():
     if 'master' not in shared.NODES:
         raise shared.CustomError('Dump: NODES is empty. You really should not dump.')
     _Dump(shared.NODES, 'NODES', is_keras=False)
-    _Dump(shared.ML_VASP_MEMORY.model, 'ML_VASP_MEMORY.model', is_keras=True)
-    shared.ML_VASP_MEMORY.model = None
-    _Dump(shared.ML_VASP_MEMORY, 'ML_VASP_MEMORY', is_keras=False)
+    _Dump(shared.ML_VASP_MEMORY, 'ML_VASP_MEMORY', is_keras=True)
     print 'Dump complete.'
 
 def Load(datetime=None):
     shared.NODES = _Load('NODES', datetime=datetime, is_keras=False)
     shared.ML_VASP_MEMORY = _Load('ML_VASP_MEMORY', datetime=datetime, is_keras=False)
     shared.ML_VASP_MEMORY.model = _Load('ML_VASP_MEMORY.model', datetime=datetime, is_keras=True)
-    # shared.ML_VASP_MEMORY = engine.Ml_vasp_memory()
     print 'Load complete.'
 
 
