@@ -37,7 +37,7 @@ import shared
 def _Dump(obj, middlename, is_keras=False):
     if is_keras:
         filepath = shared.SCRIPT_DIR + '/data/shared.%s.model.keras.'%(middlename) + time.strftime('%Y%m%d%H%M%S')
-        obj.save(filepath)
+        obj.model.save(filepath)
         delattr(obj, 'model')
         _Dump(obj, middlename, is_keras=False)
     else:
