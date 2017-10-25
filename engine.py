@@ -475,10 +475,10 @@ class Ml_vasp_memory(object):
         # initialize data
         makeparam = Makeparam(node.gen)
         input_ = np.float_([
-                            makeparam.memory['projector_real'],
-                            makeparam.memory['projector_reciprocal'],
-                            makeparam.memory['wavefunction'],
-                            makeparam.memory['arraygrid'],
+                            makeparam.projector_real,
+                            makeparam.projector_reciprocal,
+                            makeparam.wavefunction,
+                            makeparam.arraygrid,
                             node.cell.natoms(),
                             np.dot(np.cross(node.cell.base[0], node.cell.base[1]), node.cell.base[2]),
                             node.gen.getkw('npar'),
@@ -503,10 +503,10 @@ class Ml_vasp_memory(object):
         # initialize data
         makeparam = Makeparam(gen)
         X_test = np.float_([
-                            makeparam.memory['projector_real'],
-                            makeparam.memory['projector_reciprocal'],
-                            makeparam.memory['wavefunction'],
-                            makeparam.memory['arraygrid'],
+                            makeparam.projector_real,
+                            makeparam.projector_reciprocal,
+                            makeparam.wavefunction,
+                            makeparam.arraygrid,
                             node.cell.natoms(),
                             np.dot(np.cross(node.cell.base[0], node.cell.base[1]), node.cell.base[2]),
                             node.gen.getkw('npar'),
