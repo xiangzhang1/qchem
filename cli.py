@@ -23,5 +23,4 @@ import shared
 import engine
 from shared import ELEMENTS
 
-print 'Welcome. Libraries loaded. '
-IPython.embed()
+IPython.embed(banner1='Welcome. Libraries loaded. ')
