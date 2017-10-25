@@ -6,4 +6,3 @@ dill库能够将与任何object相连的property存档。dill不存档局域变�
 
 
 [Dill requires citation](https://pypi.python.org/pypi/dill).
-[OAPackage requires citation](https://pypi.python.org/pypi/OApackage).

@@ -141,7 +141,7 @@ for cell_text in cell_text_list:
                 eigenfunction, engine=vasp, spin=para,
                 ediff=1E-3, isym=2, ismear=-5,
                 ncore=1, ncore_node=1, prec=%s, encut=%s, lreal=On, kpar=%s, kpoints=G 2 2 2, algo=Fast,
-                read=n, platform=dellpc, gpu
+                read=n, platform=dellpc_gpu
                 ''' %(prec, encut, kpar)
                 n.phase = 'pbs, bulk'
 

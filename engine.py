@@ -5,6 +5,8 @@
 # ===========================================================================
 
 import os
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
+os.environ["CUDA_VISIBLE_DEVICES"] = ''
 import sys
 import subprocess
 import re
@@ -27,7 +29,6 @@ import matplotlib.pyplot as plt
 import time
 import xml.etree.ElementTree as ET
 
-
 from tqdm import tqdm, trange
 
 from dask import compute, delayed
@@ -49,17 +50,21 @@ import matplotlib.pyplot as plt
 import mpl_toolkits.mplot3d.axes3d as p3
 import matplotlib.animation as animation
 
+import copy
+
+from keras.models import Sequential
+from keras.layers import Dense, Activation, Dropout
+
 import shared
 
 
-# ====================================================
 # ====================================================
 
 
 class Gen(object):  # Stores the logical structure of keywords and modules. A unique construct deserving a name.
 
-    # Utilities
-    # ---------
+    # 1. getkw, parse_if, write_incar_kpoints
+    # ---------------------------------------
     def getkw(self, kwname):
         if kwname not in self.kw:
             raise shared.DeferError(self.__class__.__name__ + '. getkw: keyword {%s} not found, DeferError raised' %(kwname))
@@ -80,10 +85,8 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             return expression
 
     def parse_require(self, expression, run=False):  # Executes single require expression. Accepts empty expression as True.
-        #:simple grammar check
-        if len(expression.splitlines()) > 1:
+        if len(expression.splitlines()) > 1:    # grammar check
             raise shared.CustomError(self.__class__.__name__ + '.parse_require: expression {%s} contains line break' %expression)
-        #;
         operation_map = {
                 '=': lambda x, y: x & y,
                 '!=': lambda x, y: x - y,
@@ -101,10 +104,8 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
                 result = operation_map[operator](kwvalset, kwvalset)
             if run and bool(result):
                 self.kw[kwname] = result
-                #:debug
                 if shared.DEBUG >= 1:
                     print self.__class__.__name__ + ' parse_require: gave kw {%s} value {%s}' % (kwname, result)
-                #;
             if run and not bool(result):
                 raise shared.CustomError(self.__class__.__name__ + ' parse_require run=True error: parse_require results in empty set: kwname {%s}, value {%s}, required value {%s}' % (kwname, self.kw[kwname] if kwname in self.kw else 'null', kwvalset))
             if not run and not bool(result) and shared.DEBUG >= 1:
@@ -127,17 +128,13 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             return bool(result)
         else:                               ## parse if expression
             result = self.parse_if(expression)
-            #:debug
             if not run and not result and shared.DEBUG >= 1:
                     print self.__class__.__name__ + ' parse_require warning: parse_require results in empty set, deferred: expression {%s}' %(expression)
-            #;
             return result
 
     def parse_if(self,expression):  # recursively evaluate complex if condition. accepts empty expression.
-        #:grammar check
         if ',' in expression:
             raise shared.CustomError( self.__class__.__name__ + ' parse_if error: "," in if expression {%s} in engine.gen.*.conf. Did you mean to use "&"?' %expression)
-        #;
         operation_map = {
                 '&&': lambda x, y: x and y,
                 '||': lambda x, y: x or y,
@@ -174,7 +171,6 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
                 return True
             else:  #not defined means not written, which means no
                 return False
-
 
     def write_incar_kpoints(self):
         with open('INCAR','w') as outfile:
@@ -224,8 +220,8 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         return result
 
 
-    # main
-    # -------------
+    # 2. construct main data structure ; perform add-on analysis
+    # ----------------------------------------------------------
     @shared.debug_wrap
     def __init__(self, node):
         self.cell = node.cell
@@ -247,9 +243,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         with open(shared.SCRIPT_DIR + '/conf/engine.gen.' + engine_name + '.conf') as conf:
             lines = conf.read().splitlines()
             for line in [ [p.strip() for p in l.split(':')] for l in lines if not l.startswith('#') ]:
-                #:grammar check
                 if len(line) < 4: raise shared.CustomError('bad conf grammar error: needs 3 colons per line least in {%s}' %line)
-                #;
                 for part in [p.strip() for p in line[1].split(',') ]:
                     try:
                         if self.parse_if(line[0]) and self.parse_require(part, run=False) and line[2 ]!='optional':
@@ -289,65 +283,13 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             if len(self.kw[name]) != 1:
                 raise shared.CustomError( self.__class__.__name__+' error: non-unique output. Kw[%s]={%s} has not been restricted to 1 value.' %(name,self.kw[name]) )
         if self.parse_if('engine=vasp'):
-            self.check_memory()
+            memory_predicted_gb = ml_vasp_memory.predict(engine.Map().rlookup(attr_dict={'gen':self})) / 10**9 # in GB now
+            memory_available_gb = int(node.gen.getkw('nnode')) * int(node.gen.getkw('mem_node'))
+            print self.__class__.__name__ + ' memory usage %s: %s GB used out of %s GB' %('prediction' if memory_available_gb>memory_predicted_gb else 'WARNING', memory_predicted_gb, memory_available_gb)
 
-    def check_memory(self):
-        # make temporary dir
-        tmp_path = shared.SCRIPT_DIR + '/check_memory_tmp' + ''.join(random.sample(string.ascii_lowercase,4))
-        if os.path.exists(tmp_path):
-            #raise shared.CustomError('Folder {%s} already exists. Usually do not delete folder to avoid confusion.' %path)
-            os.system('trash '+tmp_path)
-        os.mkdir(tmp_path)
-        os.chdir(tmp_path)
-        # temporarily wayback and write
-        wayback = []
-        multiplier = 1
-        if self.parse_if('isym=-1'):
-            wayback.append( 'isym=-1' )
-            multiplier *= 2
-            self.kw['isym'] = ['0']
-        if self.parse_if('lsorbit=.TRUE.'):
-            wayback.append( 'lsorbit=.TRUE.' )
-            multiplier *= 2
-            self.kw['lsorbit'] = ['.FALSE.']
-        self.write_incar_kpoints()
-        with open('POSCAR','w') as f:
-            f.write(self.cell.poscar4())
-        for symbol in self.cell.stoichiometry.keys():
-            self.pot(symbol)
-        if 'isym=-1' in wayback:
-            self.kw['isym'] = ['-1']
-        if 'lsorbit=.TRUE.' in wayback:
-            self.kw['lsorbit'] = ['.TRUE.']
-        # calculate and read
-        output = check_output([shared.SCRIPT_DIR + '/resource/makeparam']).splitlines()
-        if shared.DEBUG >= 1:
-            print '-' * 35 + ' start makeparam output ' + '-' * 35
-            print '\n'.join(output)
-            print '-' * 35 + ' end makeparam output ' + '-' * 35
-        try:
-            self.memory = {}
-            self.memory['arraygrid'] = int( next(l for l in output if 'arrays on large grid' in l).split()[7] )
-            self.memory['wavefunction']  = int( next(l for l in output if 'sets of wavefunctions' in l).split()[4] )
-            self.memory['projector_real']  = abs(int( next(l for l in output if 'projectors in real space' in l).split()[4] ))
-            self.memory['projector_reciprocal']  = abs(int( next(l for l in output if 'projectors in reciprocal space' in l).split()[4] ))
-        except StopIteration, KeyError:
-            print '\n'.join(output)
-            raise shared.CustomError(self.__class__.__name__ + 'error: makeparam output illegal. Check POSCAR4 format and memory leak in script dir.')
-        # parse and raise error
-        memory_required = ( (self.memory['projector_real'] + self.memory['projector_reciprocal'])*int(self.getkw('npar')) + self.memory['wavefunction']*float(self.getkw('kpar')) )/1024.0/1024/1024 + int(self.getkw('nnode'))*0.7
-        memory_required *= multiplier
-        memory_available = int(self.getkw('nnode')) * int(self.getkw('mem_node'))
-        if memory_required > memory_available:
-            print self.__class__.__name__ + ' check_memory warning: insufficient memory. Mem required is {%s} GB. Available mem is {%s} GB.' %(memory_required, memory_available)
-        else:
-            print self.__class__.__name__ + ' check_memory report: Mem required is {%s} GB. Available mem is {%s} GB.' %(memory_required, memory_available)
-        # cleanup
-        os.chdir(shared.SCRIPT_DIR)
-        shutil.rmtree(tmp_path)
 
-    # User-defined (funcname)
-    # -----------------------
+    # 3. nbands, ncore_total, encut
+    # -----------------------------
     def ncore_total(self):
         return str( int(self.getkw('nnode')) * int(self.getkw('ncore_node')) )
 
@@ -445,6 +387,144 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         for symbol in self.cell.stoichiometry:
             ldauj += str( shared.ELEMENTS[symbol].ldauj )
         return ldauj
+
+
+# Makeparam: check memory based on gen.
+# -------------------------------------
+class Makeparam(object):
+
+    def __init__(self, gen):
+        # pre-conditioning
+        tmp_gen = copy.deepcopy(gen)
+        tmp_gen.kw['lsorbit'] = ['.FALSE.']
+        tmp_gen.kw['isym'] = ['0']
+        tmp_gen.write_incar_kpoints()
+        # make dir, write files
+        tmp_path = shared.SCRIPT_DIR + '/check_memory_tmp' + ''.join(random.sample(string.ascii_lowercase,4))
+        if os.path.exists(tmp_path):
+            os.system('trash '+tmp_path)
+        os.mkdir(tmp_path)
+        os.chdir(tmp_path)
+        with open('POSCAR','w') as f:
+            f.write(tmp_gen.cell.poscar4())
+        for symbol in tmp_gen.cell.stoichiometry.keys():
+            tmp_gen.pot(symbol)
+        # parse output
+        output = check_output([shared.SCRIPT_DIR + '/resource/makeparam']).splitlines()
+        try:
+            self.arraygrid = int( next(l for l in output if 'arrays on large grid' in l).split()[7] )
+            self.wavefunction = int( next(l for l in output if 'sets of wavefunctions' in l).split()[4] )
+            self.projector_real = abs(int( next(l for l in output if 'projectors in real space' in l).split()[4] ))
+            self.projector_reciprocal = abs(int( next(l for l in output if 'projectors in reciprocal space' in l).split()[4] ))
+        except StopIteration, KeyError:
+            print '\n'.join(output)
+            raise shared.CustomError(tmp_gen.__class__.__name__ + 'error: makeparam output illegal. Check POSCAR4 format and memory leak in script dir.')
+        # cleanup
+        shutil.rmtree(shared.SCRIPT_DIR + '/' + tmp_path)
+
+
+
+# Ssh simplifier
+def Ssh_and_run(platform, pseudo_command, jobname=None):
+    # preliminary checks
+    if platform not in ['nanaimo', 'irmik']:
+        raise shared.CustomError('Ssh_and_run: platform {%s} is not supported' %platform)
+    # run
+    interpret = {
+        ('nanaimo', 'squeue'): "squeue -n '%s'" %(jobname),
+        ('irmik', 'squeue'): "squeue -n '%s'" %(jobname),
+        ('nanaimo', 'sacct'): "sacct -S 0101 -u xzhang1 --format=maxvmsize --name=%s" %(jobname),
+        ('irmik', 'sacct'): "sacct -S 0101 -u xzhang1 --format=maxvmsize --name=%s" %(jobname),
+    }
+    command = interpret[(platform, pseudo_command)]
+    # paramiko ssh run command
+    ssh = paramiko.SSHClient()
+    ssh._policy = paramiko.WarningPolicy()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh_config = paramiko.SSHConfig()
+    user_config_file = os.path.expanduser("~/.ssh/config")
+    if os.path.exists(user_config_file):
+        with open(user_config_file) as f:
+            ssh_config.parse(f)
+    ssh.load_system_host_keys()
+    ssh.connect(platform, username='xzhang1')
+    ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command(command)
+    return '\n'.join([l.strip() for l in ssh_stdout.readlines()])
+
+
+
+
+
+# Ml_vasp_memory
+class Ml_vasp_memory(object):
+
+    def __init__(self):
+        self.model = Sequential([
+            BatchNormalization(),
+            Dense(8, activation='relu', input_dim=8),
+            Dropout(0.05),
+            Dense(4, activation='relu'),
+            Dropout(0.05),
+            Dense(1, activation='linear')
+        ])
+        self.model.compile(optimizer='rmsprop',
+                      loss='mse')
+        self.X = np.float_([])
+        self.Y = np.float_([])
+
+    def commit(self, node): # commit data to self
+        # data
+        input_ = np.float_([
+                            Makeparam(node.gen).memory['projector_real'],
+                            Makeparam(node.gen).memory['projector_reciprocal'],
+                            Makeparam(node.gen).memory['wavefunction'],
+                            Makeparam(node.gen).memory['arraygrid'],
+                            node.cell.natoms(),
+                            np.dot(np.cross(node.cell.base[0], node.cell.base[1]), node.cell.base[2]),
+                            node.gen.getkw('npar'),
+                            node.gen.ncore_total()
+                         ])
+        self.X = np.append(self.X, input_, axis=0)
+        ## in particular, getting memory usage from nanaimo
+        label = node.vasp.memory_used()
+        self.Y = np.append(self.Y, label, axis=0)
+
+    def train(self):
+        X_train = self.X
+        Y_train = self.Y
+        X_train[:, (0,2,3)] /= 10**9 # in GB
+        X_train[:, (5)] /= 1000 # in 1000A^3
+        Y_train /= 10**9 # in GB
+        model.fit(X_train, Y_train, epochs=30, verbose=0)
+
+    def predict(self, node):
+        X_test = np.float_([
+                            Makeparam(node.gen).memory['projector_real'],
+                            Makeparam(node.gen).memory['projector_reciprocal'],
+                            Makeparam(node.gen).memory['wavefunction'],
+                            Makeparam(node.gen).memory['arraygrid'],
+                            node.cell.natoms(),
+                            np.dot(np.cross(node.cell.base[0], node.cell.base[1]), node.cell.base[2]),
+                            node.gen.getkw('npar'),
+                            node.gen.ncore_total()
+                         ])
+        X_test[:, (0,2,3)] /= 10**9 # in GB
+        X_test[:, (5)] /= 1000 # in 1000A^3
+        Y_test_pred = model.predict(X_test)
+        return Y_test_pred * 10**9
+
+    def predict_old(self, node):
+        makeparam = Makeparam(node.gen)
+        # predict
+        memory_required = ( (makeparam.projector_real + makeparam.projector_reciprocal)*int(node.gen.getkw('npar')) + makeparam.wavefunction*float(node.gen.getkw('kpar')) )/1024.0/1024/1024 + int(node.gen.getkw('nnode'))*0.7
+        # warn
+        memory_available = int(node.gen.getkw('nnode')) * int(node.gen.getkw('mem_node'))
+        if memory_required > memory_available:
+            print tmp_node.gen.__class__.__name__ + ' check_memory warning: insufficient memory. Mem required is {%s} GB. Available mem is {%s} GB.' %(memory_required, memory_available)
+        else:
+            print tmp_node.gen.__class__.__name__ + ' check_memory report: Mem required is {%s} GB. Available mem is {%s} GB.' %(memory_required, memory_available)
+
+
 
 # ===========================================================================
 
@@ -596,28 +676,25 @@ class Map(object):
         return result
 
     def __init__(self, text=''):
-        #:initialize dict and text
+        # initialize dict and text
         self._dict, self._dict2 = {}, {}
         text = text.split('\n')
-        #;
 
         # src -> dst
         for line in text:
             if not line.rstrip():   continue
             line = [x.strip() for x in re.split('(->|-->)', line)]
-            #:lone node case
+            # lone node case
             if len(line) == 1:
                 src = self.lookup(line[0])
                 if src not in self._dict:   self._dict[src] = []
-            #;
             elif len(line) == 3:
                 src, dst = self.lookup(line[0]), self.lookup(line[2])
-                #:add src, dst to dict
+                # add src, dst to dict
                 if src not in self._dict:
                     self._dict[src] = []
                 if dst not in self._dict:
                     self._dict[dst] = []
-                #;
                 m = self._dict if line[1]=='->' else self._dict2
                 m[src] = [dst] if src not in m else m[src]+[dst]
             else:
@@ -712,10 +789,7 @@ class Vasp(object):
 
 
     def compute(self):
-
-        #:debug msg
         if shared.DEBUG>=2:    print 'calling %s(%s).compute' %(self.__class__.__name__, getattr(self,'path',''))
-        #;
 
         prev = Map().rlookup(attr_dict={'vasp':self}, prev=True)
 
@@ -746,10 +820,7 @@ class Vasp(object):
                 self.pot(symbol)
             # setting variables for wrapper
             ncore_total = str(  int(self.gen.getkw('nnode')) * int(self.gen.getkw('ncore_node'))  )
-            if self.gen.parse_if('gpu'):   # vasp flavor
-                print self.__class__.__name__ + ': vasp_gpu'
-                flavor = 'gpu'
-            elif self.gen.parse_if('spin=ncl'):
+            if self.gen.parse_if('spin=ncl'):
                 flavor = 'ncl'
             elif self.gen.getkw('kpoints').split()[0] in 'GM' and all([int(x)==1 for x in self.gen.getkw('kpoints').split()[1:]]):
                 flavor = 'gam'
@@ -759,9 +830,17 @@ class Vasp(object):
             # write scripts and instructions
             # subfile actually runs vasp. wrapper submits the subfile to system.
             self.wrapper = '#!/bin/bash\n' ; self.subfile = '#!/bin/bash\necho $PWD `date` start\necho -------------------------\n'
+            if self.gen.parse_if('platform=dellpc_gpu'):
+                self.subfile += 'echo > /home/xzhang1/gpu.log\n' # gpu memory usage
+                self.subfile += 'mpiexec.hydra -n %s /home/xzhang1/src/vasp.5.4.1/bin/vasp_gpu </dev/null \n' %(ncore_total)
+                self.subfile += 'mail -s "VASP job finished: {${PWD##*/}}" 8576361405@vtext.com <<<EOM \n'
+                self.subfile += 'mv /home/xzhang1/gpu.log "%s"\n' %(self.path)
+                self.wrapper += 'nohup ./subfile 2>&1 >> run.log &'
             if self.gen.parse_if('platform=dellpc'):
+                self.subfile += 'echo > /home/xzhang1/cpu.log\n' # cpu memory usage
                 self.subfile += 'mpiexec.hydra -n %s /home/xzhang1/src/vasp.5.4.1/bin/vasp_%s </dev/null \n' %(ncore_total, flavor)
                 self.subfile += 'mail -s "VASP job finished: {${PWD##*/}}" 8576361405@vtext.com <<<EOM \n'
+                self.subfile += 'mv /home/xzhang1/cpu.log "%s"\n' %(self.path)
                 self.wrapper += 'nohup ./subfile 2>&1 >> run.log &'
             if self.gen.parse_if('platform=nanaimo'):
                 self.wrapper += 'rsync -avP . nanaimo:~/%s\n' %self.remote_folder_name
@@ -823,9 +902,7 @@ class Vasp(object):
 
     @shared.moonphase_wrap
     def moonphase(self):
-        #:debug benchmark msg
         if shared.DEBUG>=2:    print 'calling %s(%s).moonphase' %(self.__class__.__name__, getattr(self,'path',''))
-        #;
 
         if not getattr(self, 'wrapper', None):
             return 0
@@ -838,43 +915,28 @@ class Vasp(object):
                 print self.__class__.__name__ + ' moonphase: could not locate the original path {%s}' %(self.path)
 
             # vasp_is_running
-            if (self.gen.parse_if('platform=dellpc')):
+            if (self.gen.parse_if('platform=dellpc|platform=dellpc_gpu')):
                 try:
                     pgrep_output = check_output(['pgrep','vasp'])
                     vasp_is_running = pgrep_output.strip() != ''
                 except CalledProcessError:
                     vasp_is_running = False
             elif self.gen.parse_if('platform=nanaimo|platform=irmik'):
-                #:debug msg
                 if shared.DEBUG>=2: print self.__class__.__name__ + '.moonphase: asking %s for status of {%s}' %(self.gen.getkw('platform'), self.path)
-                #;
-                ssh = paramiko.SSHClient()
-                #:paramiko config
-                ssh._policy = paramiko.WarningPolicy()
-                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                ssh_config = paramiko.SSHConfig()
-                user_config_file = os.path.expanduser("~/.ssh/config")
-                if os.path.exists(user_config_file):
-                    with open(user_config_file) as f:
-                        ssh_config.parse(f)
-                #;
-                ssh.load_system_host_keys()
-                ssh.connect(self.gen.getkw('platform'), username='xzhang1')
-                ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command("squeue -n '%s'" %self.remote_folder_name)
-                result = ssh_stdout.read().strip()
+                result = Ssh_and_run(self.getkw('platform'), pseudo_command='squeue', jobname=self.remote_folder_name)
                 vasp_is_running = ( len(result.splitlines()) > 1 )
             else:
                 raise shared.CustomError(self.__class__.__name__ + '.moonphase: i don\'t know what to do')
 
             # change to vasprun.xml directory
-            if self.gen.parse_if('platform=dellpc'):
+            if self.gen.parse_if('platform=dellpc|platform=dellpc_gpu'):
                 os.chdir(self.path)
             elif self.gen.parse_if('platform=nanaimo|platform=irmik'):
-                #:check sshfs mounted
+                # check sshfs mounted
                 tmp_path = '%s/Shared/%s' % (shared.HOME_DIR, self.gen.getkw('platform'))
                 if not os.listdir(tmp_path):
                     raise shared.CustomError(self.__class__.__name__ + '.moonphase: platform %s not mounted using sshfs' %(self.gen.getkw('platform')))
-                #;
+                #
                 tmp_path = '%s/Shared/%s/%s' % (shared.HOME_DIR, self.gen.getkw('platform'), self.remote_folder_name)
                 if not os.path.isfile(tmp_path + '/vasprun.xml'):
                     return 1
@@ -899,11 +961,9 @@ class Vasp(object):
             return 2
 
     def delete(self):
-        #: remove path
         if os.path.isdir(self.path):
             print 'removing self.path {%s}' %self.path
             shutil.rmtree(self.path)
-        #;
 
     def __str__(self):
         #: return log and optimized_cell
@@ -913,7 +973,6 @@ class Vasp(object):
             return self.log
         else:
             return 'moonphase is not 2, nothing here'
-        #;
 
 
     def pot(self, symbol):
@@ -924,6 +983,26 @@ class Vasp(object):
         of_ = open('./POTCAR','a')
         of_.write( if_.read() )
 
+    def memory_used(self):
+        if self.get.parse_if('platform=dellpc_gpu'):
+            if not os.path.exists(self.path + '/gpu.log'):
+                return None
+            with open(self.path + '/gpu.log', 'r') as f:
+                l = np.float_([l.split() for l in f.readlines()])
+                return np.max(l[:,1]) - np.min(l[:, 1])
+        elif self.get.parse_if('platform=dellpc'):
+            if not os.path.exists(self.path + '/cpu.log'):
+                return None
+            with open(self.path + '/cpu.log', 'r') as f:
+                l = np.float_([l.split() for l in f.readlines()])
+                return np.max(l[:,1]) - np.min(l[:, 1])
+        elif self.gen.parse_if('platform=nanaimo|platform=irmik'):
+            output = Ssh_and_run(self.gen.getkw('platform'), pseudo_command='sacct', jobname=self.gen.remote_folder_name).splitlines()
+            if len(output) < 3:
+                return None
+            return float(str.replace('K','000',output[-1]))
+        else:
+            raise shared.CustomError(self.__class__.__name__ + '.memory_used': platform not supported)
 
 
 #===========================================================================
@@ -1099,14 +1178,11 @@ class Bands(object):
             eigenval = [x.split() for x in f.readlines()]
         self.kpts = np.zeros([electron.grepen.nkpts,3])
         self.bands = np.zeros([self.nspins_bands, electron.grepen.nbands, electron.grepen.nkpts])
-        #:pop header lines
+        # pop header lines
         del eigenval[:6]
-        #;
         for idx_kpt in trange(electron.grepen.nkpts, leave=False, desc='reading bands'):
-            #
-            #:pop [empty line]
+            # pop [empty line]
             eigenval.pop(0)
-            #;
             eigenval_ = eigenval.pop(0)
             self.kpts[idx_kpt,:] = eigenval_[:3]
             #
@@ -1127,20 +1203,18 @@ class Bands(object):
                   if cbm > vbm + ZERO else "spin %s: no bandgap\n" % (idx_spin)     # only first instance is printed.
         print '-' * 130
 
-        #: interpolated bandgap
+        # interpolated bandgap
         print 'bandgap is often between interpolated and raw bandgap.'
-        #;
         if electron.grepen.is_kpoints_mesh:
             self.bandgaps_interp = [ [] for idx_spin in range(self.nspins_bands) ]
             # optimize for each spin and each band
             for idx_spin in range(self.nspins_bands):
-                #:relevant parameters exist
                 ZERO = 0.01
                 if not self.bandgaps[idx_spin]: # conductor
                     print 'spin %s: no bandgap, bandgaps_interp skipped.\n' % ( idx_spin ) ; continue
                 if [idx2_spin for idx2_spin in range(idx_spin) if self.bandgaps[idx2_spin] and np.linalg.norm(np.subtract(self.bandgaps[idx_spin], self.bandgaps[idx2_spin])) < ZERO]:    # repetitive
                     print 'spin %s: repetitive, bandgaps_interp skipped.\n' % ( idx_spin ) ; continue
-                #;
+                #
                 kptes = []
                 ZERO = abs(np.subtract(*self.bandgaps[idx_spin])) / 2.5
                 for idx_band in trange(electron.grepen.nbands, leave=False, desc='interpolating bands for bandgap', position=0):
@@ -1161,7 +1235,6 @@ class Bands(object):
                       % (idx_spin, vbm, kptes[np.where(kptes[:,3]==vbm)[0][0],:3], cbm, kptes[np.where(kptes[:,3]==cbm)[0][0],:3], cbm-vbm) \
                       if cbm > vbm else "spin %s, interpolated: no bandgap\n" % (idx_spin)
 
-    #: plot band
     def plot(self, idx_spin, idx_band):
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
@@ -1176,7 +1249,6 @@ class Bands(object):
         #
         plt.show()
         return
-    #;
 
 
 # executes population analysis
@@ -1185,10 +1257,8 @@ class Charge(object):
     @shared.debug_wrap
     @shared.log_wrap
     def __init__(self, electron):
-        #: preliminary check
         if electron.dos.norbitals_pdos > len(shared.ELEMENTS.orbitals):
             raise shared.CustomError(self.__class__.__name__ +' __init__: more orbitals than supported.')
-        #;
 
         # let's start!
         # pristine electronic configuration
@@ -1216,14 +1286,12 @@ class Charge(object):
 
         # Bader charge
         print "\n\nBader charge. Boundaries are defined as zero-flux surfaces. Note that certain flags should be set (e.g. LAECHG) for this to be reasonable.\n"
-        #: run bader
         print 'running bader...', ; sys.stdout.flush()
         if not os.path.isfile('AECCAR0') or not os.path.isfile('AECCAR2'):
             raise shared.CustomError(self.__class__.__name__ + '.__init__: no AECCAR found. You forgot to add LAECHG-tag. Bader will not run reliably.')
         os.popen('chgsum.pl AECCAR0 AECCAR2').read()
         os.popen('bader CHGCAR_sum').read()
         print '\r                 \r', ; sys.stdout.flush()
-        #;
         with open('ACF.dat','r') as f:
             lines = f.readlines()
         for idx_element, element in enumerate(electron.cell.stoichiometry.keys()):
@@ -1334,7 +1402,6 @@ class Errors(object):
 
         #: wrap-up
         print '-' * 130
-        #;
         print 'errors.py: in short, you should expect an error around %.4f eV in dirA.' %(self.error)
 
 
@@ -1454,6 +1521,10 @@ def compare_cell(eoc,boc, ZERO=0.02, rs=[10, 6.5, 6.5], is_verbose=False):    # 
     cores = []  #eoc|boc, idx_core_atom
     remainder = [range(eoc.natoms()),range(boc.natoms())]
 
+    # performance upgrade code
+    eoc_cdist = eoc.cdist()
+    boc_cdist = boc.cdist()
+
     for r in rs:    # 附录：考虑remainder里面分为多个派系的情况。做全排列太慢，只能进行局域性讨论。
         if is_verbose:  print '-' * 65 + ' r = %s ' %r + '-' * 65
         core = [[],[]]
@@ -1464,13 +1535,13 @@ def compare_cell(eoc,boc, ZERO=0.02, rs=[10, 6.5, 6.5], is_verbose=False):    # 
                 boc_winners = []
                 for idx_boc in remainder[1]:
                     # 比较已经对照出的core
-                    eoc_dist1 = eoc.cdist()[idx_eoc,core[0]] if core[0] else [0]      ## 意外情况修复
-                    boc_dist1 = boc.cdist()[idx_boc,core[1]] if core[1] else [0]
+                    eoc_dist1 = eoc_cdist[idx_eoc,core[0]] if core[0] else [0]      ## 意外情况修复
+                    boc_dist1 = boc_cdist[idx_boc,core[1]] if core[1] else [0]
                     # 比较未对照出的remainder，仅限r半径内
-                    eoc_dist2_adjidx = [idx_atom for idx_atom in remainder[0] if 0<eoc.cdist()[idx_atom,idx_eoc]<r]
-                    eoc_dist2 = eoc.cdist()[idx_eoc,eoc_dist2_adjidx]
-                    boc_dist2_adjidx = [idx_atom for idx_atom in remainder[1] if 0<boc.cdist()[idx_atom,idx_boc]<r]
-                    boc_dist2 = boc.cdist()[idx_boc,boc_dist2_adjidx]
+                    eoc_dist2_adjidx = [idx_atom for idx_atom in remainder[0] if 0<eoc_cdist[idx_atom,idx_eoc]<r]
+                    eoc_dist2 = eoc_cdist[idx_eoc,eoc_dist2_adjidx]
+                    boc_dist2_adjidx = [idx_atom for idx_atom in remainder[1] if 0<boc_cdist[idx_atom,idx_boc]<r]
+                    boc_dist2 = boc_cdist[idx_boc,boc_dist2_adjidx]
                     l = min(len(eoc_dist2), len(boc_dist2))
                     # 选举最match的
                     ## 意外情况：core是空的（不空修复），remainder在r半径内是空的（delta2最终修复），分母有0（允许np.infty），分子分母同时为0（perfect match赋0）

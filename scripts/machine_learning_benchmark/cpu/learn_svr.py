@@ -6,7 +6,6 @@ from pprint import pprint
 
 from sklearn import preprocessing
 from sklearn.svm import SVR
-
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
@@ -19,11 +18,9 @@ with open("m_cpu_config.log", "r") as if_:
 data = np.float_(data)
 
 
-
-
 # training
-MAX = 950
-TEST = 70
+MAX = 1200
+TEST = 148
 X_train = data[:MAX, :-3]
 Y_train = data[:MAX, -1]
 X_test = data[MAX:MAX+TEST, :-3]
@@ -33,6 +30,9 @@ Y_test = data[MAX:MAX+TEST, -1]
 # data = preprocessing.normalize(data, norm='l2', axis=0)
 # data[:, (0,1,3,5)] /= 1000000000
 # data[:, (-3, -2)] /= 1000
+data[:, (0,2,3)] /= 1000000000 / 10.0  # wavefunction memory
+data[:, (5)] /= 1000 / 10.0            # volume
+data[:, (8, 9)] /= 1000         # memory used
 
 X_scaler = preprocessing.StandardScaler().fit(X_train)
 X_train = X_scaler.transform(X_train)
@@ -45,13 +45,10 @@ svr = SVR(kernel='rbf')
 svr.fit(X_train, Y_train)
 
 
-
-
 #testing
 X_test = X_scaler.transform(X_test)
 Y_test_pred = Y_scaler.inverse_transform(svr.predict(X_test))
 
-
 #printing
-text_to_print = zip(Y_test, Y_test_pred) #, Y_test_poly
+text_to_print = zip(Y_test_pred) #, Y_test_poly
 np.savetxt(sys.stdout, text_to_print, fmt='%s', delimiter=' ')

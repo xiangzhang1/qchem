@@ -1,3 +1,11 @@
+Layered structure
+-----------------
+qchem: logic level API
+gui: manupulation level API
+main_gui.html: user level API
+
+
+
 Grammar
 -------
 
@@ -24,6 +32,12 @@ no duplicate refs. rlookup must always hold.
 
 Convention
 ----------
+
+ML: apply custom scaling; it is much better than StandardScaler or not scaling.
+
+use SI units: bytes, seconds, ...
+
+primary engines have the compute method; others can have str() or predict() but not compute.
 
 don't over-optimize.
 

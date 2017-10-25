@@ -53,6 +53,7 @@ def GenCh100(nx, ny, nz, padding, a=3.007083725):
 
 
 n = engine.Map().lookup('master.PbS QD.bare qd testing.Q0 Test convergence.Pb55S38.static0')
+n.reset()
 
 for ncore_node in [18, 16, 14, 12]:
     for ncore in set(factor1(ncore_node)):

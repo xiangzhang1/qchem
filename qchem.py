@@ -35,7 +35,7 @@ def Dump():
     if 'master' not in shared.NODES:
         raise shared.CustomError('Dump: NODES is empty. You really should not dump.')
     with open(shared.SCRIPT_DIR + '/data/shared.NODES.dump.'+time.strftime('%Y%m%d%H%M%S'),'wb') as dumpfile:
-        pickle.dump(shared.NODES, dumpfile) #, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump({'nodes':shared.NODES}, dumpfile) #, protocol=pickle.HIGHEST_PROTOCOL)
     print 'Dumped' + str(shared.NODES)
 
 
@@ -49,7 +49,8 @@ def Load(datetime=None):
         filename = shared.SCRIPT_DIR + '/data/' + l[-1]
     if os.path.isfile(filename):
         with open(filename,'rb') as dumpfile:
-            shared.NODES = pickle.load(dumpfile)
+            DICT = pickle.load(dumpfile)
+            shared.NODES = DICT['NODES']
         print 'Loaded' + str(shared.NODES)
     else:
         raise shared.CustomError('File {%s} not found' %filename)
