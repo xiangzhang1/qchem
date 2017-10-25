@@ -507,7 +507,7 @@ class Ml_vasp_memory(object):
                             makeparam.projector_reciprocal,
                             makeparam.wavefunction,
                             makeparam.arraygrid,
-                            node.cell.natoms(),
+                            gen.cell.natoms(),
                             np.dot(np.cross(node.cell.base[0], node.cell.base[1]), node.cell.base[2]),
                             node.gen.getkw('npar'),
                             node.gen.ncore_total()
