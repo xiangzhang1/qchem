@@ -56,9 +56,8 @@ def Load(datetime=None):
         with open(filename,'rb') as dumpfile:
             DICT = pickle.load(dumpfile)
             shared.NODES = DICT['NODES']
-            # shared.ML_VASP_MEMORY = DICT['ML_VASP_MEMORY']
-            # shared.ML_VASP_MEMORY.model = load_model(shared.SCRIPT_DIR + '/data/shared.ML_VASP_MEMORY.dump.'+time.strftime('%Y%m%d%H%M%S')
-            shared.ML_VASP_MEMORY = engine.Ml_vasp_memory()
+            shared.ML_VASP_MEMORY = DICT['ML_VASP_MEMORY']
+            shared.ML_VASP_MEMORY.model = load_model(shared.SCRIPT_DIR + '/data/shared.ML_VASP_MEMORY.dump.'+time.strftime('%Y%m%d%H%M%S')
         print 'Load complete.'
     else:
         raise shared.CustomError('File {%s} not found' %filename)
