@@ -453,8 +453,6 @@ def Ssh_and_run(platform, pseudo_command, jobname=None):
 
 
 
-
-
 # Ml_vasp_memory
 class Ml_vasp_memory(object):
 
@@ -474,11 +472,12 @@ class Ml_vasp_memory(object):
 
     def commit(self, node): # commit data to self
         # data
+        makeparam = Makeparam(node.gen)
         input_ = np.float_([
-                            Makeparam(node.gen).memory['projector_real'],
-                            Makeparam(node.gen).memory['projector_reciprocal'],
-                            Makeparam(node.gen).memory['wavefunction'],
-                            Makeparam(node.gen).memory['arraygrid'],
+                            makeparam.memory['projector_real'],
+                            makeparam.memory['projector_reciprocal'],
+                            makeparam.memory['wavefunction'],
+                            makeparam.memory['arraygrid'],
                             node.cell.natoms(),
                             np.dot(np.cross(node.cell.base[0], node.cell.base[1]), node.cell.base[2]),
                             node.gen.getkw('npar'),
@@ -498,11 +497,12 @@ class Ml_vasp_memory(object):
         model.fit(X_train, Y_train, epochs=30, verbose=0)
 
     def predict(self, node):
+        makeparam = Makeparam(node.gen)
         X_test = np.float_([
-                            Makeparam(node.gen).memory['projector_real'],
-                            Makeparam(node.gen).memory['projector_reciprocal'],
-                            Makeparam(node.gen).memory['wavefunction'],
-                            Makeparam(node.gen).memory['arraygrid'],
+                            makeparam.memory['projector_real'],
+                            makeparam.memory['projector_reciprocal'],
+                            makeparam.memory['wavefunction'],
+                            makeparam.memory['arraygrid'],
                             node.cell.natoms(),
                             np.dot(np.cross(node.cell.base[0], node.cell.base[1]), node.cell.base[2]),
                             node.gen.getkw('npar'),

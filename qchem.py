@@ -35,7 +35,7 @@ def Dump():
     if 'master' not in shared.NODES:
         raise shared.CustomError('Dump: NODES is empty. You really should not dump.')
     with open(shared.SCRIPT_DIR + '/data/shared.NODES.dump.'+time.strftime('%Y%m%d%H%M%S'),'wb') as dumpfile:
-        pickle.dump({'nodes':shared.NODES}, dumpfile) #, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump({'nodes':shared.NODES, 'ml_vasp_memory'=shared.ml_vasp_memory}, dumpfile) #, protocol=pickle.HIGHEST_PROTOCOL)
     print 'Dumped' + str(shared.NODES)
 
 
@@ -51,6 +51,7 @@ def Load(datetime=None):
         with open(filename,'rb') as dumpfile:
             DICT = pickle.load(dumpfile)
             shared.NODES = DICT['NODES']
+            shared.ml_vasp_memory = DICT['ml_vasp_memory'] if 'ml_vasp_memory' in DICT else engine.Ml_vasp_memory()
         print 'Loaded' + str(shared.NODES)
     else:
         raise shared.CustomError('File {%s} not found' %filename)
