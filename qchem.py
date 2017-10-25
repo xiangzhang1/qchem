@@ -48,9 +48,10 @@ def Load(datetime=None):
         l.sort()
         filename = shared.SCRIPT_DIR + '/data/' + l[-1]
     if os.path.isfile(filename):
+        print filename
         with open(filename,'rb') as dumpfile:
             DICT = pickle.load(dumpfile)
-            pprint(DICT)
+            print DICT
             shared.NODES = DICT['NODES']
             shared.ml_vasp_memory = DICT['ml_vasp_memory'] if 'ml_vasp_memory' in DICT else engine.Ml_vasp_memory()
         print 'Loaded' + str(shared.NODES)
