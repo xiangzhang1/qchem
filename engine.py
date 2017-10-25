@@ -405,6 +405,7 @@ class Makeparam(object):
             os.system('trash '+tmp_path)
         os.mkdir(tmp_path)
         os.chdir(tmp_path)
+        gen.write_incar_kpoints()
         with open('POSCAR','w') as f:
             f.write(tmp_gen.cell.poscar4())
         for symbol in tmp_gen.cell.stoichiometry.keys():
