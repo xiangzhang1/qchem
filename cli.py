@@ -24,3 +24,4 @@ import engine
 from shared import ELEMENTS
 
 print 'Welcome. Libraries loaded. '
+IPython.embed()
