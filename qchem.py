@@ -15,23 +15,24 @@ import shared
 
 # Node
 
-def Import(text):
-
-    #:partial syntax check
-    if '#' not in text:
-        raise shared.CustomError('qchem.Import: bad syntax. Your text is {%s}.' %text)
-    #;
-    l = re.split('^#+\s*', text, flags=re.MULTILINE) ; l.pop(0)
-    l = ['# '+x for x in l]
-
-    while l:
-        # print 'Import: parsing %s' %(l[-1].splitlines()[0] if l[-1].splitlines() else '')
-        n = Node(l.pop())
-        #: name must not be in shared.NODES
-        if n.name in shared.NODES:
-            raise shared.CustomError(' Import: Node name %s is in already in shared.NODES.' %n.name)
-        #;
-        shared.NODES[n.name] = n
+# Note: The Import function is becoming little used.
+# def Import(text):
+#
+#     #:partial syntax check
+#     if '#' not in text:
+#         raise shared.CustomError('qchem.Import: bad syntax. Your text is {%s}.' %text)
+#     #;
+#     l = re.split('^#+\s*', text, flags=re.MULTILINE) ; l.pop(0)
+#     l = ['# '+x for x in l]
+#
+#     while l:
+#         # print 'Import: parsing %s' %(l[-1].splitlines()[0] if l[-1].splitlines() else '')
+#         n = Node(l.pop())
+#         #: name must not be in shared.NODES
+#         if n.name in shared.NODES:
+#             raise shared.CustomError(' Import: Node name %s is in already in shared.NODES.' %n.name)
+#         #;
+#         shared.NODES[n.name] = n
 
 def Dump():
     # distinguish data source by prefix: shared.NODES.dump, shared.NODES.markdown, sigma.dump
@@ -39,8 +40,8 @@ def Dump():
     if 'master' not in shared.NODES:
         raise shared.CustomError('Dump: NODES is empty. You really should not dump.')
     with open(shared.SCRIPT_DIR + '/data/shared.NODES.dump.'+time.strftime('%Y%m%d%H%M%S'),'wb') as dumpfile:
-        pickle.dump({'NODES':shared.NODES, 'ML_VASP_MEMORY':shared.ML_VASP_MEMORY}, dumpfile) #, protocol=pickle.HIGHEST_PROTOCOL)
-        shared.ML_VASP_MEMORY.model.save(shared.SCRIPT_DIR + '/data/shared.ML_VASP_MEMORY.dump.'+time.strftime('%Y%m%d%H%M%S'))
+        pickle.dump({'NODES':shared.NODES, 'ML_VASP_MEMORY':shared.ML_VASP_MEMORY}, dumpfile) #, protocol=pickle.HIGHEST_PROTOCOL)  # save all objects
+        shared.ML_VASP_MEMORY.model.save(shared.SCRIPT_DIR + '/data/shared.ML_VASP_MEMORY.dump.'+time.strftime('%Y%m%d%H%M%S'))     # save ml models
     print 'Dump complete.'
 
 
