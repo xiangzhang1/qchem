@@ -1,8 +1,12 @@
 import dill as pickle   # dill requires citation
 import re
 import os
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
+os.environ["CUDA_VISIBLE_DEVICES"] = ''
 import time
 import shutil
+
+from keras.models import load_model
 
 import engine
 import shared
@@ -35,8 +39,9 @@ def Dump():
     if 'master' not in shared.NODES:
         raise shared.CustomError('Dump: NODES is empty. You really should not dump.')
     with open(shared.SCRIPT_DIR + '/data/shared.NODES.dump.'+time.strftime('%Y%m%d%H%M%S'),'wb') as dumpfile:
-        pickle.dump({'NODES':shared.NODES, 'ML_VASP_MEMORY':shared.ML_VASP_MEMORY}, dumpfile) #, protocol=pickle.HIGHEST_PROTOCOL)
-    print 'Dump completed.'
+        pickle.dump(shared.NODES, dumpfile) #, protocol=pickle.HIGHEST_PROTOCOL)
+        shared.ML_VASP_MEMORY.save(shared.SCRIPT_DIR + '/data/shared.ML_VASP_MEMORY.dump')
+    print 'Dumped' + str(shared.NODES)
 
 
 def Load(datetime=None):
@@ -49,12 +54,8 @@ def Load(datetime=None):
         filename = shared.SCRIPT_DIR + '/data/' + l[-1]
     if os.path.isfile(filename):
         with open(filename,'rb') as dumpfile:
-            # DICT = pickle.load(dumpfile)
-            # shared.NODES = DICT['NODES']
-            # shared.ML_VASP_MEMORY = DICT['ML_VASP_MEMORY'] if 'ML_VASP_MEMORY' in DICT else engine.Ml_vasp_memory()
-            DICT = pickle.load(dumpfile)
-            shared.NODES = DICT['nodes']
-            shared.ML_VASP_MEMORY = engine.Ml_vasp_memory()
+            shared.NODES = pickle.load(dumpfile)
+            shared.ML_VASP_MEMORY = load_model(shared.SCRIPT_DIR + '/data/shared.ML_VASP_MEMORY.dump') if os.path.exists(shared.SCRIPT_DIR + '/data/shared.ML_VASP_MEMORY.dump') else engine.Ml_vasp_memory()
         print 'Loaded' + str(shared.NODES)
     else:
         raise shared.CustomError('File {%s} not found' %filename)
