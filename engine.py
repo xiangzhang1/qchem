@@ -14,7 +14,7 @@ import numpy as np
 np.set_printoptions(precision=3)
 import scipy
 import shutil
-from G import pprint
+from pprint import pprint
 import tempfile
 import hashlib
 from subprocess import call, check_output, STDOUT, CalledProcessError
