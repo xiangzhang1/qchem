@@ -483,10 +483,11 @@ class Ml_vasp_memory(object):
         self.model.compile(optimizer='rmsprop',
                       loss='mse')
 
+    @shared.debug_wrap
     def take_data(self, node): # commit data to self
         ZERO = 0.1
         makeparam = Makeparam(node.gen)
-        input_ = np.float_([
+        input_ = np.float_([[
                             makeparam.projector_real,
                             makeparam.projector_reciprocal,
                             makeparam.wavefunction,
@@ -495,12 +496,15 @@ class Ml_vasp_memory(object):
                             np.dot(np.cross(node.cell.base[0], node.cell.base[1]), node.cell.base[2]),
                             node.gen.getkw('npar'),
                             node.gen.ncore_total()
-                         ])
-        label = node.vasp.memory_used()
-        if shared.DEBUG >= 1: print self.__class__.__name__ + ' taking data. ', 'Duplicate data.' if input_ in self.X_train else 'Don\'t forget to retrain.'
+                         ]])
+        label = [node.vasp.memory_used()]
+        if shared.DEBUG >= 1: print self.__class__.__name__ + ' taking data... ',
         if not any([np.linalg.norm(input_ - row) < ZERO for row in self.X_train]):
             self.X_train = np.append(self.X_train, input_, axis=0)
             self.Y_train = np.append(self.Y_train, label, axis=0)
+            if shared.DEBUG >= 1: print 'Complete.'
+        else:
+            if shared.DEBUG >= 1: print 'Skipped.'
 
     def scale_and_fit(self):
         # scale
