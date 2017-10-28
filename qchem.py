@@ -203,7 +203,8 @@ class Node(object):
                 raise shared.CustomError(self.__class__.__name__ + '.compute: cell or phase is missing. Either make sure parent has something you can inherit, or enter them.')
             if not getattr(self, 'path', None):
                 if shared.DEBUG >=1:
-                    self.path = raw_input('Provide path for node {%s} >:' %self.name)    # counterpart implemented in sigmajs
+                    self.path = raw_input('Provide path for node {%s}, empty to use default:' %self.name)    # counterpart implemented in sigmajs
+                    if not self.path.strip():   self.path = self.default_path()
                 else:   # silent mode
                     self.path = self.default_path()
                     if os.path.exists(self.path):
