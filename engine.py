@@ -287,10 +287,10 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             if len(self.kw[name]) != 1:
                 raise shared.CustomError( self.__class__.__name__+' error: non-unique output. Kw[%s]={%s} has not been restricted to 1 value.' %(name,self.kw[name]) )
         if self.parse_if('engine=vasp'):
-            memory_predicted_gb = shared.ML_VASP_MEMORY.output(self) / 10**9 # in GB now
+            memory_predicted_gb = shared.ML_VASP_MEMORY.make_prediction(self) / 10**9 # in GB now
             memory_available_gb = int(self.getkw('nnode')) * int(self.getkw('mem_node'))
             print self.__class__.__name__ + ' memory usage %s: %s GB used out of %s GB' %('prediction' if memory_available_gb>memory_predicted_gb else 'WARNING', memory_predicted_gb, memory_available_gb)
-            shared.ML_VASP_MEMORY.output2(self)
+            shared.ML_VASP_MEMORY.make_prediction2(self)
 
 
     # 3. nbands, ncore_total, encut
@@ -483,7 +483,7 @@ class Ml_vasp_memory(object):
         self.model.compile(optimizer='rmsprop',
                       loss='mse')
 
-    def input(self, node): # commit data to self
+    def acquire_data(self, node): # commit data to self
         makeparam = Makeparam(node.gen)
         input_ = np.float_([
                             makeparam.projector_real,
@@ -507,11 +507,11 @@ class Ml_vasp_memory(object):
         self.model.fit(X_train, Y_train, epochs=30, verbose=0)
 
     def scale_and_predict(self, X_test):
-        X_test = (self.X_test - self.X_scaler[0]) / self.X_scaler[1]
-        Y_test = self.model.predict(np.float_([X_test]))
+        X_test = (X_test - self.X_scaler[0]) / self.X_scaler[1]
+        Y_test = self.model.predict(X_test)
         return Y_test * self.Y_scaler[1] + self.Y_scaler[0]
 
-    def output(self, gen):
+    def make_prediction(self, gen):
         makeparam = Makeparam(gen)
         X_test = np.float_([[
                             makeparam.projector_real,
@@ -525,7 +525,7 @@ class Ml_vasp_memory(object):
                          ]])
         return np.asscalar(self.scale_and_predict(X_test))
 
-    def output2(self, gen):
+    def make_prediction2(self, gen):
         makeparam = Makeparam(gen)
         # predict
         memory_required = ( (makeparam.projector_real + makeparam.projector_reciprocal)*int(gen.getkw('npar')) + makeparam.wavefunction*float(gen.getkw('kpar')) )/1024.0/1024/1024 + int(gen.getkw('nnode'))*0.7
