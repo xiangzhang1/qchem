@@ -523,7 +523,9 @@ class Ml_vasp_memory(object):
                             gen.getkw('npar'),
                             gen.ncore_total()
                          ]])
-        return np.asscalar(self.scale_and_predict(X_test))
+        Y_test = self.scale_and_predict(X_test)
+        print 'X_test is %s; Y_test is %s' %(X_test, Y_test)
+        return np.asscalar(Y_test)
 
     def make_prediction2(self, gen):
         makeparam = Makeparam(gen)
