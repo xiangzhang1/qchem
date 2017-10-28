@@ -483,7 +483,7 @@ class Ml_vasp_memory(object):
         self.model.compile(optimizer='rmsprop',
                       loss='mse')
 
-    def acquire_data(self, node): # commit data to self
+    def take_data(self, node): # commit data to self
         makeparam = Makeparam(node.gen)
         input_ = np.float_([
                             makeparam.projector_real,
@@ -496,8 +496,10 @@ class Ml_vasp_memory(object):
                             node.gen.ncore_total()
                          ])
         label = node.vasp.memory_used()
-        self.X_train = np.append(self.X_train, input_, axis=0)
-        self.Y_train = np.append(self.Y_train, label, axis=0)
+        if not input_ in self.X_train:
+            print self.__class__.__name__ + '.take_data: learning. Don\'t forget to retrain.'
+            self.X_train = np.append(self.X_train, input_, axis=0)
+            self.Y_train = np.append(self.Y_train, label, axis=0)
 
     def scale_and_fit(self):
         # scale
@@ -860,7 +862,7 @@ class Vasp(object):
             if self.gen.parse_if('platform=dellpc'):
                 self.subfile += '''
                     (while true; do
-                        echo `date +%%s` `free | sed -n '2p' | awk '{print $3}'` >> ./cpu.log
+                        echo `date +%%s` `free -b | sed -n '2p' | awk '{print $3}'` >> ./cpu.log
                         sleep 3
                     done) &
                     bgPID=$!
@@ -977,9 +979,13 @@ class Vasp(object):
                 with open('vasprun.xml','r') as if_:
                     if if_.read().splitlines()[-1] != '</modeling>':
                         # print(self.__class__.__name__+'compute FYI: Vasp computation at %s went wrong. vasprun.xml is incomplete. Use .moonphase file to overwrite.' %self.path)
+                        with open('.moonphase', 'w') as f:  # avoid repeated reading
+                            f.write('-1')
+                        shared.ML_VASP_MEMORY.take_data(Map().rlookup(attr_dict={'vasp':self}))
                         return -1
                     else:
                         self.compute()
+                        shared.ML_VASP_MEMORY.take_data(Map().rlookup(attr_dict={'vasp':self}))
                         return 2
             else:
                 return 1
