@@ -1781,8 +1781,15 @@ class Md(Dummy):
                 fcoor = np.float_(fcoor)
                 # ccoor
                 ccoor = np.dot(fcoor, base)
-                for idx_traj, c in enumerate(fcoor):
+                for idx_traj, c in enumerate(ccoor):
                     data[idx_traj, :, idx_step] = c[:]
+
+            # the user might want to compare initial and final status. for example, total shift, or bad
+            # starting lattice parameter.
+            # in this case, data gets interpolated
+            if self.gen.parse_if('linear=true'):
+                for idx_step in range(data.shape[2]):
+                    data[:,:,idx_step] = data[:,:,0] + (data[:,:,data.shape[2]] - data[:,:,0]) / data.shape[2] * idx_step
 
 
             """
