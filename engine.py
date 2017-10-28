@@ -525,7 +525,7 @@ class Ml_vasp_memory(object):
         # predict
         Y_test_pred = self.model.predict(np.float_([X_test]))
         # reverse scale
-        return Y_test_pred * 10**9
+        return np.asscalar(Y_test_pred) * 10**9
 
     def predict_old(self, gen):
         makeparam = Makeparam(gen)
