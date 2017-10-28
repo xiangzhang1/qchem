@@ -1,6 +1,8 @@
 clean:
-	find data/ -mindepth 1 -mtime +1 -delete
+	find data/*dump.20* -mindepth 1 -mtime +1 -delete
 push:
 	git add -A ; git commit -am 'automated push' ; git push
-pull:
+cli:
 	git pull ; ./cli.py
+gui:
+	git pull ; ./gui.py

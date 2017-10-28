@@ -1,0 +1,11 @@
+ vasp.4.6.28 25Jul05 complex 
+ executed on             LinuxIFC date 2017.10.25  14:31:57
+ serial version
+
+
+--------------------------------------------------------------------------------------------------------
+
+
+ INCAR:
+ POTCAR:   PAW_PBE Pb_d 06Sep2000                 
+ POTCAR:    PAW_PBE S 17Jan2003                   
