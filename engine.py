@@ -860,7 +860,7 @@ class Vasp(object):
             if self.gen.parse_if('platform=dellpc'):
                 self.subfile += '''
                     (while true; do
-                        echo `date +\%s` `free | sed -n '2p' | awk '{print $3}'` >> ./cpu.log
+                        echo `date +%%s` `free | sed -n '2p' | awk '{print $3}'` >> ./cpu.log
                         sleep 3
                     done) &
                     bgPID=$!
