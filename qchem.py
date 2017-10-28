@@ -39,9 +39,11 @@ def _Dump(obj, middlename, is_keras=False):
         # keras-save the model
         filepath = shared.SCRIPT_DIR + '/data/shared.%s.model.keras.'%(middlename) + time.strftime('%Y%m%d%H%M%S')
         obj.model.save(filepath)
+        tmp_model = obj.model
         delattr(obj, 'model')
         # regular save the rest
         _Dump(obj, middlename, is_keras=False)
+        obj.model = tmp_model
     else:
         # dump
         filepath = shared.SCRIPT_DIR + '/data/shared.%s.pickle.'%(middlename) + time.strftime('%Y%m%d%H%M%S')
