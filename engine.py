@@ -846,7 +846,7 @@ class Vasp(object):
             # subfile actually runs vasp. wrapper submits the subfile to system.
             self.wrapper = '#!/bin/bash\n' ; self.subfile = '#!/bin/bash\necho $PWD `date` start\necho -------------------------\n'
             if self.gen.parse_if('platform=dellpc_gpu'):
-                self.subfile += '''
+                self.subfile += ''' # good indent in python, bad on bash.
                     (while true; do
                         echo `date +%%s` `nvidia-smi | sed -n '9p' | awk '{print $9}'` | sed 's/MiB//g' >> ./gpu.log
                         sleep 3
@@ -1011,13 +1011,13 @@ class Vasp(object):
         of_.write( if_.read() )
 
     def memory_used(self):
-        if self.get.parse_if('platform=dellpc_gpu'):
+        if self.gen.parse_if('platform=dellpc_gpu'):
             if not os.path.exists(self.path + '/gpu.log'):
                 return None
             with open(self.path + '/gpu.log', 'r') as f:
                 l = np.float_([l.split() for l in f.readlines()])
                 return np.max(l[:,1]) - np.min(l[:, 1])
-        elif self.get.parse_if('platform=dellpc'):
+        elif self.gen.parse_if('platform=dellpc'):
             if not os.path.exists(self.path + '/cpu.log'):
                 return None
             with open(self.path + '/cpu.log', 'r') as f:
