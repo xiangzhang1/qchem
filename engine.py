@@ -496,8 +496,8 @@ class Ml_vasp_memory(object):
 
     def train(self):
         # scale
-        X_train = self.X
-        Y_train = self.Y
+        X_train = np.copy(self.X)
+        Y_train = np.copy(self.Y)
         X_train[:, (0,2,3)] /= 10**9 # in GB
         X_train[:, (5)] /= 1000 # in 1000A^3
         Y_train /= 10**9 # in GB
