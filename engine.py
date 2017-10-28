@@ -290,6 +290,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             memory_predicted_gb = shared.ML_VASP_MEMORY.predict(self) / 10**9 # in GB now
             memory_available_gb = int(self.getkw('nnode')) * int(self.getkw('mem_node'))
             print self.__class__.__name__ + ' memory usage %s: %s GB used out of %s GB' %('prediction' if memory_available_gb>memory_predicted_gb else 'WARNING', memory_predicted_gb, memory_available_gb)
+            shared.ML_VASP_MEMORY.predict_old(self)
 
 
     # 3. nbands, ncore_total, encut
@@ -526,16 +527,16 @@ class Ml_vasp_memory(object):
         # reverse scale
         return Y_test_pred * 10**9
 
-    def predict_old(self, node):
-        makeparam = Makeparam(node.gen)
+    def predict_old(self, gen):
+        makeparam = Makeparam(gen)
         # predict
-        memory_required = ( (makeparam.projector_real + makeparam.projector_reciprocal)*int(node.gen.getkw('npar')) + makeparam.wavefunction*float(node.gen.getkw('kpar')) )/1024.0/1024/1024 + int(node.gen.getkw('nnode'))*0.7
+        memory_required = ( (makeparam.projector_real + makeparam.projector_reciprocal)*int(gen.getkw('npar')) + makeparam.wavefunction*float(gen.getkw('kpar')) )/1024.0/1024/1024 + int(gen.getkw('nnode'))*0.7
         # warn
-        memory_available = int(node.gen.getkw('nnode')) * int(node.gen.getkw('mem_node'))
+        memory_available = int(gen.getkw('nnode')) * int(gen.getkw('mem_node'))
         if memory_required > memory_available:
-            print tmp_node.gen.__class__.__name__ + ' check_memory warning: insufficient memory. Mem required is {%s} GB. Available mem is {%s} GB.' %(memory_required, memory_available)
+            print tmp_gen.__class__.__name__ + ' check_memory warning: insufficient memory. Mem required is {%s} GB. Available mem is {%s} GB.' %(memory_required, memory_available)
         else:
-            print tmp_node.gen.__class__.__name__ + ' check_memory report: Mem required is {%s} GB. Available mem is {%s} GB.' %(memory_required, memory_available)
+            print tmp_gen.__class__.__name__ + ' check_memory report: Mem required is {%s} GB. Available mem is {%s} GB.' %(memory_required, memory_available)
 
 
 # Ml_clothing
