@@ -496,8 +496,8 @@ class Ml_vasp_memory(object):
                             node.gen.ncore_total()
                          ])
         label = node.vasp.memory_used()
+        if shared.DEBUG >= 1: print self.__class__.__name__ + ' taking data. ', 'Duplicate data.' if input_ in self.X_train else 'Don\'t forget to retrain.'
         if not input_ in self.X_train:
-            print self.__class__.__name__ + '.take_data: learning. Don\'t forget to retrain.'
             self.X_train = np.append(self.X_train, input_, axis=0)
             self.Y_train = np.append(self.Y_train, label, axis=0)
 
