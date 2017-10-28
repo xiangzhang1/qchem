@@ -288,9 +288,9 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
                 raise shared.CustomError( self.__class__.__name__+' error: non-unique output. Kw[%s]={%s} has not been restricted to 1 value.' %(name,self.kw[name]) )
         if self.parse_if('engine=vasp'):
             memory_predicted_gb = shared.ML_VASP_MEMORY.make_prediction(self) / 10**9 # in GB now
+            memory_predicted_gb2 = shared.ML_VASP_MEMORY.make_prediction2(self) # in GB now
             memory_available_gb = int(self.getkw('nnode')) * int(self.getkw('mem_node'))
-            print self.__class__.__name__ + ' memory usage %s: %s GB used out of %s GB' %('prediction' if memory_available_gb>memory_predicted_gb else 'WARNING', memory_predicted_gb, memory_available_gb)
-            shared.ML_VASP_MEMORY.make_prediction2(self)
+            print self.__class__.__name__ + ' memory usage %s: %s (%s) GB used out of %s GB' %('prediction' if memory_available_gb>memory_predicted_gb else 'WARNING', memory_predicted_gb, memory_predicted_gb2, memory_available_gb)
 
 
     # 3. nbands, ncore_total, encut
@@ -530,13 +530,13 @@ class Ml_vasp_memory(object):
     def make_prediction2(self, gen):
         makeparam = Makeparam(gen)
         # predict
-        memory_required = ( (makeparam.projector_real + makeparam.projector_reciprocal)*int(gen.getkw('npar')) + makeparam.wavefunction*float(gen.getkw('kpar')) )/1024.0/1024/1024 + int(gen.getkw('nnode'))*0.7
-        # warn
-        memory_available = int(gen.getkw('nnode')) * int(gen.getkw('mem_node'))
-        if memory_required > memory_available:
-            print gen.__class__.__name__ + ' check_memory warning: insufficient memory. Mem required is {%s} GB. Available mem is {%s} GB.' %(memory_required, memory_available)
-        else:
-            print gen.__class__.__name__ + ' check_memory report: Mem required is {%s} GB. Available mem is {%s} GB.' %(memory_required, memory_available)
+        return ( (makeparam.projector_real + makeparam.projector_reciprocal)*int(gen.getkw('npar')) + makeparam.wavefunction*float(gen.getkw('kpar')) )/1024.0/1024/1024 + int(gen.getkw('nnode'))*0.7
+        # # warn
+        # memory_available = int(gen.getkw('nnode')) * int(gen.getkw('mem_node'))
+        # if memory_required > memory_available:
+        #     print gen.__class__.__name__ + ' check_memory warning: insufficient memory. Mem required is {%s} GB. Available mem is {%s} GB.' %(memory_required, memory_available)
+        # else:
+        #     print gen.__class__.__name__ + ' check_memory report: Mem required is {%s} GB. Available mem is {%s} GB.' %(memory_required, memory_available)
 
 
 

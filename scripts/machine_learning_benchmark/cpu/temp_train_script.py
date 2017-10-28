@@ -14,5 +14,7 @@ Y = data[:, -2]
 m.X_train = X
 m.Y_train = Y
 m.scale_and_fit()
+
+
 Y_pred = m.scale_and_predict(X)
 np.savetxt(sys.stdout, zip(Y, Y_pred), fmt='%s', delimiter=' ')
