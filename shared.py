@@ -38,7 +38,6 @@ from StringIO import StringIO
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__)) + '/'
 HOME_DIR = os.path.expanduser(os.path.expanduser("~")) + '/'
 
-DEBUG = 1
 DEBUG = 0
 
 # Nodes
@@ -420,7 +419,7 @@ class bcolors:
 def debug_wrap(func):
     @wraps(func)
     def wrapped(*args, **kwargs):
-        if DEBUG >= 1:
+        if DEBUG >= 2:
             try:
                 return func(*args, **kwargs)    # the important part
             except:
