@@ -1789,7 +1789,7 @@ class Md(Dummy):
             # in this case, data gets interpolated
             if self.gen.parse_if('linear=true'):
                 for idx_step in range(data.shape[2]):
-                    data[:,:,idx_step] = data[:,:,0] + (data[:,:,data.shape[2]] - data[:,:,0]) / data.shape[2] * idx_step
+                    data[:,:,idx_step] = data[:,:,0] + (data[:,:,-1] - data[:,:,0]) / data.shape[2] * idx_step
 
 
             """
