@@ -524,7 +524,7 @@ class Ml_vasp_memory(object):
                             gen.ncore_total()
                          ]])
         Y_test = self.scale_and_predict(X_test)
-        print 'X_test is %s; Y_test is %s' %(X_test, Y_test)
+        if shared.DEBUG >= 2:   print 'X_test is %s; Y_test is %s' %(X_test, Y_test)
         return np.asscalar(Y_test)
 
     def make_prediction2(self, gen):
@@ -846,16 +846,28 @@ class Vasp(object):
             # subfile actually runs vasp. wrapper submits the subfile to system.
             self.wrapper = '#!/bin/bash\n' ; self.subfile = '#!/bin/bash\necho $PWD `date` start\necho -------------------------\n'
             if self.gen.parse_if('platform=dellpc_gpu'):
-                self.subfile += 'echo > /home/xzhang1/gpu.log\n' # gpu memory usage
-                self.subfile += 'mpiexec.hydra -n %s /home/xzhang1/src/vasp.5.4.1/bin/vasp_gpu </dev/null \n' %(ncore_total)
-                self.subfile += 'mail -s "VASP job finished: {${PWD##*/}}" 8576361405@vtext.com <<<EOM \n'
-                self.subfile += 'mv /home/xzhang1/gpu.log "%s"\n' %(self.path)
+                self.subfile += '''
+                    (while true; do
+                        echo `date +%%s` `nvidia-smi | sed -n '9p' | awk '{print $9}'` | sed 's/MiB//g' >> ./gpu.log
+                        sleep 3
+                    done) &
+                    bgPID=$!
+                    mpiexec.hydra -n %s /home/xzhang1/src/vasp.5.4.1/bin/vasp_gpu </dev/null
+                    mail -s "VASP job finished: {${PWD##*/}}" 8576361405@vtext.com <<<EOM
+                    kill "$bgPID"
+                ''' %(ncore_total)
                 self.wrapper += 'nohup ./subfile 2>&1 >> run.log &'
             if self.gen.parse_if('platform=dellpc'):
-                self.subfile += 'echo > /home/xzhang1/cpu.log\n' # cpu memory usage
-                self.subfile += 'mpiexec.hydra -n %s /home/xzhang1/src/vasp.5.4.1/bin/vasp_%s </dev/null \n' %(ncore_total, flavor)
-                self.subfile += 'mail -s "VASP job finished: {${PWD##*/}}" 8576361405@vtext.com <<<EOM \n'
-                self.subfile += 'mv /home/xzhang1/cpu.log "%s"\n' %(self.path)
+                self.subfile += '''
+                    (while true; do
+                        echo `date +\%s` `free | sed -n '2p' | awk '{print $3}'` >> ./cpu.log
+                        sleep 3
+                    done) &
+                    bgPID=$!
+                    mpiexec.hydra -n %s /home/xzhang1/src/vasp.5.4.1/bin/vasp_%s </dev/null
+                    mail -s "VASP job finished: {${PWD##*/}}" 8576361405@vtext.com <<<EOM
+                    kill "$bgPID"
+                ''' %(ncore_total, flavor)
                 self.wrapper += 'nohup ./subfile 2>&1 >> run.log &'
             if self.gen.parse_if('platform=nanaimo'):
                 self.wrapper += 'rsync -avP . nanaimo:~/%s\n' %self.remote_folder_name
