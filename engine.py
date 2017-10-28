@@ -534,9 +534,9 @@ class Ml_vasp_memory(object):
         # warn
         memory_available = int(gen.getkw('nnode')) * int(gen.getkw('mem_node'))
         if memory_required > memory_available:
-            print tmp_gen.__class__.__name__ + ' check_memory warning: insufficient memory. Mem required is {%s} GB. Available mem is {%s} GB.' %(memory_required, memory_available)
+            print gen.__class__.__name__ + ' check_memory warning: insufficient memory. Mem required is {%s} GB. Available mem is {%s} GB.' %(memory_required, memory_available)
         else:
-            print tmp_gen.__class__.__name__ + ' check_memory report: Mem required is {%s} GB. Available mem is {%s} GB.' %(memory_required, memory_available)
+            print gen.__class__.__name__ + ' check_memory report: Mem required is {%s} GB. Available mem is {%s} GB.' %(memory_required, memory_available)
 
 
 # Ml_clothing
