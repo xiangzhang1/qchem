@@ -24,5 +24,5 @@ import shared
 import engine
 from shared import ELEMENTS
 
-print shared.bcolors.OKBLUE + 'Welcome to qchem CLI. You are in the right place. Libraries loaded.' + shared.bcolors.ENDC
+print shared.bcolors.OKBLUE + 'Welcome. Libraries loaded.' + shared.bcolors.ENDC
 IPython.embed(banner1='')

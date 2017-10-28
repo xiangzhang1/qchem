@@ -62,7 +62,7 @@ scheduler = BackgroundScheduler()
 scheduler.start()
 atexit.register(lambda: scheduler.shutdown()) # Shut down the scheduler when exiting the app
 
-print shared.bcolors.BOLD  + shared.bcolors.FAIL + 'You are a hacker. Cli gives you more power. Use GUI for browsing only.' + shared.bcolors.ENDC
+print shared.bcolors.BOLD  + shared.bcolors.FAIL + 'Warning: GUI will be deprecated.' + shared.bcolors.ENDC
 
 
 
