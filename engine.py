@@ -287,10 +287,10 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             if len(self.kw[name]) != 1:
                 raise shared.CustomError( self.__class__.__name__+' error: non-unique output. Kw[%s]={%s} has not been restricted to 1 value.' %(name,self.kw[name]) )
         if self.parse_if('engine=vasp'):
-            memory_predicted_gb = shared.ML_VASP_MEMORY.predict(self) / 10**9 # in GB now
+            memory_predicted_gb = shared.ML_VASP_MEMORY.output(self) / 10**9 # in GB now
             memory_available_gb = int(self.getkw('nnode')) * int(self.getkw('mem_node'))
             print self.__class__.__name__ + ' memory usage %s: %s GB used out of %s GB' %('prediction' if memory_available_gb>memory_predicted_gb else 'WARNING', memory_predicted_gb, memory_available_gb)
-            shared.ML_VASP_MEMORY.predict_old(self)
+            shared.ML_VASP_MEMORY.output2(self)
 
 
     # 3. nbands, ncore_total, encut
@@ -463,7 +463,16 @@ def Ssh_and_run(platform, pseudo_command, jobname=None):
 class Ml_vasp_memory(object):
 
     def __init__(self):
-        # initialize model
+        self.X_train = np.float_([])
+        self.Y_train = np.float_([])
+        self.X_scaler = np.float_([
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [10**9, 1, 10**9, 10**9, 1, 1000, 1, 1]
+        ])
+        self.Y_scaler = np.float_([
+            [0],
+            [10**9]
+        ])
         self.model = Sequential([
             Dense(8, activation='relu', input_dim=8),
             Dropout(0.05),
@@ -473,11 +482,8 @@ class Ml_vasp_memory(object):
         ])
         self.model.compile(optimizer='rmsprop',
                       loss='mse')
-        self.X = np.float_([])
-        self.Y = np.float_([])
 
-    def commit(self, node): # commit data to self
-        # initialize data
+    def input(self, node): # commit data to self
         makeparam = Makeparam(node.gen)
         input_ = np.float_([
                             makeparam.projector_real,
@@ -489,25 +495,25 @@ class Ml_vasp_memory(object):
                             node.gen.getkw('npar'),
                             node.gen.ncore_total()
                          ])
-        self.X = np.append(self.X, input_, axis=0)
-        ## in particular, getting memory usage from nanaimo
         label = node.vasp.memory_used()
-        self.Y = np.append(self.Y, label, axis=0)
+        self.X_train = np.append(self.X_train, input_, axis=0)
+        self.Y_train = np.append(self.Y_train, label, axis=0)
 
-    def train(self):
+    def scale_and_fit(self):
         # scale
-        X_train = np.copy(self.X)
-        Y_train = np.copy(self.Y)
-        X_train[:, (0,2,3)] /= 10**9 # in GB
-        X_train[:, (5)] /= 1000 # in 1000A^3
-        Y_train /= 10**9 # in GB
-        # train
+        X_train = (self.X_train - self.X_scaler[0]) / self.X_scaler[1]
+        Y_train = (self.Y_train - self.Y_scaler[0]) / self.Y_scaler[1]
+        # fit
         self.model.fit(X_train, Y_train, epochs=30, verbose=0)
 
-    def predict(self, gen):
-        # initialize data
+    def scale_and_predict(self, X_test):
+        X_test = (self.X_test - self.X_scaler[0]) / self.X_scaler[1]
+        Y_test = self.model.predict(np.float_([X_test]))
+        return Y_test * self.Y_scaler[1] + self.Y_scaler[0]
+
+    def output(self, gen):
         makeparam = Makeparam(gen)
-        X_test = np.float_([
+        X_test = np.float_([[
                             makeparam.projector_real,
                             makeparam.projector_reciprocal,
                             makeparam.wavefunction,
@@ -516,18 +522,10 @@ class Ml_vasp_memory(object):
                             np.dot(np.cross(gen.cell.base[0], gen.cell.base[1]), gen.cell.base[2]),
                             gen.getkw('npar'),
                             gen.ncore_total()
-                         ])
-        # scale
-        X_test[0] /= 10**9 # in GB
-        X_test[2] /= 10**9
-        X_test[3] /= 10**9
-        X_test[5] /= 1000 # in 1000A^3
-        # predict
-        Y_test_pred = self.model.predict(np.float_([X_test]))
-        # reverse scale
-        return np.asscalar(Y_test_pred) * 10**9
+                         ]])
+        return np.asscalar(self.scale_and_predict(X_test))
 
-    def predict_old(self, gen):
+    def output2(self, gen):
         makeparam = Makeparam(gen)
         # predict
         memory_required = ( (makeparam.projector_real + makeparam.projector_reciprocal)*int(gen.getkw('npar')) + makeparam.wavefunction*float(gen.getkw('kpar')) )/1024.0/1024/1024 + int(gen.getkw('nnode'))*0.7
@@ -538,67 +536,6 @@ class Ml_vasp_memory(object):
         else:
             print gen.__class__.__name__ + ' check_memory report: Mem required is {%s} GB. Available mem is {%s} GB.' %(memory_required, memory_available)
 
-
-# Ml_clothing
-class Ml_clothing(object):
-
-    def __init__(self):
-        '''
-        5 in: temperature (285+-20 C), humidity (68+-15%), pressure (1000 +- 100), windspeed (/10),
-        4 out: 秋衣/T恤, 衬衣, 保暖内衣, 毛衣 (0,1)
-        '''
-        # initialize model
-        self.X_scaler = np.float_([[285, 68, 1000, 0], [20, 15, 100, 10]])
-        self.model = Sequential([
-            Dense(4, activation='relu', input_dim=4),
-            Dropout(0.05),
-            Dense(4, activation='relu'),
-            Dropout(0.05),
-            Dense(4, activation='relu')
-        ])
-        self.model.compile(optimizer='rmsprop',
-                      loss='mse')
-        # train
-        self.X = np.float_([])    # Y for high dimensional output, y for 1d.
-        self.Y = np.float_([])    # original data is stored
-
-    def commit(self, Y_new): # commit data to self
-        # train
-        r = requests.get('http://api.openweathermap.org/data/2.5/weather?q=Cambridge,us&appid=e763734fadaae0d6e5efd2faef74dcf0').json()
-        X_new = [r['main']['temperature'], r['main']['humidity'], r['main']['pressure'], r['wind']['speed']]
-        X_new, Y_new = np.float_(X_new), np.float_(Y_new)
-        self.X = np.append(self.X, X_new, axis=0)
-        self.Y = np.append(self.Y, Y_new, axis=0)
-
-    def train(self):
-        # train
-        X_train = np.copy(self.X)
-        Y_train = np.copy(self.Y)
-        X_train = (X_train - self.X_scaler[0]) / self.X_scaler[1]
-        self.model.fit(X_train, Y_train, epochs=30, verbose=0)
-
-    def predict(self):
-        #
-        r = requests.get('http://api.openweathermap.org/data/2.5/forecast?q=Cambridge,us&appid=e763734fadaae0d6e5efd2faef74dcf0').json()['list']
-        X_pred_list = []
-        time_list = []
-        for item in r:
-            time_list.append(dateparser(item['dt_txt']))
-            X_pred_list.append([item['main']['temp'], item['main']['humidity'], item['main']['pressure'], item['wind']['speed']])
-        X_pred_list = np.float_(X_pred_list)
-        Y_pred_list = []
-        # predict
-        for idx in range(X_pred_list.shape[0]):
-            X_pred = X_pred_list[i]
-            X_pred = (X_pred - self.X_scaler[0]) / self.X_scaler[1]
-            Y_pred = self.model.predict(X_pred)
-            Y_pred_list.append(Y_pred)
-        # reverse scale and print
-        legends = ['秋衣','衬衣','保暖内衣','毛衣']
-        for i in range(Y_pred_list.shape[1]):
-            plt.plot(time_list, Y_pred_list[:,i], label=legends[i])
-        plt.legend()
-        plt.show()
 
 
 
