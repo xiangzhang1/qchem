@@ -1,3 +1,7 @@
+#!/usr/bin/python
+'''
+This is the main file.
+'''
 import dill as pickle   # dill requires citation
 import re
 import os
