@@ -158,11 +158,10 @@ class MlVaspMemory(object):
         X_batch, y_batch = self.iterator(data[:, :-1], data[:, -1:], batch_size=batch_size)
         y = self.ann(X_batch, training=True, reuse=False)
         #
-        with tf.variable_scope('optimize'):
-            update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-            loss = tf.nn.l2_loss(y - y_batch)
-            optimizer = tf.train.GradientDescentOptimizer(learning_rate)
-            training_op = optimizer.minimize(loss)  # remember to wipe your ass!
+        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+        loss = tf.nn.l2_loss(y - y_batch)
+        optimizer = tf.train.GradientDescentOptimizer(learning_rate)
+        training_op = optimizer.minimize(loss)  # remember to wipe your ass!
         saver = tf.train.Saver()
 
         # ANN: execute
