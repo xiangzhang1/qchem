@@ -191,7 +191,7 @@ class MlVaspMemory(object):
 
     def predict(self, X_new):
         # data
-        X_new = [X_new]
+        X_new = np.atleast_2d(X_new)
 
         # ANN: construct
         tf.reset_default_graph()
@@ -201,4 +201,4 @@ class MlVaspMemory(object):
         # ANN: run
         with tf.Session() as sess:
             saver.restore(sess, self.path)
-            return float(y)
+            return float(y.eval())
