@@ -167,7 +167,7 @@ class MlVaspMemory(object):
         saver = tf.train.Saver()
 
         # ANN: execute
-        with tf.train.MonitoredTrainingSession(hooks=[tf.train.CheckpointSaverHook(checkpoint_dir=self.path+'_checkpoint'), tf.train.SummarySaverHook(output_dir=self.path+'_summary', save_secs=1)]) as sess:
+        with tf.train.MonitoredTrainingSession(hooks=[tf.train.CheckpointSaverHook(checkpoint_dir=self.path+'_checkpoint', save_secs=600), tf.train.SummarySaverHook(output_dir=self.path+'_summary', save_secs=1)]) as sess:
             saver.restore(sess, self.path)
             while not sess.should_stop():
                 sess.run(training_op)
