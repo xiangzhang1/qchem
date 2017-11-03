@@ -60,14 +60,28 @@ class MlVaspMemory(object):
             X_B = tf.slice(X, [0, self.n_X_A], [-1, -1], name='X_B')
 
         with tf.variable_scope('ann_B', reuse=reuse):
-            hidden_B1 = tf.nn.elu(tf.layers.batch_normalization(tf.layers.dense(X_B, self.n_hidden_B1), training=training, momentum=0.9))
-            hidden_B2 = tf.nn.elu(tf.layers.batch_normalization(tf.layers.dense(hidden_B1, self.n_hidden_B2), training=training, momentum=0.9))
-            y_B = tf.multiply(tf.layers.dense(hidden_B2, 1, activation=tf.sigmoid), 6, name='y_B')
+            hidden_B1 = tf.layers.dense(X_B, self.n_hidden_B1)
+            hidden_B1_normalized = tf.layers.batch_normalization(hidden_B1, training=training, momentum=0.9)
+            hidden_B1_act = tf.nn.elu(hidden_B1_normalized)
+            hidden_B1_dropout = tf.layers.dropout(hidden_B1_act, rate=0.1, training=training)
+            hidden_B2 = tf.layers.dense(hidden_B1_dropout, self.n_hidden_B2)
+            hidden_B2_normalized = tf.layers.batch_normalization(hidden_B2, training=training, momentum=0.9)
+            hidden_B2_act = tf.nn.elu(hidden_B2_normalized)
+            hidden_B2_dropout = tf.layers.dropout(hidden_B2_act, rate=0.1, training=training)
+            hidden_B3 = tf.layers.dense(hidden_B2_dropout, 1, activation=tf.sigmoid)
+            y_B = tf.multiply(hidden_B3, 6, name='y_B')
 
         with tf.variable_scope('ann_A', reuse=reuse):
-            hidden_A1 = tf.nn.elu(tf.layers.batch_normalization(tf.layers.dense(X_A, self.n_hidden_A1), training=training, momentum=0.9))
-            hidden_A2 = tf.nn.elu(tf.layers.batch_normalization(tf.layers.dense(hidden_A1, self.n_hidden_A2), training=training, momentum=0.9))
-            y_A = tf.layers.dense(hidden_A2, 1, name='y_A')
+            hidden_A1 = tf.layers.dense(X_A, self.n_hidden_A1)
+            hidden_A1_normalized = tf.layers.batch_normalization(hidden_A1, training=training, momentum=0.9)
+            hidden_A1_act = tf.nn.elu(hidden_A1_normalized)
+            hidden_A1_dropout = tf.layers.dropout(hidden_A1_act, rate=0.1, training=training)
+            hidden_A2 = tf.layers.dense(hidden_A1_dropout, self.n_hidden_A2)
+            hidden_A2_normalized = tf.layers.batch_normalization(hidden_A2, training=training, momentum=0.9)
+            hidden_A2_act = tf.nn.elu(hidden_A2_normalized)
+            hidden_A2_dropout = tf.layers.dropout(hidden_A2_act, rate=0.1, training=training)
+            hidden_A3 = tf.layers.dense(hidden_A2_dropout, 1, activation=tf.sigmoid)
+            y_A = tf.multiply(hidden_A3, 6, name='y_A')
 
         with tf.variable_scope('converge_AB', reuse=reuse):
             y = tf.multiply(y_A, y_B, name='y')
