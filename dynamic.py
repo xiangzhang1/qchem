@@ -148,7 +148,6 @@ class MlVaspMemory(object):
     def fit(self):
         n_epochs = 1000
         batch_size = 32
-        learning_rate = 0.001
 
         # data
         data = np.float32(self.data)
@@ -160,7 +159,7 @@ class MlVaspMemory(object):
         #
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         loss = tf.nn.l2_loss(y - y_batch)
-        optimizer = tf.train.GradientDescentOptimizer(learning_rate)
+        optimizer = tf.train.AdamOptimizer()
         training_op = optimizer.minimize(loss)  # remember to wipe your ass!
         saver = tf.train.Saver()
 
