@@ -117,6 +117,7 @@ class MlVaspMemory(object):
 
     def fit_B(self):
         n_epochs = 100
+        learning_rate = 0.01
 
         # data
         data = np.float_([[0, 2, 1], [1, 2, 2], [0, 0, 2], [1, 0, 3], [0, -1, 3.3], [1, -1, 4.5]])
@@ -130,14 +131,12 @@ class MlVaspMemory(object):
         y_ = tf.placeholder(tf.float32, shape=(None, self.n_y_B), name='y_')
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS, scope='ann_B')
         loss = tf.nn.l2_loss(y - y_)
-        optimizer = tf.train.AdamOptimizer()
+        optimizer = tf.train.GradientDescentOptimizer(learning_rate)
         training_op = optimizer.minimize(loss)    # remember to wipe your ass!
         saver = tf.train.Saver()
 
         # ann_B: run
-        IPython.embed()
         with tf.Session() as sess:
-            sess.run(tf.global_variables_initializer())
             saver.restore(sess, self.path)
             for epoch in range(n_epochs):
                 sess.run([update_ops, training_op], feed_dict={X: data[:, :-1], y_: data[:, -1:]})
@@ -149,6 +148,7 @@ class MlVaspMemory(object):
     def fit(self):
         n_epochs = 1000
         batch_size = 32
+        learning_rate = 0.001
 
         # data
         data = np.float32(self.data)
@@ -160,7 +160,7 @@ class MlVaspMemory(object):
         #
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         loss = tf.nn.l2_loss(y - y_batch)
-        optimizer = tf.train.AdamOptimizer()
+        optimizer = tf.train.GradientDescentOptimizer(learning_rate)
         training_op = optimizer.minimize(loss)  # remember to wipe your ass!
         saver = tf.train.Saver()
 
