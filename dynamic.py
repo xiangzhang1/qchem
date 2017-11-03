@@ -68,7 +68,7 @@ class MlVaspMemory(object):
         with tf.variable_scope('ann_B', reuse=reuse):
             hidden_B1 = tf.nn.elu(tf.layers.batch_normalization(tf.layers.dense(X_B, self.n_hidden_B1), training=training, momentum=0.9))
             hidden_B2 = tf.nn.elu(tf.layers.batch_normalization(tf.layers.dense(hidden_B1, self.n_hidden_B2), training=training, momentum=0.9))
-            y_B = tf.multiply(tf.layers.dense(hidden_B2, 1, name='y_B', activation=tf.sigmoid), 6, name='y_B')
+            y_B = tf.multiply(tf.layers.dense(hidden_B2, 1, activation=tf.sigmoid), 6, name='y_B')
 
         with tf.variable_scope('ann_A', reuse=reuse):
             hidden_A1 = tf.nn.elu(tf.layers.batch_normalization(tf.layers.dense(X_A, self.n_hidden_A1), training=training, momentum=0.9))
@@ -114,7 +114,7 @@ class MlVaspMemory(object):
                  training=True, reuse=False)
         X = tf.get_default_graph().get_tensor_by_name("diverge_AB/X_B:0")
         y = tf.get_default_graph().get_tensor_by_name("ann_B/y_B:0")
-        y_ = tf.placeholder(tf.float32, shape=(None, self.n_y_B))
+        y_ = tf.placeholder(tf.float32, shape=(None, self.n_y_B), name='y_')
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS, scope='ann_B')
         loss = tf.nn.l2_loss(y - y_)
         optimizer = tf.train.GradientDescentOptimizer(learning_rate)
