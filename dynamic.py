@@ -175,7 +175,7 @@ class MlVaspMemory(object):
                 for _ in range(data.shape[0] // batch_size):
                     sess.run([update_ops, training_op])
                 if epoch % 50 == 0:
-                    print sess.run(y, y_batch)
+                    print sess.run([y, y_batch])
             saver.save(sess, self.path)
 
 
