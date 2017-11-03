@@ -1,6 +1,6 @@
 #!/usr/bin/python
 '''
-A wrapper for IPython as well as a boilerplate.
+A wrapper with custom actions possible.
 '''
 
 # common libraries
@@ -31,4 +31,9 @@ import engine
 from shared import ELEMENTS
 
 print shared.bcolors.OKBLUE + 'Welcome. Libraries loaded.' + shared.bcolors.ENDC
+dynamic.global_load()
+m = dynamic.MlVaspMemory()
+m.train_B()
+m.init_data()
+m.train()
 IPython.embed(banner1='')

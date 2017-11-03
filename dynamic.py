@@ -50,7 +50,7 @@ MLS = {}
 
 class MlVaspMemory(object):
 
-    def scaler(self, X):
+    def scaled(self, X):
         with tf.variable_scope('scaler'):
             X_scaled = tf.truediv(X, np.float32([10**8, 10**8, 10**8, 10**8, 1, 1000, 1, 10, 1, 1]), name='X_scaled')
         return X_scaled
