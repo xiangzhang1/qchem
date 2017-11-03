@@ -132,7 +132,7 @@ class MlVaspMemory(object):
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS, scope='ann_B')
         loss = tf.nn.l2_loss(y - y_)
         optimizer = tf.train.GradientDescentOptimizer(learning_rate)
-        with tf.control_dependencies(update_ops):
+        with tf.control_dependencies(update_ops):   # Wipe
             training_op = optimizer.minimize(loss)
         saver = tf.train.Saver()
 
@@ -167,11 +167,10 @@ class MlVaspMemory(object):
         saver = tf.train.Saver()
 
         # ANN: execute
-        with tf.train.MonitoredTrainingSession() as sess:
+        with tf.train.MonitoredTrainingSession(save_summaries_steps=100) as sess:
             saver.restore(sess, self.path)
             while not sess.should_stop():
                 sess.run(training_op)
-                print '3',
             saver.save(sess, self.path)
 
         with tf.Session() as sess:
