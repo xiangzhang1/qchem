@@ -23,8 +23,15 @@ def load(middlename, datetime=None):
         return pickle.load(f)
 
 def global_load():
-    global NODES
+    global NODES, MLS
     NODES = load('NODES')
+    MLS = load('MLS')
+
+def global_save():
+    global NODES, MLS
+    save(NODES, 'NODES')
+    save(MLS, 'MLS')
+
 
 # NODES
 # ==============================================================================
@@ -42,6 +49,12 @@ MLS = {}
 # ==============================================================================
 
 class MlVaspMemory(object):
+
+    def scaler(self, X):
+        with tf.variable_scope('scaler'):
+            X_scaled = tf.truediv(X, np.float32([10**8, 10**8, 10**8, 10**8, 1, 1000, 1, 10, 1, 1]), name='X_scaled')
+        return X_scaled
+
 
     def iterator(self, X_data, y_data, batch_size):
         with tf.variable_scope('iterator'):
@@ -119,7 +132,7 @@ class MlVaspMemory(object):
                 if line and not line.startswith('#') and len(line.split())==len(lines[1].split()):
                     data.append( np.float_(line.split()) )
         data = np.float_(data)
-        data /= np.float32([10**8, 10**8, 10**8, 10**8, 1, 1000, 1, 10, 10**3, 10**3, 1])
+        data[:, -3:-1] *= 10**6     # not converting! It's raw SI.
         X_data = data[:, :-3]
         X_data = np.concatenate((X_data, [[0,2]]*X_data.shape[0]), axis=1)
         y_data = data[:, -2:-1]
@@ -170,7 +183,8 @@ class MlVaspMemory(object):
         # ANN: construct
         tf.reset_default_graph()
         X_batch, y_batch = self.iterator(data[:, :-1], data[:, -1:], batch_size=batch_size)
-        y = self.ann(X_batch, training=True, reuse=False)
+        X_batch_scaled = self.scaled(X_batch)
+        y = self.ann(X_batch_scaled, training=True, reuse=False)
         #
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         loss = tf.nn.l2_loss(y - y_batch)
@@ -200,7 +214,7 @@ class MlVaspMemory(object):
 
         # ANN: construct
         tf.reset_default_graph()
-        y = self.ann(X_new, training=False, reuse=False)
+        y = self.ann(self.scaled(X_new), training=False, reuse=False)
         saver = tf.train.Saver()
 
         # ANN: run

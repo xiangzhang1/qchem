@@ -34,7 +34,7 @@ print shared.bcolors.OKBLUE + 'Welcome. Libraries loaded.' + shared.bcolors.ENDC
 # IPython.embed(banner1='')
 
 dynamic.global_load()
-self = dynamic.MlVaspMemory()
-self.train_B()
-self.init_data()
-self.train()
+m = dynamic.MlVaspMemory()
+m.train_B()
+m.init_data()
+m.train()
