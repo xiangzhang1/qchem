@@ -23,7 +23,7 @@ import shared
 import engine
 from shared import ELEMENTS
 
-qchem.Load()
+dynamic.load(dynamic.NODES, 'NODES')
 
 def get_error(x):
     import numpy as np

@@ -1,88 +1,40 @@
 #!/usr/bin/python
 '''
-This is the main file.
+This is the main file. Documentation is moved to the docs/ folder.
 '''
-import dill as pickle   # dill requires citation
 import re
 import os
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
 os.environ["CUDA_VISIBLE_DEVICES"] = ''
-import time
 import shutil
-
-from keras.models import load_model
 
 import engine
 import shared
+import dynamic
 
 # ==================================================
 
+
+# Import: where everything started
+
+def Import(text):
+    # partial syntax check
+    if '#' not in text:
+        raise shared.CustomError('qchem.Import: bad syntax. Your text is {%s}.' %text)
+    l = re.split('^#+\s*', text, flags=re.MULTILINE) ; l.pop(0)
+    l = ['# '+x for x in l]
+
+    while l:
+        # print 'Import: parsing %s' %(l[-1].splitlines()[0] if l[-1].splitlines() else '')
+        n = Node(l.pop())
+        # name must not be in NODES
+        if n.name in dynamic.NODES:
+            raise shared.CustomError(' Import: Node name %s is in already in NODES.' %n.name)
+        dynamic.NODES[n.name] = n
+
+
+
 # Node
-
-# Note: The Import function is becoming little used.
-# def Import(text):
-#
-#     #:partial syntax check
-#     if '#' not in text:
-#         raise shared.CustomError('qchem.Import: bad syntax. Your text is {%s}.' %text)
-#     #;
-#     l = re.split('^#+\s*', text, flags=re.MULTILINE) ; l.pop(0)
-#     l = ['# '+x for x in l]
-#
-#     while l:
-#         # print 'Import: parsing %s' %(l[-1].splitlines()[0] if l[-1].splitlines() else '')
-#         n = Node(l.pop())
-#         #: name must not be in shared.NODES
-#         if n.name in shared.NODES:
-#             raise shared.CustomError(' Import: Node name %s is in already in shared.NODES.' %n.name)
-#         #;
-#         shared.NODES[n.name] = n
-
-def _Dump(obj, middlename, is_keras=False):
-    if is_keras:
-        # keras-save the model
-        filepath = shared.SCRIPT_DIR + '/data/shared.%s.model.keras.'%(middlename) + time.strftime('%Y%m%d%H%M%S')
-        obj.model.save(filepath)
-        tmp_model = obj.model
-        delattr(obj, 'model')
-        # regular save the rest
-        _Dump(obj, middlename, is_keras=False)
-        obj.model = tmp_model
-    else:
-        # dump
-        filepath = shared.SCRIPT_DIR + '/data/shared.%s.pickle.'%(middlename) + time.strftime('%Y%m%d%H%M%S')
-        with open(filepath,'wb') as dumpfile:
-            pickle.dump(obj, dumpfile)
-
-def _Load(middlename, datetime=None, is_keras=False):
-    if not is_keras:
-        # load
-        filepath = shared.SCRIPT_DIR + '/data/' + sorted([x for x in os.listdir(shared.SCRIPT_DIR + '/data/') if x.startswith('shared.%s.pickle.%s'%(middlename, datetime if datetime else ''))])[-1]
-        with open(filepath, 'rb') as f:
-            return pickle.load(f)
-    else:
-        # regular load the rest
-        obj = _Load(middlename, datetime, is_keras=False)
-        # keras-load the model
-        filepath = shared.SCRIPT_DIR + '/data/' + sorted([x for x in os.listdir(shared.SCRIPT_DIR + '/data/') if x.startswith('shared.%s.model.keras.%s'%(middlename, datetime if datetime else ''))])[-1]
-        obj.model = load_model(filepath)
-        return obj
-
-
-def Dump():
-    # distinguish data source by prefix: shared.NODES.dump, shared.NODES.markdown, sigma.dump
-    # distinguish datetime by postfix: 20170803094500
-    if 'master' not in shared.NODES:
-        raise shared.CustomError('Dump: NODES is empty. You really should not dump.')
-    _Dump(shared.NODES, 'NODES', is_keras=False)
-    _Dump(shared.ML_VASP_MEMORY, 'ML_VASP_MEMORY', is_keras=True)
-    print 'Dump complete.'
-
-def Load(datetime=None):
-    shared.NODES = _Load('NODES', datetime=datetime, is_keras=False)
-    shared.ML_VASP_MEMORY = _Load('ML_VASP_MEMORY', datetime=datetime, is_keras=True)
-    print 'Load complete.'
-
 
 class Node(object):
 

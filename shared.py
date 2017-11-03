@@ -21,7 +21,7 @@ from StringIO import StringIO
 # INDEX
 # =====
 # DEBUG option, SCRIPT_DIR, HOME_DIR
-# NODES, Fragile lists, ML_VASP_MEMORY
+# Fragile lists
 # ELEMENTS
 # CustomError, DeferError, [LookupError]
 # MySFTPClient
@@ -40,12 +40,8 @@ HOME_DIR = os.path.expanduser(os.path.expanduser("~")) + '/'
 
 DEBUG = 1
 
-# Nodes
-# ===========================================================================
-
-NODES = {}
-
 # Fragile lists:
+# ===========================================================================
 
 #  all non-sigma-bullshit attributes, in the order printed (sigma.clickNode)
 #  - gui.combine.json
@@ -76,9 +72,6 @@ COLOR_PALETTE = {-1: '#a94442', 0: '#000000',  1: '#8a6d3b', 2: '#3c763d', -2: '
 
 # Element, ELEMENTS
 # ===========================================================================
-
-__version__ = '2015.01.29'
-__docformat__ = 'restructuredtext en'
 
 class lazyattr(object):
     # Lazy object attribute whose value is computed on first access."""

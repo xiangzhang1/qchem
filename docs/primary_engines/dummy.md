@@ -1,3 +1,0 @@
-Template.
-
-Does nothing.

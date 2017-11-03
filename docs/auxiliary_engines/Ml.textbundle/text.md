@@ -1,1 +1,0 @@
-![](assets/Untitled%20Document-1.png)

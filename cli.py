@@ -21,6 +21,7 @@ from fuzzywuzzy import process
 # qchem package
 import qchem
 import shared
+import dynamic
 import engine
 from shared import ELEMENTS
 

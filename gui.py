@@ -283,7 +283,7 @@ def ipython():
 
 
 # ======================================================================
-# the real qchem functions
+# Save / Load
 # ======================================================================
 
 
@@ -291,7 +291,7 @@ def ipython():
 @patch_through
 @login_required
 def reset_NODES():
-    shared.NODES = {}
+    dynamic.NODES = {}
 
 @app.route('/import_markdown', methods=['GET'])
 @patch_through
@@ -304,78 +304,64 @@ def import_markdown():
 @patch_through
 @login_required
 def new_():
-    shared.NODES['master'] = qchem.Node('# master\n\nmap:\n\n')
+    dynamic.NODES['master'] = qchem.Node('# master\n\nmap:\n\n')
 
 @app.route('/dump_nodes', methods=['GET'])
 @patch_through
 @login_required
 def dump_nodes():
-    qchem.Dump()
-
-@app.route('/dump_sigma', methods=['POST'])
-@patch_through
-@login_required
-def dump_sigma():
-    old_json = request.get_json(force=True)
-    with open(shared.SCRIPT_DIR+'/data/sigma.dump.'+time.strftime('%Y%m%d%H%M%S'),'wb') as dumpfile:
-        pickle.dump(old_json, dumpfile, protocol=pickle.HIGHEST_PROTOCOL)
-
+    dynamic.save(dynamic.NODES, 'NODES')
 
 # either load latest, or load a specific datetime_postfix.
 @app.route('/load_nodes', methods=['GET','POST'])
 @patch_through
 @login_required
 def load_nodes():
-    if request.method == 'POST':
-        datetime_postfix = request.get_json(force=True)['datetime_postfix']
-        qchem.Load(datetime_postfix)
-    else:
-        qchem.Load()
+    dynamic.NODES = dynamic.load('NODES', request.get_json(force=True)['datetime_postfix'] if request.method=='POST' else None)
 
 @app.route('/load_sigma', methods=['GET','POST'])
 @return_through
 @login_required
 def load_sigma():
-    if request.method == 'POST':  # used in conjunction with load_nodes, so expect small timestamp difference
-        datetime_postfix = int(request.get_json(force=True)['datetime_postfix'])
-        l = [int(x.replace('sigma.dump.','')) for x in os.listdir(shared.SCRIPT_DIR + '/data/') if x.startswith('sigma.dump')]
-        if not l:   raise shared.CustomError('Load: no file near {%s} found' %datetime_postfix)
-        l.sort()
-        datetime_postfix = str( [x for x in l if abs(x-datetime_postfix)<2.1][-1] )
-        filename = shared.SCRIPT_DIR + '/data/sigma.dump.' + datetime_postfix
-    else:
-        l = [x for x in os.listdir(shared.SCRIPT_DIR + '/data/') if x.startswith('sigma.dump')]
-        if not l:   raise shared.CustomError('Load: no file to load')
-        l.sort()
-        filename = shared.SCRIPT_DIR + '/data/' + l[-1]
-    if os.path.isfile(filename):
-        with open(filename,'rb') as dumpfile:
-            old_json = pickle.load(dumpfile)
-        print 'Loaded {%s}' %filename
-    else:
-        raise shared.CustomError( 'load_sigma: File {%s} not found' %filename )
-        old_json = {}
-    return jsonify(old_json)
+    datetime = request.get_json(force=True)['datetime_postfix'] if request.method=='POST' else None
+    return jsonify(dynamic.load('sigma', datetime))
+
+@app.route('/dump_sigma', methods=['POST'])
+@patch_through
+@login_required
+def dump_sigma():
+    dynamic.save(request.get_json(force=True), 'sigma')
+
 
 @app.route('/get_dumps_list', methods=['GET'])
 @return_through
 @login_required
 def get_dumps_list():
+    print 'Note: function is archaic. Middlename will not be the same for every entity.'
     j = {'datetime_postfixs':[]}
     l = []
     for fname in os.listdir(shared.SCRIPT_DIR+'/data/'):
-        if fname.startswith('shared.NODES.dump.'):
-            l.append(fname.replace('shared.NODES.dump.',''))
+        if fname.startswith('dynamic.NODES.dump.'):
+            l.append(fname.replace('dynamic.NODES.dump.',''))
     l.sort(reverse=True)
     j['datetime_postfixs'] = l[:5]
     return jsonify(j)
 
 
 
+
+
+
+
+# ======================================================================
+# the real qchem functions
+# ======================================================================
+
+
 @app.route('/request_', methods=['POST','GET'])
 @return_through
 @login_required
-def request_():  # either merge json, or use shared.NODES['master']     # yep, this is the magic function.
+def request_():  # either merge json, or use dynamic.NODES['master']     # yep, this is the magic function.
     if request.method == 'POST':
         old_json = request.get_json(force=True)
         if shared.DEBUG >= 2: print 'before to_json' + '*'*70
@@ -512,10 +498,10 @@ def edit():
         for x in node.map if getattr(node,'map',None) else []:
             if x.name == node.name:
                 raise shared.CustomError('gui edit: edit is not in place and relies on name search. one child node has same name {%s} as parent, which may cause confusion.' %node.name)
-            shared.NODES[x.name] = x
+            dynamic.NODES[x.name] = x
     qchem.Import(j['text'])
     #  update
-    if node.name in shared.NODES:
+    if node.name in dynamic.NODES:
         new_node = node.map.lookup(node.name)#pop
     else:
         raise shared.CustomError(node.__class__.__name__ + ': edit: You have not defined a same-name node (aka node with name %s which would have been read)' %(node.name))
@@ -527,7 +513,7 @@ def edit():
 @return_through
 @login_required
 def make_connection():
-    if 'master' in shared.NODES and getattr(shared.NODES['master'], 'map', None):
+    if 'master' in dynamic.NODES and getattr(dynamic.NODES['master'], 'map', None):
         statuscolor = shared.COLOR_PALETTE[2]
     else:
         statuscolor = shared.COLOR_PALETTE[-1]
@@ -541,7 +527,7 @@ def cut_ref():
     j = request.get_json(force=True)
     n = engine.Map().lookup(j['cur']+'.'+j['name'])
     p = engine.Map().lookup(j['cur'])
-    shared.NODES[n.name] = n
+    dynamic.NODES[n.name] = n
     p.map.del_node(n)
 
 @app.route('/paste_ref', methods=['POST'])
@@ -550,9 +536,9 @@ def cut_ref():
 def paste_ref():
     j = request.get_json(force=True)
     p = engine.Map().lookup(j['cur'])
-    l = [n for n in shared.NODES.values() if n!=engine.Map().lookup('master')]
+    l = [n for n in dynamic.NODES.values() if n!=engine.Map().lookup('master')]
     if not l:
-        raise shared.CustomError('paste_ref error: shared.NODES only contains master. nothing pastable')
+        raise shared.CustomError('paste_ref error: dynamic.NODES only contains master. nothing pastable')
     if len(l) > 1:
         print 'paste_ref warning: more than one nodes pastable. pastable nodes are [%s]' %([n.name for n in l])
     n = l[0]

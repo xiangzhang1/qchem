@@ -1,3 +1,18 @@
+Global constants and methods.
+
+__DEBUG__
+* -1 [obsolete]: print to chrome console, not recommended.
+* 0 [non-interactive]: concise stdout, results only, non-interactive mode.
+* 1 [debug]: debug, include vital process info.
+* 2 [developer]: debug, include all operations info, breaks when error occurs
+
+@MWT: timeout = 10 (ssh) | 2592000 (cell.cdist())
+
+
+
+
+
+
 Element, ELEMENTS
 =========================================================================
 
@@ -6,7 +21,7 @@ Purpose
 Properties of the chemical elements.
 
 Each chemical element is represented as an object instance. Physicochemical
-and descriptive properties of the elements are stored as instance attributes. 
+and descriptive properties of the elements are stored as instance attributes.
 
 Examples
 --------
@@ -90,4 +105,3 @@ ionenergy : tuple
     Ionization energies in eV
 isotopes : dict
     isotope mass number: (relative atomic mass, abundance, isotope mass number)
-    

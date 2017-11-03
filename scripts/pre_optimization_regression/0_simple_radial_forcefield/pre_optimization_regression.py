@@ -23,7 +23,7 @@ import shared
 import engine
 from shared import ELEMENTS
 
-qchem.Load()
+dynamic.load(dynamic.NODES, 'NODES')
 
 def get_error(x):
     import numpy as np
@@ -79,7 +79,7 @@ print minimize(get_error, method='Powell', x0=[  6.155e-01,   1.783e+00,  -6.703
 
 
 
-qchem.Load()
+dynamic.load(dynamic.NODES, 'NODES')
 
 def pre_optimize_regular(cell, a, b, c, d, e, f):     # start ccoor, parameters
     import numpy as np

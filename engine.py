@@ -593,10 +593,10 @@ class Map(object):
 
     def lookup(self, name):
         if name == 'master':
-            if name in shared.NODES:   return shared.NODES['master']
+            if name in dynamic.NODES:   return dynamic.NODES['master']
             else: raise shared.CustomError('找不到master了，求喂食')
-        elif name in shared.NODES:
-            return shared.NODES.pop(name)
+        elif name in dynamic.NODES:
+            return dynamic.NODES.pop(name)
         elif any([x.name == name for x in self._dict]):
             return [x for x in self._dict if x.name == name][0]
         elif '.' in name:
