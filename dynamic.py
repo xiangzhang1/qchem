@@ -1,8 +1,8 @@
 #!/usr/bin/python
 # THERE IS NO FREE POWER.
 import os
-os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
-os.environ["CUDA_VISIBLE_DEVICES"] = '-1'
+# os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
+# os.environ["CUDA_VISIBLE_DEVICES"] = '-1'
 import tensorflow as tf
 import numpy as np
 import time
@@ -160,7 +160,6 @@ class MlVaspMemory(object):
         tf.reset_default_graph()
         X_batch, y_batch = self.iterator(data[:, :-1], data[:, -1:], n_epochs=n_epochs, batch_size=batch_size)
         y = self.ann(X_batch, training=True, reuse=False)
-        IPython.embed()
         #
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         loss = tf.nn.l2_loss(y - y_batch)
@@ -174,11 +173,12 @@ class MlVaspMemory(object):
             saver.restore(sess, self.path)
             while not sess.should_stop():
                 sess.run(training_op)
+                print '3',
             saver.save(sess, self.path)
 
         with tf.Session() as sess:
             saver.restore(sess, self.path)
-            print 'fit complete. Loss for newest data point: %s' %(loss.eval(feed_dict={X_batch: data[-1:, :-1], y_batch: data[-1:, -1:]}))
+            print 'Loss for newest data point: %s' %(loss.eval(feed_dict={X_batch: data[-1:, :-1], y_batch: data[-1:, -1:]}))
 
 
     def predict(self, X_new):
