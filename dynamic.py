@@ -117,7 +117,6 @@ class MlVaspMemory(object):
 
     def fit_B(self):
         n_epochs = 100
-        learning_rate = 0.01
 
         # data
         data = np.float_([[0, 2, 1], [1, 2, 2], [0, 0, 2], [1, 0, 3], [0, -1, 3.3], [1, -1, 4.5]])
@@ -131,7 +130,7 @@ class MlVaspMemory(object):
         y_ = tf.placeholder(tf.float32, shape=(None, self.n_y_B), name='y_')
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS, scope='ann_B')
         loss = tf.nn.l2_loss(y - y_)
-        optimizer = tf.train.GradientDescentOptimizer(learning_rate)
+        optimizer = tf.train.AdamOptimizer()
         training_op = optimizer.minimize(loss)    # remember to wipe your ass!
         saver = tf.train.Saver()
 
