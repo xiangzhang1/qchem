@@ -110,7 +110,6 @@ class MlVaspMemory(object):
         # ann_B: construct
         tf.reset_default_graph()
         self.ann(tf.placeholder(tf.float32, shape=(None, self.n_X_B)),
-                 tf.placeholder(tf.float32, shape=(None, self.n_y_B)),
                  training=True)
         X = tf.get_tensor_by_name("ann_B/bar:0")
         y = tf.get_tensor_by_name("ann_B/y_B:0")
