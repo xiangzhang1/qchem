@@ -4,8 +4,6 @@ This is the main file. Documentation is moved to the docs/ folder.
 '''
 import re
 import os
-os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
-os.environ["CUDA_VISIBLE_DEVICES"] = ''
 import shutil
 
 import engine
