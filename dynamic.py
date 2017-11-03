@@ -13,7 +13,7 @@ import shared
 # save, load
 # ==============================================================================
 
-def save(obj, middlename):      # Note! Where defined, in which module pickled.
+def save(obj, middlename):      # Note! Where defined, above which module pickled.
     filepath = shared.SCRIPT_DIR + '/data/dynamic.%s.pickle.'%(middlename) + time.strftime('%Y%m%d%H%M%S')
     with open(filepath,'wb') as dumpfile:
         pickle.dump(obj, dumpfile)
@@ -93,7 +93,6 @@ class MlVaspMemory(object):
         # initialize ANN
         tf.reset_default_graph()
         self.ann(tf.placeholder(tf.float32, shape=(None, self.n_X)),
-                 tf.placeholder(tf.float32, shape=(None, self.n_y)),
                  training=True)
         saver = tf.train.Saver()
         with tf.Session() as sess:
