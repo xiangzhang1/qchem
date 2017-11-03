@@ -163,19 +163,19 @@ class MlVaspMemory(object):
             loss = tf.nn.l2_loss(y - y_batch)
             optimizer = tf.train.GradientDescentOptimizer(learning_rate)
             training_op = optimizer.minimize(loss)  # remember to wipe your ass!
-        with tf.variable_scope('summarize'):
-            summary_op = tf.summary.scalar('loss', loss)
+        # with tf.variable_scope('summarize'):
+        #     summary_op = tf.summary.scalar('loss', loss)
         saver = tf.train.Saver()
-        summary_writer = tf.summary.FileWriter(self.path+'_summary', tf.get_default_graph())
+        # summary_writer = tf.summary.FileWriter(self.path+'_summary', tf.get_default_graph())
 
         # ANN: execute
         with tf.Session() as sess:
             saver.restore(sess, self.path)
             for epoch in range(n_epochs):
                 for _ in range(data.shape[0] // batch_size):
-                    _, _, summary = sess.run([update_ops, training_op, summary_op])
-                if epoch % 10 == 0:
-                    summary_writer.add_summary(summary, epoch)
+                    sess.run([update_ops, training_op])
+                if epoch % 50 == 0:
+                    print sess.run(y, y_batch)
             saver.save(sess, self.path)
 
 
