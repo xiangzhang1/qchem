@@ -146,9 +146,9 @@ class MlVaspMemory(object):
 
 
     def fit(self):
-        n_epochs = 512
-        batch_size = 96
-        learning_rate = 0.01
+        n_epochs = 1024
+        batch_size = 256
+        learning_rate = 0.03
 
         # data
         data = np.float32(self.data)
@@ -171,8 +171,7 @@ class MlVaspMemory(object):
                 for _ in range(data.shape[0] // batch_size):
                     sess.run([update_ops, training_op])
                 if epoch % 50 == 0:
-                    print sess.run([y, y_batch, loss])
-                    print '-' * 50
+                    print 'Epoch %s, loss %s' %(epoch, sess.run(loss))
             saver.save(sess, self.path)
 
 
