@@ -47,7 +47,7 @@ class MlVaspMemory(object):
 
     def scaler(self, X):
         with tf.variable_scope('scaler'):
-            X_scaled = tf.truediv(X, [10**8, 10**8, 10**8, 10**8, 1, 1000, 1, 10, 1, 1])
+            X_scaled = tf.divide(X, np.float32([10**8, 10**8, 10**8, 10**8, 1, 1000, 1, 10, 1, 1]))
         return X_scaled
 
     def iterator(self, X_data, y_data, n_epochs, batch_size):
