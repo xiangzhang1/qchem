@@ -43,12 +43,12 @@ MLS = {}
 
 class MlVaspMemory(object):
 
-    def iterator(self, X_data, y_data, n_epochs, batch_size):
+    def iterator(self, X_data, y_data, batch_size):
         with tf.variable_scope('iterator'):
             dataset = tf.contrib.data.Dataset.from_tensor_slices((X_data, y_data))
             dataset = dataset.shuffle(buffer_size=1000)
             dataset = dataset.batch(batch_size)
-            dataset = dataset.repeat(n_epochs)
+            dataset = dataset.repeat()
             iterator = dataset.make_one_shot_iterator()
             X_batch, y_batch = iterator.get_next()
         return X_batch, y_batch
@@ -132,15 +132,14 @@ class MlVaspMemory(object):
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS, scope='ann_B')
         loss = tf.nn.l2_loss(y - y_)
         optimizer = tf.train.GradientDescentOptimizer(learning_rate)
-        with tf.control_dependencies(update_ops):   # Wipe
-            training_op = optimizer.minimize(loss)
+        training_op = optimizer.minimize(loss)    # remember to wipe your ass!
         saver = tf.train.Saver()
 
         # ann_B: run
         with tf.Session() as sess:
             saver.restore(sess, self.path)
             for epoch in range(n_epochs):
-                sess.run(training_op, feed_dict={X: data[:, :-1], y_: data[:, -1:]})
+                sess.run([update_ops, training_op], feed_dict={X: data[:, :-1], y_: data[:, -1:]})
             print 'fit_B complete. Loss: %s' %(loss.eval(feed_dict={X: data[:, :-1], y_: data[:, -1:]}))
             saver.save(sess, self.path)
 
@@ -156,21 +155,27 @@ class MlVaspMemory(object):
 
         # ANN: construct
         tf.reset_default_graph()
-        X_batch, y_batch = self.iterator(data[:, :-1], data[:, -1:], n_epochs=n_epochs, batch_size=batch_size)
+        X_batch, y_batch = self.iterator(data[:, :-1], data[:, -1:], batch_size=batch_size)
         y = self.ann(X_batch, training=True, reuse=False)
         #
-        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-        loss = tf.nn.l2_loss(y - y_batch)
-        optimizer = tf.train.GradientDescentOptimizer(learning_rate)
-        with tf.control_dependencies(update_ops):     # Wipe your ass immediately!
-            training_op = optimizer.minimize(loss)
+        with tf.variable_scope('optimize'):
+            update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+            loss = tf.nn.l2_loss(y - y_batch)
+            optimizer = tf.train.GradientDescentOptimizer(learning_rate)
+            training_op = optimizer.minimize(loss)  # remember to wipe your ass!
+        with tf.variable_scope('summarize'):
+            summary_op = tf.summary.scalar('loss', loss)
         saver = tf.train.Saver()
+        summary_writer = tf.summary.FileWriter(self.path+'_summary', tf.get_default_graph())
 
         # ANN: execute
-        with tf.train.MonitoredTrainingSession(hooks=[tf.train.CheckpointSaverHook(checkpoint_dir=self.path+'_checkpoint', save_secs=600), tf.train.SummarySaverHook(output_dir=self.path+'_summary', save_secs=1, summary_op=[loss])]) as sess:
+        with tf.Session() as sess:
             saver.restore(sess, self.path)
-            while not sess.should_stop():
-                sess.run(training_op)
+            for epoch in range(n_epochs):
+                for _ in range(X_data.shape[0] // batch_size)
+                    _, _, summary = sess.run([update_ops, training_op, summary_op])
+                if epoch % 10 == 0:
+                    summary_writer.add_summary(summary, epoch)
             saver.save(sess, self.path)
 
 
