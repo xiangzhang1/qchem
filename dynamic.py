@@ -135,6 +135,7 @@ class MlVaspMemory(object):
         saver = tf.train.Saver()
 
         # ann_B: run
+        IPython.embed()
         with tf.Session() as sess:
             saver.restore(sess, self.path)
             for epoch in range(n_epochs):
