@@ -1,6 +1,7 @@
 #!/usr/bin/python
-'''Eventually, you should use CLI, not the pretty GUI.
-This is a simple and stable wrapper.'''
+'''
+A wrapper for IPython as well as a boilerplate.
+'''
 
 # common libraries
 import sys
@@ -30,4 +31,10 @@ import engine
 from shared import ELEMENTS
 
 print shared.bcolors.OKBLUE + 'Welcome. Libraries loaded.' + shared.bcolors.ENDC
-IPython.embed(banner1='')
+# IPython.embed(banner1='')
+
+dynamic.global_load()
+self = dynamic.MlVaspMemory()
+self.fit_B()
+self.init_data()
+self.fit()
