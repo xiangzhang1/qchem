@@ -132,7 +132,7 @@ class MlVaspMemory(object):
             saver.save(sess, self.path)
 
 
-    def consume_temp(self):
+    def init_data(self):
 
         # data
         data = []
@@ -148,7 +148,7 @@ class MlVaspMemory(object):
         y_data = data[:, -2:-1]
 
         # ANN: construct
-        self.consume(np.concatenate(X_data, y_data, axis=1))
+        self.data = np.concatenate(X_data, y_data, axis=1)
 
 
     def fit(self):
