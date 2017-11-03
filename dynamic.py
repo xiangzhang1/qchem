@@ -184,7 +184,7 @@ class MlVaspMemory(object):
 
         with tf.Session() as sess:
             saver.restore(sess, self.path)
-            print 'Training complete. Loss for newest data point: %s' %(loss.eval(feed_dict={X_batch: data[-1:, :-3], y_batch: data[-1, -2:-1]}))
+            print 'Training complete. Loss for newest data point: %s' %(loss.eval(feed_dict={X_batch: data[-1:, :-1], y_batch: data[-1, -1:]}))
 
 
     def predict(self, X_new):
