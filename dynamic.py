@@ -9,7 +9,6 @@ import time
 import dill as pickle
 
 import shared
-from qchem import Node
 
 # save, load
 # ==============================================================================
@@ -24,12 +23,14 @@ def load(middlename, datetime=None):
     with open(filepath, 'rb') as f:
         return pickle.load(f)
 
-
+def global_load():
+    global NODES
+    NODES = load('NODES')
 
 # NODES
 # ==============================================================================
 
-NODES = load('NODES')
+NODES = {}
 
 # ML
 # ==============================================================================
