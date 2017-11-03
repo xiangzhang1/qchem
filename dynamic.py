@@ -19,7 +19,7 @@ def save(obj, middlename):
         pickle.dump(obj, dumpfile)
 
 def load(middlename, datetime=None):
-    filepath = shared.SCRIPT_DIR + '/data/' + sorted([x for x in os.listdir(shared.SCRIPT_DIR + '/data/') if x.startswith('shared.%s.pickle.%s'%(middlename, datetime if datetime else ''))])[-1]
+    filepath = shared.SCRIPT_DIR + '/data/' + sorted([x for x in os.listdir(shared.SCRIPT_DIR + '/data/') if x.startswith('dynamic.%s.pickle.%s'%(middlename, datetime if datetime else ''))])[-1]
     with open(filepath, 'rb') as f:
         return pickle.load(f)
 
