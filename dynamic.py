@@ -163,7 +163,7 @@ class MlVaspMemory(object):
 
         # ANN: construct
         tf.reset_default_graph()
-        X_batch, y_batch = self.iterator(data[:, :-1], data[:, -1:], n_epochs=n_epochs, batch_size=batch_size)
+        X_batch, y_batch = self.iterator(data[:, :-1], data[:, -1:]/10.0**9, n_epochs=n_epochs, batch_size=batch_size)
         X_batch_scaled = self.scaler(X_batch)
         y = self.ann(X_batch_scaled, training=True, reuse=False)
         IPython.embed()
