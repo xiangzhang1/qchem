@@ -101,6 +101,26 @@ class MlVaspMemory(object):
             saver.save(sess, self.path)
 
 
+    def init_data(self):
+
+        # data
+        data = []
+        with open("/home/xzhang1/m_cpu_config.log", "r") as if_:
+            lines = if_.readlines()
+            for line in lines:
+                if line and not line.startswith('#') and len(line.split())==len(lines[1].split()):
+                    data.append( np.float_(line.split()) )
+        data = np.float_(data)
+        data[:, -2:-1] *= 10**6    # SI unit
+        X_data = data[:, :-3]
+        X_data = np.concatenate((X_data, [[0,2]]*X_data.shape[0]), axis=1)
+        y_data = data[:, -2:-1]
+
+        # ANN: construct
+        self.data = np.concatenate((X_data, y_data), axis=1)
+
+
+
     def fit_B(self):
         n_epochs = 100
         learning_rate = 0.01
@@ -132,24 +152,6 @@ class MlVaspMemory(object):
             saver.save(sess, self.path)
 
 
-    def init_data(self):
-
-        # data
-        data = []
-        with open("/home/xzhang1/m_cpu_config.log", "r") as if_:
-            lines = if_.readlines()
-            for line in lines:
-                if line and not line.startswith('#') and len(line.split())==len(lines[1].split()):
-                    data.append( np.float_(line.split()) )
-        data = np.float_(data)
-        data[:, -2:-1] *= 10**6    # SI unit
-        X_data = data[:, :-3]
-        X_data = np.concatenate((X_data, [[0,2]]*X_data.shape[0]), axis=1)
-        y_data = data[:, -2:-1]
-
-        # ANN: construct
-        self.data = np.concatenate((X_data, y_data), axis=1)
-
 
     def fit(self):
         n_epochs = 40
@@ -161,8 +163,8 @@ class MlVaspMemory(object):
 
         # ANN: construct
         tf.reset_default_graph()
-        X_batch, y_batch = self.iterator(data[:, :-3], data[:, -2:-1])
-        X_batch_scaled = self.scaler(X_batch, batch_size=batch_size)
+        X_batch, y_batch = self.iterator(data[:, :-3], data[:, -2:-1], batch_size=batch_size)
+        X_batch_scaled = self.scaler(X_batch)
         y = self.ann(X_batch_scaled, training=True, reuse=False)
         #
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
