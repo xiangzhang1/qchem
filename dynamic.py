@@ -111,8 +111,8 @@ class MlVaspMemory(object):
         tf.reset_default_graph()
         self.ann(tf.placeholder(tf.float32, shape=(None, self.n_X)),
                  training=True)
-        X = tf.get_tensor_by_name("ann_B/bar:0")
-        y = tf.get_tensor_by_name("ann_B/y_B:0")
+        X = tf.Graph.get_tensor_by_name("ann_B/bar:0")
+        y = tf.Graph.get_tensor_by_name("ann_B/y_B:0")
         y_ = tf.placeholder(tf.float32, shape=(None, self.n_y_B))
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS, scope='ann_B')
         loss = tf.nn.l2_loss(y - y_)
