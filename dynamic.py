@@ -172,7 +172,7 @@ class MlVaspMemory(object):
         with tf.Session() as sess:
             saver.restore(sess, self.path)
             for epoch in range(n_epochs):
-                for _ in range(X_data.shape[0] // batch_size):
+                for _ in range(data.shape[0] // batch_size):
                     _, _, summary = sess.run([update_ops, training_op, summary_op])
                 if epoch % 10 == 0:
                     summary_writer.add_summary(summary, epoch)
