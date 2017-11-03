@@ -154,12 +154,12 @@ class MlVaspMemory(object):
             saver.restore(sess, self.path)
             for epoch in range(n_epochs):
                 sess.run([update_ops, training_op], feed_dict={X: data[:, :-1], y_: data[:, -1:]})
-            print 'fit_B complete. Loss: %s' %(loss.eval(feed_dict={X: data[:, :-1], y_: data[:, -1:]}))
+            print self.__class__.__name__ + ':fit_B complete. Evaluation not implemented. '
             saver.save(sess, self.path)
 
 
 
-    def fit(self):
+    def train(self):
         n_epochs = 1000
         batch_size = 32
         learning_rate = 0.001
@@ -185,8 +185,13 @@ class MlVaspMemory(object):
                 for _ in range(data.shape[0] // batch_size):
                     _loss, _, _ = sess.run([loss, update_ops, training_op])
                 if epoch % 50 == 0:
-                    print 'Epoch %s, loss %s' %(epoch, _loss)
+                    print self.__class__.__name__ + ': epoch %s, loss %s' %(epoch, _loss)
             saver.save(sess, self.path)
+            print self.__class__.__name__ + ': training complete.'
+
+        # EVALUATION
+        X_new, y_new = data[-3:, :-1], data[-3:, -1:]
+        print self.__class__.__name__ + ': Evaluation. \nX_new is %s.\nActual y_ is %s.\nPredicted y is %s.\n' %(X_new, y_new, self.predict(X_new))
 
 
     def predict(self, X_new):
@@ -201,4 +206,4 @@ class MlVaspMemory(object):
         # ANN: run
         with tf.Session() as sess:
             saver.restore(sess, self.path)
-            return float(y.eval())
+            return y.eval()
