@@ -148,7 +148,7 @@ class MlVaspMemory(object):
         y_data = data[:, -2:-1]
 
         # ANN: construct
-        self.data = np.concatenate(X_data, y_data, axis=1)
+        self.data = np.concatenate((X_data, y_data), axis=1)
 
 
     def fit(self):
