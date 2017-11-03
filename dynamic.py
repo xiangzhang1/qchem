@@ -149,7 +149,7 @@ class MlVaspMemory(object):
             for epoch in range(n_epochs):
                 sess.run(training_op, feed_dict={X: data[:, :-1], y_: data[:, -1:]})
                 print 'Epoch %s, mse %s' %(epoch, loss.eval(feed_dict={X: data[:, :-1], y_: data[:, -1:]}))
-            print 'Training complete. '
+            print 'fit_B complete. Loss: %s' %(loss.eval(feed_dict={X: data[:, :-1], y_: data[:, -1:]}))
             saver.save(sess, self.path)
 
 
@@ -184,7 +184,7 @@ class MlVaspMemory(object):
 
         with tf.Session() as sess:
             saver.restore(sess, self.path)
-            print 'Training complete. Loss for newest data point: %s' %(loss.eval(feed_dict={X_batch: data[-1:, :-1], y_batch: data[-1, -1:]}))
+            print 'fit complete. Loss for newest data point: %s' %(loss.eval(feed_dict={X_batch: data[-1:, :-1], y_batch: data[-1:, -1:]}))
 
 
     def predict(self, X_new):
