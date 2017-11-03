@@ -31,4 +31,4 @@ import engine
 from shared import ELEMENTS
 
 print shared.bcolors.OKBLUE + 'Welcome. Libraries loaded.' + shared.bcolors.ENDC
-# IPython.embed(banner1='')
+IPython.embed(banner1='')
