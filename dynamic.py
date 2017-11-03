@@ -169,9 +169,9 @@ class MlVaspMemory(object):
             saver.restore(sess, self.path)
             for epoch in range(n_epochs):
                 for _ in range(data.shape[0] // batch_size):
-                    sess.run([update_ops, training_op])
+                    _loss, _, _ = sess.run([loss, update_ops, training_op])
                 if epoch % 50 == 0:
-                    print 'Epoch %s, loss %s' %(epoch, sess.run(loss))
+                    print 'Epoch %s, loss %s' %(epoch, _loss)
             saver.save(sess, self.path)
 
 
