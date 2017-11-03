@@ -166,10 +166,7 @@ class MlVaspMemory(object):
         tf.reset_default_graph()
         X_batch, y_batch = self.iterator(data[:, :-1], data[:, -1:], batch_size=batch_size)
         X_batch_scaled = self.scaler(X_batch)
-        y = self.ann(tf.placeholder(tf.float32, shape=(None, self.n_X)),
-                                    training=True, reuse=False)
-        # y = self.ann(X_batch_scaled, training=True, reuse=False)
-        IPython.embed()
+        y = self.ann(X_batch_scaled, training=True, reuse=False)
         #
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         loss = tf.nn.l2_loss(y - y_batch)
