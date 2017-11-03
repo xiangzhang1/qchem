@@ -137,6 +137,7 @@ class MlVaspMemory(object):
         # ann_B: run
         IPython.embed()
         with tf.Session() as sess:
+            sess.run(tf.global_variables_initializer())
             saver.restore(sess, self.path)
             for epoch in range(n_epochs):
                 sess.run([update_ops, training_op], feed_dict={X: data[:, :-1], y_: data[:, -1:]})
