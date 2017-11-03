@@ -96,7 +96,7 @@ class MlVaspMemory(object):
                  training=True)
         saver = tf.train.Saver()
         with tf.Session() as sess:
-            sess.run(tf.global_variable_initializer())
+            sess.run(tf.global_variables_initializer())
             saver.save(sess, self.path)
 
 

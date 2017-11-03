@@ -5,6 +5,8 @@ This is a simple and stable wrapper.'''
 # common libraries
 import sys
 import os
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
+os.environ["CUDA_VISIBLE_DEVICES"] = '-1'
 import shutil
 import random
 import string
@@ -16,6 +18,8 @@ import numpy as np
 
 from cStringIO import StringIO
 from fuzzywuzzy import process
+
+import tensorflow as tf
 
 
 # qchem package
