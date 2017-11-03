@@ -80,7 +80,7 @@ class MlVaspMemory(object):
         self.n_X_A, self.n_hidden_A1, self.n_hidden_A2, self.n_y_A = 8, 8, 4, 1
         self.n_X_B, self.n_hidden_B1, self.n_hidden_B2, self.n_y_B = 2, 4, 4, 1
         self.n_X, self.n_y = 10, 1
-        self.path = shared.SCRIPT_DIR + str.upper(self.__class__.__name__)
+        self.path = shared.SCRIPT_DIR + 'data/' + str.upper(self.__class__.__name__)
 
         # initialize X_data
         self.data = []
@@ -167,15 +167,11 @@ class MlVaspMemory(object):
         saver = tf.train.Saver()
 
         # ANN: execute
-        with tf.train.MonitoredTrainingSession(save_summaries_steps=100) as sess:
+        with tf.train.MonitoredTrainingSession(hooks=[tf.train.CheckpointSaverHook(checkpoint_dir=self.path+'_checkpoint'), tf.train.SummarySaverHook(output_dir=self.path+'_summary', save_secs=1)]) as sess:
             saver.restore(sess, self.path)
             while not sess.should_stop():
                 sess.run(training_op)
             saver.save(sess, self.path)
-
-        with tf.Session() as sess:
-            saver.restore(sess, self.path)
-            print 'Loss for newest data point: %s' %(loss.eval(feed_dict={X_batch: data[-1:, :-1], y_batch: data[-1:, -1:]}))
 
 
     def predict(self, X_new):
