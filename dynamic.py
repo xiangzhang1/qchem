@@ -7,6 +7,7 @@ import tensorflow as tf
 import numpy as np
 import time
 import dill as pickle
+import IPython
 
 import shared
 
