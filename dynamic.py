@@ -146,9 +146,9 @@ class MlVaspMemory(object):
 
 
     def fit(self):
-        n_epochs = 1024
-        batch_size = 256
-        learning_rate = 0.03
+        n_epochs = 100
+        batch_size = 32
+        learning_rate = 0.001
 
         # data
         data = np.float32(self.data)
