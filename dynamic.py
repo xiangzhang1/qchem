@@ -149,8 +149,6 @@ class MlVaspMemory(object):
         n_epochs = 1024
         batch_size = 256
         learning_rate = 0.03
-        training = True
-        reuse=False
 
         # data
         data = np.float32(self.data)
@@ -158,22 +156,7 @@ class MlVaspMemory(object):
         # ANN: construct
         tf.reset_default_graph()
         X_batch, y_batch = self.iterator(data[:, :-1], data[:, -1:], batch_size=batch_size)
-        with tf.variable_scope('diverge_AB', reuse=reuse):
-            X_A = tf.slice(X_batch, [0, 0], [-1, self.n_X_A], name='X_A')
-            X_B = tf.slice(X_batch, [0, self.n_X_A], [-1, -1], name='X_B')
-
-        with tf.variable_scope('ann_B', reuse=reuse):
-            hidden_B1 = tf.nn.elu(tf.layers.batch_normalization(tf.layers.dense(X_B, self.n_hidden_B1), training=training, momentum=0.9))
-            hidden_B2 = tf.nn.elu(tf.layers.batch_normalization(tf.layers.dense(hidden_B1, self.n_hidden_B2), training=training, momentum=0.9))
-            y_B = tf.multiply(tf.layers.dense(hidden_B2, 1, activation=tf.sigmoid), 6, name='y_B')
-
-        with tf.variable_scope('ann_A', reuse=reuse):
-            hidden_A1 = tf.nn.elu(tf.layers.batch_normalization(tf.layers.dense(X_A, self.n_hidden_A1), training=training, momentum=0.9))
-            hidden_A2 = tf.nn.elu(tf.layers.batch_normalization(tf.layers.dense(hidden_A1, self.n_hidden_A2), training=training, momentum=0.9))
-            y_A = tf.layers.dense(hidden_A2, 1, name='y_A')
-
-        with tf.variable_scope('converge_AB', reuse=reuse):
-            y = tf.multiply(y_A, y_B, name='y')
+        y = self.ann(X_batch, training=True, reuse=False)
         #
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         loss = tf.nn.l2_loss(y - y_batch)
