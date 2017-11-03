@@ -35,6 +35,6 @@ print shared.bcolors.OKBLUE + 'Welcome. Libraries loaded.' + shared.bcolors.ENDC
 
 dynamic.global_load()
 self = dynamic.MlVaspMemory()
-self.fit_B()
+self.train_B()
 self.init_data()
-self.fit()
+self.train()

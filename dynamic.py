@@ -129,7 +129,7 @@ class MlVaspMemory(object):
 
 
 
-    def fit_B(self):
+    def train_B(self):
         n_epochs = 100
         learning_rate = 0.01
 
@@ -154,7 +154,7 @@ class MlVaspMemory(object):
             saver.restore(sess, self.path)
             for epoch in range(n_epochs):
                 sess.run([update_ops, training_op], feed_dict={X: data[:, :-1], y_: data[:, -1:]})
-            print self.__class__.__name__ + ':fit_B complete. Evaluation not implemented. '
+            print self.__class__.__name__ + ':train_B complete. Evaluation not implemented. '
             saver.save(sess, self.path)
 
 
