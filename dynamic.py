@@ -180,6 +180,10 @@ class MlVaspMemory(object):
             saver.restore(sess, self.path)
             while not sess.should_stop():
                 sess.run(training_op)
+            saver.save(sess, self.path)
+
+        with tf.Session() as sess:
+            saver.restore(sess, self.path)
             print 'Training complete. Loss for newest data point: %s' %(loss.run(feed_dict={X_batch: data[-1:, :-3], y_batch: data[-1, -2:-1]}))
 
 
