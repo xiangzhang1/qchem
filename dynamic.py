@@ -50,13 +50,13 @@ class MlVaspMemory(object):
             X_scaled = tf.divide(X, [10**9, 1, 10**9, 10**9, 1, 1000, 1, 1, 1, 1])
         return X_scaled
 
-    def iterator(self, X_data, y_data, batch_size):
+    def iterator(self, X_data, y_data, n_epochs, batch_size):
         with tf.variable_scope('iterator'):
             dataset = tf.contrib.data.Dataset.from_tensor_slices((X_data, y_data))
             dataset = dataset.shuffle(buffer_size=1000)
             dataset = dataset.batch(batch_size)
-            dataset = dataset.repeat()
-            iterator = dataset.make_initializable_iterator()
+            dataset = dataset.repeat(n_epochs)
+            iterator = dataset.make_one_shot_iterator()
             X_batch, y_batch = iterator.get_next()
         return X_batch, y_batch
 
@@ -164,7 +164,7 @@ class MlVaspMemory(object):
 
         # ANN: construct
         tf.reset_default_graph()
-        X_batch, y_batch = self.iterator(data[:, :-1], data[:, -1:], batch_size=batch_size)
+        X_batch, y_batch = self.iterator(data[:, :-1], data[:, -1:], n_epochs=n_epochs, batch_size=batch_size)
         X_batch_scaled = self.scaler(X_batch)
         IPython.embed()
         y = self.ann(tf.placeholder(tf.float32, shape=(None, self.n_X)),
@@ -174,17 +174,16 @@ class MlVaspMemory(object):
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         loss = tf.nn.l2_loss(y - y_batch)
         optimizer = tf.train.GradientDescentOptimizer(learning_rate)
-        with tf.control_dependencies(update_ops):
+        with tf.control_dependencies(update_ops):     # Wipe your ass immediately!
             training_op = optimizer.minimize(loss)
         saver = tf.train.Saver()
 
         # ANN: execute
-        with tf.Session() as sess:
+        with tf.train.MonitoredTrainingSession(graph=tf.get_default_graph()) as sess:
             saver.restore(sess, self.path)
-            for epoch in range(n_epochs):
-                for iteration in range(data.shape[0] // batch_size):
-                    sess.run(training_op)
-                print 'Epoch %s, last item loss %s' %(loss.run(feed_dict={X_batch: data[-1:, :-3], y_batch: data[-1, -2:-1]}))
+            while not sess.should_stop():
+                sess.run(training_op)
+            print 'Training complete. Loss for newest data point: %s' %(loss.run(feed_dict={X_batch: data[-1:, :-3], y_batch: data[-1, -2:-1]}))
 
 
     def predict(self, X_new):
