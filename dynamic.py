@@ -132,10 +132,7 @@ class MlVaspMemory(object):
             saver.save(sess, self.path)
 
 
-    def fit_initial(self):
-        n_epochs = 40
-        batch_size = 50
-        learning_rate = 0.01
+    def consume_temp(self):
 
         # data
         data = []
@@ -146,33 +143,12 @@ class MlVaspMemory(object):
                     data.append( np.float_(line.split()) )
         data = np.float_(data)
         data[:, -2:-1] *= 10**6    # SI unit
-        X_data = data[:1000, :-3]
+        X_data = data[:, :-3]
         X_data = np.concatenate((X_data, [[0,2]]*X_data.shape[0]), axis=1)
-        y_data = data[:1000, -2:-1]
-        X_test = data[1000:, :-3]
-        X_test = np.concatenate((X_test, [[0,2]]*X_test.shape[0]), axis=1)
-        y_test = data[1000:, -2:-1]
+        y_data = data[:, -2:-1]
 
         # ANN: construct
-        tf.reset_default_graph()
-        X_batch, y_batch = self.iterator(X_data, y_data)
-        X_batch_scaled = self.scaler(X_batch, batch_size=batch_size)
-        y = self.ann(X_batch_scaled, training=True, reuse=False)
-        #
-        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-        loss = tf.nn.l2_loss(y - y_batch)
-        optimizer = tf.train.GradientDescentOptimizer(learning_rate)
-        with tf.control_dependencies(update_ops):
-            training_op = optimizer.minimize(loss)
-        saver = tf.train.Saver()
-
-        # ANN: execute
-        with tf.Session() as sess:
-            saver.restore(sess, self.path)
-            for epoch in range(n_epochs):
-                for iteration in range(data.shape[0] // batch_size):
-                    sess.run(training_op)
-                print 'Epoch %s, loss %s' %(loss.run(feed_dict={X_batch: X_test, y_batch: y_test}))
+        self.consume(np.concatenate(X_data, y_data, axis=1))
 
 
     def fit(self):
