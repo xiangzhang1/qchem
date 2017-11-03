@@ -45,11 +45,6 @@ MLS = {}
 
 class MlVaspMemory(object):
 
-    def scaler(self, X):
-        with tf.variable_scope('scaler'):
-            X_scaled = tf.divide(X, np.float32([10**8, 10**8, 10**8, 10**8, 1, 1000, 1, 10, 1, 1]))
-        return X_scaled
-
     def iterator(self, X_data, y_data, n_epochs, batch_size):
         with tf.variable_scope('iterator'):
             dataset = tf.contrib.data.Dataset.from_tensor_slices((X_data, y_data))
@@ -112,7 +107,7 @@ class MlVaspMemory(object):
                 if line and not line.startswith('#') and len(line.split())==len(lines[1].split()):
                     data.append( np.float_(line.split()) )
         data = np.float_(data)
-        data[:, -2:-1] *= 10**6    # SI unit
+        data /= np.float32([10**8, 10**8, 10**8, 10**8, 1, 1000, 1, 10, 1, 1, 10**3, 10**3, 1])
         X_data = data[:, :-3]
         X_data = np.concatenate((X_data, [[0,2]]*X_data.shape[0]), axis=1)
         y_data = data[:, -2:-1]
@@ -154,8 +149,8 @@ class MlVaspMemory(object):
 
 
     def fit(self):
-        n_epochs = 40
-        batch_size = 50
+        n_epochs = 512
+        batch_size = 96
         learning_rate = 0.01
 
         # data
@@ -163,9 +158,8 @@ class MlVaspMemory(object):
 
         # ANN: construct
         tf.reset_default_graph()
-        X_batch, y_batch = self.iterator(data[:, :-1], data[:, -1:]/10.0**9, n_epochs=n_epochs, batch_size=batch_size)
-        X_batch_scaled = self.scaler(X_batch)
-        y = self.ann(X_batch_scaled, training=True, reuse=False)
+        X_batch, y_batch = self.iterator(data[:, :-1], data[:, -1:], n_epochs=n_epochs, batch_size=batch_size)
+        y = self.ann(X_batch, training=True, reuse=False)
         IPython.embed()
         #
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
@@ -193,8 +187,7 @@ class MlVaspMemory(object):
 
         # ANN: construct
         tf.reset_default_graph()
-        X_scaled = self.scaler(X_new)
-        y = self.ann(X_scaled, training=False, reuse=False)
+        y = self.ann(X_new, training=False, reuse=False)
         saver = tf.train.Saver()
 
         # ANN: run
