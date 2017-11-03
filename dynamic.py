@@ -1,17 +1,14 @@
 #!/usr/bin/python
+# THERE IS NO FREE POWER.
 import os
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
 os.environ["CUDA_VISIBLE_DEVICES"] = '-1'
 import tensorflow as tf
-import sys, time, shutil, re, itertools, paramiko
-from pprint import pprint
-from functools import partial, wraps
 import numpy as np
+import time
 import dill as pickle
 
 import shared
-
-
 
 # save, load
 # ==============================================================================
@@ -38,24 +35,10 @@ NODES = load('NODES')
 
 MLS = {}
 
-batch_norm_layer = partial(tf.layers.batch_normalization,
-                      training=training, momentum=0.9)
-
-
-
-# VaspMemory
-# ==============================================================================
-
-#!/usr/bin/python
-import tensorflow as tf
-
-from functools import partial
-batch_norm_layer = partial(tf.layers.batch_normalization,
-                      training=training, momentum=0.9)
-
 
 
 # MlVaspMemory
+# ==============================================================================
 
 class MlVaspMemory(object):
 
@@ -74,19 +57,19 @@ class MlVaspMemory(object):
             X_batch, y_batch = iterator.get_next()
         return X_batch, y_batch
 
-    def ann(self, X):
+    def ann(self, X, training):
         with tf.variable_scope('diverge_AB'):
             X_A = tf.slice(X, [0, 0], [-1, self.n_X_A], name='X_A')
-            X_A = tf.slice(X, [0, self.n_X_A], [-1, -1], name='X_B')
+            X_B = tf.slice(X, [0, self.n_X_A], [-1, -1], name='X_B')
 
         with tf.variable_scope('ann_B'):
-            hidden_B1 = tf.nn.elu(batch_norm_layer(tf.layers.dense(X_B, self.n_hidden_B1)))
-            hidden_B2 = tf.nn.elu(batch_norm_layer(tf.layers.dense(X_B, self.n_hidden_B2)))
+            hidden_B1 = tf.nn.elu(tf.layers.batch_normalization(tf.layers.dense(X_B, self.n_hidden_B1), training=training, momentum=0.9))
+            hidden_B2 = tf.nn.elu(tf.layers.batch_normalization(tf.layers.dense(hidden_B1, self.n_hidden_B2), training=training, momentum=0.9))
             y_B = tf.multiply(tf.layers.dense(hidden_B2, 1, name='y_B', activation=tf.sigmoid), 6, name='y_B')
 
         with tf.variable_scope('ann_A'):
-            hidden_A1 = tf.nn.elu(batch_norm_layer(tf.layers.dense(X_A, self.n_hidden_A1)))
-            hidden_A2 = tf.nn.elu(batch_norm_layer(tf.layers.dense(X_A, self.n_hidden_A2)))
+            hidden_A1 = tf.nn.elu(tf.layers.batch_normalization(tf.layers.dense(X_A, self.n_hidden_A1), training=training, momentum=0.9))
+            hidden_A2 = tf.nn.elu(tf.layers.batch_normalization(tf.layers.dense(hidden_A1, self.n_hidden_A2), training=training, momentum=0.9))
             y_A = tf.layers.dense(hidden_A2, 1, name='y_A')
 
         with tf.variable_scope('converge_AB'):
@@ -107,8 +90,9 @@ class MlVaspMemory(object):
 
         # initialize ANN
         tf.reset_default_graph()
-        y = self.ann(tf.placeholder(tf.float32, shape=(None, n_X)),
-                          tf.placeholder(tf.float32, shape=(None, n_y)))
+        self.ann(tf.placeholder(tf.float32, shape=(None, self.n_X)),
+                 tf.placeholder(tf.float32, shape=(None, self.n_y)),
+                 training=True)
         saver = tf.train.Saver()
         with tf.Session() as sess:
             sess.run(tf.global_variable_initializer())
@@ -124,8 +108,9 @@ class MlVaspMemory(object):
 
         # ann_B: construct
         tf.reset_default_graph()
-        self.ann(tf.placeholder(tf.float32, shape=(None, n_X)),
-                          tf.placeholder(tf.float32, shape=(None, n_y)))
+        self.ann(tf.placeholder(tf.float32, shape=(None, self.n_X_B)),
+                 tf.placeholder(tf.float32, shape=(None, self.n_y_B)),
+                 training=True)
         X = tf.get_tensor_by_name("ann_B/bar:0")
         y = tf.get_tensor_by_name("ann_B/y_B:0")
         y_ = tf.placeholder(tf.float32, shape=(None, self.n_y_B))
@@ -140,8 +125,8 @@ class MlVaspMemory(object):
         with tf.Session() as sess:
             saver.restore(sess, self.path)
             for epoch in range(n_epochs):
-                sess.run(training_op, feed_dict={X: data[:, :-1], y_: data[:, -1:])
-                print 'Epoch %s, mse %s' %(epoch, loss_B.eval(feed_dict={X: data[:, :-1], y_: data[:, -1:]}))
+                sess.run(training_op, feed_dict={X: data[:, :-1], y_: data[:, -1:]})
+                print 'Epoch %s, mse %s' %(epoch, loss.eval(feed_dict={X: data[:, :-1], y_: data[:, -1:]}))
             print 'Training complete. '
             saver.save(sess, self.path)
 
@@ -171,7 +156,7 @@ class MlVaspMemory(object):
         tf.reset_default_graph()
         X_batch, y_batch = self.iterator(X_data, y_data)
         X_batch_scaled = self.scaler(X_batch, batch_size=batch_size)
-        y = self.ann(X_batch_scaled)
+        y = self.ann(X_batch_scaled, training=True)
         #
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         loss = tf.nn.l2_loss(y - y_batch)
@@ -201,7 +186,7 @@ class MlVaspMemory(object):
         tf.reset_default_graph()
         X_batch, y_batch = self.iterator(data[:, :-3], data[:, -2:-1])
         X_batch_scaled = self.scaler(X_batch, batch_size=batch_size)
-        y = self.ann(X_batch_scaled)
+        y = self.ann(X_batch_scaled, training=True)
         #
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         loss = tf.nn.l2_loss(y - y_batch)
@@ -225,10 +210,11 @@ class MlVaspMemory(object):
 
         # ANN: construct
         tf.reset_default_graph()
-        X_scaled = scaler(X_new)
-        y = self.ann(X_scaled)
+        X_scaled = self.scaler(X_new)
+        y = self.ann(X_scaled, training=False)
         saver = tf.train.Saver()
 
         # ANN: run
         with tf.Session() as sess:
+            saver.restore(sess, self.path)
             return float(y)
