@@ -10,7 +10,6 @@ import shutil
 
 import engine
 import shared
-from dynamic import NODES
 import dynamic
 
 # ==================================================

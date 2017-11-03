@@ -9,11 +9,12 @@ import time
 import dill as pickle
 
 import shared
+from qchem import Node
 
 # save, load
 # ==============================================================================
 
-def save(obj, middlename):
+def save(obj, middlename):      # Note! Where defined, in which module pickled.
     filepath = shared.SCRIPT_DIR + '/data/dynamic.%s.pickle.'%(middlename) + time.strftime('%Y%m%d%H%M%S')
     with open(filepath,'wb') as dumpfile:
         pickle.dump(obj, dumpfile)
@@ -28,7 +29,6 @@ def load(middlename, datetime=None):
 # NODES
 # ==============================================================================
 
-NODES = {}
 NODES = load('NODES')
 
 # ML
