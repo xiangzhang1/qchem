@@ -32,9 +32,3 @@ from shared import ELEMENTS
 
 print shared.bcolors.OKBLUE + 'Welcome. Libraries loaded.' + shared.bcolors.ENDC
 # IPython.embed(banner1='')
-
-dynamic.global_load()
-m = dynamic.MlVaspMemory()
-m.train_B()
-m.init_data()
-m.train()
