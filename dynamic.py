@@ -149,6 +149,8 @@ class MlVaspMemory(object):
         n_epochs = 1024
         batch_size = 256
         learning_rate = 0.03
+        training = True
+        reuse=False
 
         # data
         data = np.float32(self.data)
