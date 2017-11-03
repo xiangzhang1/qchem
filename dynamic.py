@@ -59,22 +59,23 @@ class MlVaspMemory(object):
             X_batch, y_batch = iterator.get_next()
         return X_batch, y_batch
 
-    def ann(self, X, training):
-        with tf.variable_scope('diverge_AB'):
+
+    def ann(self, X, training, reuse):
+        with tf.variable_scope('diverge_AB', reuse=reuse):
             X_A = tf.slice(X, [0, 0], [-1, self.n_X_A], name='X_A')
             X_B = tf.slice(X, [0, self.n_X_A], [-1, -1], name='X_B')
 
-        with tf.variable_scope('ann_B'):
+        with tf.variable_scope('ann_B', reuse=reuse):
             hidden_B1 = tf.nn.elu(tf.layers.batch_normalization(tf.layers.dense(X_B, self.n_hidden_B1), training=training, momentum=0.9))
             hidden_B2 = tf.nn.elu(tf.layers.batch_normalization(tf.layers.dense(hidden_B1, self.n_hidden_B2), training=training, momentum=0.9))
             y_B = tf.multiply(tf.layers.dense(hidden_B2, 1, name='y_B', activation=tf.sigmoid), 6, name='y_B')
 
-        with tf.variable_scope('ann_A'):
+        with tf.variable_scope('ann_A', reuse=reuse):
             hidden_A1 = tf.nn.elu(tf.layers.batch_normalization(tf.layers.dense(X_A, self.n_hidden_A1), training=training, momentum=0.9))
             hidden_A2 = tf.nn.elu(tf.layers.batch_normalization(tf.layers.dense(hidden_A1, self.n_hidden_A2), training=training, momentum=0.9))
             y_A = tf.layers.dense(hidden_A2, 1, name='y_A')
 
-        with tf.variable_scope('converge_AB'):
+        with tf.variable_scope('converge_AB', reuse=reuse):
             y = tf.multiply(y_A, y_B, name='y')
 
         return y
@@ -111,9 +112,8 @@ class MlVaspMemory(object):
         tf.reset_default_graph()
         self.ann(tf.placeholder(tf.float32, shape=(None, self.n_X)),
                  training=True)
-        with tf.variable_scope('ann_B', reuse=True):
-            X = tf.get_default_graph().get_tensor_by_name("X_B:0")
-            y = tf.get_default_graph().get_tensor_by_name("y_B:0")
+        X = tf.get_default_graph().get_tensor_by_name("X_B:0")
+        y = tf.get_default_graph().get_tensor_by_name("y_B:0")
         y_ = tf.placeholder(tf.float32, shape=(None, self.n_y_B))
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS, scope='ann_B')
         loss = tf.nn.l2_loss(y - y_)
