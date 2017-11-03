@@ -176,7 +176,7 @@ class MlVaspMemory(object):
         saver = tf.train.Saver()
 
         # ANN: execute
-        with tf.train.MonitoredTrainingSession(graph=tf.get_default_graph()) as sess:
+        with tf.train.MonitoredTrainingSession() as sess:
             saver.restore(sess, self.path)
             while not sess.should_stop():
                 sess.run(training_op)
