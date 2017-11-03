@@ -148,7 +148,6 @@ class MlVaspMemory(object):
             saver.restore(sess, self.path)
             for epoch in range(n_epochs):
                 sess.run(training_op, feed_dict={X: data[:, :-1], y_: data[:, -1:]})
-                print 'Epoch %s, mse %s' %(epoch, loss.eval(feed_dict={X: data[:, :-1], y_: data[:, -1:]}))
             print 'fit_B complete. Loss: %s' %(loss.eval(feed_dict={X: data[:, :-1], y_: data[:, -1:]}))
             saver.save(sess, self.path)
 
@@ -167,6 +166,7 @@ class MlVaspMemory(object):
         X_batch, y_batch = self.iterator(data[:, :-1], data[:, -1:], n_epochs=n_epochs, batch_size=batch_size)
         X_batch_scaled = self.scaler(X_batch)
         y = self.ann(X_batch_scaled, training=True, reuse=False)
+        IPython.embed()
         #
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         loss = tf.nn.l2_loss(y - y_batch)
