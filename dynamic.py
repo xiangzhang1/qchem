@@ -94,7 +94,7 @@ class MlVaspMemory(object):
         # initialize ANN
         tf.reset_default_graph()
         self.ann(tf.placeholder(tf.float32, shape=(None, self.n_X)),
-                 training=True)
+                 training=True, reuse=False)
         saver = tf.train.Saver()
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -111,7 +111,7 @@ class MlVaspMemory(object):
         # ann_B: construct
         tf.reset_default_graph()
         self.ann(tf.placeholder(tf.float32, shape=(None, self.n_X)),
-                 training=True)
+                 training=True, reuse=False)
         X = tf.get_default_graph().get_tensor_by_name("X_B:0")
         y = tf.get_default_graph().get_tensor_by_name("y_B:0")
         y_ = tf.placeholder(tf.float32, shape=(None, self.n_y_B))
@@ -157,7 +157,7 @@ class MlVaspMemory(object):
         tf.reset_default_graph()
         X_batch, y_batch = self.iterator(X_data, y_data)
         X_batch_scaled = self.scaler(X_batch, batch_size=batch_size)
-        y = self.ann(X_batch_scaled, training=True)
+        y = self.ann(X_batch_scaled, training=True, reuse=False)
         #
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         loss = tf.nn.l2_loss(y - y_batch)
@@ -187,7 +187,7 @@ class MlVaspMemory(object):
         tf.reset_default_graph()
         X_batch, y_batch = self.iterator(data[:, :-3], data[:, -2:-1])
         X_batch_scaled = self.scaler(X_batch, batch_size=batch_size)
-        y = self.ann(X_batch_scaled, training=True)
+        y = self.ann(X_batch_scaled, training=True, reuse=False)
         #
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         loss = tf.nn.l2_loss(y - y_batch)
@@ -212,7 +212,7 @@ class MlVaspMemory(object):
         # ANN: construct
         tf.reset_default_graph()
         X_scaled = self.scaler(X_new)
-        y = self.ann(X_scaled, training=False)
+        y = self.ann(X_scaled, training=False, reuse=False)
         saver = tf.train.Saver()
 
         # ANN: run
