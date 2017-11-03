@@ -107,7 +107,7 @@ class MlVaspMemory(object):
                 if line and not line.startswith('#') and len(line.split())==len(lines[1].split()):
                     data.append( np.float_(line.split()) )
         data = np.float_(data)
-        data /= np.float32([10**8, 10**8, 10**8, 10**8, 1, 1000, 1, 10, 1, 1, 10**3, 10**3, 1])
+        data /= np.float32([10**8, 10**8, 10**8, 10**8, 1, 1000, 1, 10, 10**3, 10**3, 1])
         X_data = data[:, :-3]
         X_data = np.concatenate((X_data, [[0,2]]*X_data.shape[0]), axis=1)
         y_data = data[:, -2:-1]
