@@ -160,7 +160,7 @@ class MlVaspMemory(object):
         learning_rate = 0.01
 
         # data
-        data = np.float_(self.data)
+        data = np.float32(self.data)
 
         # ANN: construct
         tf.reset_default_graph()
