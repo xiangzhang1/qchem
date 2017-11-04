@@ -875,7 +875,7 @@ class Vasp(object):
                     vasp_is_running = False
             elif self.gen.parse_if('platform=nanaimo|platform=irmik'):
                 if shared.DEBUG>=2: print self.__class__.__name__ + '.moonphase: asking %s for status of {%s}' %(self.gen.getkw('platform'), self.path)
-                result = Ssh_and_run(self.getkw('platform'), pseudo_command='squeue', jobname=self.remote_folder_name)
+                result = Ssh_and_run(self.gen.getkw('platform'), pseudo_command='squeue', jobname=self.remote_folder_name)
                 vasp_is_running = ( len(result.splitlines()) > 1 )
             else:
                 raise shared.CustomError(self.__class__.__name__ + '.moonphase: i don\'t know what to do')
