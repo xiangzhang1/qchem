@@ -189,6 +189,7 @@ class MlVaspMemory(object):
         saver = tf.train.Saver()
 
         # ANN: execute
+        print self.__class__.__name__ + ': training with dropout:'
         with tf.Session() as sess:
             saver.restore(sess, self.path)
             for epoch in range(n_epochs):
