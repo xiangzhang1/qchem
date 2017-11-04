@@ -13,7 +13,15 @@ import dynamic
 # ==================================================
 
 
-# Import: where everything started
+# Import
+
+'''
+This is where everything started.
+For a new project, do one of the following:
+- qchem.Import(f.read())
+- dynamic.NODES['master'] = qchem.Node('# master\n\nmap:\n\n')
+GUI serves as a crutch only. We no longer aim to maintain global compatibility.
+'''
 
 def Import(text):
     # partial syntax check

@@ -288,44 +288,24 @@ def ipython():
 # ======================================================================
 
 
-@app.route('/reset_NODES', methods=['GET'])
-@patch_through
-@login_required
-def reset_NODES():
-    dynamic.NODES = {}
-
-@app.route('/import_markdown', methods=['GET'])
-@patch_through
-@login_required
-def import_markdown():
-    with open('data/markdown') as f:
-        qchem.Import(f.read())
-
-@app.route('/new_', methods=['GET'])
-@patch_through
-@login_required
-def new_():
-    dynamic.NODES['master'] = qchem.Node('# master\n\nmap:\n\n')
-
 @app.route('/dump_nodes', methods=['GET'])
 @patch_through
 @login_required
 def dump_nodes():
-    dynamic.save(dynamic.NODES, 'NODES')
+    dynamic.global_save()
 
 # either load latest, or load a specific datetime_postfix.
 @app.route('/load_nodes', methods=['GET','POST'])
 @patch_through
 @login_required
 def load_nodes():
-    dynamic.NODES = dynamic.load('NODES', request.get_json(force=True)['datetime_postfix'] if request.method=='POST' else None)
+    dynamic.global_load()
 
 @app.route('/load_sigma', methods=['GET','POST'])
 @return_through
 @login_required
 def load_sigma():
-    datetime = request.get_json(force=True)['datetime_postfix'] if request.method=='POST' else None
-    return jsonify(dynamic.load('sigma', datetime))
+    return jsonify(dynamic.load('sigma'))
 
 @app.route('/dump_sigma', methods=['POST'])
 @patch_through
