@@ -334,13 +334,6 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             result += 50
         return str(result)
 
-    def crappyencut(self):
-        return str(max( [ shared.ELEMENTS[symbol].pot_encut for symbol in self.cell.stoichiometry.keys() ] )+20)
-
-    def npar(self):
-        return str( int(self.getkw('ncore_node')) * int(self.getkw('nnode')) / int(self.getkw('ncore')) )
-
-
     def ismear5check(self):
         '''kpoints is fit for ismear=5'''
         kpoints = self.getkw('kpoints').split(' ')
@@ -398,6 +391,10 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         for symbol in self.cell.stoichiometry:
             ldauj += str( shared.ELEMENTS[symbol].ldauj )
         return ldauj
+
+    # 5. archived functions - may be called externally
+    def npar(self):
+        return str( int(self.getkw('ncore_node')) * int(self.getkw('nnode')) / int(self.getkw('ncore')) )
 
 
 # Makeparam: check memory based on gen.
