@@ -6,10 +6,7 @@ Getting started with Regression.
 import os
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
 os.environ["CUDA_VISIBLE_DEVICES"] = '-1'
-# nn is not numerically stable. for complex models, 10% breakdowns happen just due to numerical instability.
-# go for prior knowledge, whatever the cost
-# implementation should not be a problem
-# mathematical construction, evaluation, iteration
+
 
 import numpy as np
 import tensorflow as tf

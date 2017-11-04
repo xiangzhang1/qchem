@@ -290,11 +290,8 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
                 raise shared.CustomError( self.__class__.__name__+' error: non-unique output. Kw[%s]={%s} has not been restricted to 1 value.' %(name,self.kw[name]) )
         if self.parse_if('engine=vasp'):
             m = Makeparam(self)
-            memory_predicted_gb = float(dynamic.MLS['MLVASPMEMORY'].predict([
-                m.projector_real, m.projector_reciprocal, m.wavefunction, m.arraygrid,
-                self.cell.natoms(), np.dot(np.cross(self.cell.base[0], self.cell.base[1]), self.cell.base[2]), int(self.getkw('npar')), int(self.getkw('nnode'))*int(self.getkw('ncore_node')),
-                1 if self.parse_if('ncl') else 0, int(self.getkw('isym'))
-            ])) / 10.0**9 # in GB now
+            # Global data cannot be obtained for multi-node multi-CPU case. ML is not suitable.
+            memory_predicted_gb = ( (m.projector_real + m.projector_reciprocal)*int(gen.getkw('npar')) + m.wavefunction*float(gen.getkw('kpar')) )/1024.0/1024/1024 + int(gen.getkw('nnode'))*0.7
             memory_available_gb = int(self.getkw('nnode')) * int(self.getkw('mem_node'))
             print self.__class__.__name__ + ' memory usage %s: %s GB used out of %s GB' %('prediction' if memory_available_gb>memory_predicted_gb else 'WARNING', memory_predicted_gb, memory_available_gb)
 
@@ -442,8 +439,8 @@ def Ssh_and_run(platform, pseudo_command, jobname=None):
     interpret = {
         ('nanaimo', 'squeue'): "squeue -n '%s'" %(jobname),
         ('irmik', 'squeue'): "squeue -n '%s'" %(jobname),
-        ('nanaimo', 'sacct'): "sacct -S 0101 -u xzhang1 --format=maxvmsize --name=%s" %(jobname),
-        ('irmik', 'sacct'): "sacct -S 0101 -u xzhang1 --format=maxvmsize --name=%s" %(jobname),
+        ('nanaimo', 'sacct'): "sacct -S 0101 -u xzhang1 --name=%s" %(jobname),
+        ('irmik', 'sacct'): "sacct -S 0101 -u xzhang1 --name=%s" %(jobname),
     }
     command = interpret[(platform, pseudo_command)]
     # paramiko ssh run command
@@ -950,10 +947,11 @@ class Vasp(object):
                 l = np.float_([l.split() for l in f.readlines()])
                 return np.max(l[:,1]) - np.min(l[:, 1])
         elif self.gen.parse_if('platform=nanaimo|platform=irmik'):
-            output = Ssh_and_run(self.gen.getkw('platform'), pseudo_command='sacct', jobname=self.remote_folder_name).splitlines()
-            if len(output) < 3:
-                return None
-            return float(str.replace('K','000',output[-1]))
+            # output = Ssh_and_run(self.gen.getkw('platform'), pseudo_command='sacct', jobname=self.remote_folder_name).splitlines()
+            # if len(output) < 3:
+            #     return None
+            # return float(str.replace('K','000',output[-1]))
+            raise shared.CustomError(self.__class__.__name__ + '.memory_used: for now, irmik and nanimo stats are unstable.')
         else:
             return None
 
