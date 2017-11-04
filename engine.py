@@ -59,6 +59,7 @@ from keras.layers import Dense, Activation, Dropout
 from functools import partial
 
 import shared
+import dynamic
 
 
 # ====================================================
