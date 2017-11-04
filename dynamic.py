@@ -56,7 +56,7 @@ class MlVaspMemory(object):
         self._X, self._y0 = [], []
 
         # scaler_constant
-        self.scaler_X_constant = np.float32([10**8, 10**8, 10**8, 10**8, 1, 1000, 1, 10, 1, 1]
+        self.scaler_X_constant = np.float32([10**8, 10**8, 10**8, 10**8, 1, 1000, 1, 10, 1, 1])
         self.scaler_y_constant = 10.0**8
 
         # Paramters
