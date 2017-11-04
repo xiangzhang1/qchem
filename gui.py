@@ -31,10 +31,11 @@ from apscheduler.triggers.interval import IntervalTrigger
 import atexit
 
 # qchem package
-import qchem
+import dynamic
 import shared
-import engine
 from shared import ELEMENTS
+import qchem
+import engine
 
 
 # logging
