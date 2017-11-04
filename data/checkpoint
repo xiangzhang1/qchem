@@ -1,0 +1,2 @@
+model_checkpoint_path: "/home/xzhang1/src/qchem/qchem/data/MLVASPMEMORY"
+all_model_checkpoint_paths: "/home/xzhang1/src/qchem/qchem/data/MLVASPMEMORY"
