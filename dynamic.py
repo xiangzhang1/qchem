@@ -201,9 +201,8 @@ class MlVaspMemory(object):
 
         # Test
         # scaler
-        _X, _y0 = self._X[-3:], self._y0[-3:]
-        _X_scaled = np.float32(self.X_new) / self.X_scaler_constant
-        _y_scaled = np.float32(self.y_new) / self.y_scaler_constant
+        _X_scaled = np.float32(self._X[-3:]) / self.X_scaler_constant
+        _y_scaled = np.float32(self._y0[-3:]) / self.y_scaler_constant
         # ann
         _y = self.predict(_X_scaled)
         print self.__class__.__name__ + ': Evaluation, scaled. \n X is %s.\n y is %s.\n y0 is %s.\n' %(_X_scaled, _y_scaled, _y)
