@@ -26,11 +26,13 @@ def global_load():
     global NODES, MLS
     NODES = load('NODES')
     MLS = load('MLS')
+    print 'global_load called'
 
 def global_save():
     global NODES, MLS
     save(NODES, 'NODES')
     save(MLS, 'MLS')
+    print 'global_save called'
 
 
 # NODES

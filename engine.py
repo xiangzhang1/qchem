@@ -290,7 +290,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             m = Makeparam(self)
             memory_predicted_gb = float(dynamic.MLS['MLVASPMEMORY'].predict([
                 m.projector_real, m.projector_reciprocal, m.wavefunction, m.arraygrid,
-                m.natoms, np.dot(np.cross(self.cell.base[0], self.cell.base[1]), self.cell.base[2]), int(self.getkw('npar')), int(self.getkw('nnode'))*int(self.getkw('ncore_node')),
+                self.cell.natoms(), np.dot(np.cross(self.cell.base[0], self.cell.base[1]), self.cell.base[2]), int(self.getkw('npar')), int(self.getkw('nnode'))*int(self.getkw('ncore_node')),
                 1 if self.parse_if('ncl') else 0, int(self.getkw('isym'))
             ])) / 10.0**9 # in GB now
             memory_available_gb = int(self.getkw('nnode')) * int(self.getkw('mem_node'))
