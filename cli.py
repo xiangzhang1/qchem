@@ -1,6 +1,6 @@
 #!/usr/bin/python
 '''
-A wrapper with custom actions possible.
+An environment. Do not paste actions here.
 '''
 
 # common libraries
@@ -31,9 +31,5 @@ import engine
 from shared import ELEMENTS
 
 print shared.bcolors.OKBLUE + 'Welcome. Libraries loaded.' + shared.bcolors.ENDC
-dynamic.global_load()
-m = dynamic.MlVaspMemory()
-m.train_B()
-m.init_data()
-m.train()
+
 IPython.embed(banner1='')
