@@ -203,10 +203,16 @@ class MlVaspMemory(object):
         # Test
         # scaler
         _X_scaled = np.float32(self._X[-3:]) / self.X_scaler_constant
-        _y_scaled = np.float32(self._y0[-3:]) / self.y_scaler_constant
-        # ann
-        _y = self.predict(_X_scaled)
-        print self.__class__.__name__ + ': Evaluation, scaled. \n X is %s.\n y is %s.\n y0 is %s.\n' %(_X_scaled, _y_scaled, _y)
+        _y0_scaled = np.float32(self._y0[-3:]) / self.y_scaler_constant
+        # ANN
+        tf.reset_default_graph()
+        y = self.ann(_X_scaled, training=False, reuse=False)
+        saver = tf.train.Saver()
+        with tf.Session() as sess:
+            saver.restore(sess, self.path)
+            _y = y.eval()
+
+        print self.__class__.__name__ + ': Evaluation of ANN. \n X is %s.\n y0 is %s.\n y is %s.\n' %(_X_scaled, _y0_scaled, _y)
 
 
     def predict(self, _X):
