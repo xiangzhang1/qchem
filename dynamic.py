@@ -192,7 +192,7 @@ class MlVaspMemory(object):
         with tf.Session() as sess:
             saver.restore(sess, self.path)
             for epoch in range(n_epochs):
-                for _ in range(data.shape[0] // batch_size):
+                for _ in range(_X_scaled.shape[0] // batch_size):
                     _loss, _, _ = sess.run([loss, update_ops, training_op])
                 if epoch % 50 == 0:
                     print self.__class__.__name__ + ': epoch %s, loss %s' %(epoch, _loss)
