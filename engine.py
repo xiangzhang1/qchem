@@ -286,8 +286,12 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             if len(self.kw[name]) != 1:
                 raise shared.CustomError( self.__class__.__name__+' error: non-unique output. Kw[%s]={%s} has not been restricted to 1 value.' %(name,self.kw[name]) )
         if self.parse_if('engine=vasp'):
-            memory_predicted_gb = shared.ML_VASP_MEMORY.make_prediction(self) / 10**9 # in GB now
-            memory_predicted_gb2 = shared.ML_VASP_MEMORY.make_prediction2(self) # in GB now
+            m = Makeparam(self)
+            memory_predicted_gb = float(dynamic.MLS['MLVASPMEMORY'].predict([
+                m.projector_real, m.projector_reciprocal, m.wavefunction, m.arraygrid,
+                m.natoms, np.dot(np.cross(self.cell.base[0], self.cell.base[1]), self.cell.base[2]), int(self.getkw('npar')), int(self.getkw('nnode'))*int(self.getkw('ncore_node'))
+                1 if self.parse_if('ncl') else 0, int(self.getkw('isym'))
+            ])) / 10.0**9 # in GB now
             memory_available_gb = int(self.getkw('nnode')) * int(self.getkw('mem_node'))
             print self.__class__.__name__ + ' memory usage %s: %s (%s) GB used out of %s GB' %('prediction' if memory_available_gb>memory_predicted_gb else 'WARNING', memory_predicted_gb, memory_predicted_gb2, memory_available_gb)
 
@@ -897,11 +901,11 @@ class Vasp(object):
                         # print(self.__class__.__name__+'compute FYI: Vasp computation at %s went wrong. vasprun.xml is incomplete. Use .moonphase file to overwrite.' %self.path)
                         with open('.moonphase', 'w') as f:  # avoid repeated reading
                             f.write('-1')
-                        shared.ML_VASP_MEMORY.take_data(Map().rlookup(attr_dict={'vasp':self}))
+                        # shared.ML_VASP_MEMORY.take_data(Map().rlookup(attr_dict={'vasp':self}))
                         return -1
                     else:
                         self.compute()
-                        shared.ML_VASP_MEMORY.take_data(Map().rlookup(attr_dict={'vasp':self}))
+                        # shared.ML_VASP_MEMORY.take_data(Map().rlookup(attr_dict={'vasp':self}))
                         return 2
             else:
                 return 1
