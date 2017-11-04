@@ -153,7 +153,7 @@ class MlVaspMemory(object):
         y = tf.get_default_graph().get_tensor_by_name("ann_B/y_B:0")
         y0 = tf.placeholder(tf.float32, shape=(None, self.n_y_B), name='y0')
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS, scope='ann_B')
-        loss = tf.nn.l2_loss(y - y0)
+        loss = tf.reduce_mean(tf.squared_difference(y, y0))
         optimizer = tf.train.GradientDescentOptimizer(learning_rate)
         training_op = optimizer.minimize(loss)    # remember to wipe your ass!
         saver = tf.train.Saver()
@@ -183,7 +183,7 @@ class MlVaspMemory(object):
         y = self.ann(X_batch, training=True, reuse=False)
         #
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-        loss = tf.nn.l2_loss(y - y0_batch)
+        loss = tf.reduce_mean(tf.squared_difference(y, y0_batch))
         optimizer = tf.train.GradientDescentOptimizer(learning_rate)
         training_op = optimizer.minimize(loss)  # remember to wipe your ass!
         saver = tf.train.Saver()
