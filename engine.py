@@ -953,7 +953,7 @@ class Vasp(object):
                 l = np.float_([l.split() for l in f.readlines()])
                 return np.max(l[:,1]) - np.min(l[:, 1])
         elif self.gen.parse_if('platform=nanaimo|platform=irmik'):
-            output = Ssh_and_run(self.gen.getkw('platform'), pseudo_command='sacct', jobname=self.gen.remote_folder_name).splitlines()
+            output = Ssh_and_run(self.gen.getkw('platform'), pseudo_command='sacct', jobname=self.remote_folder_name).splitlines()
             if len(output) < 3:
                 return None
             return float(str.replace('K','000',output[-1]))
