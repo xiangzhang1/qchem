@@ -174,8 +174,8 @@ class MlVaspMemory(object):
         learning_rate = 0.001
 
         # scaler
-        _X_scaled = np.float32(self.X_data) / self.X_scaler_constant
-        _y0_scaled = np.float32(self.y_data) / self.y_scaler_constant
+        _X_scaled = np.float32(self._X) / self.X_scaler_constant
+        _y0_scaled = np.float32(self._y0) / self.y_scaler_constant
 
         # ANN: construct
         tf.reset_default_graph()
