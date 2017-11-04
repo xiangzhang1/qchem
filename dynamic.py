@@ -50,21 +50,40 @@ MLS = {}
 
 class MlVaspMemory(object):
 
-    def scaled(self, X):
-        with tf.variable_scope('scaler'):
-            X_scaled = tf.truediv(X, np.float32([10**8, 10**8, 10**8, 10**8, 1, 1000, 1, 10, 1, 1]), name='X_scaled')
-        return X_scaled
+    def __init__(self):
+
+        # X_data
+        self._X, self._y0 = [], []
+
+        # scaler_constant
+        self.scaler_X_constant = np.float32([10**8, 10**8, 10**8, 10**8, 1, 1000, 1, 10, 1, 1]
+        self.scaler_y_constant = 10.0**8
+
+        # Paramters
+        self.n_X_A, self.n_hidden_A1, self.n_hidden_A2, self.n_y_A = 8, 8, 4, 1
+        self.n_X_B, self.n_hidden_B1, self.n_hidden_B2, self.n_y_B = 2, 4, 4, 1
+        self.n_X, self.n_y = 10, 1
+        self.path = shared.SCRIPT_DIR + 'data/' + str.upper(self.__class__.__name__)
+
+        # first ANN dump
+        tf.reset_default_graph()
+        self.ann(tf.placeholder(tf.float32, shape=(None, self.n_X)),
+                 training=True, reuse=False)
+        saver = tf.train.Saver()
+        with tf.Session() as sess:
+            sess.run(tf.global_variables_initializer())
+            saver.save(sess, self.path)
 
 
-    def iterator(self, X_data, y_data, batch_size):
+    def iterator(self, _X, _y0, batch_size):
         with tf.variable_scope('iterator'):
-            dataset = tf.contrib.data.Dataset.from_tensor_slices((X_data, y_data))
+            dataset = tf.contrib.data.Dataset.from_tensor_slices((_X, _y0))
             dataset = dataset.shuffle(buffer_size=1000)
             dataset = dataset.batch(batch_size)
             dataset = dataset.repeat()
             iterator = dataset.make_one_shot_iterator()
-            X_batch, y_batch = iterator.get_next()
-        return X_batch, y_batch
+            X_batch, y0_batch = iterator.get_next()
+        return X_batch, y0_batch
 
 
     def ann(self, X, training, reuse):
@@ -102,25 +121,6 @@ class MlVaspMemory(object):
         return y
 
 
-    def __init__(self):
-        # Paramters
-        self.n_X_A, self.n_hidden_A1, self.n_hidden_A2, self.n_y_A = 8, 8, 4, 1
-        self.n_X_B, self.n_hidden_B1, self.n_hidden_B2, self.n_y_B = 2, 4, 4, 1
-        self.n_X, self.n_y = 10, 1
-        self.path = shared.SCRIPT_DIR + 'data/' + str.upper(self.__class__.__name__)
-
-        # initialize X_data
-        self.data = []
-
-        # initialize ANN
-        tf.reset_default_graph()
-        self.ann(tf.placeholder(tf.float32, shape=(None, self.n_X)),
-                 training=True, reuse=False)
-        saver = tf.train.Saver()
-        with tf.Session() as sess:
-            sess.run(tf.global_variables_initializer())
-            saver.save(sess, self.path)
-
 
     def init_data(self):
 
@@ -133,12 +133,8 @@ class MlVaspMemory(object):
                     data.append( np.float_(line.split()) )
         data = np.float_(data)
         data[:, -3:-1] *= 10**6     # not converting! It's raw SI.
-        X_data = data[:, :-3]
-        X_data = np.concatenate((X_data, [[0,2]]*X_data.shape[0]), axis=1)
-        y_data = data[:, -2:-1]
-
-        # ANN: construct
-        self.data = np.concatenate((X_data, y_data), axis=1)
+        self._X = np.concatenate((data[:, :-3], [[0,2]] * data.shape[0]), axis=1)
+        self._y0 = data[:, -2:-1]
 
 
 
@@ -155,9 +151,9 @@ class MlVaspMemory(object):
                  training=True, reuse=False)
         X = tf.get_default_graph().get_tensor_by_name("diverge_AB/X_B:0")
         y = tf.get_default_graph().get_tensor_by_name("ann_B/y_B:0")
-        y_ = tf.placeholder(tf.float32, shape=(None, self.n_y_B), name='y_')
+        y0 = tf.placeholder(tf.float32, shape=(None, self.n_y_B), name='y0')
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS, scope='ann_B')
-        loss = tf.nn.l2_loss(y - y_)
+        loss = tf.nn.l2_loss(y - y0)
         optimizer = tf.train.GradientDescentOptimizer(learning_rate)
         training_op = optimizer.minimize(loss)    # remember to wipe your ass!
         saver = tf.train.Saver()
@@ -166,7 +162,7 @@ class MlVaspMemory(object):
         with tf.Session() as sess:
             saver.restore(sess, self.path)
             for epoch in range(n_epochs):
-                sess.run([update_ops, training_op], feed_dict={X: data[:, :-1], y_: data[:, -1:]})
+                sess.run([update_ops, training_op], feed_dict={X: data[:, :-1], y0: data[:, -1:]})
             print self.__class__.__name__ + ':train_B complete. Evaluation not implemented. '
             saver.save(sess, self.path)
 
@@ -177,17 +173,17 @@ class MlVaspMemory(object):
         batch_size = 32
         learning_rate = 0.001
 
-        # data
-        data = np.float32(self.data)
+        # scaler
+        _X_scaled = np.float32(self.X_data) / self.X_scaler_constant
+        _y0_scaled = np.float32(self.y_data) / self.y_scaler_constant
 
         # ANN: construct
         tf.reset_default_graph()
-        X_batch, y_batch = self.iterator(data[:, :-1], data[:, -1:], batch_size=batch_size)
-        X_batch_scaled = self.scaled(X_batch)
-        y = self.ann(X_batch_scaled, training=True, reuse=False)
+        X_batch, y0_batch = self.iterator(_X_scaled, _y0_scaled, batch_size=batch_size)
+        y = self.ann(X_batch, training=True, reuse=False)
         #
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-        loss = tf.nn.l2_loss(y - y_batch)
+        loss = tf.nn.l2_loss(y - y0_batch)
         optimizer = tf.train.GradientDescentOptimizer(learning_rate)
         training_op = optimizer.minimize(loss)  # remember to wipe your ass!
         saver = tf.train.Saver()
@@ -203,21 +199,27 @@ class MlVaspMemory(object):
             saver.save(sess, self.path)
             print self.__class__.__name__ + ': training complete.'
 
-        # EVALUATION
-        X_new, y_new = data[-3:, :-1], data[-3:, -1:]
-        print self.__class__.__name__ + ': Evaluation. \nX_new is %s.\nActual y_ is %s.\nPredicted y is %s.\n' %(X_new, y_new, self.predict(X_new))
+        # Test
+        # scaler
+        _X, _y0 = self._X[-3:], self._y0[-3:]
+        _X_scaled = np.float32(self.X_new) / self.X_scaler_constant
+        _y_scaled = np.float32(self.y_new) / self.y_scaler_constant
+        # ann
+        _y = self.predict(_X_scaled)
+        print self.__class__.__name__ + ': Evaluation, scaled. \n X is %s.\n y is %s.\n y0 is %s.\n' %(_X_scaled, _y_scaled, _y)
 
 
-    def predict(self, X_new):
-        # data
-        X_new = np.atleast_2d(X_new)
+    def predict(self, _X):
+        # scale
+        _X_scaled = np.float32(np.atleast_2d(_X)) / self.X_scaler_constant
 
-        # ANN: construct
+        # ANN
         tf.reset_default_graph()
-        y = self.ann(self.scaled(X_new), training=False, reuse=False)
+        y = self.ann(_X_scaled, training=False, reuse=False)
         saver = tf.train.Saver()
 
-        # ANN: run
         with tf.Session() as sess:
             saver.restore(sess, self.path)
-            return y.eval()
+            _y = y.eval()
+
+        return _y * self.y_scaler_constant
