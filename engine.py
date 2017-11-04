@@ -5,6 +5,8 @@
 # ===========================================================================
 
 import os
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152; as far as current things go, CPU is faster.
+os.environ["CUDA_VISIBLE_DEVICES"] = '-1'
 import sys
 import subprocess
 import re
@@ -294,7 +296,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
                 1 if self.parse_if('ncl') else 0, int(self.getkw('isym'))
             ])) / 10.0**9 # in GB now
             memory_available_gb = int(self.getkw('nnode')) * int(self.getkw('mem_node'))
-            print self.__class__.__name__ + ' memory usage %s: %s (%s) GB used out of %s GB' %('prediction' if memory_available_gb>memory_predicted_gb else 'WARNING', memory_predicted_gb, memory_predicted_gb2, memory_available_gb)
+            print self.__class__.__name__ + ' memory usage %s: %s GB used out of %s GB' %('prediction' if memory_available_gb>memory_predicted_gb else 'WARNING', memory_predicted_gb, memory_available_gb)
 
 
     # 3. nbands, ncore_total, encut
