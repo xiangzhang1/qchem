@@ -297,7 +297,7 @@ class MlPbSOpt(object):
     def ann(self, X, training):
         y1 = bel(X, units=10, training=training)
         y2 = bel(y1, units=3, training=training)
-        y = tf.layers.dense(y_3, units=1)
+        y = tf.layers.dense(y2, units=1)
         return y
 
 
