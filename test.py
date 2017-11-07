@@ -114,10 +114,10 @@ sys.stdout = open('test.py.log', 'w')
 
 curs = [
 # Reproduce
-    'master.PbS QD.bare qd testing.Q0 Reproduce.Pb108S108.g opt',
-    'master.PbS QD.bare qd testing.Q0 Reproduce.Pb68S68.g opt',
-    'master.PbS QD.bare qd testing.Q0 Reproduce.Pb63S62.g opt',
-    'master.PbS QD.bare qd testing.Q0 Reproduce.Pb55S38.g opt',
+    # 'master.PbS QD.bare qd testing.Q0 Reproduce.Pb108S108.g opt',
+    # 'master.PbS QD.bare qd testing.Q0 Reproduce.Pb68S68.g opt',
+    # 'master.PbS QD.bare qd testing.Q0 Reproduce.Pb63S62.g opt',
+    # 'master.PbS QD.bare qd testing.Q0 Reproduce.Pb55S38.g opt',
 # Test convergence
     # 'master.PbS QD.bare qd testing.Q0 Test convergence.Pb55S38.start - regular grid | end - -0_02 | omg i forgot isym0',
     # 'master.PbS QD.bare qd testing.Q0 Test convergence.Pb55S38.start - regular grid | end - -0_02',

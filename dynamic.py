@@ -347,7 +347,7 @@ class MlPbSOpt(object):
         _y0 = self._y0[-100:]
         _y = self.predict(_X)
         print self.__class__.__name__ + '.train: training finished. evaluation on last item: actual %s, predicted %s' %(_y0, _y)
-        plt.plot(_y0, _y)
+        plt.scatter(_y0, _y)
         plt.show()
 
 
