@@ -142,13 +142,13 @@ class MlVaspSpeed(object):
 
     def ann(self, X, training):
         with tf.variable_scope('A'):
-            y_A_1 = bel(X[:, :5], units=3, training=training)
+            y_A_1 = bel(X[:, :5], units=3, activation=tf.nn.relu)
             # y_A_2 = bel(y_A_1, units=3, training=training)
             y_A = tf.layers.dense(y_A_1, units=1)
         with tf.variable_scope('B'):
-            y_B_1 = bel(X[:, 5:8], units=3, training=training)
+            y_B_1 = tf.layers.dense(X[:, 5:8], units=3, activation=tf.nn.relu)
             # y_B_2 = bel(y_B_1, units=3, training=training)
-            y_B = tf.layers.dense(y_B_1, units=1, activation=tf.sigmoid)
+            y_B = tf.layers.dense(y_B_1, units=1)
         with tf.variable_scope('C'):
             y_C = tf.layers.dense(X[:, 8:], units=1)
         with tf.variable_scope('converge'):
@@ -162,7 +162,7 @@ class MlVaspSpeed(object):
     def train(self):
         n_epochs = 1000
         batch_size = 32
-        learning_rate = 0.01
+        learning_rate = 0.001
         # pipeline
         _X = self.X_pipeline.fit_transform(self._X)
         _y0 = np.float32(self._y0)
