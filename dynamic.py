@@ -80,12 +80,12 @@ class MlVaspSpeed(object):
             ('split', FeatureUnion(transformer_list=[
                 ('A', Pipeline([
                     ('slicer', FunctionTransformer(func=lambda X: X[:, :5])),
-                    ('caster', FunctionTransformer(func=np.float)),
+                    ('caster', FunctionTransformer(func=np.float32)),
                     ('scaler', FunctionTransformer(func=lambda X: X/[10E9, 10E9, 10E9, 10, 1000]))
                 ])),
                 ('B', Pipeline([
                     ('slicer', FunctionTransformer(func=lambda X: X[:, 5:8])),
-                    ('caster', FunctionTransformer(func=np.float)),
+                    ('caster', FunctionTransformer(func=np.float32)),
                     ('scaler', FunctionTransformer(func=lambda X: X/[10, 1, 1]))
                 ])),
                 ('C', Pipeline([
