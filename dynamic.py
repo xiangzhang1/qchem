@@ -181,15 +181,15 @@ class MlVaspSpeed(object):
         with tf.Session() as sess:
             saver.restore(sess, self.path)
             for i in range(n_epochs * _X.shape[0] / batch_size):
-                batch_idx = np.random.choice(_X.shape[0], size=batch_size)
+                batch_idx = np.random.choice(_X.shape[0]-10, size=batch_size)
                 _loss, _, _ = sess.run([loss, update_ops, training_op], feed_dict={_X_batch: _X[batch_idx], _y0_batch: _y0[batch_idx]})
                 if i % 100 == 0:
                     print 'step %s, loss %s' %(i, _loss)
             saver.save(sess, self.path)
 
         # evaluate
-        _X = self._X[-1:]
-        _y0 = self._y0[-1:]
+        _X = self._X[-10:]
+        _y0 = self._y0[-10:]
         _y = self.predict(_X)
         print self.__class__.__name__ + '.train: training finished. evaluation on last item: actual %s, predicted %s' %(_y0, _y)
 
