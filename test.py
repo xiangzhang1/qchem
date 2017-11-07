@@ -1,26 +1,20 @@
-# for n in engine.Map().lookup('master').map.traverse():
-#     try:
-#         n.cell = engine.Cell(str(n.cell))
-#         n.gen.cell = n.cell
-#         n.vasp.cell = n.cell
-#         n.vasp.gen = n.gen
-#         n.vasp.optimized_cell = engine.Cell(str(n.vasp.optimized_cell))
-#     except AttributeError:
-#         pass
-#     if getattr(n, 'gen', None) and n.gen.parse_if('engine=vasp') and n.moonphase()==2:
-#         try:
-#             m.parse_obj(n.vasp, engine.Makeparam(n.vasp.gen))
-#         except (shared.CustomError, shared.DeferError) as e:
-#             print 'warning: node %s\'s parsing failed. probably old version.' %n.name
-# np.save(path_X, np.array(m._X))
-# np.save(path_y0, np.array(m._y0))
 dynamic.global_load()
 m = dynamic.MlVaspSpeed()
-path_X = '/home/xzhang1/data_X.npy'
-path_y0 = '/home/xzhang1/data_y0.npy'
-m._X, m._y0 = np.load(path_X), np.load(path_y0)
-np.save(path_X, m.X_pipeline.fit_transform(m._X))
-np.save(path_y0, np.array(m._y0))
+for n in engine.Map().lookup('master').map.traverse():
+    try:
+        n.cell = engine.Cell(str(n.cell))
+        n.gen.cell = n.cell
+        n.vasp.cell = n.cell
+        n.vasp.gen = n.gen
+        n.vasp.optimized_cell = engine.Cell(str(n.vasp.optimized_cell))
+    except AttributeError:
+        pass
+    if getattr(n, 'gen', None) and n.gen.parse_if('engine=vasp') and n.moonphase()==2:
+        try:
+            m.parse_obj(n.vasp, engine.Makeparam(n.vasp.gen))
+        except (shared.CustomError, shared.DeferError) as e:
+            print 'warning: node %s\'s parsing failed. probably old version.' %n.name
+m.train()
 
 
 import numpy as np
@@ -29,11 +23,11 @@ import tensorflow as tf
 path_X = '/home/xzhang1/data_X.npy'
 path_y0 = '/home/xzhang1/data_y0.npy'
 _X = np.load(path_X)
-_y0 = np.load(path_y0) / 10
+_y0 = np.load(path_y0)
 
 tf.reset_default_graph()
 
-X = tf.placeholder(tf.float32, shape=(None, 16))
+X = tf.placeholder(tf.float32, shape=(None, 12))
 y0 = tf.placeholder(tf.float32, shape=(None, 1))
 
 y1 = tf.layers.dense(X, units=8, activation=tf.nn.relu)
