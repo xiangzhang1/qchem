@@ -153,8 +153,7 @@ class MlVaspSpeed(object):
         with tf.variable_scope('C'):
             y_C = nbel(X[:, 8:], dims=(2,1), training=training)
         with tf.variable_scope('converge'):
-            X_concat = nbel(tf.concat([y_A, y_B, y_C], axis=1))
-            y = nbel(X_concat, dims=(3,2,1), training=training)
+            y = nbel(tf.concat([y_A, y_B, y_C], axis=1), dims=(3,2,1), training=training)
         return y
 
     def train(self):
