@@ -170,11 +170,9 @@ class MlVaspSpeed(object):
         # batch
         # ann
         tf.reset_default_graph()
-        y = self.ann(_X, training=True)
-        ## placeholders
         _X_batch = tf.placeholder(tf.float32, shape=[None, 16])
         _y0_batch = tf.placeholder(tf.float32, shape=[None, 1])
-        ## update and optimize
+        y = self.ann(_X_batch, training=True)
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         loss = tf.reduce_mean(tf.squared_difference(y, _y0_batch))
         optimizer = tf.train.GradientDescentOptimizer(learning_rate)
