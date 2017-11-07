@@ -165,7 +165,7 @@ class MlVaspSpeed(object):
         learning_rate = 0.01
         # pipeline
         _X = self.X_pipeline.fit_transform(self._X)
-        _y0 = self._y0
+        _y0 = np.float32(self._y0)
         # batch
         # ann
         tf.reset_default_graph()
