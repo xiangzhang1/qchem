@@ -286,7 +286,7 @@ class MlPbSOpt(object):
                         list_c_jkl = [c_jkl for c_jkl in ccoor if all(c + np.array([j-0.5, k-0.5, l-0.5]) * a < c_jkl) and all(c + np.array([j+0.5, k+0.5, l+0.5]) * a > c_jkl)]
                         list_i_jkl.append(1 if list_c_jkl else 0)
                         c_jkl = list_c_jkl[0] if list_c_jkl else [0, 0, 0]
-                        dx_jkl = (c_jkl - np.around(c_jkl / a) * a)[0]  # scalar
+                        dx_jkl = (c_jkl - np.around(np.array(c_jkl) / a) * a)[0]  # scalar
                         list_dx_jkl.append(dx_jkl)
         # add to database, together with symmetrics
         self._X.append(list_i_jkl + [off_stoi])
