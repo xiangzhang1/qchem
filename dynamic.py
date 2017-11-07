@@ -57,7 +57,7 @@ def bel(X, units, training):
     h1 = tf.layers.dense(X, units=units)
     h1_normalized = tf.layers.batch_normalization(h1, training=training, momentum=0.5)
     h1_act = tf.nn.elu(h1_normalized)
-    h1_dropout = tf.layers.dropout(h1_act, rate=0.3)
+    h1_dropout = tf.layers.dropout(h1_act, rate=0.1)
     return h1_act
 
 
