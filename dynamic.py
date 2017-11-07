@@ -12,6 +12,8 @@ import dill as pickle
 import IPython
 from tqdm import tqdm
 
+import matplotlib.pyplot as plt
+
 from scipy.optimize import minimize
 
 import shared
@@ -59,7 +61,7 @@ def bel(X, units, training):
     h1 = tf.layers.dense(X, units=units)
     h1_normalized = tf.layers.batch_normalization(h1, training=training, momentum=0.5)
     h1_act = tf.nn.elu(h1_normalized)
-    h1_dropout = tf.layers.dropout(h1_act, rate=0.3, training=training)
+    h1_dropout = tf.layers.dropout(h1_act, rate=0.1, training=training)
     return h1_act
 
 
@@ -298,16 +300,16 @@ class MlPbSOpt(object):
 
     def ann(self, X, training):
         y1 = bel(X, units=10, training=training)
-        y2 = bel(y1, units=8, training=training)
-        y3 = bel(y2, units=6, training=training)
-        y4 = bel(y3, units=4, training=training)
+        # y2 = bel(y1, units=8, training=training)
+        # y3 = bel(y2, units=6, training=training)
+        y4 = bel(y1, units=4, training=training)
         y = tf.layers.dense(y4, units=1)
         return y
 
 
     def train(self):
-        n_epochs = 30
-        batch_size = 1024
+        n_epochs = 100
+        batch_size = 72
         learning_rate = 0.01
         # pipeline
         _X = self.X_pipeline.fit_transform(self._X)
@@ -339,6 +341,7 @@ class MlPbSOpt(object):
         _y0 = self._y0[-100:]
         _y = self.predict(_X)
         print self.__class__.__name__ + '.train: training finished. evaluation on last item: actual %s, predicted %s' %(_y0, _y)
+        plt.plot(_y0, _y)
 
 
     def predict(self, _X):
@@ -347,7 +350,7 @@ class MlPbSOpt(object):
         # ann
         tf.reset_default_graph()
         X_batch = tf.placeholder(tf.float32, shape=[None, 126])
-        y = self.ann(X_batch, training=True)
+        y = self.ann(X_batch, training=False)
         saver = tf.train.Saver()
         # predict
         with tf.Session() as sess:
