@@ -298,14 +298,16 @@ class MlPbSOpt(object):
 
     def ann(self, X, training):
         y1 = bel(X, units=10, training=training)
-        y2 = bel(y1, units=3, training=training)
-        y = tf.layers.dense(y2, units=1)
+        y2 = bel(y1, units=8, training=training)
+        y3 = bel(y2, units=6, training=training)
+        y4 = bel(y3, units=4, training=training)
+        y = tf.layers.dense(y4, units=1)
         return y
 
 
     def train(self):
-        n_epochs = 1000
-        batch_size = 72
+        n_epochs = 300
+        batch_size = 512
         learning_rate = 0.01
         # pipeline
         _X = self.X_pipeline.fit_transform(self._X)
@@ -325,16 +327,16 @@ class MlPbSOpt(object):
         print self.__class__.__name__ + '.train: training started.'
         with tf.Session() as sess:
             saver.restore(sess, self.path)
-            for i in range(n_epochs * _X.shape[0] / batch_size):
-                batch_idx = np.random.choice(_X.shape[0]-5, size=batch_size)
+            for i in tqdm(range(n_epochs * _X.shape[0] / batch_size)):
+                batch_idx = np.random.choice(_X.shape[0]-100, size=batch_size)
                 _loss, _, _ = sess.run([loss, update_ops, training_op], feed_dict={_X_batch: _X[batch_idx], _y0_batch: _y0[batch_idx]})
                 if i % 100 == 0:
                     print 'step %s, loss %s' %(i, _loss)
             saver.save(sess, self.path)
 
         # evaluate
-        _X = self._X[-10:]
-        _y0 = self._y0[-10:]
+        _X = self._X[-100:]
+        _y0 = self._y0[-100:]
         _y = self.predict(_X)
         print self.__class__.__name__ + '.train: training finished. evaluation on last item: actual %s, predicted %s' %(_y0, _y)
 
