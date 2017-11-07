@@ -341,16 +341,17 @@ class MlPbSOpt(object):
         print self.__class__.__name__ + '.train: training finished. evaluation on last item: actual %s, predicted %s' %(_y0, _y)
 
 
-    def predict(self, X):
+    def predict(self, _X):
         # pipeline
-        X = self.X_pipeline.fit_transform(X)
+        _X_batch = self.X_pipeline.fit_transform(_X)
         # ann
         tf.reset_default_graph()
-        y = self.ann(tf.constant(X), training=True)
+        X_batch = tf.placeholder(tf.float32, shape=[None, 126])
+        y = self.ann(X_batch, training=True)
         saver = tf.train.Saver()
         # predict
         with tf.Session() as sess:
             saver.restore(sess, self.path)
-            _y = sess.run(y)
+            _y = sess.run(y, feed_dict={X_batch: _X_batch})
         _y_inverse = self.y_pipeline.inverse_transform(_y)
         return _y_inverse
