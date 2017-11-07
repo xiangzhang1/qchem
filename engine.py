@@ -408,7 +408,7 @@ class Makeparam(object):
             os.system('trash '+tmp_path)
         os.mkdir(tmp_path)
         os.chdir(tmp_path)
-        gen.write_incar_kpoints()
+        tmp_gen.write_incar_kpoints()
         with open('POSCAR','w') as f:
             f.write(tmp_gen.cell.poscar4())
         for symbol in tmp_gen.cell.stoichiometry.keys():
@@ -422,7 +422,7 @@ class Makeparam(object):
             self.projector_reciprocal = abs(int( next(l for l in output if 'projectors in reciprocal space' in l).split()[4] ))
         except StopIteration, KeyError:
             print '\n'.join(output)
-            raise shared.CustomError(tmp_gen.__class__.__name__ + 'error: makeparam output illegal. Check POSCAR4 format and memory leak in script dir.')
+            raise shared.CustomError(tmp_gen.__class__.__name__ + 'error: makeparam output illegal. Check POSCAR4 format and memory leak in directory {%s}.' %tmp_path)
         # cleanup
         os.system('trash %s' %tmp_path)
 
