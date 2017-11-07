@@ -19,6 +19,7 @@ m = dynamic.MlVaspSpeed()
 path_X = '/home/xzhang1/data_X.npy'
 path_y0 = '/home/xzhang1/data_y0.npy'
 m._X, m._y0 = np.load(path_X), np.load(path_y0)
+m.train()
 
 
 # import numpy as np

@@ -90,7 +90,7 @@ class MlVaspSpeed(object):
             ('cast_to_float32', FunctionTransformer(func=np.float32))
         ])
         self.y_pipeline = Pipeline([
-            ('log', FunctionTransformer(func=np.log)),      # reduce information to reasonable
+            # ('log', FunctionTransformer(func=np.log)),      # reduce information to reasonable
             ('scaler', StandardScaler())
         ])
         # ann. what a pity.
