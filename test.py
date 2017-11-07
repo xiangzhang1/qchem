@@ -132,8 +132,8 @@ sys.stdout = open('test.py.log', 'w')
 # ]
 
 dynamic.global_load()
-# m = dynamic.MlPbSOpt()
-m = dynamic.load('MlPbSOpt')
+m = dynamic.MlPbSOpt()
+# m = dynamic.load('MlPbSOpt')
 X_path = '/home/xzhang1/X.npy'
 y_path = '/home/xzhang1/y.npy'
 # np.save(X_path, m._X)
