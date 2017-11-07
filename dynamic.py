@@ -96,7 +96,7 @@ class MlVaspSpeed(object):
         # ann. what a pity.
         self.path = shared.SCRIPT_DIR + str.upper(self.__class__.__name__)
         tf.reset_default_graph()
-        self.ann(tf.placeholder(tf.float32, shape=(None, 16)), training=False)
+        self.ann(tf.placeholder(tf.float32, shape=(None, 12)), training=False)
         saver = tf.train.Saver()
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -172,7 +172,7 @@ class MlVaspSpeed(object):
         # batch
         # ann
         tf.reset_default_graph()
-        _X_batch = tf.placeholder(tf.float32, shape=[None, 16])
+        _X_batch = tf.placeholder(tf.float32, shape=[None, 12])
         _y0_batch = tf.placeholder(tf.float32, shape=[None, 1])
         y = self.ann(_X_batch, training=True)
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
