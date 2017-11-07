@@ -57,7 +57,7 @@ def bel(X, units, training):
     h1 = tf.layers.dense(X, units=units)
     h1_normalized = tf.layers.batch_normalization(h1, training=training, momentum=0.5)
     h1_act = tf.nn.elu(h1_normalized)
-    h1_dropout = tf.layers.dropout(h1_act, rate=0.5)
+    h1_dropout = tf.layers.dropout(h1_act, rate=0.3)
     return h1_act
 
 
@@ -146,15 +146,15 @@ class MlVaspSpeed(object):
 
     def ann(self, X, training):
         with tf.variable_scope('A'):
-            y_A_1 = bel(X[:, :5], units=4, training=training)
-            y_A_2 = bel(y_A_1, units=4, training=training)
+            y_A_1 = bel(X[:, :5], units=3, training=training)
+            y_A_2 = bel(y_A_1, units=3, training=training)
             y_A = tf.layers.dense(y_A_2, units=1)
         with tf.variable_scope('B'):
             y_B_1 = bel(X[:, 5:8], units=3, training=training)
             y_B_2 = bel(y_B_1, units=3, training=training)
-            y_B = tf.layers.dense(y_B_2, units=1, activation=tf.sigmoid)
+            y_B = tf.layers.dense(y_B_2, units=1)
         with tf.variable_scope('C'):
-            y_C = tf.layers.dense(X[:, 8:], units=1, activation=tf.sigmoid)
+            y_C = tf.layers.dense(X[:, 8:], units=1)
         with tf.variable_scope('converge'):
             y_1 = tf.concat([y_A, y_B, y_C], axis=1)
             y_2 = bel(y_1, units=3, training=training)
