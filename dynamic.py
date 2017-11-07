@@ -114,7 +114,7 @@ class MlVaspSpeed(object):
             raise shared.CustomError(self.__class__.__name__ + '.warning: no OUTCAR found. skipped collect data.')
         # parse outcar for time (s) / #elecstep
         os.chdir(vasp.path)
-        with open(vasp.path + '/OUTCAR') as f:
+        with open(vasp.path + '/OUTCAR', 'r') as f:
             lines = f.readlines()
             # total time
             line = [l for l in lines if 'Total CPU time used' in l]
