@@ -118,7 +118,7 @@ class MlVaspSpeed(object):
             lines = f.readlines()
             # total time
             line = [l for l in lines if 'Total CPU time used' in l]
-            total_time = float(line.split()[-1])
+            total_time = float(line[-1].split()[-1])
             if total_time < 1:
                 raise shared.CustomError(self.__class__.__name__ + '.warning: total time does not feel right. skipped colelct data.')
             # number of ionic steps
