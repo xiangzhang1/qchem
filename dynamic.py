@@ -269,7 +269,7 @@ class MlPbSOpt(object):
         origin = ccoor[0]
         m0 = np.random.uniform(-0.3, 0.3, 6)
         res = minimize(fun=self.err_after_tf, x0=m0, args=(ccoor, origin, a))  # find the absolute-neutral system
-        m = res.x
+        m = res.x ; dx, dy, dz, theta, phi, xi = m
         err = res.fun
         M = shared.euler2mat(theta, phi, xi).T  # use that system
         ccoor = np.dot(ccoor + [dx, dy, dz], M)
