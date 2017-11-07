@@ -155,7 +155,7 @@ class MlVaspSpeed(object):
             y_1 = tf.concat([y_A, y_B, y_C], axis=1)
             y_2 = bel(y_1, units=3, training=training)
             y_3 = bel(y_2, units=3, training=training)
-            y = tf.layers.dense(y_3, units=3)
+            y = tf.layers.dense(y_3, units=1)
         return y
 
     def train(self):
