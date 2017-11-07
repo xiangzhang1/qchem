@@ -10,6 +10,7 @@ import numpy as np
 import time
 import dill as pickle
 import IPython
+from tqdm import tqdm
 
 import shared
 
