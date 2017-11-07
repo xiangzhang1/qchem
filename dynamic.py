@@ -278,7 +278,7 @@ class MlPbSOpt(object):
         M = shared.euler2mat(theta, phi, xi).T  # use that system
         ccoor = np.dot(ccoor - origin + [dx, dy, dz], M)
         # each
-        for i, c in enumerate(ccoor):
+        for i, c in tqdm(enumerate(ccoor), desc='parsing ccoor'):
             # dx_self
             dx_i = (c - np.around(c / a) * a)[0]    # scalar
             # dx_jkl in order, i_jkl in order
@@ -288,9 +288,10 @@ class MlPbSOpt(object):
                 for k in range(-2, 3):
                     for l in range(-2, 3):
                         over_list_c_jkl = [c_jkl for c_jkl in ccoor if all(c + np.array([j-0.5, k-0.5, l-0.5]) * a < c_jkl) and all(c + np.array([j+0.5, k+0.5, l+0.5]) * a > c_jkl)]
-                        list_c_jkl = [c_jkl for c_jkl in ccoor if all(c + np.array([j-0.2, k-0.2, l-0.2]) * a < c_jkl) and all(c + np.array([j+0.2, k+0.2, l+0.2]) * a > c_jkl)]
+                        list_c_jkl = [c_jkl for c_jkl in ccoor if all(c + np.array([j-0.25, k-0.25, l-0.25]) * a < c_jkl) and all(c + np.array([j+0.25, k+0.25, l+0.25]) * a > c_jkl)]
                         if len(over_list_c_jkl) > len(list_c_jkl):
-                            raise shared.CustomError(self.__class__._name__+'._parse_obj: very un-grided 0.2-0.5: %s vs %s' %(len(over_list_c_jkl), len(list_c_jkl)))
+                            print self.__class__._name__+'._parse_obj: very un-grided 0.2-0.5: %s vs %s. skipped' %(len(over_list_c_jkl), len(list_c_jkl))
+                            pass
                         list_i_jkl.append(1 if list_c_jkl else 0)
                         # c_jkl = list_c_jkl[0] if list_c_jkl else [0, 0, 0]
                         # dx_jkl = (c_jkl - np.around(np.array(c_jkl) / a) * a)[0]  # scalar
