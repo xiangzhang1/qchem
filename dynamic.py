@@ -55,8 +55,9 @@ def bel(X, units, training):
     If regression=True,
     Reuse is not considered.'''
     h1 = tf.layers.dense(X, units=units)
-    h1_normalized = tf.layers.batch_normalization(h1, training=training, momentum=0.9)
+    h1_normalized = tf.layers.batch_normalization(h1, training=training, momentum=0.5)
     h1_act = tf.nn.elu(h1_normalized)
+    h1_dropout = tf.layers.dropout(h1_act, rate=0.3)
     return h1_act
 
 
@@ -158,9 +159,9 @@ class MlVaspSpeed(object):
         return y
 
     def train(self):
-        n_epochs = 1000
-        batch_size = 32
-        learning_rate = 0.01
+        n_epochs = 100
+        batch_size = 64
+        learning_rate = 0.001
         # pipeline
         _X = self.X_pipeline.fit_transform(self._X)
         _y0 = np.float32(self._y0)
