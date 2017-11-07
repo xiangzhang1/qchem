@@ -67,8 +67,8 @@ m.train()
 dynamic.global_load()
 m = dynamic.MlPbSOpt()
 for n in engine.Map().lookup('master').map.traverse():
-    try:
+    # try:
         m.parse_obj(n.vasp)
-    except (shared.CustomError, shared.DeferError, AttributeError) as e:
-        print 'warning: node %s\'s parsing failed. probably old version.' %n.name
+    # except (shared.CustomError, shared.DeferError, AttributeError) as e:
+    #     print 'warning: node %s\'s parsing failed. probably old version.' %n.name
 m.train()

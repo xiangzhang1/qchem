@@ -260,7 +260,7 @@ class MlPbSOpt(object):
                 for mirror_z in [-1, 1]:
                     for swap_matrix in ([[1,0,0],[0,0,1],[0,1,0]], [[0,1,0],[1,0,0],[0,0,1]], [[0,0,1],[0,1,0],[1,0,0]]):
                         transf = np.dot(np.diag([mirror_x, mirror_y, mirror_z]), swap_matrix)
-                        self._parse_obj(np.dot(vasp.optimized_cell.ccoor_prime, transf), vasp.optimized_cell.stoichiometry['Pb'] - vasp.optimized_cell.stoichiometry['S'])
+                        self._parse_obj(np.dot(vasp.optimized_cell.ccoor, transf), vasp.optimized_cell.stoichiometry['Pb'] - vasp.optimized_cell.stoichiometry['S'])
 
 
     def _parse_obj(self, ccoor, off_stoi):
