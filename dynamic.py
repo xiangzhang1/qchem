@@ -59,7 +59,7 @@ def bel(X, units, training):
     h1 = tf.layers.dense(X, units=units)
     h1_normalized = tf.layers.batch_normalization(h1, training=training, momentum=0.5)
     h1_act = tf.nn.elu(h1_normalized)
-    h1_dropout = tf.layers.dropout(h1_act, rate=0.3)
+    h1_dropout = tf.layers.dropout(h1_act, rate=0.3, training=training)
     return h1_act
 
 
@@ -237,7 +237,7 @@ class MlPbSOpt(object):
         # ann. what a pity.
         self.path = shared.SCRIPT_DIR + str.upper(self.__class__.__name__)
         tf.reset_default_graph()
-        self.ann(tf.placeholder(tf.float32, shape=(None, 126)), training=False)
+        self.ann(tf.placeholder(tf.float32, shape=(None, 126)), training=True)
         saver = tf.train.Saver()
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -306,8 +306,8 @@ class MlPbSOpt(object):
 
 
     def train(self):
-        n_epochs = 300
-        batch_size = 512
+        n_epochs = 30
+        batch_size = 1024
         learning_rate = 0.01
         # pipeline
         _X = self.X_pipeline.fit_transform(self._X)
@@ -329,9 +329,9 @@ class MlPbSOpt(object):
             saver.restore(sess, self.path)
             for i in tqdm(range(n_epochs * _X.shape[0] / batch_size)):
                 batch_idx = np.random.choice(_X.shape[0]-100, size=batch_size)
-                _loss, _, _ = sess.run([loss, update_ops, training_op], feed_dict={_X_batch: _X[batch_idx], _y0_batch: _y0[batch_idx]})
-                if i % 100 == 0:
-                    print 'step %s, loss %s' %(i, _loss)
+                _loss, _, _ = sess.run([loss, training_op, update_ops], feed_dict={_X_batch: _X[batch_idx], _y0_batch: _y0[batch_idx]})
+                # if i % 100 == 0:
+                #     print 'step %s, loss %s' %(i, _loss)
             saver.save(sess, self.path)
 
         # evaluate
@@ -346,7 +346,7 @@ class MlPbSOpt(object):
         X = self.X_pipeline.fit_transform(X)
         # ann
         tf.reset_default_graph()
-        y = self.ann(tf.constant(X), training=False)
+        y = self.ann(tf.constant(X), training=True)
         saver = tf.train.Saver()
         # predict
         with tf.Session() as sess:
