@@ -11,9 +11,8 @@ import time
 import dill as pickle
 import IPython
 from tqdm import tqdm
-
 import matplotlib.pyplot as plt
-
+import itertools
 from scipy.optimize import minimize
 
 import shared
