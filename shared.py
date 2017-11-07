@@ -16,6 +16,7 @@ import paramiko
 import time
 import traceback, sys, code
 from StringIO import StringIO
+from sklearn.preprocessing import LabelBinarizer
 
 
 # INDEX
@@ -31,6 +32,7 @@ from StringIO import StringIO
 # @log_wrap
 # bcolors (different from Fragile lists)
 # @debug_wrap
+# pipeline-friendly LabelBinary
 
 #
 # ===========================================================================
@@ -427,3 +429,17 @@ def debug_wrap(func):
         else:
             return func(*args, **kwargs)
     return wrapped
+
+
+
+# ===========================================================================
+
+class LabelBinarizerPipelineFriendly(LabelBinarizer):
+     def fit(self, X, y=None):
+         """this would allow us to fit the model based on the X input."""
+         super(LabelBinarizerPipelineFriendly, self).fit(X)
+     def transform(self, X, y=None):
+         return super(LabelBinarizerPipelineFriendly, self).transform(X)
+
+     def fit_transform(self, X, y=None):
+         return super(LabelBinarizerPipelineFriendly, self).fit(X).transform(X)

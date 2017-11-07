@@ -3,6 +3,8 @@ import os
 import tensorflow as tf
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.preprocessing import LabelBinarizer, FunctionTransformer
+from shared import LabelBinarizerPipelineFriendly
+from sklearn.feature_extraction import FeatureHasher
 from sklearn.pipeline import Pipeline, FeatureUnion
 import numpy as np
 import time
@@ -76,7 +78,7 @@ class MlVaspSpeed(object):
         self._y0 = []
         # pipeline
         self.X_pipeline = Pipeline([
-            ('cast_to_array', FunctionTransformer(np.array)),
+            ('cast_to_array', FunctionTransformer(func=np.array)),
             ('split', FeatureUnion(transformer_list=[
                 ('A', Pipeline([
                     ('slicer', FunctionTransformer(func=lambda X: X[:, :5])),
@@ -90,7 +92,7 @@ class MlVaspSpeed(object):
                 ])),
                 ('C', Pipeline([
                     ('slice_flatten', FunctionTransformer(func=lambda X: X[:, 8].flatten())),
-                    ('labeler', LabelBinarizer()),
+                    ('labeler', LabelBinarizerPipelineFriendly()),
                     ('padder', FunctionTransformer(func=lambda X: np.hstack((X, np.zeros((X.shape[0], 8-X.shape[1]))))))
                 ]))
             ]))
