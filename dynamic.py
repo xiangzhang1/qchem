@@ -163,9 +163,9 @@ class MlVaspSpeed(object):
         return y
 
     def train(self):
-        n_epochs = 1000
+        n_epochs = 5000
         batch_size = 69
-        learning_rate = 0.001
+        learning_rate = 0.01
         # pipeline
         _X = self.X_pipeline.fit_transform(self._X)
         _y0 = self.y_pipeline.fit_transform(self._y0)
