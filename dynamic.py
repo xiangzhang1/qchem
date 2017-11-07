@@ -90,7 +90,7 @@ class MlVaspSpeed(object):
             ('cast_to_float32', FunctionTransformer(func=np.float32))
         ])
         self.y_pipeline = Pipeline([
-            ('log', FunctionTransformer(func=np.log)),      # reduce information to reasonable
+            ('log', FunctionTransformer(func=np.log, inverse_func=np.exp)),      # reduce information to reasonable
             ('scaler', StandardScaler())
         ])
         # ann. what a pity.
@@ -208,4 +208,6 @@ class MlVaspSpeed(object):
         # predict
         with tf.Session() as sess:
             saver.restore(sess, self.path)
-            return sess.run(y)
+            _y = sess.run(y)
+        _y_inverse = self.y_pipeline.inverse_transform(_y)
+        return _y_inverse

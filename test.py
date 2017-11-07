@@ -17,6 +17,16 @@ for n in engine.Map().lookup('master').map.traverse():
 m.train()
 
 
+
+
+
+
+
+# -------------------------------------------------------------
+
+
+
+
 import numpy as np
 import tensorflow as tf
 
@@ -24,6 +34,7 @@ path_X = '/home/xzhang1/data_X.npy'
 path_y0 = '/home/xzhang1/data_y0.npy'
 _X = np.load(path_X)
 _y0 = np.load(path_y0)
+_y0 = np.log(_y0)
 
 tf.reset_default_graph()
 
