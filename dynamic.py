@@ -263,7 +263,6 @@ class MlVaspSpeed(object):
                         self._parse_obj(np.dot(vasp.optimized_cell.ccoor_prime, transf), vasp.optimized_cell.stoichiometry['Pb'] - vasp.optimized_cell.stoichiometry['S'])
 
 
-
     def _parse_obj(self, ccoor):
         a = 6.01417 / 2
         # coordination system
