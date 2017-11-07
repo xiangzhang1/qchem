@@ -98,7 +98,7 @@ class MlVaspSpeed(object):
         ])
         # ann. what a pity.
         tf.reset_default_graph()
-        self.ann(tf.placeholder(tf.float32, shape=(None, self.n_X)),
+        self.ann(tf.placeholder(tf.float32, shape=(None, 16)),
                  training=False, reuse=False)
         saver = tf.train.Saver()
         with tf.Session() as sess:
