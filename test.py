@@ -14,5 +14,4 @@ for n in engine.Map().lookup('master').map.traverse():
             m.parse_obj(n.vasp, engine.Makeparam(n.vasp.gen))
         except (shared.CustomError, shared.DeferError) as e:
             print 'warning: node %s\'s parsing failed. probably old version.' %n.name
-dynamic.global_save()
 m.train()
