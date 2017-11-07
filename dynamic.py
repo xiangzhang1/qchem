@@ -281,7 +281,7 @@ class MlPbSOpt(object):
             # dx_self
             dx_i = (c - np.around(c / a) * a)[0]
             list_i_jkl = []
-            for j, k, l in itertools.produce(range(-3, 4), range(-3, 4), range(-3, 4)):
+            for j, k, l in itertools.product (range(-2, 3), range(-2, 3), range(-2, 3)):
                 list_c_jkl = [c_jkl for c_jkl in ccoor if all(c + np.array([j-0.5, k-0.5, l-0.5]) * a < c_jkl) and all(c + np.array([j+0.5, k+0.5, l+0.5]) * a > c_jkl)]
                 list_i_jkl.append(1 if list_c_jkl else 0)
             # add to database, together with symmetrics
