@@ -90,7 +90,7 @@ class MlVaspSpeed(object):
             ('cast_to_float32', FunctionTransformer(func=np.float32))
         ])
         self.y_pipeline = Pipeline([
-            # ('log', FunctionTransformer(func=np.log, inverse_func=np.exp)),      # reduce information to reasonable
+            ('log', FunctionTransformer(func=np.log, inverse_func=np.exp)),      # reduce information to reasonable
             ('scaler', StandardScaler())
         ])
         # ann. what a pity.
@@ -146,8 +146,8 @@ class MlVaspSpeed(object):
 
     def ann(self, X, training):
         with tf.variable_scope('A'):
-            y_A_1 = bel(X[:, :5], units=3, training=training)
-            y_A_2 = bel(y_A_1, units=3, training=training)
+            y_A_1 = bel(X[:, :5], units=10, training=training)
+            y_A_2 = bel(y_A_1, units=10, training=training)
             y_A = tf.layers.dense(y_A_2, units=1)
         with tf.variable_scope('B'):
             y_B_1 = bel(X[:, 5:8], units=3, training=training)
