@@ -351,7 +351,7 @@ class MlPbSOpt(object):
 
     def predict(self, _X):
         # pipeline
-        _X_batch = self.X_pipeline.fit_transform(_X)
+        _X_batch = self.X_pipeline.transform(_X)
         # ann
         tf.reset_default_graph()
         X_batch = tf.placeholder(tf.float32, shape=[None, 126])
