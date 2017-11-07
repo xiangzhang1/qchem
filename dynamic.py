@@ -109,9 +109,9 @@ class MlVaspSpeed(object):
         # ------
         # preliminary checks
         if vasp.moonphase() != 2:
-            raise shared.CustomError(self.__class__.__name__ + '.warning: vasp moonphase is not 2. skipped collect data.')
+            print self.__class__.__name__ + '.warning: vasp moonphase is not 2. skipped collect data.' ; return
         if not os.path.isfile(vasp.path+'/OUTCAR'):
-            raise shared.CustomError(self.__class__.__name__ + '.warning: no OUTCAR found. skipped collect data.')
+            print self.__class__.__name__ + '.warning: no OUTCAR found. skipped collect data.' ; return
         # parse outcar for time (s) / #elecstep
         os.chdir(vasp.path)
         with open(vasp.path + '/OUTCAR', 'r') as f:
@@ -120,29 +120,32 @@ class MlVaspSpeed(object):
             line = [l for l in lines if 'Total CPU time used' in l]
             total_time = float(line[-1].split()[-1])
             if total_time < 1:
-                raise shared.CustomError(self.__class__.__name__ + '.warning: total time does not feel right. skipped colelct data.')
+                print self.__class__.__name__ + '.warning: total time does not feel right. skipped colelct data.' ; return
             # number of ionic steps
             iteration_lines = [l for l in lines if 'Iteration' in l]
             number_elec_steps = len(iteration_lines)
             # time per electronic step
             time_elec_step = total_time / number_elec_steps
-        self._y0.append([time_elec_step])
         # INPUT
         # -----
         gen = vasp.gen
         cell = vasp.cell
-        self._X.append([
-            makeparam.projector_real + makeparam.projector_reciprocal,
-            makeparam.wavefunction,
-            makeparam.arraygrid,
-            vasp.gen.cell.natoms(),
-            np.dot(np.cross(gen.cell.base[0], gen.cell.base[1]), gen.cell.base[2]),
-            # platform-specific
-            int(gen.getkw('ncore_node')),
-            int(gen.getkw('nnode')),
-            int(gen.getkw('ncore')),
-            gen.getkw('platform')
-        ])
+        try:
+            self._X.append([
+                makeparam.projector_real + makeparam.projector_reciprocal,
+                makeparam.wavefunction,
+                makeparam.arraygrid,
+                vasp.gen.cell.natoms(),
+                np.dot(np.cross(gen.cell.base[0], gen.cell.base[1]), gen.cell.base[2]),
+                # platform-specific
+                int(gen.getkw('ncore_node')),
+                int(gen.getkw('nnode')),
+                int(gen.getkw('ncore')),
+                gen.getkw('platform')
+            ])
+            self._y0.append([time_elec_step])
+        except:
+            print self.__class__.__name__ + '.warning: possibly old version of gen. failed.' ; return
 
     def ann(self, X, training):
         with tf.variable_scope('A'):
