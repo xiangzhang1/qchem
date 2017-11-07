@@ -269,7 +269,7 @@ class MlPbSOpt(object):
         origin = ccoor[0]
         m0 = np.random.uniform(-0.3, 0.3, 6)
         print 'optimizing...'
-        res = minimize(fun=self.err_after_tf, x0=m0, args=(ccoor, origin, a), method='Nelder-Mead', tol=0.01)  # find the absolute-neutral system
+        res = minimize(fun=self.err_after_tf, x0=m0, args=(ccoor, origin, a), method='Powell', tol=10E-5)  # find the absolute-neutral system
         print 'optimized, result f(%s) = %s' %(res.x, res.fun)
         dx, dy, dz, theta, phi, xi = res.x
         err = res.fun
