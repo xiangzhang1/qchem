@@ -232,6 +232,9 @@ class MlVaspSpeed(object):
 # MlPbSOpt
 # ==============================================================================
 
+def f(ccoor, c, a, j, k, l):
+    return 1 if [c_jkl for c_jkl in ccoor if all(c + np.array([j-0.5, k-0.5, l-0.5]) * a < c_jkl) and all(c + np.array([j+0.5, k+0.5, l+0.5]) * a > c_jkl)] else 0
+
 class MlPbSOpt(object):
 
     def __init__(self):
@@ -289,9 +292,7 @@ class MlPbSOpt(object):
             # dx_jkl in order, i_jkl in order
             # list_dx_jkl = []
             # list_i_jkl = []
-            def f(ccoor, j, k, l):
-                return 1 if [c_jkl for c_jkl in ccoor if all(c + np.array([j-0.5, k-0.5, l-0.5]) * a < c_jkl) and all(c + np.array([j+0.5, k+0.5, l+0.5]) * a > c_jkl)] else 0
-            list_i_jkl = Parallel(n_jobs=20)([delayed(f)(ccoor, j, k, l) for j,k,l in list(itertools.product(range(-2, 3),range(-2, 3), range(-2, 3)))])
+            list_i_jkl = Parallel(n_jobs=20)([delayed(f)(ccoor, c, a, j, k, l) for j,k,l in list(itertools.product(range(-2, 3),range(-2, 3), range(-2, 3)))])
             # for j in range(-2, 3):
             #     for k in range(-2, 3):
             #         for l in range(-2, 3):
