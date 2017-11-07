@@ -10,6 +10,9 @@ for n in engine.Map().lookup('master').map.traverse():
     except AttributeError:
         pass
     if getattr(n, 'gen', None) and n.gen.parse_if('engine=vasp') and n.moonphase()==2:
-        m.parse_obj(n.vasp, engine.Makeparam(n.vasp.gen))
+        try:
+            m.parse_obj(n.vasp, engine.Makeparam(n.vasp.gen))
+        except shared.CustomError:
+            print 'warning: node %s\'s parsing failed. probably old version.' %n.name
 dynamic.global_save()
 m.train()

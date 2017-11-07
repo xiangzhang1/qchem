@@ -109,9 +109,9 @@ class MlVaspSpeed(object):
         # ------
         # preliminary checks
         if vasp.moonphase() != 2:
-            print self.__class__.__name__ + '.warning: vasp moonphase is not 2. skipped collect data.' ; return
+            raise shared.CustomError(self.__class__.__name__ + '.warning: vasp moonphase is not 2. skipped collect data.')
         if not os.path.isfile(vasp.path+'/OUTCAR'):
-            print self.__class__.__name__ + '.warning: no OUTCAR found. skipped collect data.' ; return
+            raise shared.CustomError(self.__class__.__name__ + '.warning: no OUTCAR found. skipped collect data.')
         # parse outcar for time (s) / #elecstep
         os.chdir(vasp.path)
         with open(vasp.path + '/OUTCAR', 'r') as f:
@@ -120,7 +120,7 @@ class MlVaspSpeed(object):
             line = [l for l in lines if 'Total CPU time used' in l]
             total_time = float(line[-1].split()[-1])
             if total_time < 1:
-                print self.__class__.__name__ + '.warning: total time does not feel right. skipped colelct data.' ; return
+                raise shared.CustomError(self.__class__.__name__ + '.warning: total time does not feel right. skipped colelct data.')
             # number of ionic steps
             iteration_lines = [l for l in lines if 'Iteration' in l]
             number_elec_steps = len(iteration_lines)
@@ -130,22 +130,19 @@ class MlVaspSpeed(object):
         # -----
         gen = vasp.gen
         cell = vasp.cell
-        try:
-            self._X.append([
-                makeparam.projector_real + makeparam.projector_reciprocal,
-                makeparam.wavefunction,
-                makeparam.arraygrid,
-                vasp.gen.cell.natoms(),
-                np.dot(np.cross(gen.cell.base[0], gen.cell.base[1]), gen.cell.base[2]),
-                # platform-specific
-                int(gen.getkw('ncore_node')),
-                int(gen.getkw('nnode')),
-                int(gen.getkw('ncore')),
-                gen.getkw('platform')
-            ])
-            self._y0.append([time_elec_step])
-        except:
-            print self.__class__.__name__ + '.warning: possibly old version of gen. failed.' ; return
+        self._X.append([
+            makeparam.projector_real + makeparam.projector_reciprocal,
+            makeparam.wavefunction,
+            makeparam.arraygrid,
+            vasp.gen.cell.natoms(),
+            np.dot(np.cross(gen.cell.base[0], gen.cell.base[1]), gen.cell.base[2]),
+            # platform-specific
+            int(gen.getkw('ncore_node')),
+            int(gen.getkw('nnode')),
+            int(gen.getkw('ncore')),
+            gen.getkw('platform')
+        ])
+        self._y0.append([time_elec_step])   # put it here so that no inconsistency will happen
 
     def ann(self, X, training):
         with tf.variable_scope('A'):
