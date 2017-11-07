@@ -311,15 +311,12 @@ class MlPbSOpt(object):
         return y
 
 
-    def train(self):
-        n_epochs = 100
-        batch_size = 800
-        learning_rate = 0.001
+    def train(self, n_epochs=100, batch_size=100, learning_rate=0.001):
         # pipeline
         # _X = self.X_pipeline.fit_transform(self._X)
         # _y0 = self.y_pipeline.fit_transform(self._y0)
-        _X = self._X
-        _y0 = self._y0
+        _X = np.float32(self._X)
+        _y0 = np.float32(self._y0)
         # batch
         # ann
         tf.reset_default_graph()
@@ -354,6 +351,7 @@ class MlPbSOpt(object):
     def predict(self, _X):
         # pipeline
         # _X_batch = self.X_pipeline.transform(_X)
+        _X = np.float32(_X)
         # ann
         tf.reset_default_graph()
         X_batch = tf.placeholder(tf.float32, shape=[None, 126])
