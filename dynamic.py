@@ -91,7 +91,7 @@ class MlVaspSpeed(object):
                 ('C', Pipeline([
                     ('slice_flatten', FunctionTransformer(func=lambda X: X[:, 8].flatten())),
                     ('labeler', LabelBinarizer()),
-                    ('padder', FunctionTransformer(func=lambda X: np.hstack(X, np.zeros(X.shape[0], 8-X.shape[1]))))
+                    ('padder', FunctionTransformer(func=lambda X: np.hstack((X, np.zeros((X.shape[0], 8-X.shape[1]))))))
                 ]))
             ]))
         ])
