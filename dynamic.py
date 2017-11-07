@@ -57,7 +57,7 @@ def bel(X, units, training):
     h1 = tf.layers.dense(X, units=units)
     h1_normalized = tf.layers.batch_normalization(h1, training=training, momentum=0.5)
     h1_act = tf.nn.elu(h1_normalized)
-    h1_dropout = tf.layers.dropout(h1_act, rate=0.1)
+    h1_dropout = tf.layers.dropout(h1_act, rate=0.2)
     return h1_act
 
 
@@ -90,7 +90,7 @@ class MlVaspSpeed(object):
             ('cast_to_float32', FunctionTransformer(func=np.float32))
         ])
         self.y_pipeline = Pipeline([
-            ('log', FunctionTransformer(func=np.log, inverse_func=np.exp)),      # reduce information to reasonable
+            # ('log', FunctionTransformer(func=np.log, inverse_func=np.exp)),      # reduce information to reasonable
             ('scaler', StandardScaler())
         ])
         # ann. what a pity.
@@ -185,7 +185,7 @@ class MlVaspSpeed(object):
         with tf.Session() as sess:
             saver.restore(sess, self.path)
             for i in range(n_epochs * _X.shape[0] / batch_size):
-                batch_idx = np.random.choice(_X.shape[0], size=batch_size)
+                batch_idx = np.random.choice(_X.shape[0]-5, size=batch_size)
                 _loss, _, _ = sess.run([loss, update_ops, training_op], feed_dict={_X_batch: _X[batch_idx], _y0_batch: _y0[batch_idx]})
                 if i % 100 == 0:
                     print 'step %s, loss %s' %(i, _loss)
