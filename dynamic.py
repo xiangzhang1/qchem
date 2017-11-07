@@ -249,49 +249,52 @@ class MlPbSOpt(object):
         dx, dy, dz, theta, phi, xi = m
         ## after rotation
         M = shared.euler2mat(theta, phi, xi).T    # order doesn't matter so I can do x . M
-        ccoor_prime = np.dot(ccoor + [dx, dy, dz], M)
+        ccoor_prime = np.dot(ccoor - origin + [dx, dy, dz], M)
         ## error after rotation, in fcoor. note that ccoor is the main format.
-        fcoor_prime = (ccoor_prime - origin) / a
-        err = np.linalg.norm(fcoor_prime - np.around(fcoor_prime))
+        err = np.linalg.norm(ccoor_prime - np.around(ccoor_prime / a) * a)
         return err
 
     def parse_obj(self, vasp):
-        matrices = []
-        for mirror_x in [-1, 1]:
-            for mirror_y in [-1, 1]:
-                for mirror_z in [-1, 1]:
-                    for swap_matrix in ([[1,0,0],[0,0,1],[0,1,0]], [[0,1,0],[1,0,0],[0,0,1]], [[0,0,1],[0,1,0],[1,0,0]]):
-                        transf = np.dot(np.diag([mirror_x, mirror_y, mirror_z]), swap_matrix)
-                        self._parse_obj(np.dot(vasp.optimized_cell.ccoor, transf), vasp.optimized_cell.stoichiometry['Pb'] - vasp.optimized_cell.stoichiometry['S'])
+        # matrices = []
+        # for mirror_x in [-1, 1]:
+        #     for mirror_y in [-1, 1]:
+        #         for mirror_z in [-1, 1]:
+        #             for swap_matrix in ([[1,0,0],[0,0,1],[0,1,0]], [[0,1,0],[1,0,0],[0,0,1]], [[0,0,1],[0,1,0],[1,0,0]]):
+        #                 transf = np.dot(np.diag([mirror_x, mirror_y, mirror_z]), swap_matrix)
+        #                 self._parse_obj(np.dot(vasp.optimized_cell.ccoor, transf), vasp.optimized_cell.stoichiometry['Pb'] - vasp.optimized_cell.stoichiometry['S'])
+        self._parse_obj(vasp.optimized_cell.ccoor, vasp.optimized_cell.stoichiometry['Pb'] - vasp.optimized_cell.stoichiometry['S'])
 
 
     def _parse_obj(self, ccoor, off_stoi):
         a = 6.01417 / 2
         # coordination system
         origin = ccoor[0]
-        m0 = np.random.uniform(-0.3, 0.3, 6)
+        m0 = np.random.uniform(-0.01, 0.01, 6)
         print 'optimizing...'
         res = minimize(fun=self.err_after_tf, x0=m0, args=(ccoor, origin, a), method='Powell', tol=10E-5)  # find the absolute-neutral system
         print 'optimized, result f(%s) = %s' %(res.x, res.fun)
         dx, dy, dz, theta, phi, xi = res.x
         err = res.fun
         M = shared.euler2mat(theta, phi, xi).T  # use that system
-        ccoor = np.dot(ccoor + [dx, dy, dz], M)
+        ccoor = np.dot(ccoor - origin + [dx, dy, dz], M)
         # each
         for i, c in enumerate(ccoor):
             # dx_self
             dx_i = (c - np.around(c / a) * a)[0]    # scalar
             # dx_jkl in order, i_jkl in order
-            list_dx_jkl = []
+            # list_dx_jkl = []
             list_i_jkl = []
             for j in range(-2, 3):
                 for k in range(-2, 3):
                     for l in range(-2, 3):
-                        list_c_jkl = [c_jkl for c_jkl in ccoor if all(c + np.array([j-0.5, k-0.5, l-0.5]) * a < c_jkl) and all(c + np.array([j+0.5, k+0.5, l+0.5]) * a > c_jkl)]
+                        over_list_c_jkl = [c_jkl for c_jkl in ccoor if all(c + np.array([j-0.5, k-0.5, l-0.5]) * a < c_jkl) and all(c + np.array([j+0.5, k+0.5, l+0.5]) * a > c_jkl)]
+                        list_c_jkl = [c_jkl for c_jkl in ccoor if all(c + np.array([j-0.2, k-0.2, l-0.2]) * a < c_jkl) and all(c + np.array([j+0.2, k+0.2, l+0.2]) * a > c_jkl)]
+                        if len(over_list_c_jkl) > len(list_c_jkl):
+                            raise shared.CustomError(self.__class__._name__+'._parse_obj: very un-grided 0.2-0.5: %s vs %s' %(len(over_list_c_jkl), len(list_c_jkl)))
                         list_i_jkl.append(1 if list_c_jkl else 0)
-                        c_jkl = list_c_jkl[0] if list_c_jkl else [0, 0, 0]
-                        dx_jkl = (c_jkl - np.around(np.array(c_jkl) / a) * a)[0]  # scalar
-                        list_dx_jkl.append(dx_jkl)
+                        # c_jkl = list_c_jkl[0] if list_c_jkl else [0, 0, 0]
+                        # dx_jkl = (c_jkl - np.around(np.array(c_jkl) / a) * a)[0]  # scalar
+                        # list_dx_jkl.append(dx_jkl)
             # add to database, together with symmetrics
             self._X.append(np.array(list_i_jkl) - dx_i + [off_stoi])
             self._y0.append([dx_i])
@@ -309,8 +312,8 @@ class MlPbSOpt(object):
 
     def train(self):
         n_epochs = 100
-        batch_size = 72
-        learning_rate = 0.01
+        batch_size = 800
+        learning_rate = 0.001
         # pipeline
         _X = self.X_pipeline.fit_transform(self._X)
         _y0 = self.y_pipeline.fit_transform(self._y0)
@@ -342,6 +345,7 @@ class MlPbSOpt(object):
         _y = self.predict(_X)
         print self.__class__.__name__ + '.train: training finished. evaluation on last item: actual %s, predicted %s' %(_y0, _y)
         plt.plot(_y0, _y)
+        plt.show()
 
 
     def predict(self, _X):
