@@ -12,6 +12,8 @@ import dill as pickle
 import IPython
 from tqdm import tqdm
 
+from scipy.optimize import minimize
+
 import shared
 
 # save, load
@@ -60,6 +62,9 @@ def bel(X, units, training):
     h1_dropout = tf.layers.dropout(h1_act, rate=0.3)
     return h1_act
 
+
+# MlVaspSpeed
+# ==============================================================================
 
 class MlVaspSpeed(object):
 
@@ -173,6 +178,141 @@ class MlVaspSpeed(object):
         # ann
         tf.reset_default_graph()
         _X_batch = tf.placeholder(tf.float32, shape=[None, 12])
+        _y0_batch = tf.placeholder(tf.float32, shape=[None, 1])
+        y = self.ann(_X_batch, training=True)
+        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+        loss = tf.reduce_mean(tf.squared_difference(y, _y0_batch))
+        optimizer = tf.train.GradientDescentOptimizer(learning_rate)
+        training_op = optimizer.minimize(loss)
+        saver = tf.train.Saver()
+        # train
+        print self.__class__.__name__ + '.train: training started.'
+        with tf.Session() as sess:
+            saver.restore(sess, self.path)
+            for i in range(n_epochs * _X.shape[0] / batch_size):
+                batch_idx = np.random.choice(_X.shape[0]-5, size=batch_size)
+                _loss, _, _ = sess.run([loss, update_ops, training_op], feed_dict={_X_batch: _X[batch_idx], _y0_batch: _y0[batch_idx]})
+                if i % 100 == 0:
+                    print 'step %s, loss %s' %(i, _loss)
+            saver.save(sess, self.path)
+
+        # evaluate
+        _X = self._X[-10:]
+        _y0 = self._y0[-10:]
+        _y = self.predict(_X)
+        print self.__class__.__name__ + '.train: training finished. evaluation on last item: actual %s, predicted %s' %(_y0, _y)
+
+
+    def predict(self, X):
+        # pipeline
+        X = self.X_pipeline.fit_transform(X)
+        # ann
+        tf.reset_default_graph()
+        y = self.ann(tf.constant(X), training=False)
+        saver = tf.train.Saver()
+        # predict
+        with tf.Session() as sess:
+            saver.restore(sess, self.path)
+            _y = sess.run(y)
+        _y_inverse = self.y_pipeline.inverse_transform(_y)
+        return _y_inverse
+
+
+
+
+
+
+# MlVaspSpeed
+# ==============================================================================
+
+class MlVaspSpeed(object):
+
+    def __init__(self):
+        # data
+        self._X = []
+        self._y0 = []
+        # pipeline
+        self.X_pipeline = StandardScaler()
+        self.y_pipeline = StandardScaler()
+        # ann. what a pity.
+        self.path = shared.SCRIPT_DIR + str.upper(self.__class__.__name__)
+        tf.reset_default_graph()
+        self.ann(tf.placeholder(tf.float32, shape=(None, 126)), training=False)
+        saver = tf.train.Saver()
+        with tf.Session() as sess:
+            sess.run(tf.global_variables_initializer())
+            saver.save(sess, self.path)
+
+    def err_after_tf(self, m, ccoor, origin, a):   # error after transformation m = [dx, dy, dz, theta, phi, xi]
+        dx, dy, dz, theta, phi, xi = m
+        ## after rotation
+        M = shared.euler2mat(theta, phi, xi).T    # order doesn't matter so I can do x . M
+        ccoor_prime = np.dot(ccoor + [dx, dy, dz], M)
+        ## error after rotation, in fcoor. note that ccoor is the main format.
+        fcoor_prime = (ccoor_prime - origin) / a
+        err = np.linalg.norm(fcoor_prime - np.around(fcoor_prime))
+        return err
+
+    def parse_obj(self, vasp):
+        matrices = []
+        for mirror_x in [-1, 1]:
+            for mirror_y in [-1, 1]:
+                for mirror_z in [-1, 1]:
+                    for swap_matrix in ([[1,0,0],[0,0,1],[0,1,0]], [[0,1,0],[1,0,0],[0,0,1]], [[0,0,1],[0,1,0],[1,0,0]]):
+                        transf = np.dot(np.diag([mirror_x, mirror_y, mirror_z]), swap_matrix)
+                        self._parse_obj(np.dot(vasp.optimized_cell.ccoor_prime, transf), vasp.optimized_cell.stoichiometry['Pb'] - vasp.optimized_cell.stoichiometry['S'])
+
+
+
+    def _parse_obj(self, ccoor):
+        a = 6.01417 / 2
+        # coordination system
+        origin = ccoor[0]
+        m0 = np.random.uniform(-0.3, 0.3, 6)
+        res = minimize(fun=self.err_after_tf, x0=m0, args=(ccoor, origin, a))  # find the absolute-neutral system
+        m = res.x
+        err = res.fun
+        M = shared.euler2mat(theta, phi, xi).T  # use that system
+        ccoor = np.dot(ccoor + [dx, dy, dz], M)
+        # each
+        for i, c in enumerate(ccoor):
+            # dx_self
+            dx_i = (c - np.around(c / a) * a)[0]    # scalar
+            # dx_jkl in order, i_jkl in order
+            list_dx_jkl = []
+            list_i_jkl = []
+            for j in range(-2, 3):
+                for k in range(-2, 3):
+                    for l in range(-2, 3):
+                        list_c_jkl = [c_jkl for c_jkl in ccoor if all(c + [j-0.5, k-0.5, l-0.5] * a < cm) and all(c + [j+0.5, k+0.5, l+0.5] * a > cm)]
+                        list_i_jkl.append(1 if list_jkl else 0)
+                        c_jkl = list_jkl[0] if list_jkl else [0, 0, 0]
+                        dx_jkl = (c_jkl - np.around(c_jkl / a) * a)[0]  # scalar
+                        list_dx_jkl.append(dx_jkl)
+        # add to database, together with symmetrics
+        self._X.append(list_i_jkl + [])
+        self._y0.append([dx_i])
+
+
+
+    def ann(self, X, training):
+            y1 = bel(X, units=10, training=training)
+            y2 = bel(y1, units=3, training=training)
+            y = tf.layers.dense(y_3, units=1)
+        return y
+
+
+    def train(self):
+        n_epochs = 1000
+        batch_size = 72
+        learning_rate = 0.01
+        # pipeline
+        _X = self.X_pipeline.fit_transform(self._X)
+        _y0 = self.y_pipeline.fit_transform(self._y0)
+        # batch
+        # ann
+        tf.reset_default_graph()
+        _X_batch = tf.placeholder(tf.float32, shape=[None, 126])
         _y0_batch = tf.placeholder(tf.float32, shape=[None, 1])
         y = self.ann(_X_batch, training=True)
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
