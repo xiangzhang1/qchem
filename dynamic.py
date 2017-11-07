@@ -268,7 +268,7 @@ class MlPbSOpt(object):
     def _parse_obj(self, ccoor, off_stoi):
         a = 6.01417 / 2
         # coordination system
-        origin = ccoor[0]
+        origin = ccoor[20]
         m0 = np.random.uniform(-0.01, 0.01, 6)
         print 'optimizing...'
         res = minimize(fun=self.err_after_tf, x0=m0, args=(ccoor, origin, a), method='Powell', tol=10E-5)  # find the absolute-neutral system
@@ -280,43 +280,27 @@ class MlPbSOpt(object):
         # each
         for i, c in enumerate(tqdm(ccoor, desc='parsing ccoor')):
             # dx_self
-            dx_i = (c - np.around(c / a) * a)[0]    # scalar
-            # dx_jkl in order, i_jkl in order
-            # list_dx_jkl = []
+            dx_i = (c - np.around(c / a) * a)[0]
             list_i_jkl = []
-            for j in range(-2, 3):
-                for k in range(-2, 3):
-                    for l in range(-2, 3):
-                        list_c_jkl = [c_jkl for c_jkl in ccoor if all(c + np.array([j-0.5, k-0.5, l-0.5]) * a < c_jkl) and all(c + np.array([j+0.5, k+0.5, l+0.5]) * a > c_jkl)]
-                        # list_c_jkl = [c_jkl for c_jkl in ccoor if all(c + np.array([j-0.25, k-0.25, l-0.25]) * a < c_jkl) and all(c + np.array([j+0.25, k+0.25, l+0.25]) * a > c_jkl)]
-                        # if len(over_list_c_jkl) > len(list_c_jkl):
-                        #     print self.__class__.__name__+'._parse_obj: very un-grided 0.2-0.5: %s vs %s. skipped' %(len(over_list_c_jkl), len(list_c_jkl))
-                        #     pass
-                        list_i_jkl.append(1 if list_c_jkl else 0)
-                        # c_jkl = list_c_jkl[0] if list_c_jkl else [0, 0, 0]
-                        # dx_jkl = (c_jkl - np.around(np.array(c_jkl) / a) * a)[0]  # scalar
-                        # list_dx_jkl.append(dx_jkl)
+            for j, k, l in itertools.produce(range(-3, 4), range(-3, 4), range(-3, 4)):
+                list_c_jkl = [c_jkl for c_jkl in ccoor if all(c + np.array([j-0.5, k-0.5, l-0.5]) * a < c_jkl) and all(c + np.array([j+0.5, k+0.5, l+0.5]) * a > c_jkl)]
+                list_i_jkl.append(1 if list_c_jkl else 0)
             # add to database, together with symmetrics
             self._X.append(list_i_jkl + [off_stoi])
             self._y0.append([dx_i])
 
 
-
     def ann(self, X, training):
-        y1 = bel(X, units=10, training=training)
-        # y2 = bel(y1, units=8, training=training)
-        # y3 = bel(y2, units=6, training=training)
+        y1 = bel(X, units=20, training=training)
         y4 = bel(y1, units=4, training=training)
         y = tf.layers.dense(y4, units=1)
         return y
 
 
-    def train(self, n_epochs=100, batch_size=100, learning_rate=0.001):
+    def train(self, n_epochs=500, batch_size=72, learning_rate=0.001):
         # pipeline
-        # _X = self.X_pipeline.fit_transform(self._X)
-        # _y0 = self.y_pipeline.fit_transform(self._y0)
-        _X = np.float32(self._X)
-        _y0 = np.float32(self._y0)
+        _X = self.X_pipeline.fit_transform(self._X)
+        _y0 = self.y_pipeline.fit_transform(self._y0)
         # batch
         # ann
         tf.reset_default_graph()
@@ -350,8 +334,7 @@ class MlPbSOpt(object):
 
     def predict(self, _X):
         # pipeline
-        # _X_batch = self.X_pipeline.transform(_X)
-        _X = np.float32(_X)
+        _X_batch = self.X_pipeline.transform(_X)
         # ann
         tf.reset_default_graph()
         X_batch = tf.placeholder(tf.float32, shape=[None, 126])
@@ -360,6 +343,6 @@ class MlPbSOpt(object):
         # predict
         with tf.Session() as sess:
             saver.restore(sess, self.path)
-            _y = sess.run(y, feed_dict={X_batch: _X})
-        # _y_inverse = self.y_pipeline.inverse_transform(_y)
+            _y = sess.run(y, feed_dict={X_batch: _X_batch})
+        _y_inverse = self.y_pipeline.inverse_transform(_y)
         return _y
