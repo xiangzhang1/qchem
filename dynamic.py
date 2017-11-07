@@ -158,9 +158,10 @@ class MlVaspSpeed(object):
         #     y = tf.layers.dense(y_3, units=1)
         # return y
         y1 = tf.layers.dense(X, units=8, activation=tf.nn.relu)
-        y2 = tf.layers.dense(y1, units=4, activation=tf.nn.relu)
-        y3 = tf.layers.dense(y2, units=2, activation=tf.nn.relu)
-        y = tf.layers.dense(y3, units=1, activation=tf.nn.relu)
+        y2 = tf.layers.dense(y1, units=6, activation=tf.nn.relu)
+        y3 = tf.layers.dense(y2, units=3, activation=tf.nn.relu)
+        y = tf.layers.dense(y3, units=1)
+        return y
 
     def train(self):
         n_epochs = 1000
