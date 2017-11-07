@@ -199,7 +199,7 @@ class MlVaspSpeed(object):
         X = self.X_pipeline.fit_transform(X)
         # ann
         tf.reset_default_graph()
-        y = self.ann(X, training=False)
+        y = self.ann(tf.constant(X), training=False)
         saver = tf.train.Saver()
         # predict
         with tf.Session() as sess:
