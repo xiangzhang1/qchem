@@ -414,7 +414,10 @@ class Makeparam(object):
         for symbol in tmp_gen.cell.stoichiometry.keys():
             tmp_gen.pot(symbol)
         # parse output
-        output = check_output([shared.SCRIPT_DIR + '/resource/makeparam']).splitlines()
+        try:
+            output = check_output([shared.SCRIPT_DIR + '/resource/makeparam']).splitlines()
+        except CalledProcessError:
+            raise shared.CustomError(self.__class__.__name__ + ' error: makeparam failed with non-zero exit status. possibly memory error. give it up man :)')
         try:
             self.arraygrid = int( next(l for l in output if 'arrays on large grid' in l).split()[7] )
             self.wavefunction = int( next(l for l in output if 'sets of wavefunctions' in l).split()[4] )
@@ -422,7 +425,7 @@ class Makeparam(object):
             self.projector_reciprocal = abs(int( next(l for l in output if 'projectors in reciprocal space' in l).split()[4] ))
         except StopIteration, KeyError:
             print '\n'.join(output)
-            raise shared.CustomError(tmp_gen.__class__.__name__ + 'error: makeparam output illegal. Check POSCAR4 format and memory leak in directory {%s}.' %tmp_path)
+            raise shared.CustomError(tmp_gen.__class__.__name__ + ' error: makeparam output illegal. Check POSCAR4 format and memory leak in directory {%s}.' %tmp_path)
         # cleanup
         os.system('trash %s' %tmp_path)
 

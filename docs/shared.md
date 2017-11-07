@@ -8,9 +8,7 @@ __DEBUG__
 
 @MWT: timeout = 10 (ssh) | 2592000 (cell.cdist())
 
-
-
-
+__CustomError__: data is inconsistent. Probably have to recalculate.
 
 
 Element, ELEMENTS
