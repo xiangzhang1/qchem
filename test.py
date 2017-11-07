@@ -33,6 +33,8 @@ from shared import ELEMENTS
 print shared.bcolors.OKBLUE + 'Welcome. Libraries loaded.' + shared.bcolors.ENDC
 
 
+sys.stdout = open('test.py.log', 'w')
+
 
 
 # ---------------------------

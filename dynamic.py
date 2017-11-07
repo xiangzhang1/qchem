@@ -291,7 +291,7 @@ class MlPbSOpt(object):
                         dx_jkl = (c_jkl - np.around(np.array(c_jkl) / a) * a)[0]  # scalar
                         list_dx_jkl.append(dx_jkl)
             # add to database, together with symmetrics
-            self._X.append(list_i_jkl + [off_stoi])
+            self._X.append(np.array(list_i_jkl) - dx_i + [off_stoi])
             self._y0.append([dx_i])
 
 
