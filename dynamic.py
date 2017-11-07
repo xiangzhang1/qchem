@@ -71,7 +71,6 @@ def nbel(X, dims, training, activation=tf.nn.elu):
 class MlVaspSpeed(object):
 
     def __init__(self):
-        self.path = shared.SCRIPT_DIR + str.upper(self.__class__.__name__)
         # data
         self._X = []
         self._y0 = []
@@ -97,6 +96,7 @@ class MlVaspSpeed(object):
             ]))
         ])
         # ann. what a pity.
+        self.path = shared.SCRIPT_DIR + str.upper(self.__class__.__name__)
         tf.reset_default_graph()
         self.ann(tf.placeholder(tf.float32, shape=(None, 16)), training=False)
         saver = tf.train.Saver()
@@ -104,7 +104,7 @@ class MlVaspSpeed(object):
             sess.run(tf.global_variables_initializer())
             saver.save(sess, self.path)
 
-    def take_data(self, vasp):
+    def parse_obj(self, vasp):
         # OUTPUT
         # ------
         # preliminary checks
