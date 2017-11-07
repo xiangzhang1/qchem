@@ -2,7 +2,7 @@
 import os
 import tensorflow as tf
 from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.preprocessing import LabelBinarizer, FunctionTransformer
+from sklearn.preprocessing import LabelBinarizer, FunctionTransformer, StandardScaler
 from shared import LabelBinarizerPipelineFriendly
 from sklearn.feature_extraction import FeatureHasher
 from sklearn.pipeline import Pipeline, FeatureUnion
@@ -74,20 +74,24 @@ class MlVaspSpeed(object):
                 ('A', Pipeline([
                     ('slicer', FunctionTransformer(func=lambda X: X[:, :5])),
                     ('caster', FunctionTransformer(func=np.float32)),
-                    ('scaler', FunctionTransformer(func=lambda X: X/[10E9, 10E9, 10E9, 10, 1000]))
+                    ('scaler', StandardScaler())
                 ])),
                 ('B', Pipeline([
                     ('slicer', FunctionTransformer(func=lambda X: X[:, 5:8])),
                     ('caster', FunctionTransformer(func=np.float32)),
-                    ('scaler', FunctionTransformer(func=lambda X: X/[10, 1, 1]))
+                    ('scaler', StandardScaler())
                 ])),
                 ('C', Pipeline([
                     ('slice_flatten', FunctionTransformer(func=lambda X: X[:, 8].flatten())),
                     ('labeler', LabelBinarizerPipelineFriendly()),
-                    ('padder', FunctionTransformer(func=lambda X: np.hstack((X, np.zeros((X.shape[0], 8-X.shape[1]))))))
+                    ('padder', FunctionTransformer(func=lambda X: np.hstack((X, np.zeros((X.shape[0], 4-X.shape[1]))))))
                 ]))
             ])),
             ('cast_to_float32', FunctionTransformer(func=np.float32))
+        ])
+        self.y_Pipeline = Pipeline([
+            ('log', FunctionTransformer(func=np.log)),      # reduce information to reasonable
+            ('scaler', StandardScaler())
         ])
         # ann. what a pity.
         self.path = shared.SCRIPT_DIR + str.upper(self.__class__.__name__)
@@ -141,26 +145,21 @@ class MlVaspSpeed(object):
         self._y0.append([time_elec_step])   # put it here so that no inconsistency will happen
 
     def ann(self, X, training):
-        # with tf.variable_scope('A'):
-        #     y_A_1 = bel(X[:, :5], units=3, training=training)
-        #     y_A_2 = bel(y_A_1, units=3, training=training)
-        #     y_A = tf.layers.dense(y_A_2, units=1)
-        # with tf.variable_scope('B'):
-        #     y_B_1 = bel(X[:, 5:8], units=3, training=training)
-        #     y_B_2 = bel(y_B_1, units=3, training=training)
-        #     y_B = tf.layers.dense(y_B_2, units=1, activation=tf.sigmoid)
-        # with tf.variable_scope('C'):
-        #     y_C = tf.layers.dense(X[:, 8:], units=1, activation=tf.sigmoid)
-        # with tf.variable_scope('converge'):
-        #     y_1 = tf.concat([y_A, y_B, y_C], axis=1)
-        #     y_2 = bel(y_1, units=3, training=training)
-        #     y_3 = bel(y_2, units=3, training=training)
-        #     y = tf.layers.dense(y_3, units=1)
-        # return y
-        y1 = tf.layers.dense(X, units=8, activation=tf.nn.relu)
-        y2 = tf.layers.dense(y1, units=6, activation=tf.nn.relu)
-        y3 = tf.layers.dense(y2, units=3, activation=tf.nn.relu)
-        y = tf.layers.dense(y3, units=1)
+        with tf.variable_scope('A'):
+            y_A_1 = bel(X[:, :5], units=3, training=training)
+            y_A_2 = bel(y_A_1, units=3, training=training)
+            y_A = tf.layers.dense(y_A_2, units=1)
+        with tf.variable_scope('B'):
+            y_B_1 = bel(X[:, 5:8], units=3, training=training)
+            y_B_2 = bel(y_B_1, units=3, training=training)
+            y_B = tf.layers.dense(y_B_2, units=1, activation=tf.sigmoid)
+        with tf.variable_scope('C'):
+            y_C = tf.layers.dense(X[:, 8:], units=1, activation=tf.sigmoid)
+        with tf.variable_scope('converge'):
+            y_1 = tf.concat([y_A, y_B, y_C], axis=1)
+            y_2 = bel(y_1, units=3, training=training)
+            y_3 = bel(y_2, units=3, training=training)
+            y = tf.layers.dense(y_3, units=1)
         return y
 
     def train(self):
@@ -169,7 +168,7 @@ class MlVaspSpeed(object):
         learning_rate = 0.001
         # pipeline
         _X = self.X_pipeline.fit_transform(self._X)
-        _y0 = np.float32(self._y0)
+        _y0 = self.y_pipeline.fit_transform(self._y0)
         # batch
         # ann
         tf.reset_default_graph()
@@ -186,7 +185,7 @@ class MlVaspSpeed(object):
         with tf.Session() as sess:
             saver.restore(sess, self.path)
             for i in range(n_epochs * _X.shape[0] / batch_size):
-                batch_idx = np.random.choice(_X.shape[0]-5, size=batch_size)
+                batch_idx = np.random.choice(_X.shape[0], size=batch_size)
                 _loss, _, _ = sess.run([loss, update_ops, training_op], feed_dict={_X_batch: _X[batch_idx], _y0_batch: _y0[batch_idx]})
                 if i % 100 == 0:
                     print 'step %s, loss %s' %(i, _loss)
