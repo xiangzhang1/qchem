@@ -142,7 +142,7 @@ class MlVaspSpeed(object):
 
     def ann(self, X, training):
         with tf.variable_scope('A'):
-            y_A_1 = bel(X[:, :5], units=3, activation=tf.nn.relu)
+            y_A_1 = tf.layers.dense(X[:, :5], units=3, activation=tf.nn.relu)
             # y_A_2 = bel(y_A_1, units=3, training=training)
             y_A = tf.layers.dense(y_A_1, units=1)
         with tf.variable_scope('B'):
