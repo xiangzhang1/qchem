@@ -104,7 +104,7 @@ class MlVaspSpeed(object):
             sess.run(tf.global_variables_initializer())
             saver.save(sess, self.path)
 
-    def parse_obj(self, vasp):
+    def parse_obj(self, vasp, makeparam):
         # OUTPUT
         # ------
         # preliminary checks
@@ -131,7 +131,6 @@ class MlVaspSpeed(object):
         # -----
         gen = vasp.gen
         cell = vasp.cell
-        makeparam = engine.Makeparam(gen)
         self._X.append([
             makeparam.projector_real + makeparam.projector_reciprocal,
             makeparam.wavefunction,
