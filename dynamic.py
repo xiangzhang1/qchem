@@ -91,7 +91,8 @@ class MlVaspSpeed(object):
         ])
         self.y_pipeline = Pipeline([
             # ('log', FunctionTransformer(func=np.log)),      # reduce information to reasonable
-            ('scaler', StandardScaler())
+            # ('scaler', StandardScaler())
+            ('cast_to_float32', FunctionTransformer(func=np.float32))
         ])
         # ann. what a pity.
         self.path = shared.SCRIPT_DIR + str.upper(self.__class__.__name__)
