@@ -159,8 +159,8 @@ class MlVaspSpeed(object):
         return y
 
     def train(self):
-        n_epochs = 100
-        batch_size = 64
+        n_epochs = 1000
+        batch_size = 40
         learning_rate = 0.001
         # pipeline
         _X = self.X_pipeline.fit_transform(self._X)
@@ -181,7 +181,7 @@ class MlVaspSpeed(object):
         with tf.Session() as sess:
             saver.restore(sess, self.path)
             for i in range(n_epochs * _X.shape[0] / batch_size):
-                batch_idx = np.random.choice(_X.shape[0]-10, size=batch_size)
+                batch_idx = np.random.choice(_X.shape[0]-5, size=batch_size)
                 _loss, _, _ = sess.run([loss, update_ops, training_op], feed_dict={_X_batch: _X[batch_idx], _y0_batch: _y0[batch_idx]})
                 if i % 100 == 0:
                     print 'step %s, loss %s' %(i, _loss)
