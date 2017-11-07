@@ -12,6 +12,9 @@ import dill as pickle
 import IPython
 from tqdm import tqdm
 
+from joblib import Parallel, delayed
+import multiprocessing
+
 import matplotlib.pyplot as plt
 
 from scipy.optimize import minimize
@@ -283,21 +286,24 @@ class MlPbSOpt(object):
             dx_i = (c - np.around(c / a) * a)[0]    # scalar
             # dx_jkl in order, i_jkl in order
             # list_dx_jkl = []
-            list_i_jkl = []
-            for j in range(-2, 3):
-                for k in range(-2, 3):
-                    for l in range(-2, 3):
-                        over_list_c_jkl = [c_jkl for c_jkl in ccoor if all(c + np.array([j-0.5, k-0.5, l-0.5]) * a < c_jkl) and all(c + np.array([j+0.5, k+0.5, l+0.5]) * a > c_jkl)]
-                        list_c_jkl = [c_jkl for c_jkl in ccoor if all(c + np.array([j-0.25, k-0.25, l-0.25]) * a < c_jkl) and all(c + np.array([j+0.25, k+0.25, l+0.25]) * a > c_jkl)]
-                        if len(over_list_c_jkl) > len(list_c_jkl):
-                            print self.__class__.__name__+'._parse_obj: very un-grided 0.2-0.5: %s vs %s. skipped' %(len(over_list_c_jkl), len(list_c_jkl))
-                            pass
-                        list_i_jkl.append(1 if list_c_jkl else 0)
+            # list_i_jkl = []
+            def f(ccoor, j, k, l):
+                return 1 if [c_jkl for c_jkl in ccoor if all(c + np.array([j-0.5, k-0.5, l-0.5]) * a < c_jkl) and all(c + np.array([j+0.5, k+0.5, l+0.5]) * a > c_jkl)] else 0
+            list_i_jkl = Parallel(n_jobs=20)[delayed(ccoor, j, k, l) for j,k,l in list(itertools.product(range(-2, 3),range(-2, 3), range(-2, 3)))]
+            # for j in range(-2, 3):
+            #     for k in range(-2, 3):
+            #         for l in range(-2, 3):
+            #             over_list_c_jkl = [c_jkl for c_jkl in ccoor if all(c + np.array([j-0.5, k-0.5, l-0.5]) * a < c_jkl) and all(c + np.array([j+0.5, k+0.5, l+0.5]) * a > c_jkl)]
+            #             list_c_jkl = [c_jkl for c_jkl in ccoor if all(c + np.array([j-0.25, k-0.25, l-0.25]) * a < c_jkl) and all(c + np.array([j+0.25, k+0.25, l+0.25]) * a > c_jkl)]
+            #             if len(over_list_c_jkl) > len(list_c_jkl):
+            #                 print self.__class__.__name__+'._parse_obj: very un-grided 0.2-0.5: %s vs %s. skipped' %(len(over_list_c_jkl), len(list_c_jkl))
+            #                 pass
+            #             list_i_jkl.append(1 if list_c_jkl else 0)
                         # c_jkl = list_c_jkl[0] if list_c_jkl else [0, 0, 0]
                         # dx_jkl = (c_jkl - np.around(np.array(c_jkl) / a) * a)[0]  # scalar
                         # list_dx_jkl.append(dx_jkl)
             # add to database, together with symmetrics
-            self._X.append(np.array(list_i_jkl) - dx_i + [off_stoi])
+            self._X.append(list_i_jkl + [off_stoi])
             self._y0.append([dx_i])
 
 
