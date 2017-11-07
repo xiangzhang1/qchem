@@ -50,23 +50,23 @@ NODES = {}
 
 MLS = {}
 
-def bel(X, dim, training, activation=tf.nn.elu):
+def bel(X, dim, training):
     '''Returns a Batch-normalized, Elu-activated Layer.
     If dim==1, no activation or normalization is carried out.
     Reuse is not considered.'''
-    h1 = tf.layers.dense(X, dim)
+    h1 = tf.layers.dense(X, units=dim)
     if dim==1:
         return h1
     else:
         h1_normalized = tf.layers.batch_normalization(h1, training=training, momentum=0.9)
-        h1_act = activation(h1_normalized)
+        h1_act = tf.nn.elu(h1_normalized)
         return h1_act
 
-def nbel(X, dims, training, activation=tf.nn.elu):
+def nbel(X, dims, training):
     '''Returns an MLP of size dims, e.g. (5,3,3,1)'''
     y = X
     for dim in dims:
-        y = bel(y, dim, training=training, activation=activation)
+        y = bel(y, dim=dim, training=training)
     return y
 
 
@@ -95,7 +95,8 @@ class MlVaspSpeed(object):
                     ('labeler', LabelBinarizerPipelineFriendly()),
                     ('padder', FunctionTransformer(func=lambda X: np.hstack((X, np.zeros((X.shape[0], 8-X.shape[1]))))))
                 ]))
-            ]))
+            ])),
+            ('cast_to_float32', FunctionTransformer(func=np.float32))
         ])
         # ann. what a pity.
         self.path = shared.SCRIPT_DIR + str.upper(self.__class__.__name__)
