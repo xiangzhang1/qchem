@@ -183,7 +183,7 @@ class MlVaspSpeed(object):
         with tf.Session() as sess:
             saver.restore(sess, self.path)
             for _ in range(n_epochs * _X.shape[0] / batch_size):
-                batch_idx = random.choice(-X.shape[0], batch_size)
+                batch_idx = random.choice(_X.shape[0], batch_size)
                 sess.run([update_ops, training_op], feed_dict={_X_batch: _X[batch_idx], _y0_batch: _y0[batch_idx]})
             saver.save(sess, self.path)
 
