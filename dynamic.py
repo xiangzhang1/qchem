@@ -222,10 +222,10 @@ class MlVaspSpeed(object):
 
 
 
-# MlVaspSpeed
+# MlPbSOpt
 # ==============================================================================
 
-class MlVaspSpeed(object):
+class MlPbSOpt(object):
 
     def __init__(self):
         # data
@@ -263,7 +263,7 @@ class MlVaspSpeed(object):
                         self._parse_obj(np.dot(vasp.optimized_cell.ccoor_prime, transf), vasp.optimized_cell.stoichiometry['Pb'] - vasp.optimized_cell.stoichiometry['S'])
 
 
-    def _parse_obj(self, ccoor):
+    def _parse_obj(self, ccoor, off_stoi):
         a = 6.01417 / 2
         # coordination system
         origin = ccoor[0]
@@ -289,7 +289,7 @@ class MlVaspSpeed(object):
                         dx_jkl = (c_jkl - np.around(c_jkl / a) * a)[0]  # scalar
                         list_dx_jkl.append(dx_jkl)
         # add to database, together with symmetrics
-        self._X.append(list_i_jkl + [])
+        self._X.append(list_i_jkl + [off_stoi])
         self._y0.append([dx_i])
 
 
