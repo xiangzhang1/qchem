@@ -50,24 +50,14 @@ NODES = {}
 
 MLS = {}
 
-def bel(X, dim, training):
+def bel(X, units, training):
     '''Returns a Batch-normalized, Elu-activated Layer.
-    If dim==1, no activation or normalization is carried out.
+    If regression=True,
     Reuse is not considered.'''
-    h1 = tf.layers.dense(X, units=dim)
-    if dim==1:
-        return h1
-    else:
-        h1_normalized = tf.layers.batch_normalization(h1, training=training, momentum=0.9)
-        h1_act = tf.nn.elu(h1_normalized)
-        return h1_act
-
-def nbel(X, dims, training):
-    '''Returns an MLP of size dims, e.g. (5,3,3,1)'''
-    y = X
-    for dim in dims:
-        y = bel(y, dim=dim, training=training)
-    return y
+    h1 = tf.layers.dense(X, units=units)
+    h1_normalized = tf.layers.batch_normalization(h1, training=training, momentum=0.9)
+    h1_act = tf.nn.elu(h1_normalized)
+    return h1_act
 
 
 class MlVaspSpeed(object):
@@ -151,13 +141,20 @@ class MlVaspSpeed(object):
 
     def ann(self, X, training):
         with tf.variable_scope('A'):
-            y_A = nbel(X[:, :5], dims=(5,3,3,1), training=training)
+            y_A_1 = bel(X[:, :5], units=3, training=training)
+            y_A_2 = bel(y_A_1, units=3, training=training)
+            y_A = tf.layers.dense(y3, units=1)
         with tf.variable_scope('B'):
-            y_B = nbel(X[:, 5:8], dims=(3,3,1), training=training)
+            y_B_1 = bel(X[:, 5:8], units=3, training=training)
+            y_B_2 = bel(y_B_1, units=3, training=training)
+            y_B = tf.layers.dense(y3, units=1, activation=tf.sigmoid)
         with tf.variable_scope('C'):
-            y_C = nbel(X[:, 8:], dims=(2,1), training=training)
+            y_C = tf.layers.dense(X[:, 8:], units=1, activation=tf.sigmoid)
         with tf.variable_scope('converge'):
-            y = nbel(tf.concat([y_A, y_B, y_C], axis=1), dims=(3,2,1), training=training)
+            y_1 = tf.concat([y_A, y_B, y_C], axis=1)
+            y_2 = bel(y_1, units=3, training=training)
+            y_3 = bel(y_2, units=3, training=training)
+            y = tf.layers.dense(y_3, units=3)
         return y
 
     def train(self):
@@ -182,11 +179,11 @@ class MlVaspSpeed(object):
         print self.__class__.__name__ + '.train: training started.'
         with tf.Session() as sess:
             saver.restore(sess, self.path)
-            for i in tqdm(range(n_epochs * _X.shape[0] / batch_size)):
+            for i in range(n_epochs * _X.shape[0] / batch_size):
                 batch_idx = np.random.choice(_X.shape[0], size=batch_size)
                 _loss, _, _ = sess.run([loss, update_ops, training_op], feed_dict={_X_batch: _X[batch_idx], _y0_batch: _y0[batch_idx]})
                 if i % 100 == 0:
-                    print 'loss %s' %_loss
+                    print 'step %s, loss %s' %(i, _loss)
             saver.save(sess, self.path)
 
         # evaluate
