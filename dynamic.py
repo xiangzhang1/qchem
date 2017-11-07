@@ -23,7 +23,7 @@ def save(obj, middlename):      # Note! Where defined, above which module pickle
 def load(middlename, datetime=None):
     filepath = shared.SCRIPT_DIR + '/data/' + sorted([x for x in os.listdir(shared.SCRIPT_DIR + '/data/') if x.startswith('dynamic.%s.pickle.%s'%(middlename, datetime if datetime else ''))])[-1]
     with open(filepath, 'rb') as f:
-        return pickle.load(f, protocol=pickle.HIGHEST_PROTOCOL)
+        return pickle.load(f)
 
 def global_load():
     global NODES, MLS
