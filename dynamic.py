@@ -161,7 +161,7 @@ class MlVaspSpeed(object):
         return y
 
     def train(self):
-        n_epochs = 300
+        n_epochs = 1000
         batch_size = 32
         learning_rate = 0.01
         # pipeline
@@ -199,7 +199,7 @@ class MlVaspSpeed(object):
         X = self.X_pipeline.fit_transform(X)
         # ann
         tf.reset_default_graph()
-        y = self.ann(X, trianing=False)
+        y = self.ann(X, training=False)
         saver = tf.train.Saver()
         # predict
         with tf.Session() as sess:
