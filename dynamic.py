@@ -188,7 +188,6 @@ class MlVaspSpeed(object):
             for i in range(n_epochs * _X.shape[0] / batch_size):
                 batch_idx = np.random.choice(_X.shape[0]-5, size=batch_size)
                 _loss, _, _ = sess.run([loss, update_ops, training_op], feed_dict={_X_batch: _X[batch_idx], _y0_batch: _y0[batch_idx]})
-                IPython.embed()
                 if i % 100 == 0:
                     print 'step %s, loss %s' %(i, _loss)
             saver.save(sess, self.path)
