@@ -268,8 +268,10 @@ class MlPbSOpt(object):
         # coordination system
         origin = ccoor[0]
         m0 = np.random.uniform(-0.3, 0.3, 6)
-        res = minimize(fun=self.err_after_tf, x0=m0, args=(ccoor, origin, a))  # find the absolute-neutral system
-        m = res.x ; dx, dy, dz, theta, phi, xi = m
+        print 'optimizing...'
+        res = minimize(fun=self.err_after_tf, x0=m0, args=(ccoor, origin, a), method='Nelder-Mead', tol=0.01)  # find the absolute-neutral system
+        print 'optimized, result f(%s) = %s' %(res.x, res.fun)
+        dx, dy, dz, theta, phi, xi = res.x
         err = res.fun
         M = shared.euler2mat(theta, phi, xi).T  # use that system
         ccoor = np.dot(ccoor + [dx, dy, dz], M)
