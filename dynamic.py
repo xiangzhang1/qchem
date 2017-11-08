@@ -209,7 +209,7 @@ class MlVaspSpeed(object):
                 X_batch = Variable(_X_batch, requires_grad=True)
                 y0_batch = Variable(_y0_batch, requires_grad=True)
                 y = self.net(X_batch)
-                loss = torch.sum((y - y0_batch)^2)
+                loss = torch.sum((y - y0_batch) ** 2)
                 loss.backward()
                 optimizer.step()
 
