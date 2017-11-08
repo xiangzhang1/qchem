@@ -226,6 +226,7 @@ class MlVaspSpeed(object):
             y0_batch = Variable(torch.FloatTensor(_y0[batch_idx]), requires_grad=False)
             y = self.net(X_batch)
             loss = criterion(y, y0_batch)
+            optimizer.zero_grad()   # suggested trick
             loss.backward()
             optimizer.step()
             if epoch % 100 == 0:
