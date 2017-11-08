@@ -210,8 +210,8 @@ class MlVaspSpeed(object):
         self.net.train()
         for epoch in range(n_epochs):
             for _X_batch, _y0_batch in dataloader:
-                X_batch = Variable(_X_batch)
-                y0_batch = Variable(_y0_batch)
+                X_batch = Variable(_X_batch, requires_grad=True)
+                y0_batch = Variable(_y0_batch, requires_grad=True)
                 y = self.net(_X_batch)
                 loss = criterion(y, y0_batch)
                 loss.backward()
@@ -229,7 +229,7 @@ class MlVaspSpeed(object):
         _X = self.X_pipeline.fit_transform(_X)
         # ann
         self.net.eval()
-        y = self.net(Variable(torch.Tensor(X)))
+        y = self.net(Variable(torch.Tensor(X), requires_grad=True))
         # pipeline
         _y_inverse = self.y_pipeline.inverse_transform(y.data.numpy())
         return _y_inverse
