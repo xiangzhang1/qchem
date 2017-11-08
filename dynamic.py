@@ -83,23 +83,27 @@ class MlVaspSpeed(object):
         def __init__(self):
             super(MlVaspSpeed.Net, self).__init__()
             self.lA1 = nn.Linear(5, 3)
+            self.bnA1 = nn.BatchNorm1d(3, momentum=0.8)
             self.lA2 = nn.Linear(3, 3)
+            self.bnA2 = nn.BatchNorm1d(3, momentum=0.8)
             self.lA3 = nn.Linear(3, 1)
 
             self.lB1 = nn.Linear(3, 3)
+            self.bnB1 = nn.BatchNorm1d(3, momentum=0.8)
             self.lB2 = nn.Linear(3, 3)
+            self.bnB2 = nn.BatchNorm1d(3, momentum=0.8)
             self.lB3 = nn.Linear(3, 1)
 
             self.lC1 = nn.Linear(4, 1)
 
         def forward(self, X):
 
-            A = F.elu(self.lA1(X[:, :5]))
-            A = F.elu(self.lA2(A))
+            A = self.bnA1(F.elu(self.lA1(X[:, :5])))
+            A = self.bnA2(F.elu(self.lA2(A)))
             A = self.lA3(A)
 
-            B = F.elu(self.lB1(X[:, 5:8]))
-            B = F.elu(self.lB2(B))
+            B = self.bnB1(F.elu(self.lB1(X[:, 5:8])))
+            B = self.bnB2(F.elu(self.lB2(B)))
             B = self.lB3(B)
 
             C = self.lC1(X[:, 8:16])
@@ -198,7 +202,7 @@ class MlVaspSpeed(object):
         dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
         # ann
         criterion = nn.MSELoss()
-        optimizer = optim.SGD(self.net.parameters(), lr=0.001)
+        optimizer = optim.RMSprop(self.net.parameters(), lr=0.001, momentum=0.9)
         # train
         self.net.train()
         for epoch in range(n_epochs):
