@@ -162,7 +162,7 @@ class MlVaspSpeed(object):
             ('scaler', StandardScaler())
         ])
         # ann. what a pity.
-        self.net = MlVaspSpeed.Net(bn_momentum=0.5, dropout_p=0.1)
+        self.net = MlVaspSpeed.Net(bn_momentum=0.3, dropout_p=0.2)
 
 
     def parse_obj(self, vasp, makeparam):
@@ -209,8 +209,8 @@ class MlVaspSpeed(object):
 
     def train(self):
         n_epochs = 5000
-        batch_size = 32
-        learning_rate = 0.0001  # smaller feels better
+        batch_size = 46
+        learning_rate = 0.00001  # smaller feels better
         # pipeline
         _X = self.X_pipeline.fit_transform(self._X)
         _y0 = self.y_pipeline.fit_transform(self._y0)
@@ -236,7 +236,9 @@ class MlVaspSpeed(object):
         _y0 = self._y0[-10:]
         _y = self.predict(_X)
         IPython.embed(banner1='inspect _y. is it nan?')
-        print self.__class__.__name__ + '.train: training finished. evaluation on last item: actual %s, predicted %s' %(_y0, _y)
+        print self.__class__.__name__ + '.train: training finished. evaluation on last item: \n actual | predicted'
+        for _y0_, _y_ in zip(_y0, _y):
+            print _y0_, _y_
 
 
     def predict(self, _X):
