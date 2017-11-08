@@ -220,6 +220,7 @@ class MlVaspSpeed(object):
         _X = self._X[-10:]
         _y0 = self._y0[-10:]
         _y = self.predict(_X)
+        IPython.embed(banner1='inspect _y. is it nan?')
         print self.__class__.__name__ + '.train: training finished. evaluation on last item: actual %s, predicted %s' %(_y0, _y)
 
 
