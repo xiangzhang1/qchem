@@ -423,6 +423,7 @@ class Makeparam(object):
             print '\n'.join(output)
             raise shared.CustomError(tmp_gen.__class__.__name__ + ' error: makeparam output illegal. Check POSCAR4 format and memory leak in directory {%s}.' %tmp_path)
         # cleanup
+        os.chdir(shared.SCRIPT_DIR)
         shutil.rmtree(tmp_path)
 
 
@@ -910,6 +911,7 @@ class Vasp(object):
     def delete(self):
         if os.path.isdir(self.path):
             print 'removing self.path {%s}' %self.path
+            os.chdir(shared.SCRIPT_DIR)
             shutil.rmtree(self.path)
 
     def __str__(self):
@@ -991,6 +993,7 @@ class Dummy(object):
     def delete(self):
         print 'removing folder {%s}' %self.path
         if os.path.isdir(self.path):
+            os.chdir(shared.SCRIPT_DIR)
             shutil.rmtree(self.path)
 
 
