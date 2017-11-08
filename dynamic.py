@@ -197,7 +197,7 @@ class MlVaspSpeed(object):
         _X = self.X_pipeline.fit_transform(self._X)
         _y0 = self.y_pipeline.fit_transform(self._y0)
         # batch
-        dataset = TensorDataset(torch.from_numpy(_X), torch.from_numpy(_y0))
+        dataset = TensorDataset(torch.FloatTensor(_X), torch.FloatTensor(_y0))
         dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
         # ann
         criterion = nn.MSELoss()
@@ -226,7 +226,7 @@ class MlVaspSpeed(object):
         _X = self.X_pipeline.fit_transform(_X)
         # ann
         self.net.eval()
-        y = self.net(Variable(torch.from_numpy(X), requires_grad=True))
+        y = self.net(Variable(torch.FloatTensor(X), requires_grad=True))
         # pipeline
         _y_inverse = self.y_pipeline.inverse_transform(y.data.numpy())
         return _y_inverse
