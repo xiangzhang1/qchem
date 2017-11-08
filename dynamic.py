@@ -159,7 +159,7 @@ class MlVaspSpeed(object):
             ('scaler', StandardScaler())
         ])
         # ann. what a pity.
-        self.net = MlVaspSpeed.Net(bn_momentum=0.9)
+        self.net = MlVaspSpeed.Net(bn_momentum=0.9, dropout_p=0.4)
 
 
     def parse_obj(self, vasp, makeparam):
