@@ -6,8 +6,6 @@ An environment. Do not paste actions here.
 # common libraries
 import sys
 import os
-# os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
-# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import shutil
 import random
 import string
@@ -16,6 +14,7 @@ import time
 from pprint import pprint
 import IPython
 import numpy as np
+from tqdm import tqdm
 
 from cStringIO import StringIO
 from fuzzywuzzy import process

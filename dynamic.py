@@ -196,7 +196,7 @@ class MlVaspSpeed(object):
         # pipeline
         _X = self.X_pipeline.fit_transform(self._X)
         _y0 = self.y_pipeline.fit_transform(self._y0)
-        IPython.embed('Now inspect _X and _y0')
+        IPython.embed(banner1='Now inspect _X and _y0')
         # batch
         dataset = TensorDataset(torch.FloatTensor(_X), torch.FloatTensor(_y0))
         dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
