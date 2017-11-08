@@ -1,11 +1,5 @@
 #!/usr/bin/python
 import os
-import tensorflow as tf
-from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.preprocessing import LabelBinarizer, FunctionTransformer, StandardScaler
-from shared import LabelBinarizerPipelineFriendly
-from sklearn.feature_extraction import FeatureHasher
-from sklearn.pipeline import Pipeline, FeatureUnion
 import numpy as np
 import time
 import dill as pickle
@@ -14,6 +8,22 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 import itertools
 from scipy.optimize import minimize
+
+# scikit-learn
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.preprocessing import LabelBinarizer, FunctionTransformer, StandardScaler
+from shared import LabelBinarizerPipelineFriendly
+from sklearn.feature_extraction import FeatureHasher
+from sklearn.pipeline import Pipeline, FeatureUnion
+
+# tensorflow
+import tensorflow as tf
+
+# pytorch
+import torch
+from torch.autograd import Variable
+import torch.nn as nn
+import torch.nn.functional as F
 
 import shared
 
@@ -54,7 +64,7 @@ NODES = {}
 MLS = {}
 
 def bel(X, units, training):
-    '''Returns a Batch-normalized, Elu-activated Layer.
+    '''Returns a Batch-normalized, Elu-activated Tensorflow layer.
     If regression=True,
     Reuse is not considered.'''
     h1 = tf.layers.dense(X, units=units)
@@ -100,7 +110,7 @@ class MlVaspSpeed(object):
             ('scaler', StandardScaler())
         ])
         # ann. what a pity.
-        self.path = shared.SCRIPT_DIR + str.upper(self.__class__.__name__)
+        self.path = shared.SCRIPT_DIR + '/data/' + str.upper(self.__class__.__name__)
         tf.reset_default_graph()
         self.ann(tf.placeholder(tf.float32, shape=(None, 12)), training=False)
         saver = tf.train.Saver()
@@ -169,7 +179,7 @@ class MlVaspSpeed(object):
         return y
 
     def train(self):
-        n_epochs = 5000
+        n_epochs = 10000
         batch_size = 69
         learning_rate = 0.01
         # pipeline
@@ -219,7 +229,24 @@ class MlVaspSpeed(object):
         return _y_inverse
 
 
-
+# inital training script for MlVaspSpeed
+# dynamic.global_load()
+# m = dynamic.MlVaspSpeed()
+# for n in engine.Map().lookup('master').map.traverse():
+#     try:
+#         n.cell = engine.Cell(str(n.cell))
+#         n.gen.cell = n.cell
+#         n.vasp.cell = n.cell
+#         n.vasp.gen = n.gen
+#         n.vasp.optimized_cell = engine.Cell(str(n.vasp.optimized_cell))
+#     except AttributeError:
+#         pass
+#     if getattr(n, 'gen', None) and n.gen.parse_if('engine=vasp') and n.moonphase()==2:
+#         try:
+#             m.parse_obj(n.vasp, engine.Makeparam(n.vasp.gen))
+#         except (shared.CustomError, shared.DeferError) as e:
+#             print 'warning: node %s\'s parsing failed. probably old version.' %n.name
+# m.train()
 
 
 
@@ -227,6 +254,8 @@ class MlVaspSpeed(object):
 # ==============================================================================
 
 class MlPbSOpt(object):
+
+    class Net(nn.Module):
 
     def __init__(self):
         # data
@@ -244,16 +273,8 @@ class MlPbSOpt(object):
             sess.run(tf.global_variables_initializer())
             saver.save(sess, self.path)
 
-    def err_after_tf(self, m, ccoor, origin, a):   # error after transformation m = [dx, dy, dz, theta, phi, xi]
-        dx, dy, dz, theta, phi, xi = m
-        ## after rotation
-        M = shared.euler2mat(theta, phi, xi).T    # order doesn't matter so I can do x . M
-        ccoor_prime = np.dot(ccoor - origin + [dx, dy, dz], M)
-        ## error after rotation, in fcoor. note that ccoor is the main format.
-        err = np.linalg.norm(ccoor_prime - np.around(ccoor_prime / a) * a)
-        return err
-
     def parse_obj(self, vasp):
+        a = 6.01417/2
         # matrices = []
         # for mirror_x in [-1, 1]:
         #     for mirror_y in [-1, 1]:
@@ -261,7 +282,18 @@ class MlPbSOpt(object):
         #             for swap_matrix in ([[1,0,0],[0,0,1],[0,1,0]], [[0,1,0],[1,0,0],[0,0,1]], [[0,0,1],[0,1,0],[1,0,0]]):
         #                 transf = np.dot(np.diag([mirror_x, mirror_y, mirror_z]), swap_matrix)
         #                 self._parse_obj(np.dot(vasp.optimized_cell.ccoor, transf), vasp.optimized_cell.stoichiometry['Pb'] - vasp.optimized_cell.stoichiometry['S'])
-        self._parse_obj(vasp.optimized_cell.ccoor, vasp.optimized_cell.stoichiometry['Pb'] - vasp.optimized_cell.stoichiometry['S'])
+
+        # first, we get the fcoor. no rotation need be taken into account.
+        ccoor = vasp.optimized_cell.ccoor
+        def e(r0, ccoor=ccoor, a=a):
+            fcoor = np.subtract(ccoor, r0) / a
+            return np.linalg.norm(fcoor - np.around(fcoor))
+        r0 = minimize(fun=e, x0=[0,0,0], bounds=[(-0.5*a,0.5*a) for _ in range(3)]).x
+        fcoor = np.subtract(ccoor, r0) / a
+
+        # second, we parse it.
+
+
 
 
     def _parse_obj(self, ccoor, off_stoi):
