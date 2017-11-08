@@ -208,30 +208,28 @@ class MlVaspSpeed(object):
         self._y0.append([time_elec_step])   # put it here so that no inconsistency will happen
 
     def train(self):
-        n_epochs = 1000
-        batch_size = 32
+        n_epochs = 5000
+        batch_size = 64
         learning_rate = 0.01
         # pipeline
         _X = self.X_pipeline.fit_transform(self._X)
         _y0 = self.y_pipeline.fit_transform(self._y0)
-        # batch
-        dataset = TensorDataset(torch.FloatTensor(_X), torch.FloatTensor(_y0))
-        dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
+        # batch: random.choice
         # ann
         criterion = nn.MSELoss()
         optimizer = optim.SGD(self.net.parameters(), lr=learning_rate)
         # train
         self.net.train()
         for epoch in range(n_epochs):
-            for _X_batch, _y0_batch in dataloader:
-                X_batch = Variable(_X_batch, requires_grad=True)
-                y0_batch = Variable(_y0_batch, requires_grad=False)
-                y = self.net(X_batch)
-                loss = criterion(y, y0_batch)
-                loss.backward()
-                optimizer.step()
-                if epoch % 10 == 0:
-                    print 'epoch %s, loss %s'%(epoch, loss.data.numpy()[0])
+            batch_idx = np.random.choice(_X.shape[0], size=batch_size)
+            X_batch= Variable(torch.FloatTensor(_X[batch_idx]), requires_grad=True)
+            y0_batch = Variable(torch.FloatTensor(_y0[batch_idx]), requires_grad=False)
+            y = self.net(X_batch)
+            loss = criterion(y, y0_batch)
+            loss.backward()
+            optimizer.step()
+            if epoch % 10 == 0:
+                print 'epoch %s, loss %s'%(epoch, loss.data.numpy()[0])
 
         # evaluate
         _X = self._X[-10:]
