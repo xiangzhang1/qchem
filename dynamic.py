@@ -122,7 +122,7 @@ class MlVaspSpeed(object):
             C = self.lC2(C)
 
             y = torch.stack((A, B, C))
-            y = self.bn1(self.dropout(F.elu(self.l1(y))))
+            y = self.bn1(self.dropout1(F.elu(self.l1(y))))
             y = self.l2(y)
 
             return y
