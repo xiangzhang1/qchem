@@ -401,7 +401,7 @@ class Makeparam(object):
         # make dir, write files
         tmp_path = shared.SCRIPT_DIR + '/check_memory_tmp' + ''.join(random.sample(string.ascii_lowercase,4))
         if os.path.exists(tmp_path):
-            os.system('trash '+tmp_path)
+            shutil.rmtree(tmp_path)
         os.mkdir(tmp_path)
         os.chdir(tmp_path)
         tmp_gen.write_incar_kpoints()
@@ -423,7 +423,7 @@ class Makeparam(object):
             print '\n'.join(output)
             raise shared.CustomError(tmp_gen.__class__.__name__ + ' error: makeparam output illegal. Check POSCAR4 format and memory leak in directory {%s}.' %tmp_path)
         # cleanup
-        os.system('trash %s' %tmp_path)
+        shutil.rmtree(tmp_path)
 
 
 

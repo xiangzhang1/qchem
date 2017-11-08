@@ -190,7 +190,7 @@ class MlVaspSpeed(object):
         self._y0.append([time_elec_step])   # put it here so that no inconsistency will happen
 
     def train(self):
-        n_epochs = 5000
+        n_epochs = 10000
         batch_size = 69
         learning_rate = 0.01
         # pipeline
@@ -225,7 +225,7 @@ class MlVaspSpeed(object):
         _X = self.X_pipeline.fit_transform(_X)
         # ann
         self.net.eval()
-        y = self.net(Variable(torch.FloatTensor(X), requires_grad=True))
+        y = self.net(Variable(torch.FloatTensor(_X), requires_grad=True))
         # pipeline
         _y_inverse = self.y_pipeline.inverse_transform(y.data.numpy())
         return _y_inverse
