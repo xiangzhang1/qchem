@@ -98,7 +98,7 @@ class MlVaspSpeed(object):
             self.dropoutB2 = nn.Dropout(p=dropout_p)
             self.lB3 = nn.Linear(3, 1)
 
-            self.lC1 = nn.Linear(8, 2)
+            self.lC1 = nn.Linear(4, 2)
             self.bnC1 = nn.BatchNorm1d(2, momentum=bn_momentum)
             self.dropoutC1 = nn.Dropout(p=dropout_p)
             self.lC2 = nn.Linear(2, 1)
@@ -211,7 +211,6 @@ class MlVaspSpeed(object):
         # pipeline
         _X = self.X_pipeline.fit_transform(self._X)
         _y0 = self.y_pipeline.fit_transform(self._y0)
-        IPython.embed(banner1='Now inspect _X and _y0')
         # batch
         dataset = TensorDataset(torch.FloatTensor(_X), torch.FloatTensor(_y0))
         dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
