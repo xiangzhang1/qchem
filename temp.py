@@ -47,4 +47,14 @@ for n in engine.Map().lookup('master').map.traverse():
             m.parse_obj(n.vasp, engine.Makeparam(n.vasp.gen))
         except (shared.CustomError, shared.DeferError) as e:
             print 'warning: node %s\'s parsing failed. probably old version.' %n.name
-m.train()
+
+bn_momentum = 0.7
+dropout_p = 0.2
+learning_rate = 10E-5
+batch_size = 46
+nepochs = 5000
+def f(x):
+    bn_momentum, dropout_p, learning_rate, batch_size, nepochs = x
+    m.net = dynamic.MlVaspSpeed.Net(bn_momentum=bn_momentum, dropout_p=dropout_p)
+    m.train(learning_rate=learning_rate, batch_size=batch_size, nepochs=nepochs)
+f([0.7, 0.2, 10E-5, 46, 5000])

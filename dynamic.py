@@ -207,7 +207,7 @@ class MlVaspSpeed(object):
         ])
         self._y0.append([time_elec_step])   # put it here so that no inconsistency will happen
 
-    def train(self):
+    def train(self, n_epochs=5000, batch_size=46, learning_rate=10E-5):
         n_epochs = 5000
         batch_size = 46
         learning_rate = 0.00001  # smaller feels better
@@ -235,10 +235,12 @@ class MlVaspSpeed(object):
         _X = self._X[-10:]
         _y0 = self._y0[-10:]
         _y = self.predict(_X)
-        IPython.embed(banner1='inspect _y. is it nan?')
         print self.__class__.__name__ + '.train: training finished. evaluation on last item: \n actual | predicted'
-        for _y0_, _y_ in zip(_y0, _y):
-            print _y0_, _y_
+        for a, b in zip(_y0, _y):
+            print a, b
+        # create a metric
+        a, b = np.amax(_y0 / _y), np.amin(_y0 / _y)
+        return max(a, 1) * max(b, 1)
 
 
     def predict(self, _X):
