@@ -80,35 +80,50 @@ class MlVaspSpeed(object):
 
     class Net(nn.Module):
 
-        def __init__(self):
+        def __init__(self, bn_momentum, dropout_p):
             super(MlVaspSpeed.Net, self).__init__()
             self.lA1 = nn.Linear(5, 3)
-            self.bnA1 = nn.BatchNorm1d(3, momentum=0.8)
+            self.bnA1 = nn.BatchNorm1d(3, momentum=bn_momentum)
+            self.dropoutA1 = nn.Dropout(p=dropout_p)
             self.lA2 = nn.Linear(3, 3)
-            self.bnA2 = nn.BatchNorm1d(3, momentum=0.8)
+            self.bnA2 = nn.BatchNorm1d(3, momentum=bn_momentum)
+            self.dropoutA2 = nn.Dropout(p=dropout_p)
             self.lA3 = nn.Linear(3, 1)
 
             self.lB1 = nn.Linear(3, 3)
-            self.bnB1 = nn.BatchNorm1d(3, momentum=0.8)
+            self.bnB1 = nn.BatchNorm1d(3, momentum=bn_momentum)
+            self.dropoutB1 = nn.Dropout(p=dropout_p)
             self.lB2 = nn.Linear(3, 3)
-            self.bnB2 = nn.BatchNorm1d(3, momentum=0.8)
+            self.bnB2 = nn.BatchNorm1d(3, momentum=bn_momentum)
+            self.dropoutB2 = nn.Dropout(p=dropout_p)
             self.lB3 = nn.Linear(3, 1)
 
-            self.lC1 = nn.Linear(4, 1)
+            self.lC1 = nn.Linear(8, 2)
+            self.bnC1 = nn.CatchNorm1d(2, momentum=bn_momentum)
+            self.dropoutC1 = nn.Dropout(p=dropout_p)
+            self.lC2 = nn.Linear(2, 1)
+
+            self.l1 = nn.Linear(3, 3)
+            self.bn1 = nn.BatchNorm1d(3, momentum=bn_momentum)
+            self.dropout1 = nn.Dropout(p=dropout_p)
+            self.l2 = nn.Linear(3, 1)
 
         def forward(self, X):
 
-            A = self.bnA1(F.elu(self.lA1(X[:, :5])))
-            A = self.bnA2(F.elu(self.lA2(A)))
+            A = self.bnA1(self.dropoutA1(F.elu(self.lA1(X[:, :5]))))
+            A = self.bnA2(self.dropoutA2(F.elu(self.lA2(A))))
             A = self.lA3(A)
 
-            B = self.bnB1(F.elu(self.lB1(X[:, 5:8])))
-            B = self.bnB2(F.elu(self.lB2(B)))
+            B = self.bnB1(self.dropoutB1(F.elu(self.lB1(X[:, 5:8]))))
+            B = self.bnB2(self.dropoutB2(F.elu(self.lB2(B))))
             B = self.lB3(B)
 
-            C = self.lC1(X[:, 8:16])
+            C = self.bnC1(self.dropoutC1(F.elu(self.lC1(X[:, 8:12]))))
+            C = self.lB2(B)
 
-            y = A * B * C
+            y = torch.cat((A, B, C), dim=0)
+            y = self.bn1(self.dropout(F.elu(self.l1(y))))
+            y = self.l2(y)
 
             return y
 
@@ -144,7 +159,7 @@ class MlVaspSpeed(object):
             ('scaler', StandardScaler())
         ])
         # ann. what a pity.
-        self.net = MlVaspSpeed.Net()
+        self.net = MlVaspSpeed.Net(bn_momentum=0.9)
 
 
     def parse_obj(self, vasp, makeparam):
@@ -191,7 +206,7 @@ class MlVaspSpeed(object):
 
     def train(self):
         n_epochs = 1000
-        batch_size = 69
+        batch_size = 32
         learning_rate = 0.01
         # pipeline
         _X = self.X_pipeline.fit_transform(self._X)
@@ -202,7 +217,7 @@ class MlVaspSpeed(object):
         dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
         # ann
         criterion = nn.MSELoss()
-        optimizer = optim.RMSprop(self.net.parameters(), lr=0.001, momentum=0.9)
+        optimizer = optim.SGD(self.net.parameters(), lr=learning_rate)
         # train
         self.net.train()
         for epoch in range(n_epochs):
