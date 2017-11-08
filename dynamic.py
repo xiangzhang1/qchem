@@ -233,8 +233,8 @@ class MlVaspSpeed(object):
                 print 'epoch %s, loss %s'%(epoch, loss.data.numpy()[0])
 
         # evaluate
-        _X = self._X[-10:]
-        _y0 = self._y0[-10:]
+        _X = np.float32(self._X[-10:])
+        _y0 = np.float32(self._y0[-10:])
         _y = self.predict(_X)
         print self.__class__.__name__ + '.train: training finished. evaluation on last item: \n actual | predicted'
         for a, b in zip(_y0, _y):
