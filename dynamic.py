@@ -211,9 +211,6 @@ class MlVaspSpeed(object):
         self._y0.append([time_elec_step])   # put it here so that no inconsistency will happen
 
     def train(self, n_epochs=5000, batch_size=46, learning_rate=10E-5, optimizer_name='SGD'):
-        n_epochs = 5000
-        batch_size = 46
-        learning_rate = 0.00001  # smaller feels better
         # pipeline
         _X = self.X_pipeline.fit_transform(self._X)
         _y0 = self.y_pipeline.fit_transform(self._y0)
