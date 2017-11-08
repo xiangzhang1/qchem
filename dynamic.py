@@ -200,16 +200,14 @@ class MlVaspSpeed(object):
         dataset = TensorDataset(torch.from_numpy(_X), torch.from_numpy(_y0))
         dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
         # ann
-        criterion = nn.MSELoss()
         optimizer = optim.SGD(self.net.parameters(), lr=0.01)
         # train
         self.net.train()
         for epoch in range(n_epochs):
             for _X_batch, _y0_batch in dataloader:
                 X_batch = Variable(_X_batch, requires_grad=True)
-                y0_batch = Variable(_y0_batch, requires_grad=True)
                 y = self.net(X_batch)
-                loss = criterion(y, y0_batch)
+                loss = torch.sum((y - _y0_batch) ** 2)
                 loss.backward()
                 optimizer.step()
 
