@@ -209,6 +209,7 @@ class MlVaspSpeed(object):
                 X_batch = Variable(_X_batch, requires_grad=True)
                 y0_batch = Variable(_y0_batch, requires_grad=False)
                 y = self.net(X_batch)
+                IPython.embed()
                 loss = criterion(y, y0_batch)
                 loss.backward()
                 optimizer.step()
@@ -225,7 +226,7 @@ class MlVaspSpeed(object):
         _X = self.X_pipeline.fit_transform(_X)
         # ann
         self.net.eval()
-        y = self.net(Variable(torch.Tensor(X), requires_grad=True))
+        y = self.net(Variable(torch.from_numpy(X), requires_grad=True))
         # pipeline
         _y_inverse = self.y_pipeline.inverse_transform(y.data.numpy())
         return _y_inverse
