@@ -98,7 +98,8 @@ class MlVaspSpeed(object):
 
         def forward(self, X):
 
-            A = self.lA1(X[:, :5])
+            A = X[:, :5]
+            A = self.lA1(A)
             A = F.elu(A)
             A = self.bnA1(A)
             # A = self.bnA1(F.elu(self.lA1(X[:, :5])))
