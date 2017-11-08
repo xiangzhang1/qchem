@@ -16,14 +16,13 @@ from shared import LabelBinarizerPipelineFriendly
 from sklearn.feature_extraction import FeatureHasher
 from sklearn.pipeline import Pipeline, FeatureUnion
 
-# tensorflow
-import tensorflow as tf
-
 # pytorch
 import torch
 from torch.autograd import Variable
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.utils.data import TensorDataset, DataLoader
+import torch.optim as optim
 
 import shared
 
@@ -79,6 +78,37 @@ def bel(X, units, training):
 
 class MlVaspSpeed(object):
 
+    class Net(nn.Module):
+
+        def __init__(self):
+            super(Net, self).__init__()
+            self.lA1 = nn.Linear(5, 3)
+            self.lA2 = nn.Linear(3, 3)
+            self.lA3 = nn.Linear(3, 1)
+
+            self.lB1 = nn.Linear(3, 3)
+            self.lB2 = nn.Linear(3, 3)
+            self.lB3 = nn.Linear(3, 1)
+
+            self.lC1 = nn.Linear(8, 1)
+
+        def forward(self, X):
+
+            A = F.batch_norm(F.elu(self.lA1(X[:, :5])))
+            A = F.batch_norm(F.elu(self.lA2(A)))
+            A = self.lA3(A)
+
+            B = F.batch_norm(F.elu(self.lB1(X[:, 5:8])))
+            B = F.batch_norm(F.elu(self.lB2(B)))
+            B = self.lB3(B)
+
+            C = self.lC1(X[:, 8:16])
+
+            y = A * B * C
+
+            return y
+
+
     def __init__(self):
         # data
         self._X = []
@@ -110,13 +140,8 @@ class MlVaspSpeed(object):
             ('scaler', StandardScaler())
         ])
         # ann. what a pity.
-        self.path = shared.SCRIPT_DIR + '/data/' + str.upper(self.__class__.__name__)
-        tf.reset_default_graph()
-        self.ann(tf.placeholder(tf.float32, shape=(None, 12)), training=False)
-        saver = tf.train.Saver()
-        with tf.Session() as sess:
-            sess.run(tf.global_variables_initializer())
-            saver.save(sess, self.path)
+        self.net = MlVaspSpeed.Net()
+
 
     def parse_obj(self, vasp, makeparam):
         # OUTPUT
@@ -160,24 +185,6 @@ class MlVaspSpeed(object):
         ])
         self._y0.append([time_elec_step])   # put it here so that no inconsistency will happen
 
-    def ann(self, X, training):
-        with tf.variable_scope('A'):
-            y_A_1 = bel(X[:, :5], units=3, training=training)
-            y_A_2 = bel(y_A_1, units=3, training=training)
-            y_A = tf.layers.dense(y_A_2, units=1)
-        with tf.variable_scope('B'):
-            y_B_1 = bel(X[:, 5:8], units=3, training=training)
-            y_B_2 = bel(y_B_1, units=3, training=training)
-            y_B = tf.layers.dense(y_B_2, units=1)
-        with tf.variable_scope('C'):
-            y_C = tf.layers.dense(X[:, 8:], units=1)
-        with tf.variable_scope('converge'):
-            y_1 = tf.concat([y_A, y_B, y_C], axis=1)
-            y_2 = bel(y_1, units=3, training=training)
-            y_3 = bel(y_2, units=3, training=training)
-            y = tf.layers.dense(y_3, units=1)
-        return y
-
     def train(self):
         n_epochs = 10000
         batch_size = 69
@@ -186,26 +193,19 @@ class MlVaspSpeed(object):
         _X = self.X_pipeline.fit_transform(self._X)
         _y0 = self.y_pipeline.fit_transform(self._y0)
         # batch
+        dataset = TensorDataset(torch.from_numpy(_X), torch.from_numpy(_y0))
+        dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
         # ann
-        tf.reset_default_graph()
-        _X_batch = tf.placeholder(tf.float32, shape=[None, 12])
-        _y0_batch = tf.placeholder(tf.float32, shape=[None, 1])
-        y = self.ann(_X_batch, training=True)
-        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-        loss = tf.reduce_mean(tf.squared_difference(y, _y0_batch))
-        optimizer = tf.train.GradientDescentOptimizer(learning_rate)
-        training_op = optimizer.minimize(loss)
-        saver = tf.train.Saver()
+        criterion = nn.MSELoss()
+        optimizer = optim.SGD(self.net.parameters(), lr=0.01)
         # train
-        print self.__class__.__name__ + '.train: training started.'
-        with tf.Session() as sess:
-            saver.restore(sess, self.path)
-            for i in range(n_epochs * _X.shape[0] / batch_size):
-                batch_idx = np.random.choice(_X.shape[0]-5, size=batch_size)
-                _loss, _, _ = sess.run([loss, update_ops, training_op], feed_dict={_X_batch: _X[batch_idx], _y0_batch: _y0[batch_idx]})
-                if i % 100 == 0:
-                    print 'step %s, loss %s' %(i, _loss)
-            saver.save(sess, self.path)
+        self.net.train()
+        for epoch in range(n_epochs):
+            for _X_batch, _y0_batch in dataloader:
+                _y = net(_X_batch)
+                loss = criterion(_y, _y0)
+                loss.backward()
+                optimizer.step()
 
         # evaluate
         _X = self._X[-10:]
@@ -216,15 +216,10 @@ class MlVaspSpeed(object):
 
     def predict(self, X):
         # pipeline
-        X = self.X_pipeline.fit_transform(X)
+        _X = self.X_pipeline.fit_transform(X)
         # ann
-        tf.reset_default_graph()
-        y = self.ann(tf.constant(X), training=False)
-        saver = tf.train.Saver()
-        # predict
-        with tf.Session() as sess:
-            saver.restore(sess, self.path)
-            _y = sess.run(y)
+        self.net.eval()
+        _y = self.net(torch.from_numpy(_X))
         _y_inverse = self.y_pipeline.inverse_transform(_y)
         return _y_inverse
 
@@ -253,125 +248,125 @@ class MlVaspSpeed(object):
 # MlPbSOpt
 # ==============================================================================
 
-class MlPbSOpt(object):
-
-    def __init__(self):
-        # data
-        self._X = []
-        self._y0 = []
-        # pipeline
-        self.X_pipeline = StandardScaler()
-        self.y_pipeline = StandardScaler()
-        # ann. what a pity.
-        self.path = shared.SCRIPT_DIR + str.upper(self.__class__.__name__)
-        tf.reset_default_graph()
-        self.ann(tf.placeholder(tf.float32, shape=(None, 126)), training=True)
-        saver = tf.train.Saver()
-        with tf.Session() as sess:
-            sess.run(tf.global_variables_initializer())
-            saver.save(sess, self.path)
-
-    def parse_obj(self, vasp):
-        a = 6.01417/2
-        # matrices = []
-        # for mirror_x in [-1, 1]:
-        #     for mirror_y in [-1, 1]:
-        #         for mirror_z in [-1, 1]:
-        #             for swap_matrix in ([[1,0,0],[0,0,1],[0,1,0]], [[0,1,0],[1,0,0],[0,0,1]], [[0,0,1],[0,1,0],[1,0,0]]):
-        #                 transf = np.dot(np.diag([mirror_x, mirror_y, mirror_z]), swap_matrix)
-        #                 self._parse_obj(np.dot(vasp.optimized_cell.ccoor, transf), vasp.optimized_cell.stoichiometry['Pb'] - vasp.optimized_cell.stoichiometry['S'])
-
-        # first, we get the fcoor. no rotation need be taken into account.
-        ccoor = vasp.optimized_cell.ccoor
-        def e(r0, ccoor=ccoor, a=a):
-            fcoor = np.subtract(ccoor, r0) / a
-            return np.linalg.norm(fcoor - np.around(fcoor))
-        r0 = minimize(fun=e, x0=[0,0,0], bounds=[(-0.5*a,0.5*a) for _ in range(3)]).x
-        fcoor = np.subtract(ccoor, r0) / a
-
-        # second, we parse it.
-
-
-
-
-    def _parse_obj(self, ccoor, off_stoi):
-        a = 6.01417 / 2
-        # coordination system
-        origin = ccoor[20]
-        m0 = np.random.uniform(-0.01, 0.01, 6)
-        print 'optimizing...'
-        res = minimize(fun=self.err_after_tf, x0=m0, args=(ccoor, origin, a), method='Powell', tol=10E-5)  # find the absolute-neutral system
-        print 'optimized, result f(%s) = %s' %(res.x, res.fun)
-        dx, dy, dz, theta, phi, xi = res.x
-        err = res.fun
-        M = shared.euler2mat(theta, phi, xi).T  # use that system
-        ccoor = np.dot(ccoor - origin + [dx, dy, dz], M)
-        # each
-        for i, c in enumerate(tqdm(ccoor, desc='parsing ccoor')):
-            # dx_self
-            dx_i = (c - np.around(c / a) * a)[0]
-            list_i_jkl = []
-            for j, k, l in itertools.product(range(-2, 3), range(-2, 3), range(-2, 3)):
-                list_c_jkl = [c_jkl for c_jkl in ccoor if all(c + np.array([j-0.5, k-0.5, l-0.5]) * a < c_jkl) and all(c + np.array([j+0.5, k+0.5, l+0.5]) * a > c_jkl)]
-                list_i_jkl.append(1 if list_c_jkl else 0)
-            # add to database, together with symmetrics
-            self._X.append(list_i_jkl + [off_stoi])
-            self._y0.append([dx_i])
-
-
-    def ann(self, X, training):
-        y1 = bel(X, units=20, training=training)
-        y4 = bel(y1, units=4, training=training)
-        y = tf.layers.dense(y4, units=1)
-        return y
-
-
-    def train(self, n_epochs=500, batch_size=72, learning_rate=0.001):
-        # pipeline
-        _X = self.X_pipeline.fit_transform(self._X)
-        _y0 = self.y_pipeline.fit_transform(self._y0)
-        # batch
-        # ann
-        tf.reset_default_graph()
-        _X_batch = tf.placeholder(tf.float32, shape=[None, 126])
-        _y0_batch = tf.placeholder(tf.float32, shape=[None, 1])
-        y = self.ann(_X_batch, training=True)
-        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-        loss = tf.reduce_mean(tf.squared_difference(y, _y0_batch))
-        optimizer = tf.train.GradientDescentOptimizer(learning_rate)
-        training_op = optimizer.minimize(loss)
-        saver = tf.train.Saver()
-        # train
-        print self.__class__.__name__ + '.train: training started.'
-        with tf.Session() as sess:
-            saver.restore(sess, self.path)
-            for i in tqdm(range(n_epochs * _X.shape[0] / batch_size)):
-                batch_idx = np.random.choice(_X.shape[0]-100, size=batch_size)
-                _loss, _, _ = sess.run([loss, training_op, update_ops], feed_dict={_X_batch: _X[batch_idx], _y0_batch: _y0[batch_idx]})
-                # if i % 100 == 0:
-                #     print 'step %s, loss %s' %(i, _loss)
-            saver.save(sess, self.path)
-
-        # evaluate
-        _X = self._X[-100:]
-        _y0 = self._y0[-100:]
-        _y = self.predict(_X)
-        print self.__class__.__name__ + '.train: training finished. evaluation on last item: actual %s, predicted %s' %(_y0, _y)
-        plt.scatter(_y0, _y)
-        plt.show()
-
-
-    def predict(self, _X):
-        # pipeline
-        _X_batch = self.X_pipeline.transform(_X)
-        # ann
-        tf.reset_default_graph()
-        X_batch = tf.placeholder(tf.float32, shape=[None, 126])
-        y = self.ann(X_batch, training=False)
-        saver = tf.train.Saver()
-        # predict
-        with tf.Session() as sess:
-            saver.restore(sess, self.path)
-            _y = sess.run(y, feed_dict={X_batch: _X_batch})
-        _y_inverse = self.y_pipeline.inverse_transform(_y)
-        return _y
+# class MlPbSOpt(object):
+#
+#     def __init__(self):
+#         # data
+#         self._X = []
+#         self._y0 = []
+#         # pipeline
+#         self.X_pipeline = StandardScaler()
+#         self.y_pipeline = StandardScaler()
+#         # ann. what a pity.
+#         self.path = shared.SCRIPT_DIR + str.upper(self.__class__.__name__)
+#         tf.reset_default_graph()
+#         self.ann(tf.placeholder(tf.float32, shape=(None, 126)), training=True)
+#         saver = tf.train.Saver()
+#         with tf.Session() as sess:
+#             sess.run(tf.global_variables_initializer())
+#             saver.save(sess, self.path)
+#
+#     def parse_obj(self, vasp):
+#         a = 6.01417/2
+#         # matrices = []
+#         # for mirror_x in [-1, 1]:
+#         #     for mirror_y in [-1, 1]:
+#         #         for mirror_z in [-1, 1]:
+#         #             for swap_matrix in ([[1,0,0],[0,0,1],[0,1,0]], [[0,1,0],[1,0,0],[0,0,1]], [[0,0,1],[0,1,0],[1,0,0]]):
+#         #                 transf = np.dot(np.diag([mirror_x, mirror_y, mirror_z]), swap_matrix)
+#         #                 self._parse_obj(np.dot(vasp.optimized_cell.ccoor, transf), vasp.optimized_cell.stoichiometry['Pb'] - vasp.optimized_cell.stoichiometry['S'])
+#
+#         # first, we get the fcoor. no rotation need be taken into account.
+#         ccoor = vasp.optimized_cell.ccoor
+#         def e(r0, ccoor=ccoor, a=a):
+#             fcoor = np.subtract(ccoor, r0) / a
+#             return np.linalg.norm(fcoor - np.around(fcoor))
+#         r0 = minimize(fun=e, x0=[0,0,0], bounds=[(-0.5*a,0.5*a) for _ in range(3)]).x
+#         fcoor = np.subtract(ccoor, r0) / a
+#
+#         # second, we parse it.
+#
+#
+#
+#
+#     def _parse_obj(self, ccoor, off_stoi):
+#         a = 6.01417 / 2
+#         # coordination system
+#         origin = ccoor[20]
+#         m0 = np.random.uniform(-0.01, 0.01, 6)
+#         print 'optimizing...'
+#         res = minimize(fun=self.err_after_tf, x0=m0, args=(ccoor, origin, a), method='Powell', tol=10E-5)  # find the absolute-neutral system
+#         print 'optimized, result f(%s) = %s' %(res.x, res.fun)
+#         dx, dy, dz, theta, phi, xi = res.x
+#         err = res.fun
+#         M = shared.euler2mat(theta, phi, xi).T  # use that system
+#         ccoor = np.dot(ccoor - origin + [dx, dy, dz], M)
+#         # each
+#         for i, c in enumerate(tqdm(ccoor, desc='parsing ccoor')):
+#             # dx_self
+#             dx_i = (c - np.around(c / a) * a)[0]
+#             list_i_jkl = []
+#             for j, k, l in itertools.product(range(-2, 3), range(-2, 3), range(-2, 3)):
+#                 list_c_jkl = [c_jkl for c_jkl in ccoor if all(c + np.array([j-0.5, k-0.5, l-0.5]) * a < c_jkl) and all(c + np.array([j+0.5, k+0.5, l+0.5]) * a > c_jkl)]
+#                 list_i_jkl.append(1 if list_c_jkl else 0)
+#             # add to database, together with symmetrics
+#             self._X.append(list_i_jkl + [off_stoi])
+#             self._y0.append([dx_i])
+#
+#
+#     def ann(self, X, training):
+#         y1 = bel(X, units=20, training=training)
+#         y4 = bel(y1, units=4, training=training)
+#         y = tf.layers.dense(y4, units=1)
+#         return y
+#
+#
+#     def train(self, n_epochs=500, batch_size=72, learning_rate=0.001):
+#         # pipeline
+#         _X = self.X_pipeline.fit_transform(self._X)
+#         _y0 = self.y_pipeline.fit_transform(self._y0)
+#         # batch
+#         # ann
+#         tf.reset_default_graph()
+#         _X_batch = tf.placeholder(tf.float32, shape=[None, 126])
+#         _y0_batch = tf.placeholder(tf.float32, shape=[None, 1])
+#         y = self.ann(_X_batch, training=True)
+#         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+#         loss = tf.reduce_mean(tf.squared_difference(y, _y0_batch))
+#         optimizer = tf.train.GradientDescentOptimizer(learning_rate)
+#         training_op = optimizer.minimize(loss)
+#         saver = tf.train.Saver()
+#         # train
+#         print self.__class__.__name__ + '.train: training started.'
+#         with tf.Session() as sess:
+#             saver.restore(sess, self.path)
+#             for i in tqdm(range(n_epochs * _X.shape[0] / batch_size)):
+#                 batch_idx = np.random.choice(_X.shape[0]-100, size=batch_size)
+#                 _loss, _, _ = sess.run([loss, training_op, update_ops], feed_dict={_X_batch: _X[batch_idx], _y0_batch: _y0[batch_idx]})
+#                 # if i % 100 == 0:
+#                 #     print 'step %s, loss %s' %(i, _loss)
+#             saver.save(sess, self.path)
+#
+#         # evaluate
+#         _X = self._X[-100:]
+#         _y0 = self._y0[-100:]
+#         _y = self.predict(_X)
+#         print self.__class__.__name__ + '.train: training finished. evaluation on last item: actual %s, predicted %s' %(_y0, _y)
+#         plt.scatter(_y0, _y)
+#         plt.show()
+#
+#
+#     def predict(self, _X):
+#         # pipeline
+#         _X_batch = self.X_pipeline.transform(_X)
+#         # ann
+#         tf.reset_default_graph()
+#         X_batch = tf.placeholder(tf.float32, shape=[None, 126])
+#         y = self.ann(X_batch, training=False)
+#         saver = tf.train.Saver()
+#         # predict
+#         with tf.Session() as sess:
+#             saver.restore(sess, self.path)
+#             _y = sess.run(y, feed_dict={X_batch: _X_batch})
+#         _y_inverse = self.y_pipeline.inverse_transform(_y)
+#         return _y
