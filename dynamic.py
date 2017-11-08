@@ -220,7 +220,7 @@ class MlVaspSpeed(object):
         # batch: random.choice
         # ann
         criterion = nn.MSELoss()
-        optimizer = optim.SGD(self.net.parameters(), lr=learning_rate)
+        optimizer = optim.Adam(self.net.parameters(), lr=learning_rate)
         # train
         self.net.train()
         for epoch in range(n_epochs):
