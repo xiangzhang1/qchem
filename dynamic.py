@@ -94,15 +94,11 @@ class MlVaspSpeed(object):
             self.bnB2 = nn.BatchNorm1d(3)
             self.lB3 = nn.Linear(3, 1)
 
-            self.lC1 = nn.Linear(8, 1)
+            self.lC1 = nn.Linear(4, 1)
 
         def forward(self, X):
 
-            A = X[:, :5]
-            A = self.lA1(A)
-            A = F.elu(A)
-            A = self.bnA1(A)
-            # A = self.bnA1(F.elu(self.lA1(X[:, :5])))
+            A = self.bnA1(F.elu(self.lA1(X[:, :5])))
             A = self.bnA2(F.elu(self.lA2(A)))
             A = self.lA3(A)
 
