@@ -162,7 +162,7 @@ class MlVaspSpeed(object):
             ('scaler', StandardScaler())
         ])
         # ann. what a pity.
-        self.net = MlVaspSpeed.Net(bn_momentum=0.9, dropout_p=0.1)
+        self.net = MlVaspSpeed.Net(bn_momentum=0.5, dropout_p=0.1)
 
 
     def parse_obj(self, vasp, makeparam):
@@ -208,7 +208,7 @@ class MlVaspSpeed(object):
         self._y0.append([time_elec_step])   # put it here so that no inconsistency will happen
 
     def train(self):
-        n_epochs = 2000
+        n_epochs = 5000
         batch_size = 64
         learning_rate = 0.001
         # pipeline
