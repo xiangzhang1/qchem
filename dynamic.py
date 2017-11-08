@@ -190,12 +190,13 @@ class MlVaspSpeed(object):
         self._y0.append([time_elec_step])   # put it here so that no inconsistency will happen
 
     def train(self):
-        n_epochs = 10000
+        n_epochs = 1000
         batch_size = 69
         learning_rate = 0.01
         # pipeline
         _X = self.X_pipeline.fit_transform(self._X)
         _y0 = self.y_pipeline.fit_transform(self._y0)
+        IPython.embed('Now inspect _X and _y0')
         # batch
         dataset = TensorDataset(torch.FloatTensor(_X), torch.FloatTensor(_y0))
         dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
@@ -212,6 +213,8 @@ class MlVaspSpeed(object):
                 loss = criterion(y, y0_batch)
                 loss.backward()
                 optimizer.step()
+                if epoch % 100:
+                    print 'epoch %s, loss %s'%(epoch, loss.data.numpy()[0])
 
         # evaluate
         _X = self._X[-10:]
