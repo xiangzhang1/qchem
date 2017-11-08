@@ -48,13 +48,14 @@ for n in engine.Map().lookup('master').map.traverse():
         except (shared.CustomError, shared.DeferError) as e:
             print 'warning: node %s\'s parsing failed. probably old version.' %n.name
 
-bn_momentum = 0.7
-dropout_p = 0.2
-learning_rate = 10E-5
-batch_size = 46
-n_epochs = 5000
+
 def f(x, m=m):
     bn_momentum, dropout_p, learning_rate, batch_size, n_epochs = x[0] / 10.0, x[1] / 15.0, 10**(-1*x[2]), 10 * x[3], 1000 * x[4]
     m.net = dynamic.MlVaspSpeed.Net(bn_momentum=bn_momentum, dropout_p=dropout_p)
-    m.train(learning_rate=learning_rate, batch_size=batch_size, n_epochs=n_epochs)
-print f([7, 4, 5, 4.6, 5])
+    return m.train(learning_rate=learning_rate, batch_size=batch_size, n_epochs=n_epochs)
+print f([7, 4, 5, 4.6, 3])
+# bn_momentum = 0.7
+# dropout_p = 0.2
+# learning_rate = 10E-5
+# batch_size = 46
+# n_epochs = 5000
