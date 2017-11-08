@@ -239,8 +239,11 @@ class MlVaspSpeed(object):
         for a, b in zip(_y0, _y):
             print a, b
         # create a metric
-        a, b = np.amax(_y0 / _y), np.amin(_y0 / _y)
-        return max(a, 1) * max(b, 1)
+        a = np.zeros((_y0.shape[0], 2))
+        a[:, 0] = _y0 / _y
+        a[:, 1] = _y / _y0
+        b = np.amax(a, axis=0)
+        return np.sum(b)
 
 
     def predict(self, _X):

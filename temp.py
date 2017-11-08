@@ -52,9 +52,9 @@ bn_momentum = 0.7
 dropout_p = 0.2
 learning_rate = 10E-5
 batch_size = 46
-nepochs = 5000
-def f(x):
-    bn_momentum, dropout_p, learning_rate, batch_size, nepochs = x
+n_epochs = 5000
+def f(x, m=m):
+    bn_momentum, dropout_p, learning_rate, batch_size, n_epochs = x
     m.net = dynamic.MlVaspSpeed.Net(bn_momentum=bn_momentum, dropout_p=dropout_p)
-    m.train(learning_rate=learning_rate, batch_size=batch_size, nepochs=nepochs)
+    m.train(learning_rate=learning_rate, batch_size=batch_size, n_epochs=n_epochs)
 f([0.7, 0.2, 10E-5, 46, 5000])
