@@ -224,7 +224,7 @@ class MlVaspSpeed(object):
         # train
         self.net.train()
         for epoch in range(n_epochs):
-            batch_idx = np.random.choice(_X.shape[0], size=batch_size)
+            batch_idx = np.random.choice(range(_X.shape[0]), size=batch_size)
             X_batch= Variable(torch.FloatTensor(_X[batch_idx]), requires_grad=True)
             y0_batch = Variable(torch.FloatTensor(_y0[batch_idx]), requires_grad=False)
             y = self.net(X_batch)
