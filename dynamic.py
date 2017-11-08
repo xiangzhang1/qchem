@@ -104,9 +104,9 @@ class MlVaspSpeed(object):
             self.lC2 = nn.Linear(2, 1)
 
             self.l1 = nn.Linear(3, 3)
-            self.bn1 = nn.BatchNorm1d(3, momentum=bn_momentum)
+            self.bn1 = nn.BatchNorm1d(2, momentum=bn_momentum)
             self.dropout1 = nn.Dropout(p=dropout_p)
-            self.l2 = nn.Linear(3, 1)
+            self.l2 = nn.Linear(2, 1)
 
         def forward(self, X):
 
@@ -119,7 +119,7 @@ class MlVaspSpeed(object):
             B = self.lB3(B)
 
             C = self.bnC1(self.dropoutC1(F.elu(self.lC1(X[:, 8:12]))))
-            C = self.lB2(C)
+            C = self.lC2(C)
 
             y = torch.stack((A, B, C))
             y = self.bn1(self.dropout(F.elu(self.l1(y))))
