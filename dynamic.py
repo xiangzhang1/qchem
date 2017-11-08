@@ -190,7 +190,7 @@ class MlVaspSpeed(object):
         self._y0.append([time_elec_step])   # put it here so that no inconsistency will happen
 
     def train(self):
-        n_epochs = 10000
+        n_epochs = 5000
         batch_size = 69
         learning_rate = 0.01
         # pipeline
@@ -204,7 +204,7 @@ class MlVaspSpeed(object):
         optimizer = optim.SGD(self.net.parameters(), lr=0.01)
         # train
         self.net.train()
-        for epoch in range(n_epochs):
+        for epoch in tqdm(range(n_epochs)):
             for _X_batch, _y0_batch in dataloader:
                 X_batch = Variable(_X_batch, requires_grad=True)
                 y0_batch = Variable(_y0_batch, requires_grad=False)
