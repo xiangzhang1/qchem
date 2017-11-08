@@ -99,7 +99,7 @@ class MlVaspSpeed(object):
             self.lB3 = nn.Linear(3, 1)
 
             self.lC1 = nn.Linear(8, 2)
-            self.bnC1 = nn.CatchNorm1d(2, momentum=bn_momentum)
+            self.bnC1 = nn.BatchNorm1d(2, momentum=bn_momentum)
             self.dropoutC1 = nn.Dropout(p=dropout_p)
             self.lC2 = nn.Linear(2, 1)
 
