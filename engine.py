@@ -52,10 +52,6 @@ import copy
 import requests
 import dateparser
 
-import tensorflow as tf
-from keras.models import Sequential
-from keras.layers import Dense, Activation, Dropout
-
 from functools import partial
 
 import shared
