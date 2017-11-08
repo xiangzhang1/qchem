@@ -212,7 +212,7 @@ class MlVaspSpeed(object):
             for _X_batch, _y0_batch in dataloader:
                 X_batch = Variable(_X_batch, requires_grad=True)
                 y0_batch = Variable(_y0_batch, requires_grad=True)
-                y = self.net(_X_batch)
+                y = self.net(X_batch)
                 loss = criterion(y, y0_batch)
                 loss.backward()
                 optimizer.step()
