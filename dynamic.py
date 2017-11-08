@@ -208,16 +208,16 @@ class MlVaspSpeed(object):
         self._y0.append([time_elec_step])   # put it here so that no inconsistency will happen
 
     def train(self):
-        n_epochs = 5000
+        n_epochs = 2000
         batch_size = 64
-        learning_rate = 0.01
+        learning_rate = 0.001
         # pipeline
         _X = self.X_pipeline.fit_transform(self._X)
         _y0 = self.y_pipeline.fit_transform(self._y0)
         # batch: random.choice
         # ann
         criterion = nn.MSELoss()
-        optimizer = optim.SGD(self.net.parameters(), lr=learning_rate)
+        optimizer = optim.Adam(self.net.parameters(), lr=learning_rate)
         # train
         self.net.train()
         for epoch in range(n_epochs):
@@ -228,7 +228,7 @@ class MlVaspSpeed(object):
             loss = criterion(y, y0_batch)
             loss.backward()
             optimizer.step()
-            if epoch % 10 == 0:
+            if epoch % 100 == 0:
                 print 'epoch %s, loss %s'%(epoch, loss.data.numpy()[0])
 
         # evaluate
