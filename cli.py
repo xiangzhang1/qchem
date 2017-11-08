@@ -20,8 +20,13 @@ import numpy as np
 from cStringIO import StringIO
 from fuzzywuzzy import process
 
-import tensorflow as tf
-
+# pytorch
+import torch
+from torch.autograd import Variable
+import torch.nn as nn
+import torch.nn.functional as F
+from torch.utils.data import TensorDataset, DataLoader
+import torch.optim as optim
 
 # qchem package
 import qchem
