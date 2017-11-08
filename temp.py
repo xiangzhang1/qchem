@@ -33,7 +33,7 @@ m.train()
 
 dynamic.global_load()
 m = dynamic.MlVaspSpeed()
-for n in tqdm(engine.Map().lookup('master').map.traverse()):
+for n in engine.Map().lookup('master').map.traverse():
     try:
         n.cell = engine.Cell(str(n.cell))
         n.gen.cell = n.cell
