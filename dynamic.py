@@ -81,7 +81,7 @@ class MlVaspSpeed(object):
     class Net(nn.Module):
 
         def __init__(self):
-            super(Net, self).__init__()
+            super(MlVaspSpeed.Net, self).__init__()
             self.lA1 = nn.Linear(5, 3)
             self.lA2 = nn.Linear(3, 3)
             self.lA3 = nn.Linear(3, 1)
@@ -225,23 +225,23 @@ class MlVaspSpeed(object):
 
 
 # inital training script for MlVaspSpeed
-# dynamic.global_load()
-# m = dynamic.MlVaspSpeed()
-# for n in engine.Map().lookup('master').map.traverse():
-#     try:
-#         n.cell = engine.Cell(str(n.cell))
-#         n.gen.cell = n.cell
-#         n.vasp.cell = n.cell
-#         n.vasp.gen = n.gen
-#         n.vasp.optimized_cell = engine.Cell(str(n.vasp.optimized_cell))
-#     except AttributeError:
-#         pass
-#     if getattr(n, 'gen', None) and n.gen.parse_if('engine=vasp') and n.moonphase()==2:
-#         try:
-#             m.parse_obj(n.vasp, engine.Makeparam(n.vasp.gen))
-#         except (shared.CustomError, shared.DeferError) as e:
-#             print 'warning: node %s\'s parsing failed. probably old version.' %n.name
-# m.train()
+dynamic.global_load()
+m = dynamic.MlVaspSpeed()
+for n in engine.Map().lookup('master').map.traverse():
+    try:
+        n.cell = engine.Cell(str(n.cell))
+        n.gen.cell = n.cell
+        n.vasp.cell = n.cell
+        n.vasp.gen = n.gen
+        n.vasp.optimized_cell = engine.Cell(str(n.vasp.optimized_cell))
+    except AttributeError:
+        pass
+    if getattr(n, 'gen', None) and n.gen.parse_if('engine=vasp') and n.moonphase()==2:
+        try:
+            m.parse_obj(n.vasp, engine.Makeparam(n.vasp.gen))
+        except (shared.CustomError, shared.DeferError) as e:
+            print 'warning: node %s\'s parsing failed. probably old version.' %n.name
+m.train()
 
 
 
