@@ -255,8 +255,6 @@ class MlVaspSpeed(object):
 
 class MlPbSOpt(object):
 
-    class Net(nn.Module):
-
     def __init__(self):
         # data
         self._X = []
