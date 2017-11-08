@@ -103,6 +103,8 @@ class MlVaspSpeed(object):
             self.dropoutC1 = nn.Dropout(p=dropout_p)
             self.lC2 = nn.Linear(2, 1)
 
+            self.bn0 = nn.BatchNorm1d(3, momentum=bn_momentum)
+            self.dropout0 = nn.Dropout(p=dropout_p)
             self.l1 = nn.Linear(3, 2)
             self.bn1 = nn.BatchNorm1d(2, momentum=bn_momentum)
             self.dropout1 = nn.Dropout(p=dropout_p)
@@ -122,6 +124,7 @@ class MlVaspSpeed(object):
             C = self.lC2(C)
 
             y = torch.cat((A, B, C), dim=1)
+            y = self.bn0(self.dropout0(F.elu(y)))
             y = self.bn1(self.dropout1(F.elu(self.l1(y))))
             y = self.l2(y)
 
