@@ -414,7 +414,7 @@ class MlPbSOpt(object):
                 # 拔剑四顾！
                 feature_npart = dense_matrix[ix-2:ix+3, iy-2:iy+3, iz-2:iz+3, 0].flatten()    # 您点的5*5*5矩阵到货啦！      # C式拍平，质量保证！
                 # 还有点小尾巴，主要是几何
-                displace_to_center = fc - center_coordinate
+                displace_to_center = np.float32([ix,iy,iz]) + dense_matrix[ix,iy,iz,1:] - center_coordinate
                 dist_to_nearest_surface = np.amin([np.abs([ix2-ix,iy2-iy,iz2-iz]) for ix2,iy2,iz2 in np.ndindex((Nx,Ny,Nz)) if dense_matrix[ix,iy,iz,0]!=0], axis=0)
                 dist_to_vertices = np.sum((vertice_coordinates - fc)**2,axis=1)**(0.5) ; np.sort(dist_to_vertices)
                 IPython.embed()
