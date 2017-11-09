@@ -407,6 +407,7 @@ class MlPbSOpt(object):
         dense_matrices  = [dense_matrix[::reverse_x, ::reverse_y, ::reverse_z, :].transpose(order) for reverse_x in [-1,1] for reverse_y in [-1,1] for reverse_z in [-1,1] for order in [(0,1,2,3),(0,2,1,3),(1,0,2,3),(1,2,0,3),(2,1,0,3),(2,0,1,3)]]
         for dense_matrix in dense_matrices:
             center_coordinate = np.mean([[ix,iy,iz] for ix,iy,iz in np.ndindex((Nx,Ny,Nz)) if dense_matrix[ix,iy,iz,0]!=0], axis=0)     # ignore me as well
+            blank_coor = np.float32([ix,iy,iz in np.ndindex((Nx,Ny,Nz)) if dense_matrix[ix,iy,iz,0]==0])
 
             # third, we parse features and labels from the dense matrix.
             for ix, iy, iz in np.ndindex((Nx,Ny,Nz)):
@@ -415,15 +416,14 @@ class MlPbSOpt(object):
                 feature_npart = dense_matrix[ix-2:ix+3, iy-2:iy+3, iz-2:iz+3, 0].flatten()    # 您点的5*5*5矩阵到货啦！      # C式拍平，质量保证！
                 # 还有点小尾巴，主要是几何
                 displace_to_center = np.float32([ix,iy,iz]) + dense_matrix[ix,iy,iz,1:] - center_coordinate
-                dist_to_nearest_surface = np.amin([np.abs([ix2-ix,iy2-iy,iz2-iz]) for ix2,iy2,iz2 in np.ndindex((Nx,Ny,Nz)) if dense_matrix[ix,iy,iz,0]!=0], axis=0)
-                dist_to_vertices = np.sum((vertice_coordinates - [ix,iy,iz])**2,axis=1)**(0.5) ; np.sort(dist_to_vertices)
+                dist_to_nearest_surface = np.amin(blank_coor-[ix,iy,iz], axis=0)
+                dist_to_vertices = np.sum((vertice_coordinates - [ix,iy,iz])**2,axis=1)**(0.5)
                 dist_to_vertices_hist, _ = np.histogram(dist_to_vertices, bins=20, range=(0, 10), density=True)
                 # fourth, formally establish features and labels
                 _X = np.concatenate((feature_npart, feature_stoichiometry, displace_to_center, dist_to_nearest_surface, dense_matrix[ix,iy,iz,0:1], dist_to_vertices_hist))    # 125 + (2 + 3 + 3 + 1) + (20)
                 _y0 = dense_matrix[ix,iy,iz,1:2]
                 self._X.append(_X)
                 self._y0.append(_y0)
-
 
 
     def train(self, n_epochs=10240, batch_size=128, learning_rate=0.01, optimizer_name='SGD', test_set_size=128):
