@@ -233,8 +233,8 @@ class MlVaspSpeed(object):
             #     print 'epoch %s, loss %s'%(epoch, loss.data.numpy()[0])
 
         # evaluate
-        _X = self._X[-10:]
-        _y0 = np.float32(self._y0[-10:]).flatten()
+        _X = self._X
+        _y0 = np.float32(self._y0).flatten()
         _y = np.float32(self.predict(_X)).flatten()
         print self.__class__.__name__ + '.train: training finished. evaluation on last item: \n actual | predicted'
         for a, b in zip(_y0, _y):
@@ -244,7 +244,7 @@ class MlVaspSpeed(object):
         a[:, 0] = _y0 / _y
         a[:, 1] = _y / _y0
         b = np.amax(a, axis=0)
-        return np.sum(b ** 2.5)
+        return np.sum(b ** 2.5) / 100
 
 
     def predict(self, _X):

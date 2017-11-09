@@ -67,5 +67,5 @@ def f(x, m=m, optimizer_name='SGD'):
 # f([9, 1, 2, 3.2, 4])
 
 from scipy.optimize import minimize
-print minimize(f, x0=[9, 1, 2, 3.2, 4], method='Powell') ; sys.stdout.flush()
+print minimize(f, x0=np.float32([9, 1, 2, 3.2, 4]), method='Powell') ; sys.stdout.flush()
 print 'finished! :)'
