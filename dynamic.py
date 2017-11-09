@@ -199,10 +199,14 @@ class MlVaspSpeed(object):
         ])
         self._y0.append([time_elec_step])   # put it here so that no inconsistency will happen
 
-    def train(self, n_epochs=4000, batch_size=32, learning_rate=0.02, optimizer_name='SGD'):
+    def train(self, n_epochs=4000, batch_size=32, learning_rate=0.02, optimizer_name='SGD', test_set_size=5):
+        test_idx = np.random.choice(range(_X.shape[0]), size=test_set_size)
+        train_idx = np.array([i for i in range(_X.shape[0]) if i not in train_idx])
+
+        # train
         # pipeline
-        _X = self.X_pipeline.fit_transform(self._X)[:-5]
-        _y0 = self.y_pipeline.fit_transform(self._y0)[:-5]
+        _X = self.X_pipeline.fit_transform(self._X)[train_idx]
+        _y0 = self.y_pipeline.fit_transform(self._y0)[train_idx]
         # batch: random.choice
         # ann
         criterion = nn.MSELoss()
@@ -221,15 +225,13 @@ class MlVaspSpeed(object):
             if epoch % 100 == 0:
                 print 'epoch %s, loss %s'%(epoch, loss.data.numpy()[0])
 
-        # evaluate
-        _X = self._X[-10:]
-        _y0 = np.float32(self._y0).flatten()[-10:]
-        _y = np.float32(self.predict(_X)).flatten()[-10:]
+        # test
+        _X = self._X[test_idx]
+        _y0 = np.float32(self._y0).flatten()[test_idx]
+        _y = np.float32(self.predict(_X)).flatten()[test_idx]
         print self.__class__.__name__ + '.train: training finished. evaluation on last items: \n actual | predicted'
         for a, b in zip(_y0, _y):
             print a, b
-
-        # return a custom metric on how good the training result is.
         a = np.zeros((_y0.shape[0], 2))
         a[:, 0] = _y0 / _y
         a[:, 1] = _y / _y0
