@@ -24,9 +24,7 @@ m = dynamic.MlPbSOpt()
 for cur in curs:
     n = engine.Map().lookup(cur)
     print 'parsing cur %s' %cur
-    m.parse_obj(n.vasp)
+    m.parse_train(n.vasp)
     print 'parsing complete.'
-dynamic.save(m, m.__class__.__name__)
-m.train()
 
 # ------------------------------------------------------------------------------
