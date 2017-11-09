@@ -407,7 +407,7 @@ class MlPbSOpt(object):
         dense_matrices  = [dense_matrix[::reverse_x, ::reverse_y, ::reverse_z, :].transpose(order) for reverse_x in [-1,1] for reverse_y in [-1,1] for reverse_z in [-1,1] for order in [(0,1,2,3),(0,2,1,3),(1,0,2,3),(1,2,0,3),(2,1,0,3),(2,0,1,3)]]
         for dense_matrix in dense_matrices:
             center_coordinate = np.mean([[ix,iy,iz] for ix,iy,iz in np.ndindex((Nx,Ny,Nz)) if dense_matrix[ix,iy,iz,0]!=0], axis=0)     # ignore me as well
-            blank_coor = np.float32([ix,iy,iz in np.ndindex((Nx,Ny,Nz)) if dense_matrix[ix,iy,iz,0]==0])
+            blank_coor = np.float32([[ix,iy,iz] for ix,iy,iz in np.ndindex((Nx,Ny,Nz)) if dense_matrix[ix,iy,iz,0]==0])
 
             # third, we parse features and labels from the dense matrix.
             for ix, iy, iz in np.ndindex((Nx,Ny,Nz)):
