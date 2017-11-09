@@ -394,7 +394,7 @@ class MlPbSOpt(object):
             vertice_coordinates = np.float32([fcoor[iv] for iv in hull.vertices])
             center_coordinate = np.mean(fcoor, axis=0)
             # -------------------------------
-            for idx_atom, fc in fcoor:
+            for idx_atom, fc in enumerate(fcoor):
                 # dense matrix 空降！
                 ix, iy, iz = np.int32(np.around(fc))
                 # 拔剑四顾！
