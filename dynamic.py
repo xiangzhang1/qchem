@@ -166,7 +166,7 @@ class MlVaspSpeed(object):
         self.net = MlVaspSpeedNet()
 
 
-    def parse_train(self, vasp, gen, cell, makeparam):
+    def parse_train(self, node, vasp, gen, cell, makeparam):
         # OUTPUT
         # ------
         # preliminary checks
