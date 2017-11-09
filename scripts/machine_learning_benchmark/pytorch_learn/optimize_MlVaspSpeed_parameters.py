@@ -70,4 +70,5 @@ def f(x, m=m, optimizer_name='SGD'):
 
 from scipy.optimize import minimize
 print minimize(f, x0=np.float32([9, 1, 2, 3.2, 4]), method='Powell') ; sys.stdout.flush()
+# 9.056  0.017  1.726  3.2    4. -> better retain some dropout   |    0.9, 0.06, 0.02, 32, 4000
 print 'finished! :)'

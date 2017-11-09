@@ -259,7 +259,7 @@ class MlVaspSpeed(object):
 
 
 # inital training script for MlVaspSpeed
-
+0.9, 0.06, 0.02, 32, 4000
 
 
 
