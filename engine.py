@@ -292,8 +292,8 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             memory_available_gb = int(self.getkw('nnode')) * int(self.getkw('mem_node'))
             print self.__class__.__name__ + ' memory usage %s: %s GB used out of %s GB' %('prediction' if memory_available_gb>memory_predicted_gb else 'WARNING', memory_predicted_gb, memory_available_gb)
             m = dynamic.MLS['MLVASPSPEED']
-            t_elecstep = m.predict(m.parse_predict(self, cell, Makeparam(self))).asscalar()
-            print self.__class__.__name__ + ' time per elecstep ~ %s s. *10 for ionic step. *100 for geomopt.' %t_elecstep
+            t_elecstep = np.asscalar(m.predict(m.parse_predict(self, cell, Makeparam(self))))
+            print self.__class__.__name__ + ' time per elecstep ~ %s s. highly inaccurate. *10 for ionic step. *100 for geomopt.' %t_elecstep
 
 
     # 3. nbands, ncore_total, encut
@@ -846,6 +846,8 @@ class Vasp(object):
                 with open('CONTCAR','r') as f_:
                     text = f_.read()
                     setattr(self, 'optimized_cell', Cell(text))
+            # training
+            dynamic.MLS['MLVASPSPEED'].parse_train(self, node.gen, node.cell, Makeparam(node.gen))
 
         else:
             print self.__class__.__name__ + ' compute: calculation already completed at %s. Why are you here?' %path

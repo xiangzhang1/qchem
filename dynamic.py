@@ -7,7 +7,10 @@ import IPython
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import itertools
+
+# scipy
 from scipy.optimize import minimize
+from scipy.spatial import ConvexHull
 
 # scikit-learn
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -255,7 +258,7 @@ class MlVaspSpeed(object):
 
     def predict(self, _X):
         # pipeline
-        _X = self.X_pipeline.fit_transform(_X)
+        _X = self.X_pipeline.transform(_X)
         # ann
         self.net.eval()
         y = self.net(Variable(torch.FloatTensor(_X), requires_grad=True))
@@ -269,128 +272,191 @@ class MlVaspSpeed(object):
 
 
 
+
+
 # MlPbSOpt
 # ==============================================================================
 
-# class MlPbSOpt(object):
-#
-#     def __init__(self):
-#         # data
-#         self._X = []
-#         self._y0 = []
-#         # pipeline
-#         self.X_pipeline = StandardScaler()
-#         self.y_pipeline = StandardScaler()
-#         # ann. what a pity.
-#         self.path = shared.SCRIPT_DIR + str.upper(self.__class__.__name__)
-#         tf.reset_default_graph()
-#         self.ann(tf.placeholder(tf.float32, shape=(None, 126)), training=True)
-#         saver = tf.train.Saver()
-#         with tf.Session() as sess:
-#             sess.run(tf.global_variables_initializer())
-#             saver.save(sess, self.path)
-#
-#     def parse_obj(self, vasp):
-#         a = 6.01417/2
-#         # matrices = []
-#         # for mirror_x in [-1, 1]:
-#         #     for mirror_y in [-1, 1]:
-#         #         for mirror_z in [-1, 1]:
-#         #             for swap_matrix in ([[1,0,0],[0,0,1],[0,1,0]], [[0,1,0],[1,0,0],[0,0,1]], [[0,0,1],[0,1,0],[1,0,0]]):
-#         #                 transf = np.dot(np.diag([mirror_x, mirror_y, mirror_z]), swap_matrix)
-#         #                 self._parse_obj(np.dot(vasp.optimized_cell.ccoor, transf), vasp.optimized_cell.stoichiometry['Pb'] - vasp.optimized_cell.stoichiometry['S'])
-#
-#         # first, we get the fcoor. no rotation need be taken into account.
-#         ccoor = vasp.optimized_cell.ccoor
-#         def e(r0, ccoor=ccoor, a=a):
-#             fcoor = np.subtract(ccoor, r0) / a
-#             return np.linalg.norm(fcoor - np.around(fcoor))
-#         r0 = minimize(fun=e, x0=[0,0,0], bounds=[(-0.5*a,0.5*a) for _ in range(3)]).x
-#         fcoor = np.subtract(ccoor, r0) / a
-#
-#         # second, we parse it.
-#
-#
-#
-#
-#     def _parse_obj(self, ccoor, off_stoi):
-#         a = 6.01417 / 2
-#         # coordination system
-#         origin = ccoor[20]
-#         m0 = np.random.uniform(-0.01, 0.01, 6)
-#         print 'optimizing...'
-#         res = minimize(fun=self.err_after_tf, x0=m0, args=(ccoor, origin, a), method='Powell', tol=10E-5)  # find the absolute-neutral system
-#         print 'optimized, result f(%s) = %s' %(res.x, res.fun)
-#         dx, dy, dz, theta, phi, xi = res.x
-#         err = res.fun
-#         M = shared.euler2mat(theta, phi, xi).T  # use that system
-#         ccoor = np.dot(ccoor - origin + [dx, dy, dz], M)
-#         # each
-#         for i, c in enumerate(tqdm(ccoor, desc='parsing ccoor')):
-#             # dx_self
-#             dx_i = (c - np.around(c / a) * a)[0]
-#             list_i_jkl = []
-#             for j, k, l in itertools.product(range(-2, 3), range(-2, 3), range(-2, 3)):
-#                 list_c_jkl = [c_jkl for c_jkl in ccoor if all(c + np.array([j-0.5, k-0.5, l-0.5]) * a < c_jkl) and all(c + np.array([j+0.5, k+0.5, l+0.5]) * a > c_jkl)]
-#                 list_i_jkl.append(1 if list_c_jkl else 0)
-#             # add to database, together with symmetrics
-#             self._X.append(list_i_jkl + [off_stoi])
-#             self._y0.append([dx_i])
-#
-#
-#     def ann(self, X, training):
-#         y1 = bel(X, units=20, training=training)
-#         y4 = bel(y1, units=4, training=training)
-#         y = tf.layers.dense(y4, units=1)
-#         return y
-#
-#
-#     def train(self, n_epochs=500, batch_size=72, learning_rate=0.001):
-#         # pipeline
-#         _X = self.X_pipeline.fit_transform(self._X)
-#         _y0 = self.y_pipeline.fit_transform(self._y0)
-#         # batch
-#         # ann
-#         tf.reset_default_graph()
-#         _X_batch = tf.placeholder(tf.float32, shape=[None, 126])
-#         _y0_batch = tf.placeholder(tf.float32, shape=[None, 1])
-#         y = self.ann(_X_batch, training=True)
-#         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-#         loss = tf.reduce_mean(tf.squared_difference(y, _y0_batch))
-#         optimizer = tf.train.GradientDescentOptimizer(learning_rate)
-#         training_op = optimizer.minimize(loss)
-#         saver = tf.train.Saver()
-#         # train
-#         print self.__class__.__name__ + '.train: training started.'
-#         with tf.Session() as sess:
-#             saver.restore(sess, self.path)
-#             for i in tqdm(range(n_epochs * _X.shape[0] / batch_size)):
-#                 batch_idx = np.random.choice(_X.shape[0]-100, size=batch_size)
-#                 _loss, _, _ = sess.run([loss, training_op, update_ops], feed_dict={_X_batch: _X[batch_idx], _y0_batch: _y0[batch_idx]})
-#                 # if i % 100 == 0:
-#                 #     print 'step %s, loss %s' %(i, _loss)
-#             saver.save(sess, self.path)
-#
-#         # evaluate
-#         _X = self._X[-100:]
-#         _y0 = self._y0[-100:]
-#         _y = self.predict(_X)
-#         print self.__class__.__name__ + '.train: training finished. evaluation on last item: actual %s, predicted %s' %(_y0, _y)
-#         plt.scatter(_y0, _y)
-#         plt.show()
-#
-#
-#     def predict(self, _X):
-#         # pipeline
-#         _X_batch = self.X_pipeline.transform(_X)
-#         # ann
-#         tf.reset_default_graph()
-#         X_batch = tf.placeholder(tf.float32, shape=[None, 126])
-#         y = self.ann(X_batch, training=False)
-#         saver = tf.train.Saver()
-#         # predict
-#         with tf.Session() as sess:
-#             saver.restore(sess, self.path)
-#             _y = sess.run(y, feed_dict={X_batch: _X_batch})
-#         _y_inverse = self.y_pipeline.inverse_transform(_y)
-#         return _y
+
+class MlPbSOptNet(nn.Module):
+
+    def __init__(self, bn_momentum=0.74, dropout_p=0.07):   # 2500 variables in total. Expect high dropout.
+        super(MlVaspSpeedNet, self).__init__()
+        self.lA1 = nn.Linear(125, 15)
+        self.bnA1 = nn.BatchNorm1d(15, momentum=bn_momentum)
+        self.dropoutA1 = nn.Dropout(p=dropout_p)
+        self.lA2 = nn.Linear(15, 10)
+        self.bnA2 = nn.BatchNorm1d(10, momentum=bn_momentum)
+        self.dropoutA2 = nn.Dropout(p=dropout_p)
+
+        self.lB1 = nn.Linear(6, 8)
+        self.bnB1 = nn.BatchNorm1d(8, momentum=bn_momentum)
+        self.dropoutB1 = nn.Dropout(p=dropout_p)
+        self.lB2 = nn.Linear(8, 5)
+        self.bnB2 = nn.BatchNorm1d(5, momentum=bn_momentum)
+        self.dropoutB2 = nn.Dropout(p=dropout_p)
+
+        self.lC1 = nn.Linear(20, 10)
+        self.bnC1 = nn.BatchNorm1d(10, momentum=bn_momentum)
+        self.dropoutC1 = nn.Dropout(p=dropout_p)
+        self.lC2 = nn.Linear(10, 5)
+        self.bnC2 = nn.BatchNorm1d(5, momentum=bn_momentum)
+        self.dropoutC2 = nn.Dropout(p=dropout_p)
+
+        self.l1 = nn.Linear(20, 5)
+        self.bn1 = nn.BatchNorm1d(5, momentum=bn_momentum)
+        self.dropout1 = nn.Dropout(p=dropout_p)
+        self.l2 = nn.Linear(5, 5)
+        self.bn2 = nn.BatchNorm1d(5, momentum=bn_momentum)
+        self.dropout1 = nn.Dropout(p=dropout_p)
+        self.l3 = nn.Linear(5, 1)
+
+    def forward(self, X):   # 啊！真舒畅！
+
+        A = self.bnA1(self.dropoutA1(F.elu(self.lA1(X[:, :125]))))
+        A = self.bnA2(self.dropoutA2(F.elu(self.lA2(A))))
+
+        B = self.bnB1(self.dropoutB1(F.elu(self.lB1(X[:, 125:125+6]))))
+        B = self.bnB2(self.dropoutB2(F.elu(self.lB2(B))))
+
+        C = self.bnC1(self.dropoutC1(F.elu(self.lC1(X[:, 125+6:125+6+20]))))
+        C = self.bnC2(self.dropoutC2(F.elu(self.lC2(C))))
+
+        y = torch.cat((A, B, C), dim=1)
+        y = self.bn1(self.dropout1(F.elu(self.l1(y))))
+        y = self.bn2(self.dropout2(F.elu(self.l2(y))))
+        y = self.l3(y)
+
+        return y
+
+
+class MlPbSOpt(object):
+
+    def __init__(self):
+        # data
+        self._X = []
+        self._y0 = []
+        # pipeline
+        self.X_pipeline = StandardScaler()
+        self.y_pipeline = StandardScaler()
+        # ann. what a pity.
+        self.net = MlPbSOptNet()
+
+
+    def parse_train(self, vasp):
+        a = 6.01417/2
+        cell = vasp.optimized_cell
+
+        # first, we get the fcoor and use that. no rotation need be taken into account.
+        ccoor = cell.ccoor
+        def error_after_transformation(transformation, ccoor=ccoor, a=a):       # note: parallelization doesn't save time.
+            x0, y0, z0, sz, sx, sy = transformation
+            rotation_matrix = shared.euler2mat(sz, sx, sy)
+            ccoor_transformed = np.dot(np.subtract(ccoor, [x0, y0, z0]), rotation_matrix.T)
+            fcoor = ccoor_transformed / a
+            return np.linalg.norm(fcoor - np.around(fcoor))
+        t = minimize(fun=error_after_transformation,
+                     x0=[0, 0, 0, 0, 0, 0],
+                     bounds=[(-.8,.8), (-.8,.8), (-.8,.8), (-.2,.2), (-.2,.2), (-.2,.2)]
+                    ).x
+        x0, y0, z0, sz, sx, sy = transformation
+        rotation_matrix = shared.euler2mat(sz, sx, sy)
+        ccoor_transformed = np.dot(np.subtract(ccoor, [x0, y0, z0]), rotation_matrix.T)
+        fcoor = ccoor_transformed / a
+
+        # second, we convert the sparse matrix to a dense matrix
+        Nx = math.ceil(np.linalg.norm(cell.base[0]) / a)      # assume 长方体
+        Ny = math.ceil(np.linalg.norm(cell.base[1]) / a)
+        Nz = math.ceil(np.linalg.norm(cell.base[2]) / a)
+        dense_matrix = np.zeros((Nx, Ny, Nz, 4))
+        for idx_atom, fc in fcoor:
+            # dense matrix 指标
+            ix, iy, iz = np.around(fc)
+            # 符号位
+            idx_ele = 0 if idx_atom < cell.stoichiometry.values()[0] else 1     # OrderedDict, 品质保证!     # assume Pb S only
+            symbol = cell.stoichiometry.keys()[idx_ele]
+            feature_n = 2 if symbol=='Pb' else -2
+            dense_matrix[ix, iy, iz, 0] = feature_n
+            # 数值位: dx, dy, dz
+            dense_matrix[ix, iy, iz, 1:] = fc - np.around(fc)
+
+        # fifth, one vasp produces many input. we should utilize all of them. we do this by generating every possible permutation of dense_matrix
+        dense_matrices  = [dense_matrix[::reverse_x, ::reverse_y, ::reverse_z].transpose(order) for reverse_x in [-1,1] for reverse_y in [-1,1] for reverse_z in [-1,1] for order in [(0,1,2),(0,2,1),(1,0,2),(1,2,0),(2,1,0),(2,0,1)]]
+        for dense_matrix in dense_matrices:
+
+            # third, we parse features and labels from the dense matrix.
+            # --pre-parsing the convex-hull--
+            hull = ConvexHull(np.around(fcoor))
+            nvertices = len(hull.vertices) ; if len(hull.vertices) > 20: raise shared.CustomError(self.__class__.__name__ + '.parse_train: # vertices > 20. Assumption broken. Rethink.')
+            vertice_coordinates = np.float32([fcoor[iv] for iv in hull.vertices])
+            center_coordinate = np.mean(fcoor, axis=0)
+            # -------------------------------
+            for idx_atom, fc in fcoor:
+                # dense matrix 空降！
+                ix, iy, iz = np.around(fc)
+                # 拔剑四顾！
+                feature_npart = dense_matrix[ix-2:ix+3, iy-2:iy+3, iz-2:iz+3, 0].flatten()    # 您点的5*5*5矩阵到货啦！      # C式拍平，质量保证！
+                # 还有点小尾巴: stoichiometry 以及 convexhull
+                feature_stoichiometry = np.float32([cell.stoichiometry['Pb'], cell.stoichiometry['S']])
+                displace_to_center = fc - center_coordinate
+                dist_to_vertices = np.sum((vertice_coordinates - fc)**2,axis=1)**(1./2)
+                np.sort(dist_to_vertices) ; dist_to_vertices = np.pad(dist_to_vertices, (0, 20-nvertices))
+
+                # fourth, formally establish features and labels
+                _X = np.concatenate((feature_npart, feature_stoichiometry, displace_to_center, dense_matrix[ix:ix+1,iy:iy+1,iz:iz+1,0:1], dist_to_vertices))    # 125 + (2 + 3 + 1) + (20)
+                _y0 = (fc - np.around(fc))[0]
+
+
+
+    def train(self, n_epochs=1024, batch_size=128, learning_rate=0.01, optimizer_name='SGD', test_set_size=128):
+        test_idx = np.random.choice(range(len(self._X)), size=test_set_size)
+        train_idx = np.array([i for i in range(len(self._X)) if i not in test_idx])
+
+        # train
+        # pipeline
+        _X = self.X_pipeline.fit_transform(self._X)[train_idx]
+        _y0 = self.y_pipeline.fit_transform(self._y0)[train_idx]
+        # batch: random.choice
+        # ann
+        criterion = nn.MSELoss()
+        optimizer = getattr(optim, optimizer_name)(self.net.parameters(), lr=learning_rate)
+        # train
+        self.net.train()
+        for epoch in range(n_epochs):
+            batch_idx = np.random.choice(range(_X.shape[0]), size=batch_size)
+            X_batch= Variable(torch.FloatTensor(_X[batch_idx]), requires_grad=True)
+            y0_batch = Variable(torch.FloatTensor(_y0[batch_idx]), requires_grad=False)
+            y = self.net(X_batch)
+            loss = criterion(y, y0_batch)
+            optimizer.zero_grad()   # suggested trick
+            loss.backward()
+            optimizer.step()
+            if epoch % 128 == 0:
+                print 'epoch %s, loss %s'%(epoch, loss.data.numpy()[0])
+
+        # test
+        _X = np.array(self._X)[test_idx]
+        _y0 = np.float32(self._y0).flatten()[test_idx]
+        _y = np.float32(self.predict(_X)).flatten()
+        print self.__class__.__name__ + '.train: training finished. evaluation on last items: \n actual | predicted'
+        for a, b in zip(_y0, _y):
+            print a, b
+        a = np.zeros((_y0.shape[0], 2))
+        a[:, 0] = _y0 / _y
+        a[:, 1] = _y / _y0
+        b = np.amax(a, axis=0)
+        return np.sum(b ** 2.5) / 100   # yes, I'm using a different loss. the point, however, is that I don't want to blow up the convergence.
+
+
+    def parse_predict(self, gen, cell, makeparam):
+        pass  # 未完待续
+
+    def predict(self, _X):
+        # pipeline
+        _X = self.X_pipeline.transform(_X)
+        # ann
+        self.net.eval()
+        y = self.net(Variable(torch.FloatTensor(_X), requires_grad=True))
+        # pipeline
+        _y_inverse = self.y_pipeline.inverse_transform(y.data.numpy())
+        return _y_inverse
