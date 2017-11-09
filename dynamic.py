@@ -395,7 +395,7 @@ class MlPbSOpt(object):
             feature_n = 2 if symbol=='Pb' else -2
             dense_matrix[ix, iy, iz, 0] = feature_n
             # 数值位: dx, dy, dz
-            dense_matrix[ix, iy, iz, 1:] = fc - np.around(fc)
+            dense_matrix[ix, iy, iz, 1:] = fcoor[idx_atom] - rfc
 
         # --pre-parsing the convex-hull and then a few other features, ignore me...--
         hull = ConvexHull(rfcoor)
