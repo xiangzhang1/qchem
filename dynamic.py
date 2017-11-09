@@ -356,7 +356,7 @@ class MlPbSOpt(object):
             ccoor_transformed = np.dot(np.subtract(ccoor, [x0, y0, z0]), rotation_matrix.T)
             fcoor = ccoor_transformed / a
             return np.linalg.norm(fcoor - np.around(fcoor))
-        t = minimize(fun=error_after_transformation,
+        transformation = minimize(fun=error_after_transformation,
                      x0=[0, 0, 0, 0, 0, 0],
                      bounds=[(-.8,.8), (-.8,.8), (-.8,.8), (-.2,.2), (-.2,.2), (-.2,.2)]
                     ).x
