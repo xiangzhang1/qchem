@@ -406,6 +406,7 @@ class MlPbSOpt(object):
                 np.sort(dist_to_vertices) ; dist_to_vertices = np.pad(dist_to_vertices, (0, 20-nvertices), mode='constant')
 
                 # fourth, formally establish features and labels
+                IPython.embed()
                 _X = np.concatenate((feature_npart, feature_stoichiometry, displace_to_center, dense_matrix[ix:ix+1,iy:iy+1,iz:iz+1,0:1], dist_to_vertices))    # 125 + (2 + 3 + 1) + (20)
                 _y0 = (fc - np.around(fc))[0]
 
