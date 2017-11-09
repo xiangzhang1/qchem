@@ -371,7 +371,7 @@ class MlPbSOpt(object):
         Ny = int(math.ceil(np.linalg.norm(cell.base[1]) / a))
         Nz = int(math.ceil(np.linalg.norm(cell.base[2]) / a))
         dense_matrix = np.zeros((Nx, Ny, Nz, 4))
-        for idx_atom, fc in fcoor:
+        for idx_atom, fc in enumerate(fcoor):
             # dense matrix 指标
             ix, iy, iz = np.around(fc)
             # 符号位
