@@ -226,7 +226,7 @@ class MlVaspSpeed(object):
                 print 'epoch %s, loss %s'%(epoch, loss.data.numpy()[0])
 
         # test
-        _X = self._X[test_idx]
+        _X = np.array(self._X)[test_idx]
         _y0 = np.float32(self._y0).flatten()[test_idx]
         _y = np.float32(self.predict(_X)).flatten()[test_idx]
         print self.__class__.__name__ + '.train: training finished. evaluation on last items: \n actual | predicted'
