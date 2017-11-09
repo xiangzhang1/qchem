@@ -35,7 +35,7 @@ import engine
 from shared import ELEMENTS
 
 
-sys.stdout = open('optimize_MlVaspSpeed_parameters.log', 'w')
+# sys.stdout = open('optimize_MlVaspSpeed_parameters.log', 'w')
 
 print shared.bcolors.OKBLUE + 'Welcome. Libraries loaded.' + shared.bcolors.ENDC
 

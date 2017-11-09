@@ -9,6 +9,7 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 import itertools
 import math
+import types
 
 # scipy
 from scipy.optimize import minimize
@@ -134,6 +135,7 @@ class MlVaspSpeed(object):
         # data
         self._X = []
         self._y0 = []
+        self._cur = []
         # pipeline
         self.X_pipeline = Pipeline([
             ('cast_to_array', FunctionTransformer(func=np.array)),
@@ -203,6 +205,10 @@ class MlVaspSpeed(object):
             gen.getkw('platform')
         ])
         self._y0.append([time_elec_step])   # put it here so that no inconsistency will happen
+        # old compat
+        node = engine.Map().rlookup(attr_dict={'vasp':self})
+        node.default_path = types.MethodType(qchem.Node.__dict__['default_path'], node)
+        self._cur.append(node.default_path(cur=True))
 
     def train(self, n_epochs=5800, batch_size=64, learning_rate=0.026, optimizer_name='SGD', test_set_size=5):
         test_idx = np.random.choice(range(len(self._X)), size=test_set_size)

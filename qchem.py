@@ -201,9 +201,12 @@ class Node(object):
             if getattr(node,'map',None):
                 node.map.del_node(self)
 
-    def default_path(self):
+    def default_path(self, cur=False):
         if engine.Map().lookup('master') == self:
             return '/home/xzhang1/run/master'
         else:
-            parent_node = engine.Map().rlookup(node_list = [self], parent=True)     # if none found, an error would have been raised
-            return parent_node.default_path() + '/' + re.sub(r"\s+", '_', self.name)
+            parent_node = engine.Map().rlookup(node_list = [self], parent=True)
+            if cur:
+                return parent_node.default_path(cur=cur) + '.' + self.name
+            else:
+                return parent_node.default_path() + '/' + re.sub(r"\s+", '_', self.name)
