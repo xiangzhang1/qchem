@@ -53,6 +53,7 @@ import requests
 import dateparser
 
 from functools import partial
+from weakref import ref
 
 import shared
 import dynamic
@@ -224,7 +225,8 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
     # ----------------------------------------------------------
     @shared.debug_wrap
     def __init__(self, node):
-        self.cell = node.cell
+        self.node = ref(node)
+        cell = cell
         input_ = node.phase + ', ' + node.property
     # 读mod, kw
         self.mod = {}
@@ -282,12 +284,16 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         for name in self.kw:
             if len(self.kw[name]) != 1:
                 raise shared.CustomError( self.__class__.__name__+' error: non-unique output. Kw[%s]={%s} has not been restricted to 1 value.' %(name,self.kw[name]) )
+        # Unfortunately, what should have been done in vasp is moved here, for high efficiency.
         if self.parse_if('engine=vasp'):
             m = Makeparam(self)
             # Global data cannot be obtained for multi-node multi-CPU case. ML is not suitable.
             memory_predicted_gb = ( (m.projector_real + m.projector_reciprocal)*int(self.getkw('npar')) + m.wavefunction*float(self.getkw('kpar')) )/1024.0/1024/1024 + int(self.getkw('nnode'))*0.7
             memory_available_gb = int(self.getkw('nnode')) * int(self.getkw('mem_node'))
             print self.__class__.__name__ + ' memory usage %s: %s GB used out of %s GB' %('prediction' if memory_available_gb>memory_predicted_gb else 'WARNING', memory_predicted_gb, memory_available_gb)
+            m = dynamic.MLS['MLVASPSPEED']
+            t_elecstep = m.predict(m.parse_predict(self, cell, Makeparam(self))).asscalar()
+            print self.__class__.__name__ + ' time per elecstep ~ %s s. *10 for ionic step. *100 for geomopt.' %t_elecstep
 
 
     # 3. nbands, ncore_total, encut
@@ -296,14 +302,15 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         return str( int(self.getkw('nnode')) * int(self.getkw('ncore_node')) )
 
     def nbands(self):
+        cell = self.node().cell
         print self.__class__.__name__ + ' warning: nbands may not be that reliable'
         # extracted from vasp source code
         if self.parse_if('spin=ncl'):
-            nbands = ( self.cell.nelectrons() * 3 / 5 + sum(self.cell.stoichiometry.values()) * 3 / 2 ) * 2
+            nbands = ( cell.nelectrons() * 3 / 5 + sum(cell.stoichiometry.values()) * 3 / 2 ) * 2
         elif self.parse_if('spin=para'):
-            nbands = self.cell.nelectrons() * 3 / 5 + sum(self.cell.stoichiometry.values()) * 1 / 2
+            nbands = cell.nelectrons() * 3 / 5 + sum(cell.stoichiometry.values()) * 1 / 2
         elif self.parse_if('spin=afm|spin=fm'):
-            nbands = self.cell.nelectrons() / 2 + sum(self.cell.stoichiometry.values()) / 2
+            nbands = cell.nelectrons() / 2 + sum(cell.stoichiometry.values()) / 2
         else:
             raise shared.CustomError(self.__class__.__name__+'spin variable is not fm, afm or para, cannot compute nbands')
         # nbands change based on parallel
@@ -311,12 +318,14 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         return str(int(nbands))
 
     def lmaxmix(self):
+        cell = self.node().cell
         b_l_map = { 's': 2, 'p': 2, 'd': 4, 'f': 6, 'g': 8 }
-        lmaxmix = max( [ b_l_map[ shared.ELEMENTS[symbol].block ] for symbol in  self.cell.stoichiometry.keys() ] )
+        lmaxmix = max( [ b_l_map[ shared.ELEMENTS[symbol].block ] for symbol in  cell.stoichiometry.keys() ] )
         return str(lmaxmix)
 
     def encut(self):
-        result = max( [ shared.ELEMENTS[symbol].pot_encut for symbol in self.cell.stoichiometry.keys() ] )
+        cell = self.node().cell
+        result = max( [ shared.ELEMENTS[symbol].pot_encut for symbol in cell.stoichiometry.keys() ] )
         if result + 140 < 400:  # totally confusing guess, out of perovskites and quantum dots
             result = 400
         elif result < 400:
@@ -358,28 +367,29 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
                and int(kpoints[3]) % int(self.getkw('nkredz')) == 0
 
     def magmom(self):
+        cell = self.node().cell
         magmom = ''
         if self.parse_if('spin=afm'):
             print self.__class__.__name__ + ' warning: more than 1 AFM pattern exists.'
-            for symbol in self.cell.stoichiometry:
-                l = [0] * self.cell.stoichiometry[symbol]
+            for symbol in cell.stoichiometry:
+                l = [0] * cell.stoichiometry[symbol]
                 base = shared.ELEMENTS[symbol].magmom
                 l[::2] = base
                 l[1::2] = -1 * base
                 magmom += ' ' + ' '.join(l)
         if self.parse_if('spin=fm'):
-            for symbol in self.cell.stoichiometry:
+            for symbol in cell.stoichiometry:
                 base = shared.ELEMENTS[symbol].magmom
-                magmom += ' ' + str( self.cell.stoichiometry[symbol] ) + '*' + str( base )
+                magmom += ' ' + str( cell.stoichiometry[symbol] ) + '*' + str( base )
         return magmom
     def ldauu(self):
         ldauu = ''
-        for symbol in self.cell.stoichiometry:
+        for symbol in self.node().cell.stoichiometry:
             ldauu += str( shared.ELEMENTS[symbol].ldauu )
         return ldauu
     def ldauj(self):
         ldauj = ''
-        for symbol in self.cell.stoichiometry:
+        for symbol in self.node().cell.stoichiometry:
             ldauj += str( shared.ELEMENTS[symbol].ldauj )
         return ldauj
 
@@ -714,55 +724,53 @@ class Map(object):
 class Vasp(object):
 
     def __init__(self, node):
-        self.gen = node.gen
-        self.cell = node.cell
-        self.path = node.path
-        self.name = node.name
-
+        self.node = ref(node)
 
     def compute(self):
         if shared.DEBUG>=2:    print 'calling %s(%s).compute' %(self.__class__.__name__, getattr(self,'path',''))
 
-        prev = Map().rlookup(attr_dict={'vasp':self}, prev=True)
+        node = self.node()
+        prev = Map().rlookup(node_list=[node], prev=True)
+        path = node.path
+        gen = node.gen
+        name = node.name
 
         if not getattr(self, 'wrapper', None):
-            if os.path.exists(self.path):
-                raise shared.CustomError( self.__class__.__name__ + ' __init__: path {%s} already exists. enforcing strictly, you need to remove it manually.' %self.path )
-            os.makedirs(self.path)
-            os.chdir(self.path)
-            if self.gen.parse_if('icharg=1|icharg=11'):
-                shutil.copyfile(prev.path+'/CHG', self.path+'/CHG')
-                shutil.copyfile(prev.path+'/CHGCAR', self.path+'/CHGCAR')
-            if self.gen.parse_if('icharg=0|icharg=10|istart=1|istart=2'):
-                shutil.copyfile(prev.path+'/WAVECAR', self.path+'/WAVECAR')
-            if getattr(self, 'prev', None) and getattr(prev, 'vasp', None) and getattr(prev.vasp, 'optimized_cell', None):
-                setattr(self, 'cell', prev.vasp.optimized_cell)
-                setattr(Map().rlookup(attr_dict={'vasp':self}, parent=False), 'cell', prev.vasp.optimized_cell)   # burden of data duplication
-                print self.__class__.__name__ + '.compute: prev.vasp.optimized_cell overwrites self.cell.'
-            # ALWAYS INHERIT CELL IF POSSIBLE. NOT SURE IF THIS IS GOOD.
-            elif getattr(self, 'prev', None) and getattr(prev, 'cell', None):
-                setattr(self, 'cell', prev.cell)
-                print self.__class__.__name__ + '.compute: prev.vasp.cell overwrites self.cell.'
+            if os.path.exists(path):
+                raise shared.CustomError( self.__class__.__name__ + ' __init__: path {%s} already exists. enforcing strictly, you need to remove it manually.' %path )
+            os.makedirs(path)
+            os.chdir(path)
+            if gen.parse_if('icharg=1|icharg=11'):
+                shutil.copyfile(prev.path+'/CHG', path+'/CHG')
+                shutil.copyfile(prev.path+'/CHGCAR', path+'/CHGCAR')
+            if gen.parse_if('icharg=0|icharg=10|istart=1|istart=2'):
+                shutil.copyfile(prev.path+'/WAVECAR', path+'/WAVECAR')
+            if prev and getattr(prev, 'vasp', None) and getattr(prev.vasp, 'optimized_cell', None):
+                node.cell = copy.deepcopy(prev.vasp.optimized_cell)
+                print self.__class__.__name__ + '.compute: prev.vasp.optimized_cell overwrites node.cell.'
+            elif prev and getattr(prev, 'cell', None):
+                node.cell = copy.deepcopy(prev.cell)
+                print self.__class__.__name__ + '.compute: prev.vasp.cell overwrites node.cell.'
             # write incar etc. Relies on inheritance.
-            os.chdir(self.path)
-            self.gen.write_incar_kpoints()
+            os.chdir(path)
+            gen.write_incar_kpoints()
             with open('POSCAR','w') as f:
-                f.write(str(self.cell))
-            for symbol in self.cell.stoichiometry.keys():
+                f.write(str(cell))
+            for symbol in cell.stoichiometry.keys():
                 self.pot(symbol)
             # setting variables for wrapper
-            ncore_total = str(  int(self.gen.getkw('nnode')) * int(self.gen.getkw('ncore_node'))  )
-            if self.gen.parse_if('spin=ncl'):
+            ncore_total = str(  int(gen.getkw('nnode')) * int(gen.getkw('ncore_node'))  )
+            if gen.parse_if('spin=ncl'):
                 flavor = 'ncl'
-            elif self.gen.getkw('kpoints').split()[0] in 'GM' and all([int(x)==1 for x in self.gen.getkw('kpoints').split()[1:]]):
+            elif gen.getkw('kpoints').split()[0] in 'GM' and all([int(x)==1 for x in gen.getkw('kpoints').split()[1:]]):
                 flavor = 'gam'
             else:
                 flavor = 'std'
-            self.remote_folder_name = ''.join(e for e in self.name if e.isalnum()) + ''.join(random.sample(string.ascii_lowercase,4))
+            self.remote_folder_name = ''.join(e for e in name if e.isalnum()) + ''.join(random.sample(string.ascii_lowercase,4))
             # write scripts and instructions
             # subfile actually runs vasp. wrapper submits the subfile to system.
             self.wrapper = '#!/bin/bash\n' ; self.subfile = '#!/bin/bash\necho $PWD `date` start\necho -------------------------\n'
-            if self.gen.parse_if('platform=dellpc_gpu'):
+            if gen.parse_if('platform=dellpc_gpu'):
                 self.subfile += ''' # good indent in python, bad on bash.
                     (while true; do
                         echo `date +%%s` `nvidia-smi | sed -n '9p' | awk '{print $9}'` | sed 's/MiB//g' >> ./gpu.log
@@ -774,7 +782,7 @@ class Vasp(object):
                     kill "$bgPID"
                 ''' %(ncore_total)
                 self.wrapper += 'nohup ./subfile 2>&1 >> run.log &'
-            if self.gen.parse_if('platform=dellpc'):
+            if gen.parse_if('platform=dellpc'):
                 self.subfile += '''
                     (while true; do
                         echo `date +%%s` `free -b | sed -n '2p' | awk '{print $3}'` >> ./cpu.log
@@ -786,18 +794,18 @@ class Vasp(object):
                     kill "$bgPID"
                 ''' %(ncore_total, flavor)
                 self.wrapper += 'nohup ./subfile 2>&1 >> run.log &'
-            if self.gen.parse_if('platform=nanaimo'):
+            if gen.parse_if('platform=nanaimo'):
                 self.wrapper += 'rsync -avP . nanaimo:~/%s\n' %self.remote_folder_name
                 self.wrapper += 'ssh nanaimo <<EOF\n'
                 self.wrapper += ' cd %s\n' %self.remote_folder_name
-                self.wrapper += ' sbatch --nodes=%s --ntasks=%s --job-name=%s -t 48:00:00 --export=ALL subfile\n' %(self.gen.getkw('nnode'), ncore_total, self.remote_folder_name)
+                self.wrapper += ' sbatch --nodes=%s --ntasks=%s --job-name=%s -t 48:00:00 --export=ALL subfile\n' %(gen.getkw('nnode'), ncore_total, self.remote_folder_name)
                 self.wrapper += 'EOF\n'
                 self.subfile += '#!/bin/bash\n. /usr/share/Modules/init/bash\nmodule purge\nmodule load intel\nmodule load impi\nmpirun -np %s /opt/vasp.5.4.4/bin/vasp_%s\n' %(ncore_total, flavor)
-            if self.gen.parse_if('platform=irmik'):
+            if gen.parse_if('platform=irmik'):
                 self.wrapper += 'rsync -avP . irmik:~/%s\n' %self.remote_folder_name
                 self.wrapper += 'ssh irmik <<EOF\n'
                 self.wrapper += ' cd %s\n' %self.remote_folder_name
-                self.wrapper += ' sbatch --nodes=%s --ntasks=%s --job-name=%s -t 48:00:00 --export=ALL subfile\n' %(self.gen.getkw('nnode'), ncore_total, self.remote_folder_name)
+                self.wrapper += ' sbatch --nodes=%s --ntasks=%s --job-name=%s -t 48:00:00 --export=ALL subfile\n' %(gen.getkw('nnode'), ncore_total, self.remote_folder_name)
                 self.wrapper += 'EOF\n'
                 self.subfile += '#!/bin/bash\n. /usr/share/Modules/init/bash\nmodule purge\nmodule load mvapich2-2.2/intel\nmpirun -np %s /opt/vasp.5.4.4/bin/vasp_%s\n' %(ncore_total, flavor)
             self.subfile += 'echo $PWD `date` end \necho -------------------------\n'
@@ -813,36 +821,34 @@ class Vasp(object):
                 # fork
                 with open(os.devnull, 'r+b', 0) as DEVNULL:
                     subprocess.Popen(['bash', './wrapper'], stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL, preexec_fn=os.setpgrp, close_fds=True)
-                print self.__class__.__name__ + ': computation started. local path   %s   . waiting for filesystem update. ' %self.path
+                print self.__class__.__name__ + ': computation started. local path   %s   . waiting for filesystem update. ' %path
             else:
                 if shared.DEBUG >= 1: print '-'*50
-                print self.__class__.__name__ + ': wrapper generated at   %s   . waiting for filesystem update. ' %self.path
+                print self.__class__.__name__ + ': wrapper generated at   %s   . waiting for filesystem update. ' %path
 
 
         # no log but invoked, only possible from moonphase. write parent.
         elif not getattr(self,'log',None):
-            os.chdir(self.path)
+            os.chdir(path)
             # download folder
-            if self.gen.parse_if('platform=nanaimo|platform=irmik|platform=hodduk'):
-                print '%s.compute: copying remote folder {%s} back to self.path {%s}' %(self.__class__.__name__, self.remote_folder_name, self.path)
-                subprocess.Popen(['rsync', '-a', '-h', '--info=progress2', '%s:%s/' %(self.gen.getkw('platform'),self.remote_folder_name), '%s'%self.path], stdout=sys.stdout, stderr=sys.stderr).wait()
-                #os.system('scp -r /home/xzhang1/Shared/%s/%s/ %s' %(self.gen.getkw('platform'), self.remote_folder_name, self.path))
+            if gen.parse_if('platform=nanaimo|platform=irmik|platform=hodduk'):
+                print '%s.compute: copying remote folder {%s} back to path {%s}' %(self.__class__.__name__, self.remote_folder_name, path)
+                subprocess.Popen(['rsync', '-a', '-h', '--info=progress2', '%s:%s/' %(gen.getkw('platform'),self.remote_folder_name), '%s'%path], stdout=sys.stdout, stderr=sys.stderr).wait()
+                #os.system('scp -r /home/xzhang1/Shared/%s/%s/ %s' %(gen.getkw('platform'), self.remote_folder_name, path))
                 print self.__class__.__name__ + '.compute: copy complete.'
             # log
-            l = os.listdir(self.path)
+            l = os.listdir(path)
             filename = ([x for x in l if x.startswith('slurm-')] + [x for x in l if x.startswith('run.log')] + [x for x in l if x.startswith('OSZICAR')])[0]
             with open(filename,'r') as if_:
                 self.log = if_.read()
-            # write parent cell if opt
-            parent_node = Map().rlookup(attr_dict={'vasp':self}, parent=True)
-            if getattr(self, 'gen', None) and self.gen.parse_if('opt'):
-                with open('CONTCAR','r') as infile:
-                    text = infile.read()
-                    setattr(parent_node, 'cell', Cell(text))
+            # optimized_cell
+            if gen.parse_if('opt'):
+                with open('CONTCAR','r') as f_:
+                    text = f_.read()
                     setattr(self, 'optimized_cell', Cell(text))
 
         else:
-            print self.__class__.__name__ + ' compute: calculation already completed at %s. Why are you here?' %self.path
+            print self.__class__.__name__ + ' compute: calculation already completed at %s. Why are you here?' %path
 
     @shared.moonphase_wrap
     def moonphase(self):
@@ -1054,7 +1060,7 @@ class Dos(object):
         energy = 0 ; PDOS = 1
         return [ [ [ interp1d(self.pdos[idx_spin, idx_atom, idx_orbital, :, energy], self.pdos[idx_spin, idx_atom, idx_orbital, :, PDOS], kind='cubic') \
                      for idx_orbital in range(self.norbitals_pdos) ] \
-                        for idx_atom in range(sum(self.cell.stoichiometry.values())) ] \
+                        for idx_atom in range(sum(self.node().cell.stoichiometry.values())) ] \
                             for idx_spin in range(self.nspins_pdos) ]
 
     @shared.log_wrap

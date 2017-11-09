@@ -70,5 +70,6 @@ def f(x, m=m, optimizer_name='SGD'):    #  train then return error. for hyperpar
     return err
 
 from scipy.optimize import minimize
-print minimize(f, x0=np.float32([9, 1, 2, 3.2, 4]), method='Powell') ; sys.stdout.flush()   # this is the current optimal.
+print minimize(f, x0=np.float32([9, 1, 2, 3.2, 4]), method='Powell') ; sys.stdout.flush()
+# 7.382  1.     2.     3.2    4.    ->       0.74, 0.07, 0.01, 32, 4000
 print 'finished! :)'
