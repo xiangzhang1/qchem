@@ -19,6 +19,8 @@ from tqdm import tqdm
 from cStringIO import StringIO
 from fuzzywuzzy import process
 
+import types
+
 # pytorch
 import torch
 from torch.autograd import Variable

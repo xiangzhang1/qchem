@@ -203,7 +203,10 @@ class Node(object):
 
     def default_path(self, cur=False):
         if engine.Map().lookup('master') == self:
-            return '/home/xzhang1/run/master'
+            if cur:
+                return 'master'
+            else:
+                return '/home/xzhang1/run/master'
         else:
             parent_node = engine.Map().rlookup(node_list = [self], parent=True)
             if cur:
