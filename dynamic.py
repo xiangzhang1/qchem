@@ -282,7 +282,7 @@ class MlVaspSpeed(object):
 class MlPbSOptNet(nn.Module):
 
     def __init__(self, bn_momentum=0.74, dropout_p=0.07):   # 2500 variables in total. Expect high dropout.
-        super(MlVaspSpeedNet, self).__init__()
+        super(MlPbSOptNet, self).__init__()
         self.lA1 = nn.Linear(125, 15)
         self.bnA1 = nn.BatchNorm1d(15, momentum=bn_momentum)
         self.dropoutA1 = nn.Dropout(p=dropout_p)
