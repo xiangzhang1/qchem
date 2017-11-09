@@ -310,7 +310,7 @@ class MlPbSOptNet(nn.Module):
         self.dropout1 = nn.Dropout(p=dropout_p)
         self.l2 = nn.Linear(5, 5)
         self.bn2 = nn.BatchNorm1d(5, momentum=bn_momentum)
-        self.dropout1 = nn.Dropout(p=dropout_p)
+        self.dropout2 = nn.Dropout(p=dropout_p)
         self.l3 = nn.Linear(5, 1)
 
     def forward(self, X):   # 啊！真舒畅！
