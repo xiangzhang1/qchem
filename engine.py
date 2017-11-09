@@ -847,7 +847,7 @@ class Vasp(object):
                     text = f_.read()
                     setattr(self, 'optimized_cell', Cell(text))
             # training
-            dynamic.MLS['MLVASPSPEED'].parse_train(self, node.gen, node.cell, Makeparam(node.gen))
+            dynamic.MLS['MLVASPSPEED'].parse_train(node, self, node.gen, node.cell, Makeparam(node.gen))
 
         else:
             print self.__class__.__name__ + ' compute: calculation already completed at %s. Why are you here?' %path
