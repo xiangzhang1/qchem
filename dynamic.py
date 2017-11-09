@@ -69,7 +69,7 @@ MLS = {}
 
 class MlVaspSpeedNet(nn.Module):
 
-    def __init__(self, bn_momentum=0.9, dropout_p=0.06):
+    def __init__(self, bn_momentum=0.9, dropout_p=0.001):
         super(MlVaspSpeedNet, self).__init__()
         self.lA1 = nn.Linear(5, 3)
         self.bnA1 = nn.BatchNorm1d(3, momentum=bn_momentum)
