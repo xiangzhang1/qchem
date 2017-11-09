@@ -201,7 +201,7 @@ class MlVaspSpeed(object):
 
     def train(self, n_epochs=4000, batch_size=32, learning_rate=0.02, optimizer_name='SGD', test_set_size=5):
         test_idx = np.random.choice(range(len(self._X)), size=test_set_size)
-        train_idx = np.array([i for i in range(len(self._X)) if i not in train_idx])
+        train_idx = np.array([i for i in range(len(self._X)) if i not in test_idx])
 
         # train
         # pipeline
