@@ -80,7 +80,7 @@ class MlVaspSpeed(object):
 
     class Net(nn.Module):
 
-        def __init__(self, bn_momentum, dropout_p):
+        def __init__(self, bn_momentum=0.9, dropout_p=0.06):
             super(MlVaspSpeed.Net, self).__init__()
             self.lA1 = nn.Linear(5, 3)
             self.bnA1 = nn.BatchNorm1d(3, momentum=bn_momentum)
@@ -165,7 +165,7 @@ class MlVaspSpeed(object):
             ('scaler', StandardScaler())
         ])
         # ann. what a pity.
-        self.net = MlVaspSpeed.Net(bn_momentum=0.7, dropout_p=0.2)
+        self.net = MlVaspSpeed.Net()
 
 
     def parse_obj(self, vasp, makeparam):
@@ -210,7 +210,7 @@ class MlVaspSpeed(object):
         ])
         self._y0.append([time_elec_step])   # put it here so that no inconsistency will happen
 
-    def train(self, n_epochs=5000, batch_size=46, learning_rate=10E-5, optimizer_name='SGD'):
+    def train(self, n_epochs=4000, batch_size=32, learning_rate=0.018, optimizer_name='SGD'):
         # pipeline
         _X = self.X_pipeline.fit_transform(self._X)
         _y0 = self.y_pipeline.fit_transform(self._y0)
@@ -258,9 +258,7 @@ class MlVaspSpeed(object):
         return _y_inverse
 
 
-# inital training script for MlVaspSpeed
-0.9, 0.06, 0.02, 32, 4000
-
+# inital training script for MlVaspSpeed ca nbe found in scripts/machine_learning_benchmark/optimize_MlVaspSpeed_parameters.py
 
 
 # MlPbSOpt

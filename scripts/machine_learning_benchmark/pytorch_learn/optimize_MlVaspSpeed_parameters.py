@@ -55,9 +55,9 @@ for n in engine.Map().lookup('master').map.traverse():
             m.parse_obj(n.vasp, engine.Makeparam(n.vasp.gen))
         except (shared.CustomError, shared.DeferError) as e:
             print 'warning: node %s\'s parsing failed. probably old version.' %n.name ; sys.stdout.flush()
+m.train()
 
-
-def f(x, m=m, optimizer_name='SGD'):
+def f(x, m=m, optimizer_name='SGD'):    #  train then return error. for hyperparameter search.
     print '----------------------------' ; sys.stdout.flush()
     x = abs(x)
     bn_momentum, dropout_p, learning_rate, batch_size, n_epochs = x[0] / 10.0, x[1] / 15.0, 10**(-1*x[2]), int(10 * x[3]), int(1000 * x[4])
