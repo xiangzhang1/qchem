@@ -49,11 +49,14 @@ for n in engine.Map().lookup('master').map.traverse():
             print 'warning: node %s\'s parsing failed. probably old version.' %n.name
 
 
-def f(x, m=m, optimizer_name='Adam'):
+def f(x, m=m, optimizer_name='SGD'):
     bn_momentum, dropout_p, learning_rate, batch_size, n_epochs = x[0] / 10.0, x[1] / 15.0, 10**(-1*x[2]), int(10 * x[3]), int(1000 * x[4])
     m.net = dynamic.MlVaspSpeed.Net(bn_momentum=bn_momentum, dropout_p=dropout_p)
-    return m.train(learning_rate=learning_rate, batch_size=batch_size, n_epochs=n_epochs, optimizer_name=optimizer_name)
-print f([9, 1, 6, 6.9, 1], optimizer_name='Adam')
+    err = m.train(learning_rate=learning_rate, batch_size=batch_size, n_epochs=n_epochs, optimizer_name=optimizer_name)
+    print '----------------------------\nparameters: %s. error: %s.' %(x, err)
+
+from scipy.optimize import minimize
+print minimize(f, x0=[9, 1, 2, 3.2, 4], method='Powell')
 # bn_momentum = 0.7
 # dropout_p = 0.2
 # learning_rate = 10E-5

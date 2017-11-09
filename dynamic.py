@@ -165,7 +165,7 @@ class MlVaspSpeed(object):
             ('scaler', StandardScaler())
         ])
         # ann. what a pity.
-        self.net = MlVaspSpeed.Net(bn_momentum=0.7, dropout_p=0.2)
+        self.net = MlVaspSpeed.Net(bn_momentum=0.7, dropout_p=0.2).cuda()
 
 
     def parse_obj(self, vasp, makeparam):
@@ -222,8 +222,8 @@ class MlVaspSpeed(object):
         self.net.train()
         for epoch in range(n_epochs):
             batch_idx = np.random.choice(range(_X.shape[0]), size=batch_size)
-            X_batch= Variable(torch.FloatTensor(_X[batch_idx]), requires_grad=True)
-            y0_batch = Variable(torch.FloatTensor(_y0[batch_idx]), requires_grad=False)
+            X_batch= Variable(torch.FloatTensor(_X[batch_idx]), requires_grad=True).cuda()
+            y0_batch = Variable(torch.FloatTensor(_y0[batch_idx]), requires_grad=False).cuda()
             y = self.net(X_batch)
             loss = criterion(y, y0_batch)
             optimizer.zero_grad()   # suggested trick
