@@ -206,7 +206,7 @@ class MlVaspSpeed(object):
         _X = self.X_pipeline.fit_transform(self._X)[train_idx]
         _y0 = self.y_pipeline.fit_transform(self._y0)[train_idx]
         test_idx = np.random.choice(range(_X.shape[0]), size=test_set_size)
-        train_idx = np.array([i for i in range(_X.shape[0]) if i not in train_idx])
+        train_idx = np.array([i for i in range(_X.shape[0]) if i not in test_idx])
         # batch: random.choice
         # ann
         criterion = nn.MSELoss()
