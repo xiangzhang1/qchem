@@ -229,8 +229,8 @@ class MlVaspSpeed(object):
             optimizer.zero_grad()   # suggested trick
             loss.backward()
             optimizer.step()
-            if epoch % 100 == 0:
-                print 'epoch %s, loss %s'%(epoch, loss.data.numpy()[0])
+            # if epoch % 100 == 0:
+            #     print 'epoch %s, loss %s'%(epoch, loss.data.numpy()[0])
 
         # evaluate
         _X = self._X[-10:]
