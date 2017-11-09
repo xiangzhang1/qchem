@@ -388,7 +388,8 @@ class MlPbSOpt(object):
             # third, we parse features and labels from the dense matrix.
             # --pre-parsing the convex-hull--
             hull = ConvexHull(np.around(fcoor))
-            nvertices = len(hull.vertices) ; if len(hull.vertices) > 20: raise shared.CustomError(self.__class__.__name__ + '.parse_train: # vertices > 20. Assumption broken. Rethink.')
+            nvertices = len(hull.vertices)
+            if nvertices > 20:  raise shared.CustomError(self.__class__.__name__ + '.parse_train: # vertices > 20. Assumption broken. Rethink.')
             vertice_coordinates = np.float32([fcoor[iv] for iv in hull.vertices])
             center_coordinate = np.mean(fcoor, axis=0)
             # -------------------------------
