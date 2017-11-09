@@ -213,7 +213,7 @@ class MlVaspSpeed(object):
         self._y0.append(_y0)
         self._cur.append(_cur)
         return (_X, _y0, _cur)
-    
+
 
     def train(self, n_epochs=5800, batch_size=64, learning_rate=0.026, optimizer_name='SGD', test_set_size=5):
         test_idx = np.random.choice(range(len(self._X)), size=test_set_size)
@@ -433,7 +433,8 @@ class MlPbSOpt(object):
                 dist_to_vertices = np.sum((vertice_coordinates - [ix,iy,iz])**2,axis=1)**(0.5)
                 dist_to_vertices_hist, _ = np.histogram(dist_to_vertices, bins=20, range=(0, 10), density=True)
                 # fourth, formally establish features and labels
-                _X = np.concatenate((feature_npart, feature_stoichiometry, displace_to_center, dist_to_nearest_surface, dense_matrix[ix,iy,iz,0:1], dist_to_vertices_hist))    # 125 + (2 + 3 + 3 + 1) + (20)
+                # _X = np.concatenate((feature_npart, feature_stoichiometry, displace_to_center, dist_to_nearest_surface, dense_matrix[ix,iy,iz,0:1], dist_to_vertices_hist))    # 125 + (2 + 3 + 3 + 1) + (20)
+                _X = feature_npart
                 _y0 = dense_matrix[ix,iy,iz,1:2]
                 self._X.append(_X)
                 self._y0.append(_y0)

@@ -1,7 +1,7 @@
 from scipy import spatial
 
 dynamic.global_load()
-m = dynamic.MLS['MLVASPSPEED']
+m = dynamic.MLS['MLPBSOPT']
 
 _X = m.X_pipeline.transform(m._X)
 _y0 = m.y_pipeline.transform(m._y0)
