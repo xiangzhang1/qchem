@@ -74,7 +74,7 @@ MLS = {}
 
 class MlVaspSpeedNet(nn.Module):
 
-    def __init__(self, bn_momentum=0.74, dropout_p=0.07):
+    def __init__(self, bn_momentum=0.97, dropout_p=0.077):
         super(MlVaspSpeedNet, self).__init__()
         self.lA1 = nn.Linear(5, 3)
         self.bnA1 = nn.BatchNorm1d(3, momentum=bn_momentum)
@@ -204,7 +204,7 @@ class MlVaspSpeed(object):
         ])
         self._y0.append([time_elec_step])   # put it here so that no inconsistency will happen
 
-    def train(self, n_epochs=4000, batch_size=32, learning_rate=0.01, optimizer_name='SGD', test_set_size=5):
+    def train(self, n_epochs=5800, batch_size=64, learning_rate=0.026, optimizer_name='SGD', test_set_size=5):
         test_idx = np.random.choice(range(len(self._X)), size=test_set_size)
         train_idx = np.array([i for i in range(len(self._X)) if i not in test_idx])
 

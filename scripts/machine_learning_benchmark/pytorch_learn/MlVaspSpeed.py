@@ -70,5 +70,5 @@ def f(x, m=m, optimizer_name='SGD'):    #  train then return error. for hyperpar
 
 from scipy.optimize import minimize
 print minimize(f, x0=np.float32([9, 1, 2, 3.2, 4]), method='Powell') ; sys.stdout.flush()
-# 10.618   1.      2.      3.2     4.
+#  9.704  1.159  1.591  6.478  5.784   |     0.97, 0.077, 0.026, 64, 5800
 print 'finished! :)'
