@@ -200,8 +200,8 @@ class MlVaspSpeed(object):
         self._y0.append([time_elec_step])   # put it here so that no inconsistency will happen
 
     def train(self, n_epochs=4000, batch_size=32, learning_rate=0.02, optimizer_name='SGD', test_set_size=5):
-        test_idx = np.random.choice(range(self._X.shape[0]), size=test_set_size)
-        train_idx = np.array([i for i in range(self._X.shape[0]) if i not in train_idx])
+        test_idx = np.random.choice(range(len(self._X)), size=test_set_size)
+        train_idx = np.array([i for i in range(len(self._X)) if i not in train_idx])
 
         # train
         # pipeline
