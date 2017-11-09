@@ -51,7 +51,7 @@ for n in engine.Map().lookup('master').map.traverse():
 
 def f(x, m=m, optimizer_name='SGD'):
     bn_momentum, dropout_p, learning_rate, batch_size, n_epochs = x[0] / 10.0, x[1] / 15.0, 10**(-1*x[2]), int(10 * x[3]), int(1000 * x[4])
-    m.net = dynamic.MlVaspSpeed.Net(bn_momentum=bn_momentum, dropout_p=dropout_p).cuda()
+    m.net = dynamic.MlVaspSpeed.Net(bn_momentum=bn_momentum, dropout_p=dropout_p)
     err = m.train(learning_rate=learning_rate, batch_size=batch_size, n_epochs=n_epochs, optimizer_name=optimizer_name)
     print '----------------------------\nparameters: %s. error: %s.' %(x, err)
 

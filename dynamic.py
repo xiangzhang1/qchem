@@ -165,7 +165,7 @@ class MlVaspSpeed(object):
             ('scaler', StandardScaler())
         ])
         # ann. what a pity.
-        self.net = MlVaspSpeed.Net(bn_momentum=0.7, dropout_p=0.2).cuda()
+        self.net = MlVaspSpeed.Net(bn_momentum=0.7, dropout_p=0.2)
 
 
     def parse_obj(self, vasp, makeparam):
@@ -222,15 +222,15 @@ class MlVaspSpeed(object):
         self.net.train()
         for epoch in range(n_epochs):
             batch_idx = np.random.choice(range(_X.shape[0]), size=batch_size)
-            X_batch= Variable(torch.FloatTensor(_X[batch_idx]), requires_grad=True).cuda()
-            y0_batch = Variable(torch.FloatTensor(_y0[batch_idx]), requires_grad=False).cuda()
+            X_batch= Variable(torch.FloatTensor(_X[batch_idx]), requires_grad=True)
+            y0_batch = Variable(torch.FloatTensor(_y0[batch_idx]), requires_grad=False)
             y = self.net(X_batch)
             loss = criterion(y, y0_batch)
             optimizer.zero_grad()   # suggested trick
             loss.backward()
             optimizer.step()
-            if epoch % 100 == 0:
-                print 'epoch %s, loss %s'%(epoch, loss.data.cpu().numpy()[0])
+            # if epoch % 100 == 0:
+            #     print 'epoch %s, loss %s'%(epoch, loss.data.numpy()[0])
 
         # evaluate
         _X = self._X[-10:]
@@ -254,7 +254,7 @@ class MlVaspSpeed(object):
         self.net.eval()
         y = self.net(Variable(torch.FloatTensor(_X), requires_grad=True))
         # pipeline
-        _y_inverse = self.y_pipeline.inverse_transform(y.data.cpu().numpy())
+        _y_inverse = self.y_pipeline.inverse_transform(y.data.numpy())
         return _y_inverse
 
 
