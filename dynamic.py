@@ -190,9 +190,10 @@ class MlVaspSpeed(object):
             number_elec_steps = len(iteration_lines)
             # time per electronic step
             time_elec_step = total_time / number_elec_steps
+        _y0 = [time_elec_step]
         # INPUT
         # -----
-        self._X.append([
+        _X = [
             makeparam.projector_real + makeparam.projector_reciprocal,
             makeparam.wavefunction,
             makeparam.arraygrid,
@@ -203,9 +204,16 @@ class MlVaspSpeed(object):
             int(gen.getkw('nnode')),
             int(gen.getkw('ncore')),
             gen.getkw('platform')
-        ])
-        self._y0.append([time_elec_step])   # put it here so that no inconsistency will happen
-        self._cur.append(node.default_path(cur=True))
+        ]
+        # COMMENT (posterity)
+        # ------------------
+        _cur = node.default_path(cur=True)
+        # put it here so that no inconsistency will happen
+        self._X.append(_X)
+        self._y0.append(_y0)
+        self._cur.append(_cur)
+        return (_X, _y0, _cur)
+    
 
     def train(self, n_epochs=5800, batch_size=64, learning_rate=0.026, optimizer_name='SGD', test_set_size=5):
         test_idx = np.random.choice(range(len(self._X)), size=test_set_size)
