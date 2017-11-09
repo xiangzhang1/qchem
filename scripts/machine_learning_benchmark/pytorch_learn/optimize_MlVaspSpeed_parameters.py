@@ -1,4 +1,4 @@
-#!/usr/bin/python
+SpeedNet#!/usr/bin/python
 '''
 An environment. Do not paste actions here.
 '''
@@ -65,7 +65,7 @@ def f(x, m=m, optimizer_name='SGD'):    #  train then return error. for hyperpar
     print '----------------------------' ; sys.stdout.flush()
     x = abs(x)
     bn_momentum, dropout_p, learning_rate, batch_size, n_epochs = x[0] / 10.0, x[1] / 15.0, 10**(-1*x[2]), int(10 * x[3]), int(1000 * x[4])
-    m.net = dynamic.MlVaspSpeed.Net(bn_momentum=bn_momentum, dropout_p=dropout_p)
+    m.net = dynamic.MlVaspSpeedNet(bn_momentum=bn_momentum, dropout_p=dropout_p)
     err = m.train(learning_rate=learning_rate, batch_size=batch_size, n_epochs=n_epochs, optimizer_name=optimizer_name)
     print 'parameters: %s. error: %s.' %(x, err) ; sys.stdout.flush()
     return err

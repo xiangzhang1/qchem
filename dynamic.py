@@ -100,30 +100,31 @@ class MlVaspSpeedNet(nn.Module):
         self.dropout1 = nn.Dropout(p=dropout_p)
         self.l2 = nn.Linear(2, 1)
 
+    def forward(self, X):
+
+        A = self.bnA1(self.dropoutA1(F.elu(self.lA1(X[:, :5]))))
+        A = self.bnA2(self.dropoutA2(F.elu(self.lA2(A))))
+        A = self.lA3(A)
+
+        B = self.bnB1(self.dropoutB1(F.elu(self.lB1(X[:, 5:8]))))
+        B = self.bnB2(self.dropoutB2(F.elu(self.lB2(B))))
+        B = self.lB3(B)
+
+        C = self.bnC1(self.dropoutC1(F.elu(self.lC1(X[:, 8:12]))))
+        C = self.lC2(C)
+        # C = self.lC3(X[:, 8:12])
+
+        y = torch.cat((A, B, C), dim=1)
+        y = self.bn0(self.dropout0(F.elu(y)))
+        y = self.bn1(self.dropout1(F.elu(self.l1(y))))
+        y = self.l2(y)
+        # y = A * B * C
+
+        return y
 
 class MlVaspSpeed(object):
 
-        def forward(self, X):
 
-            A = self.bnA1(self.dropoutA1(F.elu(self.lA1(X[:, :5]))))
-            A = self.bnA2(self.dropoutA2(F.elu(self.lA2(A))))
-            A = self.lA3(A)
-
-            B = self.bnB1(self.dropoutB1(F.elu(self.lB1(X[:, 5:8]))))
-            B = self.bnB2(self.dropoutB2(F.elu(self.lB2(B))))
-            B = self.lB3(B)
-
-            C = self.bnC1(self.dropoutC1(F.elu(self.lC1(X[:, 8:12]))))
-            C = self.lC2(C)
-            # C = self.lC3(X[:, 8:12])
-
-            y = torch.cat((A, B, C), dim=1)
-            y = self.bn0(self.dropout0(F.elu(y)))
-            y = self.bn1(self.dropout1(F.elu(self.l1(y))))
-            y = self.l2(y)
-            # y = A * B * C
-
-            return y
 
 
     def __init__(self):
