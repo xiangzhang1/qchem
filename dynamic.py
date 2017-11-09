@@ -403,7 +403,7 @@ class MlPbSOpt(object):
                 feature_stoichiometry = np.float32([cell.stoichiometry['Pb'], cell.stoichiometry['S']])
                 displace_to_center = fc - center_coordinate
                 dist_to_vertices = np.sum((vertice_coordinates - fc)**2,axis=1)**(1./2)
-                np.sort(dist_to_vertices) ; dist_to_vertices = np.pad(dist_to_vertices, (0, 20-nvertices))
+                np.sort(dist_to_vertices) ; dist_to_vertices = np.pad(dist_to_vertices, (0, 20-nvertices), mode='constant')
 
                 # fourth, formally establish features and labels
                 _X = np.concatenate((feature_npart, feature_stoichiometry, displace_to_center, dense_matrix[ix:ix+1,iy:iy+1,iz:iz+1,0:1], dist_to_vertices))    # 125 + (2 + 3 + 1) + (20)
