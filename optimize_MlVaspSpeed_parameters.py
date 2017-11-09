@@ -37,7 +37,7 @@ from shared import ELEMENTS
 print shared.bcolors.OKBLUE + 'Welcome. Libraries loaded.' + shared.bcolors.ENDC
 
 
-f = open('optimize_MlVaspSpeed.log', 'w')
+f_ = open('optimize_MlVaspSpeed.log', 'w')
 
 dynamic.global_load()
 m = dynamic.MlVaspSpeed()
@@ -67,6 +67,6 @@ def f(x, m=m, optimizer_name='SGD'):
 # f([9, 1, 2, 3.2, 4])
 
 from scipy.optimize import minimize
-f.write(minimize(f, x0=[9, 1, 2, 3.2, 4], method='Powell'))
-f.write('finished! :)')
-f.close()
+f_.write(minimize(f, x0=[9, 1, 2, 3.2, 4], method='Powell'))
+f_.write('finished! :)')
+f_.close()
