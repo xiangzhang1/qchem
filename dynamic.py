@@ -373,7 +373,7 @@ class MlPbSOpt(object):
         dense_matrix = np.zeros((Nx, Ny, Nz, 4))
         for idx_atom, fc in enumerate(fcoor):
             # dense matrix 指标
-            ix, iy, iz = np.around(fc)
+            ix, iy, iz = np.int32(np.around(fc))
             # 符号位
             idx_ele = 0 if idx_atom < cell.stoichiometry.values()[0] else 1     # OrderedDict, 品质保证!     # assume Pb S only
             symbol = cell.stoichiometry.keys()[idx_ele]
@@ -396,7 +396,7 @@ class MlPbSOpt(object):
             # -------------------------------
             for idx_atom, fc in fcoor:
                 # dense matrix 空降！
-                ix, iy, iz = np.around(fc)
+                ix, iy, iz = np.int32(np.around(fc))
                 # 拔剑四顾！
                 feature_npart = dense_matrix[ix-2:ix+3, iy-2:iy+3, iz-2:iz+3, 0].flatten()    # 您点的5*5*5矩阵到货啦！      # C式拍平，质量保证！
                 # 还有点小尾巴: stoichiometry 以及 convexhull
