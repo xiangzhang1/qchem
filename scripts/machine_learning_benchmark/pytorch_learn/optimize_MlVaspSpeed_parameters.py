@@ -55,7 +55,6 @@ for n in engine.Map().lookup('master').map.traverse():
             m.parse_train(n.vasp, n.vasp.gen, n.vasp.gen.cell, engine.Makeparam(n.vasp.gen))
         except (shared.CustomError, shared.DeferError) as e:
             print 'warning: node %s\'s parsing failed. probably old version.' %n.name ; sys.stdout.flush()
-m.train()
 
 
 
@@ -70,9 +69,6 @@ def f(x, m=m, optimizer_name='SGD'):    #  train then return error. for hyperpar
     print 'parameters: %s. error: %s.' %(x, err) ; sys.stdout.flush()
     return err
 
-# f([9, 1, 2, 3.2, 4])
-
 from scipy.optimize import minimize
-print minimize(f, x0=np.float32([9, 1, 2, 3.2, 4]), method='Powell') ; sys.stdout.flush()
-# 9.056  0.017  1.726  3.2    4. -> better retain some dropout   |    0.9, 0.06, 0.02, 32, 4000
+print minimize(f, x0=np.float32([9, 1, 2, 3.2, 4]), method='Powell') ; sys.stdout.flush()   # this is the current optimal.
 print 'finished! :)'

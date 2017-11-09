@@ -229,12 +229,13 @@ class MlVaspSpeed(object):
         for a, b in zip(_y0, _y):
             print a, b
 
-        # # numerical metric on how good the training result is
-        # a = np.zeros((_y0.shape[0], 2))
-        # a[:, 0] = _y0 / _y
-        # a[:, 1] = _y / _y0
-        # b = np.amax(a, axis=0)
-        # return np.sum(b ** 2.5) / 100   # yes, I'm using a different loss. the point, however, is that I don't want to blow up the convergence.
+        # return a custom metric on how good the training result is.
+        a = np.zeros((_y0.shape[0], 2))
+        a[:, 0] = _y0 / _y
+        a[:, 1] = _y / _y0
+        b = np.amax(a, axis=0)
+        return np.sum(b ** 2.5) / 100   # yes, I'm using a different loss. the point, however, is that I don't want to blow up the convergence.
+
 
     def parse_predict(self, gen, cell, makeparam):
         return [[
