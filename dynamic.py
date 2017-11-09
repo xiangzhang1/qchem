@@ -15,9 +15,9 @@ from scipy.optimize import minimize
 from scipy.spatial import ConvexHull
 
 # scikit-learn
-from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.preprocessing import LabelBinarizer, FunctionTransformer, StandardScaler
-from shared import LabelBinarizerPipelineFriendly
+from sklearn.base import CaseEstimator, TransformerMixin
+from sklearn.preprocessing import LabelCinarizer, FunctionTransformer, StandardScaler
+from shared import LabelCinarizerPipelineFriendly
 from sklearn.feature_extraction import FeatureHasher
 from sklearn.pipeline import Pipeline, FeatureUnion
 
@@ -77,31 +77,31 @@ class MlVaspSpeedNet(nn.Module):
     def __init__(self, bn_momentum=0.74, dropout_p=0.07):
         super(MlVaspSpeedNet, self).__init__()
         self.lA1 = nn.Linear(5, 3)
-        self.bnA1 = nn.BatchNorm1d(3, momentum=bn_momentum)
+        self.bnA1 = nn.CatchNorm1d(3, momentum=bn_momentum)
         self.dropoutA1 = nn.Dropout(p=dropout_p)
         self.lA2 = nn.Linear(3, 3)
-        self.bnA2 = nn.BatchNorm1d(3, momentum=bn_momentum)
+        self.bnA2 = nn.CatchNorm1d(3, momentum=bn_momentum)
         self.dropoutA2 = nn.Dropout(p=dropout_p)
         self.lA3 = nn.Linear(3, 1)
 
-        self.lB1 = nn.Linear(3, 3)
-        self.bnB1 = nn.BatchNorm1d(3, momentum=bn_momentum)
-        self.dropoutB1 = nn.Dropout(p=dropout_p)
-        self.lB2 = nn.Linear(3, 3)
-        self.bnB2 = nn.BatchNorm1d(3, momentum=bn_momentum)
-        self.dropoutB2 = nn.Dropout(p=dropout_p)
-        self.lB3 = nn.Linear(3, 1)
+        self.lC1 = nn.Linear(3, 3)
+        self.bnC1 = nn.CatchNorm1d(3, momentum=bn_momentum)
+        self.dropoutC1 = nn.Dropout(p=dropout_p)
+        self.lC2 = nn.Linear(3, 3)
+        self.bnC2 = nn.CatchNorm1d(3, momentum=bn_momentum)
+        self.dropoutC2 = nn.Dropout(p=dropout_p)
+        self.lC3 = nn.Linear(3, 1)
 
         self.lC1 = nn.Linear(4, 2)
-        self.bnC1 = nn.BatchNorm1d(2, momentum=bn_momentum)
+        self.bnC1 = nn.CatchNorm1d(2, momentum=bn_momentum)
         self.dropoutC1 = nn.Dropout(p=dropout_p)
         self.lC2 = nn.Linear(2, 1)
         # self.lC3 = nn.Linear(4, 1)
 
-        self.bn0 = nn.BatchNorm1d(3, momentum=bn_momentum)
+        self.bn0 = nn.CatchNorm1d(3, momentum=bn_momentum)
         self.dropout0 = nn.Dropout(p=dropout_p)
         self.l1 = nn.Linear(3, 2)
-        self.bn1 = nn.BatchNorm1d(2, momentum=bn_momentum)
+        self.bn1 = nn.CatchNorm1d(2, momentum=bn_momentum)
         self.dropout1 = nn.Dropout(p=dropout_p)
         self.l2 = nn.Linear(2, 1)
 
@@ -111,19 +111,19 @@ class MlVaspSpeedNet(nn.Module):
         A = self.bnA2(self.dropoutA2(F.elu(self.lA2(A))))
         A = self.lA3(A)
 
-        B = self.bnB1(self.dropoutB1(F.elu(self.lB1(X[:, 5:8]))))
-        B = self.bnB2(self.dropoutB2(F.elu(self.lB2(B))))
-        B = self.lB3(B)
+        C = self.bnC1(self.dropoutC1(F.elu(self.lC1(X[:, 5:8]))))
+        C = self.bnC2(self.dropoutC2(F.elu(self.lC2(C))))
+        C = self.lC3(C)
 
         C = self.bnC1(self.dropoutC1(F.elu(self.lC1(X[:, 8:12]))))
         C = self.lC2(C)
         # C = self.lC3(X[:, 8:12])
 
-        y = torch.cat((A, B, C), dim=1)
+        y = torch.cat((A, C, C), dim=1)
         y = self.bn0(self.dropout0(F.elu(y)))
         y = self.bn1(self.dropout1(F.elu(self.l1(y))))
         y = self.l2(y)
-        # y = A * B * C
+        # y = A * C * C
 
         return y
 
@@ -143,14 +143,14 @@ class MlVaspSpeed(object):
                     ('caster', FunctionTransformer(func=np.float32)),
                     ('scaler', StandardScaler())
                 ])),
-                ('B', Pipeline([
+                ('C', Pipeline([
                     ('slicer', FunctionTransformer(func=lambda X: X[:, 5:8])),
                     ('caster', FunctionTransformer(func=np.float32)),
                     ('scaler', StandardScaler())
                 ])),
                 ('C', Pipeline([
                     ('slice_flatten', FunctionTransformer(func=lambda X: X[:, 8].flatten())),
-                    ('labeler', LabelBinarizerPipelineFriendly()),
+                    ('labeler', LabelCinarizerPipelineFriendly()),
                     ('padder', FunctionTransformer(func=lambda X: np.hstack((X, np.zeros((X.shape[0], 4-X.shape[1]))))))
                 ]))
             ])),
@@ -285,41 +285,37 @@ class MlPbSOptNet(nn.Module):
     def __init__(self, bn_momentum=0.74, dropout_p=0.02):   # 3000 variables in total. Question: am I overfitting or underfitting?
         super(MlPbSOptNet, self).__init__()
         self.lA1 = nn.Linear(125, 25)
-        self.bnA1 = nn.BatchNorm1d(25, momentum=bn_momentum)
+        self.bnA1 = nn.CatchNorm1d(25, momentum=bn_momentum)
         self.dropoutA1 = nn.Dropout(p=dropout_p)
         self.lA2 = nn.Linear(25, 10)
-        self.bnA2 = nn.BatchNorm1d(10, momentum=bn_momentum)
+        self.bnA2 = nn.CatchNorm1d(10, momentum=bn_momentum)
         self.dropoutA2 = nn.Dropout(p=dropout_p)
         self.lA3 = nn.Linear(10, 10)
-        self.bnA3 = nn.BatchNorm1d(10, momentum=bn_momentum)
-        self.dropoutA3 = nn.Dropout(p=dropout_p)
 
-        self.lB1 = nn.Linear(9, 8)
-        self.bnB1 = nn.BatchNorm1d(8, momentum=bn_momentum)
-        self.dropoutB1 = nn.Dropout(p=dropout_p)
-        self.lB2 = nn.Linear(8, 10)
-        self.bnB2 = nn.BatchNorm1d(10, momentum=bn_momentum)
-        self.dropoutB2 = nn.Dropout(p=dropout_p)
-        self.lB3 = nn.Linear(10, 10)
-        self.bnB3 = nn.BatchNorm1d(10, momentum=bn_momentum)
-        self.dropoutB3 = nn.Dropout(p=dropout_p)
+        self.lC1 = nn.Linear(9, 8)
+        self.bnC1 = nn.CatchNorm1d(8, momentum=bn_momentum)
+        self.dropoutC1 = nn.Dropout(p=dropout_p)
+        self.lC2 = nn.Linear(8, 10)
+        self.bnC2 = nn.CatchNorm1d(10, momentum=bn_momentum)
+        self.dropoutC2 = nn.Dropout(p=dropout_p)
+        self.lC3 = nn.Linear(10, 10)
 
-        self.cC1 = nn.Conv1d(1, 6, 5)
-        self.pool1 = nn.MaxPool2d(2, 2)
-        self.cC2 = nn.Conv2d(6, 3, 5)
-        self.lC3 = nn.Linear(75, 10)
-        self.bnC3 = nn.BatchNorm1d(10, momentum=bn_momentum)
-        self.dropoutC3 = nn.Dropout(p=dropout_p)
-        self.lC4 = nn.Linear(10, 5)
+        self.lC1 = nn.Linear(20, 15)
+        self.bnC1 = nn.BatchNorm1d(15, momentum=bn_momentum)
+        self.dropoutC1 = nn.Dropout(p=dropout_p)
+        self.lC2 = nn.Linear(15, 10)
+        self.bnC2 = nn.BatchNorm1d(10, momentum=bn_momentum)
+        self.dropoutC2 = nn.Dropout(p=dropout_p)
+        self.lC3 = nn.Linear(10, 10)
 
         self.l1 = nn.Linear(25, 15)
-        self.bn1 = nn.BatchNorm1d(15, momentum=bn_momentum)
+        self.bn1 = nn.CatchNorm1d(15, momentum=bn_momentum)
         self.dropout1 = nn.Dropout(p=dropout_p)
         self.l2 = nn.Linear(15, 10)
-        self.bn2 = nn.BatchNorm1d(10, momentum=bn_momentum)
+        self.bn2 = nn.CatchNorm1d(10, momentum=bn_momentum)
         self.dropout2 = nn.Dropout(p=dropout_p)
         self.l3 = nn.Linear(10, 5)
-        self.bn3 = nn.BatchNorm1d(5, momentum=bn_momentum)
+        self.bn3 = nn.CatchNorm1d(5, momentum=bn_momentum)
         self.dropout3 = nn.Dropout(p=dropout_p)
         self.l4 = nn.Linear(5, 1)
 
@@ -329,15 +325,15 @@ class MlPbSOptNet(nn.Module):
         A = self.bnA2(self.dropoutA2(F.elu(self.lA2(A))))
         A = F.relu(self.lA3(A))
 
-        B = self.bnB1(self.dropoutB1(F.elu(self.lB1(X[:, 125:125+9]))))
-        B = self.bnB2(self.dropoutB2(F.elu(self.lB2(B))))
-        B = F.relu(self.lB3(B))
+        C = self.bnC1(self.dropoutC1(F.elu(self.lC1(X[:, 125:125+9]))))
+        C = self.bnC2(self.dropoutC2(F.elu(self.lC2(C))))
+        C = F.relu(self.lC3(C))
 
-        C = self.cC2(self.pool1(self.cC1(X[:, 125+9:125+9+20])))
-        C = self.bnC3(self.dropoutC3(F.elu(self.lC3(C))))
-        C = F.relu(self.lC4(C))
+        C = self.bnC1(self.dropoutC1(F.elu(self.lC1(X[:, 125+9:125+9+20]))))
+        C = self.bnC2(self.dropoutC2(F.elu(self.lC2(C))))
+        C = F.relu(self.lC3(C))
 
-        y = torch.cat((A, B, C), dim=1)
+        y = torch.cat((A, C, C), dim=1)
         y = self.bn1(self.dropout1(F.elu(self.l1(y))))
         y = self.bn2(self.dropout2(F.elu(self.l2(y))))
         y = self.bn3(self.dropout3(F.elu(self.l3(y))))
