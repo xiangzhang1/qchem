@@ -294,25 +294,23 @@ class MlPbSOptNet(nn.Module):
         self.bnA3 = nn.BatchNorm1d(10, momentum=bn_momentum)
         self.dropoutA3 = nn.Dropout(p=dropout_p)
 
-        self.lB1 = nn.Linear(6, 8)
+        self.lB1 = nn.Linear(9, 8)
         self.bnB1 = nn.BatchNorm1d(8, momentum=bn_momentum)
         self.dropoutB1 = nn.Dropout(p=dropout_p)
-        self.lB2 = nn.Linear(8, 5)
+        self.lB2 = nn.Linear(8, 10)
         self.bnB2 = nn.BatchNorm1d(5, momentum=bn_momentum)
         self.dropoutB2 = nn.Dropout(p=dropout_p)
-        self.lB3 = nn.Linear(5, 5)
+        self.lB3 = nn.Linear(10, 10)
         self.bnB3 = nn.BatchNorm1d(5, momentum=bn_momentum)
         self.dropoutB3 = nn.Dropout(p=dropout_p)
 
-        self.lC1 = nn.Linear(20, 10)
-        self.bnC1 = nn.BatchNorm1d(10, momentum=bn_momentum)
-        self.dropoutC1 = nn.Dropout(p=dropout_p)
-        self.lC2 = nn.Linear(10, 5)
-        self.bnC2 = nn.BatchNorm1d(5, momentum=bn_momentum)
-        self.dropoutC2 = nn.Dropout(p=dropout_p)
-        self.lC3 = nn.Linear(5, 5)
-        self.bnC3 = nn.BatchNorm1d(5, momentum=bn_momentum)
+        self.cC1 = nn.Conv1d(1, 6, 5)
+        self.pool1 = nn.MaxPool2d(2, 2)
+        self.cC2 = nn.Conv2d(6, 3, 5)
+        self.lC3 = nn.Linear(75, 10)
+        self.bnC3 = nn.BatchNorm1d(10, momentum=bn_momentum)
         self.dropoutC3 = nn.Dropout(p=dropout_p)
+        self.lC4 = nn.Linear(10, 5)
 
         self.l1 = nn.Linear(20, 15)
         self.bn1 = nn.BatchNorm1d(15, momentum=bn_momentum)
@@ -331,13 +329,13 @@ class MlPbSOptNet(nn.Module):
         A = self.bnA2(self.dropoutA2(F.elu(self.lA2(A))))
         A = F.relu(self.lA3(A))
 
-        B = self.bnB1(self.dropoutB1(F.elu(self.lB1(X[:, 125:125+6]))))
+        B = self.bnB1(self.dropoutB1(F.elu(self.lB1(X[:, 125:125+9]))))
         B = self.bnB2(self.dropoutB2(F.elu(self.lB2(B))))
         B = F.relu(self.lB3(B))
 
-        C = self.bnC1(self.dropoutC1(F.elu(self.lC1(X[:, 125+6:125+6+20]))))
-        C = self.bnC2(self.dropoutC2(F.elu(self.lC2(C))))
-        C = F.relu(self.lC3(C))
+        C = self.cC2(self.pool1(self.cC1(X[:, 125+9:125+9+20])))
+        C = self.bnC3(self.dropoutC3(F.elu(self.lC3(C))))
+        C = F.relu(self.lC4(C))
 
         y = torch.cat((A, B, C), dim=1)
         y = self.bn1(self.dropout1(F.elu(self.l1(y))))
@@ -365,7 +363,7 @@ class MlPbSOpt(object):
         a = 6.01417/2
         cell = vasp.optimized_cell
 
-        # first, we get the fcoor and use that. no rotation need be taken into account.
+        # first, we get the fcoor and use that. rotation taken into account.
         ccoor = cell.ccoor
         def error_after_transformation(transformation, ccoor=ccoor, a=a):       # note: parallelization doesn't save time.
             x0, y0, z0, sz, sx, sy = transformation
@@ -381,15 +379,16 @@ class MlPbSOpt(object):
         rotation_matrix = shared.euler2mat(sz, sx, sy)
         ccoor_transformed = np.dot(np.subtract(ccoor, [x0, y0, z0]), rotation_matrix.T)
         fcoor = ccoor_transformed / a
+        rfcoor = np.around(fcoor)
 
         # second, we convert the sparse matrix to a dense matrix
         Nx = int(math.ceil(np.linalg.norm(cell.base[0]) / a))      # assume 长方体
         Ny = int(math.ceil(np.linalg.norm(cell.base[1]) / a))
         Nz = int(math.ceil(np.linalg.norm(cell.base[2]) / a))
         dense_matrix = np.zeros((Nx, Ny, Nz, 4))
-        for idx_atom, fc in enumerate(fcoor):
+        for idx_atom, rfc in enumerate(rfcoor):
             # dense matrix 指标
-            ix, iy, iz = np.int32(np.around(fc))
+            ix, iy, iz = np.int32(rfc)
             # 符号位
             idx_ele = 0 if idx_atom < cell.stoichiometry.values()[0] else 1     # OrderedDict, 品质保证!     # assume Pb S only
             symbol = cell.stoichiometry.keys()[idx_ele]
@@ -398,36 +397,33 @@ class MlPbSOpt(object):
             # 数值位: dx, dy, dz
             dense_matrix[ix, iy, iz, 1:] = fc - np.around(fc)
 
+        # --pre-parsing the convex-hull and then a few other features, ignore me...--
+        hull = ConvexHull(rfcoor)
+        vertice_coordinates = np.float32([fcoor[iv] for iv in hull.vertices])
+        feature_stoichiometry = np.float32([cell.stoichiometry['Pb'], cell.stoichiometry['S']])
+        # ------------------------------------------
+
         # fifth, one vasp produces many input. we should utilize all of them. we do this by generating every possible permutation of dense_matrix
         dense_matrices  = [dense_matrix[::reverse_x, ::reverse_y, ::reverse_z, :].transpose(order) for reverse_x in [-1,1] for reverse_y in [-1,1] for reverse_z in [-1,1] for order in [(0,1,2,3),(0,2,1,3),(1,0,2,3),(1,2,0,3),(2,1,0,3),(2,0,1,3)]]
         for dense_matrix in dense_matrices:
+            center_coordinate = np.mean([[ix,iy,iz] for ix,iy,iz in np.ndindex((Nx,Ny,Nz)) if dense_matrix[ix,iy,iz,0]!=0], axis=0)     # ignore me as well
 
             # third, we parse features and labels from the dense matrix.
-            # --pre-parsing the convex-hull--
-            hull = ConvexHull(np.around(fcoor))
-            nvertices = len(hull.vertices)
-            if nvertices > 20:
-                IPython.embed()
-                raise shared.CustomError(self.__class__.__name__ + '.parse_train: # vertices > 20. Assumption broken. Rethink.')
-            vertice_coordinates = np.float32([fcoor[iv] for iv in hull.vertices])
-            center_coordinate = np.mean(fcoor, axis=0)
-            # -------------------------------
-            for idx_atom, fc in enumerate(fcoor):
-                # dense matrix 空降！
-                ix, iy, iz = np.int32(np.around(fc))
+            for ix, iy, iz in np.ndindex((Nx,Ny,Nz)):
+                if dense_matrix[ix,iy,iz,0] == 0:  continue
                 # 拔剑四顾！
                 feature_npart = dense_matrix[ix-2:ix+3, iy-2:iy+3, iz-2:iz+3, 0].flatten()    # 您点的5*5*5矩阵到货啦！      # C式拍平，质量保证！
-                # 还有点小尾巴: stoichiometry 以及 convexhull
-                feature_stoichiometry = np.float32([cell.stoichiometry['Pb'], cell.stoichiometry['S']])
-                displace_to_center = (fc - center_coordinate)**-1 * 5.0
-                dist_to_vertices = np.sum((vertice_coordinates - fc)**2,axis=1)**(-0.5) * 5.0
-                np.sort(dist_to_vertices) ; dist_to_vertices = np.pad(dist_to_vertices, (0, 20-nvertices), mode='constant')
-
+                # 还有点小尾巴，主要是几何
+                displace_to_center = fc - center_coordinate
+                dist_to_nearest_surface = np.amin([np.abs([ix2-ix,iy2-iy,iz2-iz]) for ix2,iy2,iz2 in np.ndindex((Nx,Ny,Nz)) if dense_matrix[ix,iy,iz,0]!=0], axis=0)
+                dist_to_vertices = np.sum((vertice_coordinates - fc)**2,axis=1)**(0.5) ; np.sort(dist_to_vertices)
+                IPython.embed()
+                dist_to_vertices_hist, _ = np.histogram(dist_to_vertices, bins=20, range=(0, 4), density=True)
                 # fourth, formally establish features and labels
-                _X = np.concatenate((feature_npart, feature_stoichiometry, displace_to_center, dense_matrix[ix,iy,iz,0:1], dist_to_vertices))    # 125 + (2 + 3 + 1) + (20)
-                _y0 = (fc - np.around(fc))[0]
+                _X = np.concatenate((feature_npart, feature_stoichiometry, displace_to_center, dist_to_nearest_surface, dense_matrix[ix,iy,iz,0:1], dist_to_vertices_hist))    # 125 + (2 + 3 + 3 + 1) + (20)
+                _y0 = dense_matrix[ix,iy,iz,1:2]
                 self._X.append(_X)
-                self._y0.append([_y0])
+                self._y0.append(_y0)
 
 
 
