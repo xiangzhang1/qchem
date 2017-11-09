@@ -1,4 +1,4 @@
-SpeedNet#!/usr/bin/python
+#!/usr/bin/python
 '''
 An environment. Do not paste actions here.
 '''
@@ -58,7 +58,6 @@ for n in engine.Map().lookup('master').map.traverse():
 
 
 
-# The following is a little deprecated.
 
 def f(x, m=m, optimizer_name='SGD'):    #  train then return error. for hyperparameter search.
     print '----------------------------' ; sys.stdout.flush()
@@ -71,5 +70,5 @@ def f(x, m=m, optimizer_name='SGD'):    #  train then return error. for hyperpar
 
 from scipy.optimize import minimize
 print minimize(f, x0=np.float32([9, 1, 2, 3.2, 4]), method='Powell') ; sys.stdout.flush()
-# 10.618   1.      2.      3.2     4. 
+# 10.618   1.      2.      3.2     4.
 print 'finished! :)'
