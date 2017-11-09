@@ -8,6 +8,7 @@ import IPython
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import itertools
+import math
 
 # scipy
 from scipy.optimize import minimize
