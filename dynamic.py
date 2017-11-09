@@ -237,7 +237,7 @@ class MlVaspSpeed(object):
         # return np.sum(b ** 2.5) / 100   # yes, I'm using a different loss. the point, however, is that I don't want to blow up the convergence.
 
     def parse_predict(self, gen, cell, makeparam):
-        return [
+        return [[
             makeparam.projector_real + makeparam.projector_reciprocal,
             makeparam.wavefunction,
             makeparam.arraygrid,
@@ -248,7 +248,7 @@ class MlVaspSpeed(object):
             int(gen.getkw('nnode')),
             int(gen.getkw('ncore')),
             gen.getkw('platform')
-        ]
+        ]]
 
     def predict(self, _X):
         # pipeline
