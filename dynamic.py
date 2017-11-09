@@ -383,7 +383,7 @@ class MlPbSOpt(object):
             dense_matrix[ix, iy, iz, 1:] = fc - np.around(fc)
 
         # fifth, one vasp produces many input. we should utilize all of them. we do this by generating every possible permutation of dense_matrix
-        dense_matrices  = [dense_matrix[::reverse_x, ::reverse_y, ::reverse_z].transpose(order) for reverse_x in [-1,1] for reverse_y in [-1,1] for reverse_z in [-1,1] for order in [(0,1,2),(0,2,1),(1,0,2),(1,2,0),(2,1,0),(2,0,1)]]
+        dense_matrices  = [dense_matrix[::reverse_x, ::reverse_y, ::reverse_z, :].transpose(order) for reverse_x in [-1,1] for reverse_y in [-1,1] for reverse_z in [-1,1] for order in [(0,1,2,3),(0,2,1,3),(1,0,2,3),(1,2,0,3),(2,1,0,3),(2,0,1,3)]]
         for dense_matrix in dense_matrices:
 
             # third, we parse features and labels from the dense matrix.
