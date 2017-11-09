@@ -367,9 +367,9 @@ class MlPbSOpt(object):
         fcoor = ccoor_transformed / a
 
         # second, we convert the sparse matrix to a dense matrix
-        Nx = math.ceil(np.linalg.norm(cell.base[0]) / a)      # assume 长方体
-        Ny = math.ceil(np.linalg.norm(cell.base[1]) / a)
-        Nz = math.ceil(np.linalg.norm(cell.base[2]) / a)
+        Nx = int(math.ceil(np.linalg.norm(cell.base[0]) / a))      # assume 长方体
+        Ny = int(math.ceil(np.linalg.norm(cell.base[1]) / a))
+        Nz = int(math.ceil(np.linalg.norm(cell.base[2]) / a))
         dense_matrix = np.zeros((Nx, Ny, Nz, 4))
         for idx_atom, fc in fcoor:
             # dense matrix 指标
