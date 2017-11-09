@@ -417,8 +417,7 @@ class MlPbSOpt(object):
                 displace_to_center = np.float32([ix,iy,iz]) + dense_matrix[ix,iy,iz,1:] - center_coordinate
                 dist_to_nearest_surface = np.amin([np.abs([ix2-ix,iy2-iy,iz2-iz]) for ix2,iy2,iz2 in np.ndindex((Nx,Ny,Nz)) if dense_matrix[ix,iy,iz,0]!=0], axis=0)
                 dist_to_vertices = np.sum((vertice_coordinates - [ix,iy,iz])**2,axis=1)**(0.5) ; np.sort(dist_to_vertices)
-                IPython.embed()
-                dist_to_vertices_hist, _ = np.histogram(dist_to_vertices, bins=20, range=(0, 4), density=True)
+                dist_to_vertices_hist, _ = np.histogram(dist_to_vertices, bins=20, range=(0, 10), density=True)
                 # fourth, formally establish features and labels
                 _X = np.concatenate((feature_npart, feature_stoichiometry, displace_to_center, dist_to_nearest_surface, dense_matrix[ix,iy,iz,0:1], dist_to_vertices_hist))    # 125 + (2 + 3 + 3 + 1) + (20)
                 _y0 = dense_matrix[ix,iy,iz,1:2]
