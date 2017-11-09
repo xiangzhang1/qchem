@@ -52,7 +52,7 @@ for n in engine.Map().lookup('master').map.traverse():
         pass
     if getattr(n, 'gen', None) and n.gen.parse_if('engine=vasp') and n.moonphase()==2:
         try:
-            m.parse_obj(n.vasp, engine.Makeparam(n.vasp.gen))
+            m.parse_train(n.vasp, n.vasp.gen, n.vasp.gen.cell, engine.Makeparam(n.vasp.gen))
         except (shared.CustomError, shared.DeferError) as e:
             print 'warning: node %s\'s parsing failed. probably old version.' %n.name ; sys.stdout.flush()
 m.train()

@@ -122,10 +122,8 @@ class MlVaspSpeedNet(nn.Module):
 
         return y
 
+
 class MlVaspSpeed(object):
-
-
-
 
     def __init__(self):
         # data
@@ -161,7 +159,7 @@ class MlVaspSpeed(object):
         self.net = MlVaspSpeedNet()
 
 
-    def parse_obj(self, vasp, makeparam):
+    def parse_train(self, vasp, gen, cell, makeparam):
         # OUTPUT
         # ------
         # preliminary checks
@@ -187,14 +185,12 @@ class MlVaspSpeed(object):
             time_elec_step = total_time / number_elec_steps
         # INPUT
         # -----
-        gen = vasp.gen
-        cell = vasp.cell
         self._X.append([
             makeparam.projector_real + makeparam.projector_reciprocal,
             makeparam.wavefunction,
             makeparam.arraygrid,
-            vasp.gen.cell.natoms(),
-            np.dot(np.cross(gen.cell.base[0], gen.cell.base[1]), gen.cell.base[2]),
+            cell.natoms(),
+            np.dot(np.cross(cell.base[0], cell.base[1]), cell.base[2]),
             # platform-specific
             int(gen.getkw('ncore_node')),
             int(gen.getkw('nnode')),
@@ -222,8 +218,8 @@ class MlVaspSpeed(object):
             optimizer.zero_grad()   # suggested trick
             loss.backward()
             optimizer.step()
-            # if epoch % 100 == 0:
-            #     print 'epoch %s, loss %s'%(epoch, loss.data.numpy()[0])
+            if epoch % 100 == 0:
+                print 'epoch %s, loss %s'%(epoch, loss.data.numpy()[0])
 
         # evaluate
         _X = self._X
@@ -239,6 +235,19 @@ class MlVaspSpeed(object):
         b = np.amax(a, axis=0)
         return np.sum(b ** 2.5) / 100   # yes, I'm using a different loss. the point, however, is that I don't want to blow up the convergence.
 
+    def parse_predict(self, gen, cell, makeparam):
+        return np.float32([
+            makeparam.projector_real + makeparam.projector_reciprocal,
+            makeparam.wavefunction,
+            makeparam.arraygrid,
+            cell.natoms(),
+            np.dot(np.cross(cell.base[0], cell.base[1]), cell.base[2]),
+            # platform-specific
+            int(gen.getkw('ncore_node')),
+            int(gen.getkw('nnode')),
+            int(gen.getkw('ncore')),
+            gen.getkw('platform')
+        ])
 
     def predict(self, _X):
         # pipeline
@@ -252,6 +261,8 @@ class MlVaspSpeed(object):
 
 
 # inital training script for MlVaspSpeed ca nbe found in scripts/machine_learning_benchmark/optimize_MlVaspSpeed_parameters.py
+
+
 
 
 # MlPbSOpt
