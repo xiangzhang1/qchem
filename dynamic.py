@@ -291,6 +291,8 @@ class MlPbSOptNet(nn.Module):
         self.bnA2 = nn.BatchNorm1d(10, momentum=bn_momentum)
         self.dropoutA2 = nn.Dropout(p=dropout_p)
         self.lA3 = nn.Linear(10, 10)
+        self.bnA3 = nn.BatchNorm1d(10, momentum=bn_momentum)
+        self.dropoutA3 = nn.Dropout(p=dropout_p)
 
         self.lB1 = nn.Linear(9, 8)
         self.bnB1 = nn.BatchNorm1d(8, momentum=bn_momentum)
@@ -299,6 +301,8 @@ class MlPbSOptNet(nn.Module):
         self.bnB2 = nn.BatchNorm1d(10, momentum=bn_momentum)
         self.dropoutB2 = nn.Dropout(p=dropout_p)
         self.lB3 = nn.Linear(10, 10)
+        self.bnB3 = nn.BatchNorm1d(10, momentum=bn_momentum)
+        self.dropoutB3 = nn.Dropout(p=dropout_p)
 
         self.lC1 = nn.Linear(20, 15)
         self.bnC1 = nn.BatchNorm1d(15, momentum=bn_momentum)
@@ -306,7 +310,9 @@ class MlPbSOptNet(nn.Module):
         self.lC2 = nn.Linear(15, 10)
         self.bnC2 = nn.BatchNorm1d(10, momentum=bn_momentum)
         self.dropoutC2 = nn.Dropout(p=dropout_p)
-        self.lC3 = nn.Linear(10, 10)
+        self.lC3 = nn.Linear(10, 5)
+        self.bnC3 = nn.BatchNorm1d(5, momentum=bn_momentum)
+        self.dropoutC3 = nn.Dropout(p=dropout_p)
 
         self.l1 = nn.Linear(25, 15)
         self.bn1 = nn.BatchNorm1d(15, momentum=bn_momentum)
@@ -323,15 +329,15 @@ class MlPbSOptNet(nn.Module):
 
         A = self.bnA1(self.dropoutA1(F.elu(self.lA1(X[:, :125]))))
         A = self.bnA2(self.dropoutA2(F.elu(self.lA2(A))))
-        A = F.relu(self.lA3(A))
+        A = self.bnA3(self.dropoutA3(F.elu(self.lA3(A))))
 
         B = self.bnB1(self.dropoutB1(F.elu(self.lB1(X[:, 125:125+9]))))
         B = self.bnB2(self.dropoutB2(F.elu(self.lB2(B))))
-        B = F.relu(self.lB3(B))
+        B = self.bnB3(self.dropoutB3(F.elu(self.lB3(B))))
 
         C = self.bnC1(self.dropoutC1(F.elu(self.lC1(X[:, 125+9:125+9+20]))))
         C = self.bnC2(self.dropoutC2(F.elu(self.lC2(C))))
-        C = F.relu(self.lC3(C))
+        C = self.bnC3(self.dropoutC3(F.elu(self.lC3(C))))
 
         y = torch.cat((A, B, C), dim=1)
         y = self.bn1(self.dropout1(F.elu(self.l1(y))))
