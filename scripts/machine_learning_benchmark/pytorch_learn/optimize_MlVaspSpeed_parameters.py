@@ -57,6 +57,10 @@ for n in engine.Map().lookup('master').map.traverse():
             print 'warning: node %s\'s parsing failed. probably old version.' %n.name ; sys.stdout.flush()
 m.train()
 
+
+
+# The following is a little deprecated.
+
 def f(x, m=m, optimizer_name='SGD'):    #  train then return error. for hyperparameter search.
     print '----------------------------' ; sys.stdout.flush()
     x = abs(x)

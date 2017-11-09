@@ -29,7 +29,7 @@ import shared
 # save, load
 # ==============================================================================
 
-def save(obj, middlename):      # Note! Where defined, above which module pickled.
+def save(obj, middlename):      # Note! Where defined, where obj pickled.
     filepath = shared.SCRIPT_DIR + '/data/dynamic.%s.pickle.'%(middlename) + time.strftime('%Y%m%d%H%M%S')
     with open(filepath,'wb') as dumpfile:
         pickle.dump(obj, dumpfile, protocol=pickle.HIGHEST_PROTOCOL)
@@ -62,54 +62,46 @@ NODES = {}
 
 MLS = {}
 
-def bel(X, units, training):
-    '''Returns a Batch-normalized, Elu-activated Tensorflow layer.
-    If regression=True,
-    Reuse is not considered.'''
-    h1 = tf.layers.dense(X, units=units)
-    h1_normalized = tf.layers.batch_normalization(h1, training=training, momentum=0.5)
-    h1_act = tf.nn.elu(h1_normalized)
-    h1_dropout = tf.layers.dropout(h1_act, rate=0.1, training=training)
-    return h1_act
-
 
 # MlVaspSpeed
 # ==============================================================================
 
+
+class MlVaspSpeedNet(nn.Module):
+
+    def __init__(self, bn_momentum=0.9, dropout_p=0.06):
+        super(MlVaspSpeedNet, self).__init__()
+        self.lA1 = nn.Linear(5, 3)
+        self.bnA1 = nn.BatchNorm1d(3, momentum=bn_momentum)
+        self.dropoutA1 = nn.Dropout(p=dropout_p)
+        self.lA2 = nn.Linear(3, 3)
+        self.bnA2 = nn.BatchNorm1d(3, momentum=bn_momentum)
+        self.dropoutA2 = nn.Dropout(p=dropout_p)
+        self.lA3 = nn.Linear(3, 1)
+
+        self.lB1 = nn.Linear(3, 3)
+        self.bnB1 = nn.BatchNorm1d(3, momentum=bn_momentum)
+        self.dropoutB1 = nn.Dropout(p=dropout_p)
+        self.lB2 = nn.Linear(3, 3)
+        self.bnB2 = nn.BatchNorm1d(3, momentum=bn_momentum)
+        self.dropoutB2 = nn.Dropout(p=dropout_p)
+        self.lB3 = nn.Linear(3, 1)
+
+        self.lC1 = nn.Linear(4, 2)
+        self.bnC1 = nn.BatchNorm1d(2, momentum=bn_momentum)
+        self.dropoutC1 = nn.Dropout(p=dropout_p)
+        self.lC2 = nn.Linear(2, 1)
+        # self.lC3 = nn.Linear(4, 1)
+
+        self.bn0 = nn.BatchNorm1d(3, momentum=bn_momentum)
+        self.dropout0 = nn.Dropout(p=dropout_p)
+        self.l1 = nn.Linear(3, 2)
+        self.bn1 = nn.BatchNorm1d(2, momentum=bn_momentum)
+        self.dropout1 = nn.Dropout(p=dropout_p)
+        self.l2 = nn.Linear(2, 1)
+
+
 class MlVaspSpeed(object):
-
-    class Net(nn.Module):
-
-        def __init__(self, bn_momentum=0.9, dropout_p=0.06):
-            super(MlVaspSpeed.Net, self).__init__()
-            self.lA1 = nn.Linear(5, 3)
-            self.bnA1 = nn.BatchNorm1d(3, momentum=bn_momentum)
-            self.dropoutA1 = nn.Dropout(p=dropout_p)
-            self.lA2 = nn.Linear(3, 3)
-            self.bnA2 = nn.BatchNorm1d(3, momentum=bn_momentum)
-            self.dropoutA2 = nn.Dropout(p=dropout_p)
-            self.lA3 = nn.Linear(3, 1)
-
-            self.lB1 = nn.Linear(3, 3)
-            self.bnB1 = nn.BatchNorm1d(3, momentum=bn_momentum)
-            self.dropoutB1 = nn.Dropout(p=dropout_p)
-            self.lB2 = nn.Linear(3, 3)
-            self.bnB2 = nn.BatchNorm1d(3, momentum=bn_momentum)
-            self.dropoutB2 = nn.Dropout(p=dropout_p)
-            self.lB3 = nn.Linear(3, 1)
-
-            self.lC1 = nn.Linear(4, 2)
-            self.bnC1 = nn.BatchNorm1d(2, momentum=bn_momentum)
-            self.dropoutC1 = nn.Dropout(p=dropout_p)
-            self.lC2 = nn.Linear(2, 1)
-            # self.lC3 = nn.Linear(4, 1)
-
-            self.bn0 = nn.BatchNorm1d(3, momentum=bn_momentum)
-            self.dropout0 = nn.Dropout(p=dropout_p)
-            self.l1 = nn.Linear(3, 2)
-            self.bn1 = nn.BatchNorm1d(2, momentum=bn_momentum)
-            self.dropout1 = nn.Dropout(p=dropout_p)
-            self.l2 = nn.Linear(2, 1)
 
         def forward(self, X):
 
@@ -165,7 +157,7 @@ class MlVaspSpeed(object):
             ('scaler', StandardScaler())
         ])
         # ann. what a pity.
-        self.net = MlVaspSpeed.Net()
+        self.net = MlVaspSpeedNet()
 
 
     def parse_obj(self, vasp, makeparam):
