@@ -314,7 +314,7 @@ class MlPbSOptNet(nn.Module):
         self.bnC3 = nn.BatchNorm1d(5, momentum=bn_momentum)
         self.dropoutC3 = nn.Dropout(p=dropout_p)
 
-        self.l1 = nn.Linear(30, 15)
+        self.l1 = nn.Linear(20, 15)
         self.bn1 = nn.BatchNorm1d(15, momentum=bn_momentum)
         self.dropout1 = nn.Dropout(p=dropout_p)
         self.l2 = nn.Linear(15, 10)
