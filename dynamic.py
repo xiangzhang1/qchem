@@ -228,7 +228,7 @@ class MlVaspSpeed(object):
         # test
         _X = np.array(self._X)[test_idx]
         _y0 = np.float32(self._y0).flatten()[test_idx]
-        _y = np.float32(self.predict(_X)).flatten()[test_idx]
+        _y = np.float32(self.predict(_X)).flatten()
         print self.__class__.__name__ + '.train: training finished. evaluation on last items: \n actual | predicted'
         for a, b in zip(_y0, _y):
             print a, b
