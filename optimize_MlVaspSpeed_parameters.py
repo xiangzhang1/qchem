@@ -63,6 +63,7 @@ def f(x, m=m, optimizer_name='SGD'):
     m.net = dynamic.MlVaspSpeed.Net(bn_momentum=bn_momentum, dropout_p=dropout_p)
     err = m.train(learning_rate=learning_rate, batch_size=batch_size, n_epochs=n_epochs, optimizer_name=optimizer_name)
     print 'parameters: %s. error: %s.' %(x, err) ; sys.stdout.flush()
+    return err
 
 # f([9, 1, 2, 3.2, 4])
 

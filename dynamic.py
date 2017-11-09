@@ -244,7 +244,7 @@ class MlVaspSpeed(object):
         a[:, 0] = _y0 / _y
         a[:, 1] = _y / _y0
         b = np.amax(a, axis=0)
-        return np.sum(b ** 2.5) / 100
+        return np.sum(b ** 2.5) / 100   # yes, I'm using a different loss. the point, however, is that I don't want to blow up the convergence.
 
 
     def predict(self, _X):
