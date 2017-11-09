@@ -298,10 +298,10 @@ class MlPbSOptNet(nn.Module):
         self.bnB1 = nn.BatchNorm1d(8, momentum=bn_momentum)
         self.dropoutB1 = nn.Dropout(p=dropout_p)
         self.lB2 = nn.Linear(8, 10)
-        self.bnB2 = nn.BatchNorm1d(5, momentum=bn_momentum)
+        self.bnB2 = nn.BatchNorm1d(10, momentum=bn_momentum)
         self.dropoutB2 = nn.Dropout(p=dropout_p)
         self.lB3 = nn.Linear(10, 10)
-        self.bnB3 = nn.BatchNorm1d(5, momentum=bn_momentum)
+        self.bnB3 = nn.BatchNorm1d(10, momentum=bn_momentum)
         self.dropoutB3 = nn.Dropout(p=dropout_p)
 
         self.cC1 = nn.Conv1d(1, 6, 5)
