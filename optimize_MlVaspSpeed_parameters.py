@@ -37,7 +37,7 @@ from shared import ELEMENTS
 print shared.bcolors.OKBLUE + 'Welcome. Libraries loaded.' + shared.bcolors.ENDC
 
 
-sys.stdout = open('optimize_MlVaspSpeed.log', 'w')
+f = open('optimize_MlVaspSpeed.log', 'w')
 
 dynamic.global_load()
 m = dynamic.MlVaspSpeed()
@@ -54,19 +54,19 @@ for n in engine.Map().lookup('master').map.traverse():
         try:
             m.parse_obj(n.vasp, engine.Makeparam(n.vasp.gen))
         except (shared.CustomError, shared.DeferError) as e:
-            print 'warning: node %s\'s parsing failed. probably old version.' %n.name
+            f.write('warning: node %s\'s parsing failed. probably old version.\n' %n.name)
 
 
 def f(x, m=m, optimizer_name='SGD'):
-    print '----------------------------'
+    f.write('----------------------------\n')
     bn_momentum, dropout_p, learning_rate, batch_size, n_epochs = x[0] / 10.0, x[1] / 15.0, 10**(-1*x[2]), int(10 * x[3]), int(1000 * x[4])
     m.net = dynamic.MlVaspSpeed.Net(bn_momentum=bn_momentum, dropout_p=dropout_p)
     err = m.train(learning_rate=learning_rate, batch_size=batch_size, n_epochs=n_epochs, optimizer_name=optimizer_name)
-    print 'parameters: %s. error: %s.' %(x, err)
+    f.write('parameters: %s. error: %s.\n' %(x, err))
 
 # f([9, 1, 2, 3.2, 4])
 
 from scipy.optimize import minimize
-print minimize(f, x0=[9, 1, 2, 3.2, 4], method='Powell')
-
-sys.stdout.close()
+f.write(minimize(f, x0=[9, 1, 2, 3.2, 4], method='Powell'))
+f.write('finished! :)')
+f.close()
