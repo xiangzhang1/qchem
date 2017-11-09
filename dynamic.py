@@ -282,14 +282,17 @@ class MlVaspSpeed(object):
 
 class MlPbSOptNet(nn.Module):
 
-    def __init__(self, bn_momentum=0.74, dropout_p=0.07):   # 2500 variables in total. Expect high dropout.
+    def __init__(self, bn_momentum=0.74, dropout_p=0.02):   # 3000 variables in total. Question: am I overfitting or underfitting?
         super(MlPbSOptNet, self).__init__()
-        self.lA1 = nn.Linear(125, 15)
-        self.bnA1 = nn.BatchNorm1d(15, momentum=bn_momentum)
+        self.lA1 = nn.Linear(125, 25)
+        self.bnA1 = nn.BatchNorm1d(25, momentum=bn_momentum)
         self.dropoutA1 = nn.Dropout(p=dropout_p)
-        self.lA2 = nn.Linear(15, 10)
+        self.lA2 = nn.Linear(25, 10)
         self.bnA2 = nn.BatchNorm1d(10, momentum=bn_momentum)
         self.dropoutA2 = nn.Dropout(p=dropout_p)
+        self.lA3 = nn.Linear(10, 10)
+        self.bnA3 = nn.BatchNorm1d(10, momentum=bn_momentum)
+        self.dropoutA3 = nn.Dropout(p=dropout_p)
 
         self.lB1 = nn.Linear(6, 8)
         self.bnB1 = nn.BatchNorm1d(8, momentum=bn_momentum)
@@ -297,6 +300,9 @@ class MlPbSOptNet(nn.Module):
         self.lB2 = nn.Linear(8, 5)
         self.bnB2 = nn.BatchNorm1d(5, momentum=bn_momentum)
         self.dropoutB2 = nn.Dropout(p=dropout_p)
+        self.lB3 = nn.Linear(5, 5)
+        self.bnB3 = nn.BatchNorm1d(5, momentum=bn_momentum)
+        self.dropoutB3 = nn.Dropout(p=dropout_p)
 
         self.lC1 = nn.Linear(20, 10)
         self.bnC1 = nn.BatchNorm1d(10, momentum=bn_momentum)
@@ -304,30 +310,40 @@ class MlPbSOptNet(nn.Module):
         self.lC2 = nn.Linear(10, 5)
         self.bnC2 = nn.BatchNorm1d(5, momentum=bn_momentum)
         self.dropoutC2 = nn.Dropout(p=dropout_p)
+        self.lC3 = nn.Linear(5, 5)
+        self.bnC3 = nn.BatchNorm1d(5, momentum=bn_momentum)
+        self.dropoutC3 = nn.Dropout(p=dropout_p)
 
-        self.l1 = nn.Linear(20, 5)
-        self.bn1 = nn.BatchNorm1d(5, momentum=bn_momentum)
+        self.l1 = nn.Linear(20, 15)
+        self.bn1 = nn.BatchNorm1d(15, momentum=bn_momentum)
         self.dropout1 = nn.Dropout(p=dropout_p)
-        self.l2 = nn.Linear(5, 5)
-        self.bn2 = nn.BatchNorm1d(5, momentum=bn_momentum)
+        self.l2 = nn.Linear(15, 10)
+        self.bn2 = nn.BatchNorm1d(10, momentum=bn_momentum)
         self.dropout2 = nn.Dropout(p=dropout_p)
-        self.l3 = nn.Linear(5, 1)
+        self.l3 = nn.Linear(10, 5)
+        self.bn3 = nn.BatchNorm1d(5, momentum=bn_momentum)
+        self.dropout3 = nn.Dropout(p=dropout_p)
+        self.l4 = nn.Linear(5, 1)
 
     def forward(self, X):   # 啊！真舒畅！
 
         A = self.bnA1(self.dropoutA1(F.elu(self.lA1(X[:, :125]))))
         A = self.bnA2(self.dropoutA2(F.elu(self.lA2(A))))
+        A = self.bnA3(self.dropoutA3(F.elu(self.lA3(A))))
 
         B = self.bnB1(self.dropoutB1(F.elu(self.lB1(X[:, 125:125+6]))))
         B = self.bnB2(self.dropoutB2(F.elu(self.lB2(B))))
+        B = self.bnB3(self.dropoutB3(F.elu(self.lB3(B))))
 
         C = self.bnC1(self.dropoutC1(F.elu(self.lC1(X[:, 125+6:125+6+20]))))
         C = self.bnC2(self.dropoutC2(F.elu(self.lC2(C))))
+        C = self.bnC3(self.dropoutC3(F.elu(self.lC3(C))))
 
         y = torch.cat((A, B, C), dim=1)
         y = self.bn1(self.dropout1(F.elu(self.l1(y))))
         y = self.bn2(self.dropout2(F.elu(self.l2(y))))
-        y = self.l3(y)
+        y = self.bn3(self.dropout3(F.elu(self.l3(y))))
+        y = self.l4(y)
 
         return y
 
@@ -413,7 +429,7 @@ class MlPbSOpt(object):
 
 
 
-    def train(self, n_epochs=1024, batch_size=128, learning_rate=0.01, optimizer_name='SGD', test_set_size=128):
+    def train(self, n_epochs=10240, batch_size=128, learning_rate=0.01, optimizer_name='SGD', test_set_size=128):
         test_idx = np.random.choice(range(len(self._X)), size=test_set_size)
         train_idx = np.array([i for i in range(len(self._X)) if i not in test_idx])
 
