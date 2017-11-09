@@ -399,7 +399,7 @@ class MlPbSOpt(object):
 
         # --pre-parsing the convex-hull and then a few other features, ignore me...--
         hull = ConvexHull(rfcoor)
-        vertice_coordinates = np.float32([fcoor[iv] for iv in hull.vertices])
+        vertice_coordinates = np.float32([rfcoor[iv] for iv in hull.vertices])
         feature_stoichiometry = np.float32([cell.stoichiometry['Pb'], cell.stoichiometry['S']])
         # ------------------------------------------
 
@@ -416,7 +416,7 @@ class MlPbSOpt(object):
                 # 还有点小尾巴，主要是几何
                 displace_to_center = np.float32([ix,iy,iz]) + dense_matrix[ix,iy,iz,1:] - center_coordinate
                 dist_to_nearest_surface = np.amin([np.abs([ix2-ix,iy2-iy,iz2-iz]) for ix2,iy2,iz2 in np.ndindex((Nx,Ny,Nz)) if dense_matrix[ix,iy,iz,0]!=0], axis=0)
-                dist_to_vertices = np.sum((vertice_coordinates - fc)**2,axis=1)**(0.5) ; np.sort(dist_to_vertices)
+                dist_to_vertices = np.sum((vertice_coordinates - [ix,iy,iz])**2,axis=1)**(0.5) ; np.sort(dist_to_vertices)
                 IPython.embed()
                 dist_to_vertices_hist, _ = np.histogram(dist_to_vertices, bins=20, range=(0, 4), density=True)
                 # fourth, formally establish features and labels
