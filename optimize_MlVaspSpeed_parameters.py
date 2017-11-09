@@ -36,6 +36,9 @@ from shared import ELEMENTS
 
 print shared.bcolors.OKBLUE + 'Welcome. Libraries loaded.' + shared.bcolors.ENDC
 
+
+sys.stdout = open('optimize_MlVaspSpeed.log', 'w')
+
 dynamic.global_load()
 m = dynamic.MlVaspSpeed()
 for n in engine.Map().lookup('master').map.traverse():
@@ -65,3 +68,5 @@ def f(x, m=m, optimizer_name='SGD'):
 
 from scipy.optimize import minimize
 print minimize(f, x0=[9, 1, 2, 3.2, 4], method='Powell')
+
+sys.stdout.close()
