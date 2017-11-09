@@ -29,7 +29,7 @@ import shared
 # save, load
 # ==============================================================================
 
-def save(obj, middlename):      # Note! Where defined, where obj pickled.
+def save(obj, middlename):      # Note! Where defined, above which obj pickled.
     filepath = shared.SCRIPT_DIR + '/data/dynamic.%s.pickle.'%(middlename) + time.strftime('%Y%m%d%H%M%S')
     with open(filepath,'wb') as dumpfile:
         pickle.dump(obj, dumpfile, protocol=pickle.HIGHEST_PROTOCOL)
@@ -201,8 +201,8 @@ class MlVaspSpeed(object):
 
     def train(self, n_epochs=4000, batch_size=32, learning_rate=0.018, optimizer_name='SGD'):
         # pipeline
-        _X = self.X_pipeline.fit_transform(self._X)
-        _y0 = self.y_pipeline.fit_transform(self._y0)
+        _X = self.X_pipeline.fit_transform(self._X)[:-5]
+        _y0 = self.y_pipeline.fit_transform(self._y0)[:-5]
         # batch: random.choice
         # ann
         criterion = nn.MSELoss()
@@ -222,21 +222,22 @@ class MlVaspSpeed(object):
                 print 'epoch %s, loss %s'%(epoch, loss.data.numpy()[0])
 
         # evaluate
-        _X = self._X
-        _y0 = np.float32(self._y0).flatten()
-        _y = np.float32(self.predict(_X)).flatten()
-        print self.__class__.__name__ + '.train: training finished. evaluation on last item: \n actual | predicted'
+        _X = self._X[-10:]
+        _y0 = np.float32(self._y0).flatten()[-10:]
+        _y = np.float32(self.predict(_X)).flatten()[-10:]
+        print self.__class__.__name__ + '.train: training finished. evaluation on last items: \n actual | predicted'
         for a, b in zip(_y0, _y):
             print a, b
-        # create a metric
-        a = np.zeros((_y0.shape[0], 2))
-        a[:, 0] = _y0 / _y
-        a[:, 1] = _y / _y0
-        b = np.amax(a, axis=0)
-        return np.sum(b ** 2.5) / 100   # yes, I'm using a different loss. the point, however, is that I don't want to blow up the convergence.
+
+        # # numerical metric on how good the training result is
+        # a = np.zeros((_y0.shape[0], 2))
+        # a[:, 0] = _y0 / _y
+        # a[:, 1] = _y / _y0
+        # b = np.amax(a, axis=0)
+        # return np.sum(b ** 2.5) / 100   # yes, I'm using a different loss. the point, however, is that I don't want to blow up the convergence.
 
     def parse_predict(self, gen, cell, makeparam):
-        return np.float32([
+        return [
             makeparam.projector_real + makeparam.projector_reciprocal,
             makeparam.wavefunction,
             makeparam.arraygrid,
@@ -247,7 +248,7 @@ class MlVaspSpeed(object):
             int(gen.getkw('nnode')),
             int(gen.getkw('ncore')),
             gen.getkw('platform')
-        ])
+        ]
 
     def predict(self, _X):
         # pipeline
