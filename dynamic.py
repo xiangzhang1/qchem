@@ -184,7 +184,7 @@ class MlVaspSpeed(object):
                 raise shared.CustomError(self.__class__.__name__ + '.warning: no Total CPU time line found. skipped collect data.')
             total_time = float(line[-1].split()[-1])
             if total_time < 1:
-                raise shared.CustomError(self.__class__.__name__ + '.warning: total time does not feel right. skipped colelct data.')
+                raise shared.CustomError(self.__class__.__name__ + '.warning: total time does not feel right. skipped collect data.')
             # number of ionic steps
             iteration_lines = [l for l in lines if 'Iteration' in l]
             number_elec_steps = len(iteration_lines)
@@ -205,9 +205,6 @@ class MlVaspSpeed(object):
             gen.getkw('platform')
         ])
         self._y0.append([time_elec_step])   # put it here so that no inconsistency will happen
-        # old compat
-        node = engine.Map().rlookup(attr_dict={'vasp':self})
-        node.default_path = types.MethodType(qchem.Node.__dict__['default_path'], node)
         self._cur.append(node.default_path(cur=True))
 
     def train(self, n_epochs=5800, batch_size=64, learning_rate=0.026, optimizer_name='SGD', test_set_size=5):
@@ -275,7 +272,7 @@ class MlVaspSpeed(object):
         return _y_inverse
 
 
-# inital training script for MlVaspSpeed ca nbe found in scripts/machine_learning_benchmark/optimize_MlVaspSpeed_parameters.py
+# inital training script for MlVaspSpeed can be found in scripts/pytorch_learn
 
 
 
