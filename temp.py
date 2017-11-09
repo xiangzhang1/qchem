@@ -30,38 +30,3 @@ dynamic.save(m, m.__class__.__name__)
 m.train()
 
 # ------------------------------------------------------------------------------
-
-dynamic.global_load()
-m = dynamic.MlVaspSpeed()
-for n in engine.Map().lookup('master').map.traverse():
-    try:
-        n.cell = engine.Cell(str(n.cell))
-        n.gen.cell = n.cell
-        n.vasp.cell = n.cell
-        n.vasp.gen = n.gen
-        n.vasp.optimized_cell = engine.Cell(str(n.vasp.optimized_cell))
-    except AttributeError:
-        pass
-    if getattr(n, 'gen', None) and n.gen.parse_if('engine=vasp') and n.moonphase()==2:
-        try:
-            m.parse_obj(n.vasp, engine.Makeparam(n.vasp.gen))
-        except (shared.CustomError, shared.DeferError) as e:
-            print 'warning: node %s\'s parsing failed. probably old version.' %n.name
-
-
-def f(x, m=m, optimizer_name='SGD'):
-    print '----------------------------'
-    bn_momentum, dropout_p, learning_rate, batch_size, n_epochs = x[0] / 10.0, x[1] / 15.0, 10**(-1*x[2]), int(10 * x[3]), int(1000 * x[4])
-    m.net = dynamic.MlVaspSpeed.Net(bn_momentum=bn_momentum, dropout_p=dropout_p)
-    err = m.train(learning_rate=learning_rate, batch_size=batch_size, n_epochs=n_epochs, optimizer_name=optimizer_name)
-    print 'parameters: %s. error: %s.' %(x, err)
-
-f([9, 1, 2, 3.2, 4])
-
-from scipy.optimize import minimize
-print minimize(f, x0=[9, 1, 2, 3.2, 4], method='Powell')
-# bn_momentum = 0.7
-# dropout_p = 0.2
-# learning_rate = 10E-5
-# batch_size = 46
-# n_epochs = 5000

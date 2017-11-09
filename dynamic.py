@@ -244,7 +244,7 @@ class MlVaspSpeed(object):
         a[:, 0] = _y0 / _y
         a[:, 1] = _y / _y0
         b = np.amax(a, axis=0)
-        return np.sum(b)
+        return np.sum(b ** 2.5)
 
 
     def predict(self, _X):
