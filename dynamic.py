@@ -230,7 +230,7 @@ class MlVaspSpeed(object):
             loss.backward()
             optimizer.step()
             if epoch % 100 == 0:
-                print 'epoch %s, loss %s'%(epoch, loss.data.numpy()[0])
+                print 'epoch %s, loss %s'%(epoch, loss.data.cpu().numpy()[0])
 
         # evaluate
         _X = self._X[-10:]
@@ -254,7 +254,7 @@ class MlVaspSpeed(object):
         self.net.eval()
         y = self.net(Variable(torch.FloatTensor(_X), requires_grad=True))
         # pipeline
-        _y_inverse = self.y_pipeline.inverse_transform(y.data.numpy())
+        _y_inverse = self.y_pipeline.inverse_transform(y.data.cpu().numpy())
         return _y_inverse
 
 
