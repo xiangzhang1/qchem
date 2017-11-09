@@ -20,6 +20,10 @@ from cStringIO import StringIO
 from fuzzywuzzy import process
 
 import types
+import matplotlib.pyplot as plt
+
+# scipy
+from scipy import spatial
 
 # pytorch
 import torch
