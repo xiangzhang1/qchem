@@ -304,7 +304,7 @@ class MlPbSOptNet(nn.Module):
         self.bnB3 = nn.BatchNorm1d(5, momentum=bn_momentum)
         self.dropoutB3 = nn.Dropout(p=dropout_p)
 
-        self.lC1 = nn.Linear(30, 10)
+        self.lC1 = nn.Linear(20, 10)
         self.bnC1 = nn.BatchNorm1d(10, momentum=bn_momentum)
         self.dropoutC1 = nn.Dropout(p=dropout_p)
         self.lC2 = nn.Linear(10, 5)
@@ -335,7 +335,7 @@ class MlPbSOptNet(nn.Module):
         B = self.bnB2(self.dropoutB2(F.elu(self.lB2(B))))
         B = F.relu(self.lB3(B))
 
-        C = self.bnC1(self.dropoutC1(F.elu(self.lC1(X[:, 125+6:125+6+30]))))
+        C = self.bnC1(self.dropoutC1(F.elu(self.lC1(X[:, 125+6:125+6+20]))))
         C = self.bnC2(self.dropoutC2(F.elu(self.lC2(C))))
         C = F.relu(self.lC3(C))
 
@@ -406,7 +406,9 @@ class MlPbSOpt(object):
             # --pre-parsing the convex-hull--
             hull = ConvexHull(np.around(fcoor))
             nvertices = len(hull.vertices)
-            if nvertices > 30:  raise shared.CustomError(self.__class__.__name__ + '.parse_train: # vertices > 30. Assumption broken. Rethink.')
+            if nvertices > 20:
+                IPython.embed()
+                raise shared.CustomError(self.__class__.__name__ + '.parse_train: # vertices > 20. Assumption broken. Rethink.')
             vertice_coordinates = np.float32([fcoor[iv] for iv in hull.vertices])
             center_coordinate = np.mean(fcoor, axis=0)
             # -------------------------------
@@ -419,10 +421,10 @@ class MlPbSOpt(object):
                 feature_stoichiometry = np.float32([cell.stoichiometry['Pb'], cell.stoichiometry['S']])
                 displace_to_center = (fc - center_coordinate)**-1 * 5.0
                 dist_to_vertices = np.sum((vertice_coordinates - fc)**2,axis=1)**(-0.5) * 5.0
-                np.sort(dist_to_vertices) ; dist_to_vertices = np.pad(dist_to_vertices, (0, 30-nvertices), mode='constant')
+                np.sort(dist_to_vertices) ; dist_to_vertices = np.pad(dist_to_vertices, (0, 20-nvertices), mode='constant')
 
                 # fourth, formally establish features and labels
-                _X = np.concatenate((feature_npart, feature_stoichiometry, displace_to_center, dense_matrix[ix,iy,iz,0:1], dist_to_vertices))    # 125 + (2 + 3 + 1) + (30)
+                _X = np.concatenate((feature_npart, feature_stoichiometry, displace_to_center, dense_matrix[ix,iy,iz,0:1], dist_to_vertices))    # 125 + (2 + 3 + 1) + (20)
                 _y0 = (fc - np.around(fc))[0]
                 self._X.append(_X)
                 self._y0.append([_y0])

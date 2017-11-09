@@ -35,7 +35,7 @@ import engine
 from shared import ELEMENTS
 
 
-sys.stdout = open('optimize_MlPbSOpt_parameters.log', 'w')
+# sys.stdout = open('optimize_MlPbSOpt_parameters.log', 'w')
 
 curs = [
 # Reproduce
