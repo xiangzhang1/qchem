@@ -408,6 +408,8 @@ class MlPbSOpt(object):
                 # fourth, formally establish features and labels
                 _X = np.concatenate((feature_npart, feature_stoichiometry, displace_to_center, dense_matrix[ix,iy,iz,0:1], dist_to_vertices))    # 125 + (2 + 3 + 1) + (20)
                 _y0 = (fc - np.around(fc))[0]
+                self._X.append(_X)
+                self._y0.append(_y0)
 
 
 
