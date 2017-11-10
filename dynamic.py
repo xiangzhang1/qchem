@@ -443,7 +443,7 @@ class MlPbSOpt(object):
         self.net_global.train()
         self.net_final.train()
         for epoch in range(n_epochs):
-            batch_idx = np.random.choice(range(_X.shape[0]), size=batch_size)
+            batch_idx = np.random.choice(range(_X_local.shape[0]), size=batch_size)
             #
             X_local= Variable(torch.FloatTensor(_X_local[batch_idx]), requires_grad=True)
             X_high= Variable(torch.FloatTensor(_X_high[batch_idx]), requires_grad=True)
