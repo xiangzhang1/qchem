@@ -336,7 +336,7 @@ class MlPbSOpt(object):
             nn.Conv3d(4, 6, kernel_size=2),
             nn.ReLU(),
             nn.MaxPool3d(2),
-            Reshape(-1, ),
+            Reshape(-1, 6 * 3 * 3 * 3),
             nn.MaxPool3d(2),
             nn.Linear(6 * 3 * 3 * 3, 10),
             nn.BatchNorm1d(10, momentum=bn_momentum),
