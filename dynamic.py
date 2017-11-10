@@ -79,32 +79,32 @@ class MlVaspSpeedNet(nn.Module):
     def __init__(self, bn_momentum=0.97, dropout_p=0.077):
         super(MlVaspSpeedNet, self).__init__()
         self.lA1 = nn.Linear(5, 3)
-        self.bnA1 = #nn.BatchNorm1d(3, momentum=bn_momentum)
-        self.dropoutA1 = #nn.Dropout(p=dropout_p)
+        self.bnA1 = nn.BatchNorm1d(3, momentum=bn_momentum)
+        self.dropoutA1 = nn.Dropout(p=dropout_p)
         self.lA2 = nn.Linear(3, 3)
-        self.bnA2 = #nn.BatchNorm1d(3, momentum=bn_momentum)
-        self.dropoutA2 = #nn.Dropout(p=dropout_p)
+        self.bnA2 = nn.BatchNorm1d(3, momentum=bn_momentum)
+        self.dropoutA2 = nn.Dropout(p=dropout_p)
         self.lA3 = nn.Linear(3, 1)
 
         self.lB1 = nn.Linear(3, 3)
-        self.bnB1 = #nn.BatchNorm1d(3, momentum=bn_momentum)
-        self.dropoutB1 = #nn.Dropout(p=dropout_p)
+        self.bnB1 = nn.BatchNorm1d(3, momentum=bn_momentum)
+        self.dropoutB1 = nn.Dropout(p=dropout_p)
         self.lB2 = nn.Linear(3, 3)
-        self.bnB2 = #nn.BatchNorm1d(3, momentum=bn_momentum)
-        self.dropoutB2 = #nn.Dropout(p=dropout_p)
+        self.bnB2 = nn.BatchNorm1d(3, momentum=bn_momentum)
+        self.dropoutB2 = nn.Dropout(p=dropout_p)
         self.lB3 = nn.Linear(3, 1)
 
         self.lC1 = nn.Linear(4, 2)
-        self.bnC1 = #nn.BatchNorm1d(2, momentum=bn_momentum)
-        self.dropoutC1 = #nn.Dropout(p=dropout_p)
+        self.bnC1 = nn.BatchNorm1d(2, momentum=bn_momentum)
+        self.dropoutC1 = nn.Dropout(p=dropout_p)
         self.lC2 = nn.Linear(2, 1)
         # self.lC3 = nn.Linear(4, 1)
 
-        self.bn0 = #nn.BatchNorm1d(3, momentum=bn_momentum)
-        self.dropout0 = #nn.Dropout(p=dropout_p)
+        self.bn0 = nn.BatchNorm1d(3, momentum=bn_momentum)
+        self.dropout0 = nn.Dropout(p=dropout_p)
         self.l1 = nn.Linear(3, 2)
-        self.bn1 = #nn.BatchNorm1d(2, momentum=bn_momentum)
-        self.dropout1 = #nn.Dropout(p=dropout_p)
+        self.bn1 = nn.BatchNorm1d(2, momentum=bn_momentum)
+        self.dropout1 = nn.Dropout(p=dropout_p)
         self.l2 = nn.Linear(2, 1)
 
     def forward(self, X):
@@ -316,38 +316,38 @@ class MlPbSOpt(object):
         self.net_local = Sequential(
             nn.Linear(125, 25),
             nn.ELU(),
-            #nn.BatchNorm1d(25, momentum=bn_momentum),
-            #nn.Dropout(p=dropout_p),
+            # nn.BatchNorm1d(25, momentum=bn_momentum),
+            # nn.Dropout(p=dropout_p),
             nn.Linear(25, 20),
             nn.ELU(),
-            #nn.BatchNorm1d(20, momentum=bn_momentum),
-            #nn.Dropout(p=dropout_p),
+            # nn.BatchNorm1d(20, momentum=bn_momentum),
+            # nn.Dropout(p=dropout_p),
             nn.Linear(20, 15),
             nn.ELU(),
-            #nn.BatchNorm1d(15, momentum=bn_momentum),
-            #nn.Dropout(p=dropout_p),
+            # nn.BatchNorm1d(15, momentum=bn_momentum),
+            # nn.Dropout(p=dropout_p),
             nn.Linear(15, 10),
             nn.ELU(),
-            #nn.BatchNorm1d(10, momentum=bn_momentum),
-            #nn.Dropout(p=dropout_p),
+            # nn.BatchNorm1d(10, momentum=bn_momentum),
+            # nn.Dropout(p=dropout_p),
             nn.Linear(10, 5),
             nn.ELU(),
-            #nn.BatchNorm1d(5, momentum=bn_momentum),
-            #nn.Dropout(p=dropout_p),
+            # nn.BatchNorm1d(5, momentum=bn_momentum),
+            # nn.Dropout(p=dropout_p),
         ).cuda()
         self.net_high = Sequential(
             nn.Linear(12, 8),
             nn.ELU(),
-            #nn.BatchNorm1d(8, momentum=bn_momentum),
-            #nn.Dropout(p=dropout_p),
+            # nn.BatchNorm1d(8, momentum=bn_momentum),
+            # nn.Dropout(p=dropout_p),
             nn.Linear(8, 7),
             nn.ELU(),
-            #nn.BatchNorm1d(7, momentum=bn_momentum),
-            #nn.Dropout(p=dropout_p),
+            # nn.BatchNorm1d(7, momentum=bn_momentum),
+            # nn.Dropout(p=dropout_p),
             nn.Linear(7, 6),
             nn.ELU(),
-            #nn.BatchNorm1d(6, momentum=bn_momentum),
-            #nn.Dropout(p=dropout_p),
+            # nn.BatchNorm1d(6, momentum=bn_momentum),
+            # nn.Dropout(p=dropout_p),
         ).cuda()
         self.net_global = Sequential(
             nn.Conv3d(1, 4, kernel_size=2),
@@ -359,34 +359,34 @@ class MlPbSOpt(object):
             Reshape(-1, 8 * 2 * 2 * 2),
             nn.Linear(8 * 2 * 2 * 2, 16),
             nn.ELU(),
-            #nn.BatchNorm1d(16, momentum=bn_momentum),
-            #nn.Dropout(p=dropout_p),
+            # nn.BatchNorm1d(16, momentum=bn_momentum),
+            # nn.Dropout(p=dropout_p),
             nn.Linear(16, 12),
             nn.ELU(),
-            #nn.BatchNorm1d(12, momentum=bn_momentum),
-            #nn.Dropout(p=dropout_p),
+            # nn.BatchNorm1d(12, momentum=bn_momentum),
+            # nn.Dropout(p=dropout_p),
             nn.Linear(12, 8),
             nn.ELU(),
-            #nn.BatchNorm1d(8, momentum=bn_momentum),
-            #nn.Dropout(p=dropout_p),
+            # nn.BatchNorm1d(8, momentum=bn_momentum),
+            # nn.Dropout(p=dropout_p),
             nn.Linear(8, 4),
             nn.ELU(),
-            #nn.BatchNorm1d(4, momentum=bn_momentum),
-            #nn.Dropout(p=dropout_p)
+            # nn.BatchNorm1d(4, momentum=bn_momentum),
+            # nn.Dropout(p=dropout_p)
         ).cuda()
         self.net_final = Sequential(
             nn.Linear(15, 12),
             nn.ELU(),
-            #nn.BatchNorm1d(12, momentum=bn_momentum),
-            #nn.Dropout(p=dropout_p),
+            # nn.BatchNorm1d(12, momentum=bn_momentum),
+            # nn.Dropout(p=dropout_p),
             nn.Linear(12, 8),
             nn.ELU(),
-            #nn.BatchNorm1d(8, momentum=bn_momentum),
-            #nn.Dropout(p=dropout_p),
+            # nn.BatchNorm1d(8, momentum=bn_momentum),
+            # nn.Dropout(p=dropout_p),
             nn.Linear(8, 4),
             nn.ELU(),
-            #nn.BatchNorm1d(4, momentum=bn_momentum),
-            #nn.Dropout(p=dropout_p),
+            # nn.BatchNorm1d(4, momentum=bn_momentum),
+            # nn.Dropout(p=dropout_p),
             nn.Linear(4, 1)
         ).cuda()
 
