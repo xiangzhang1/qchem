@@ -430,7 +430,8 @@ class MlPbSOpt(object):
 
                     # 四. 关于高级策略
                     feature_selfcharge = dense_matrix[ix, iy, iz, 0:1]
-                    feature_npart *= feature_selfcharge[0]
+                    feature_local *= feature_selfcharge[0]
+                    feature_global *= feature_selfcharge[0]
                     feature_displace_to_center = np.float32([ix,iy,iz]) - center_coordinate
 
                     nsd1 = next(k for k,g in enumerate(dense_matrix[ix:,iy,iz,0]) if g==0)
