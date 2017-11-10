@@ -435,7 +435,7 @@ class MlPbSOpt(object):
             feature_local = dense_matrix[ix-2:ix+3, iy-2:iy+3, iz-2:iz+3, 0].flatten() * dense_matrix[ix, iy, iz, 0]  #27
             label_dx = dense_matrix[ix, iy, iz, 1]  #dx
 
-            feature_global = np.abs([dense_matrix[ix-6:ix+7, iy-6:iy+7, iz-6:iz+7, 0]]) #shape=(1, 13,13,13)
+            feature_global = np.abs(dense_matrix[ix-6:ix+7, iy-6:iy+7, iz-6:iz+7, 0]) #shape=(13,13,13)
 
             # 四. 关于高级策略
             feature_selfcharge = dense_matrix[ix, iy, iz, 0]  #scalar
@@ -450,8 +450,8 @@ class MlPbSOpt(object):
 
             self._X_local.append(feature_local)
             self._X_high.append(np.concatenate((feature_stoichiometry, [feature_selfcharge], feature_displace_to_center, [nsdx1, nsdx2, nsdy1, nsdy2, nsdz1, nsdz2])))
-            self._X_global.append(feature_global)
-            self._y0.append(label_dx)
+            self._X_global.append([feature_global])
+            self._y0.append([label_dx])
 
 
     def train(self, n_epochs=8000, batch_size=64, learning_rate=0.001, optimizer_name='SGD', test_set_size=128):
