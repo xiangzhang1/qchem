@@ -26,6 +26,7 @@ from sklearn.pipeline import Pipeline, FeatureUnion
 import torch
 from torch.autograd import Variable
 import torch.nn as nn
+from torch.nn import Sequential
 import torch.nn.functional as F
 from torch.utils.data import TensorDataset, DataLoader
 import torch.optim as optim
