@@ -363,7 +363,9 @@ class MlPbSOpt(object):
 
     def __init__(self):
         # data
-        self._X = []
+        self._X_local = []
+        self._X_high = []
+        self._X_global = []
         self._y0 = []
         # pipeline
         self.X_pipeline = StandardScaler()
@@ -376,7 +378,7 @@ class MlPbSOpt(object):
         a = 6.01417/2
         cell = vasp.optimized_cell
 
-        # first, we get the fcoor and use that. rotation taken into account.
+        # 三一. 确定初始格子
         ccoor = cell.ccoor
         def error_after_transformation(transformation, ccoor=ccoor, a=a):       # note: parallelization doesn't save time.
             x0, y0, z0, sz, sx, sy = transformation
@@ -394,50 +396,57 @@ class MlPbSOpt(object):
         fcoor = ccoor_transformed / a
         rfcoor = np.around(fcoor)
 
-        # second, we convert the sparse matrix to a dense matrix
+        # 二. 将稀疏网格转为密集网格
         Nx = int(math.ceil(np.linalg.norm(cell.base[0]) / a))      # assume 长方体
         Ny = int(math.ceil(np.linalg.norm(cell.base[1]) / a))
         Nz = int(math.ceil(np.linalg.norm(cell.base[2]) / a))
         dense_matrix = np.zeros((Nx, Ny, Nz, 4))
         for idx_atom, rfc in enumerate(rfcoor):
-            # dense matrix 指标
+            # 坐标
             ix, iy, iz = np.int32(rfc)
             # 符号位
-            idx_ele = 0 if idx_atom < cell.stoichiometry.values()[0] else 1     # OrderedDict, 品质保证!     # assume Pb S only
+            idx_ele = 0 if idx_atom < cell.stoichiometry.values()[0] else 1     # OrderedDict顺序     # assume Pb S only
             symbol = cell.stoichiometry.keys()[idx_ele]
-            feature_n = 2 if symbol=='Pb' else -2
+            feature_n = 1 if symbol=='Pb' else -1
             dense_matrix[ix, iy, iz, 0] = feature_n
             # 数值位: dx, dy, dz
             dense_matrix[ix, iy, iz, 1:] = fcoor[idx_atom] - rfc
 
-        # --pre-parsing the convex-hull and then a few other features, ignore me...--
-        hull = ConvexHull(rfcoor)
-        vertice_coordinates = np.float32([rfcoor[iv] for iv in hull.vertices])
         feature_stoichiometry = np.float32([cell.stoichiometry['Pb'], cell.stoichiometry['S']])
-        # ------------------------------------------
 
-        # fifth, one vasp produces many input. we should utilize all of them. we do this by generating every possible permutation of dense_matrix
+        # 五. 对称性
         dense_matrices  = [dense_matrix[::reverse_x, ::reverse_y, ::reverse_z, :].transpose(order) for reverse_x in [-1,1] for reverse_y in [-1,1] for reverse_z in [-1,1] for order in [(0,1,2,3),(0,2,1,3),(1,0,2,3),(1,2,0,3),(2,1,0,3),(2,0,1,3)]]
         for dense_matrix in dense_matrices[0:1]:
-            center_coordinate = np.mean([[ix,iy,iz] for ix,iy,iz in np.ndindex((Nx,Ny,Nz)) if dense_matrix[ix,iy,iz,0]!=0], axis=0)     # ignore me as well
-            blank_coor = np.float32([[ix,iy,iz] for ix,iy,iz in np.ndindex((Nx,Ny,Nz)) if dense_matrix[ix,iy,iz,0]==0])
+            center_coordinate = np.mean([[ix,iy,iz] for ix,iy,iz in np.ndindex((Nx,Ny,Nz)) if dense_matrix[ix,iy,iz,0]!=0], axis=0)
 
-            # third, we parse features and labels from the dense matrix.
             for ix, iy, iz in np.ndindex((Nx,Ny,Nz)):
-                if dense_matrix[ix,iy,iz,0] == 0:  continue
-                # 拔剑四顾！
-                feature_npart = dense_matrix[ix-2:ix+3, iy-2:iy+3, iz-2:iz+3, 0].flatten()    # 您点的5*5*5矩阵到货啦！      # C式拍平，质量保证！
-                # 还有点小尾巴，主要是几何
-                displace_to_center = np.float32([ix,iy,iz]) + dense_matrix[ix,iy,iz,1:] - center_coordinate
-                dist_to_nearest_surface = np.amin(blank_coor-[ix,iy,iz], axis=0)
-                dist_to_vertices = np.sum((vertice_coordinates - [ix,iy,iz])**2,axis=1)**(0.5)
-                dist_to_vertices_hist, _ = np.histogram(dist_to_vertices, bins=20, range=(0, 10), density=True)
-                # fourth, formally establish features and labels
-                # _X = np.concatenate((feature_npart, feature_stoichiometry, displace_to_center, dist_to_nearest_surface, dense_matrix[ix,iy,iz,0:1], dist_to_vertices_hist))    # 125 + (2 + 3 + 3 + 1) + (20)
-                _X = feature_npart
-                _y0 = dense_matrix[ix,iy,iz,1:2]
-                self._X.append(_X)
-                self._y0.append(_y0)
+                if dense_matrix[ix,iy,iz,0] != 0:
+                    # 三二. 取得 dx 和 local feature
+                    feature_local = dense_matrix[ix-2:ix+3, iy-2:iy+3, iz-2:iz+3, 0].flatten()    # C式拍平，质量保证！
+                    label_dx = dense_matrix[ix,iy,iz,1:2]
+
+                    feature_global = np.pad(dense_matrix, 5, mode='constant')[ix-5:ix+6, iy-5:iy+6, iz-5:iz+6, 0:2]
+                    feature_global[:,:,:,1] = feature_global[:,:,:,0]**2
+
+                    # 四. 关于高级策略
+                    feature_selfcharge = dense_matrix[ix, iy, iz, 0:1]
+                    feature_npart *= feature_selfcharge[0]
+                    feature_displace_to_center = np.float32([ix,iy,iz]) - center_coordinate
+
+                    nsd1 = next(k for k,g in enumerate(dense_matrix[ix:,iy,iz,0]) if g==0)
+                    nsd2 = next(k for k,g in enumerate(dense_matrix[ix:0:-1,iy,iz,0]) if g==0)
+                    fdtsx = min(nsd1, nsd2)
+                    nsd1 = next(k for k,g in enumerate(dense_matrix[ix,iy:,iz,0]) if g==0)
+                    nsd2 = next(k for k,g in enumerate(dense_matrix[ix,iy:0:-1,iz,0]) if g==0)
+                    fdtsy = min(nsd1, nsd2)
+                    nsd1 = next(k for k,g in enumerate(dense_matrix[ix,iy,iz:,0]) if g==0)
+                    nsd2 = next(k for k,g in enumerate(dense_matrix[ix,iy,iz:0:-1,0]) if g==0)
+                    fdtsz = min(nsd1, nsd2)
+
+                    self._X_local.append(feature_local)
+                    self._X_high.append(np.concatenate((feature_stoichiometry, feature_selfcharge, feature_displace_to_center, [fdtsx, fdtsy, fdtsz])))
+                    self._X_global.append(feature_global)
+                    self._y0.append(label_dx)
 
 
     def train(self, n_epochs=10240, batch_size=128, learning_rate=0.01, optimizer_name='SGD', test_set_size=128):
