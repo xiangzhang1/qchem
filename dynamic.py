@@ -436,7 +436,7 @@ class MlPbSOpt(object):
         # batch: random.choice
         # ann
         criterion = nn.MSELoss()
-        optimizer = getattr(optim, optimizer_name)(self.net.parameters(), lr=learning_rate)
+        optimizer = getattr(optim, optimizer_name)(itertools.chain(self.net_local.parameters(), self.net_high.parameters(), self.net_global.parameters(), self.net_final.parameters()), lr=learning_rate)
         # train
         self.net_local.train()
         self.net_high.train()
