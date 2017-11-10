@@ -507,5 +507,5 @@ class MlPbSOpt(object):
         X_final = torch.cat((y_local, y_high, y_global))
         y = self.net_final(X_final)
         # pipeline
-        _y_inverse = self.y_pipeline.inverse_transform(y.data.numpy())
+        _y_inverse = self.y_pipeline.inverse_transform(y.data.cpu().numpy())
         return _y_inverse
