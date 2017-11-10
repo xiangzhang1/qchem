@@ -3,14 +3,15 @@ from scipy import spatial
 dynamic.global_load()
 m = dynamic.MLS['MLPBSOPT']
 
-_X = m.X_pipeline.transform(m._X)
+_X_local = np.float32(m._X_local)
+_X_high = m.X_high_pipeline.transform(m._X_high)
 _y0 = m.y_pipeline.transform(m._y0)
 
-
-
+Xdist = spatial.distance.pdist(np.concatenate((_X_local, _X_high), axis=1))
+ydist = spatial.distance.pdist(_y0)
 
 # problems identified. cannot guess why. 数值启发方法.
-Xdm = spatial.distance.squareform(_X_dist)
+Xdm = spatial.distance.squareform(np.concatenate((_X_local, _X_high), axis=1))
 ydm = spatial.distance.squareform(_y0_dist)
 
 for ix, iy in np.ndindex(Xdm.shape[0], Xdm.shape[1]):

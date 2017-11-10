@@ -435,7 +435,7 @@ class MlPbSOpt(object):
                     self._y0.append(label_dx)
 
 
-    def train(self, n_epochs=8000, batch_size=64, learning_rate=0.01, optimizer_name='Adam', test_set_size=128):
+    def train(self, n_epochs=8000, batch_size=64, learning_rate=0.001, optimizer_name='SGD', test_set_size=128):
         test_idx = np.random.choice(range(len(self._X_local)), size=test_set_size)
         train_idx = np.array([i for i in range(len(self._X_local)) if i not in test_idx])
 
