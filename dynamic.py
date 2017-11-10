@@ -291,74 +291,6 @@ class MlVaspSpeed(object):
 # ==============================================================================
 
 
-class MlPbSOptNet(nn.Module):
-
-    def __init__(self, bn_momentum=0.74, dropout_p=0.02):   # 3000 variables in total. Question: am I overfitting or underfitting?
-        super(MlPbSOptNet, self).__init__()
-        self.lA1 = nn.Linear(125, 25)
-        self.bnA1 = nn.BatchNorm1d(25, momentum=bn_momentum)
-        self.dropoutA1 = nn.Dropout(p=dropout_p)
-        self.lA2 = nn.Linear(25, 10)
-        self.bnA2 = nn.BatchNorm1d(10, momentum=bn_momentum)
-        self.dropoutA2 = nn.Dropout(p=dropout_p)
-        self.lA3 = nn.Linear(10, 10)
-        self.bnA3 = nn.BatchNorm1d(10, momentum=bn_momentum)
-        self.dropoutA3 = nn.Dropout(p=dropout_p)
-
-        self.lB1 = nn.Linear(9, 8)
-        self.bnB1 = nn.BatchNorm1d(8, momentum=bn_momentum)
-        self.dropoutB1 = nn.Dropout(p=dropout_p)
-        self.lB2 = nn.Linear(8, 10)
-        self.bnB2 = nn.BatchNorm1d(10, momentum=bn_momentum)
-        self.dropoutB2 = nn.Dropout(p=dropout_p)
-        self.lB3 = nn.Linear(10, 10)
-        self.bnB3 = nn.BatchNorm1d(10, momentum=bn_momentum)
-        self.dropoutB3 = nn.Dropout(p=dropout_p)
-
-        self.lC1 = nn.Linear(20, 15)
-        self.bnC1 = nn.BatchNorm1d(15, momentum=bn_momentum)
-        self.dropoutC1 = nn.Dropout(p=dropout_p)
-        self.lC2 = nn.Linear(15, 10)
-        self.bnC2 = nn.BatchNorm1d(10, momentum=bn_momentum)
-        self.dropoutC2 = nn.Dropout(p=dropout_p)
-        self.lC3 = nn.Linear(10, 5)
-        self.bnC3 = nn.BatchNorm1d(5, momentum=bn_momentum)
-        self.dropoutC3 = nn.Dropout(p=dropout_p)
-
-        self.l1 = nn.Linear(25, 15)
-        self.bn1 = nn.BatchNorm1d(15, momentum=bn_momentum)
-        self.dropout1 = nn.Dropout(p=dropout_p)
-        self.l2 = nn.Linear(15, 10)
-        self.bn2 = nn.BatchNorm1d(10, momentum=bn_momentum)
-        self.dropout2 = nn.Dropout(p=dropout_p)
-        self.l3 = nn.Linear(10, 5)
-        self.bn3 = nn.BatchNorm1d(5, momentum=bn_momentum)
-        self.dropout3 = nn.Dropout(p=dropout_p)
-        self.l4 = nn.Linear(5, 1)
-
-    def forward(self, X):   # 啊！真舒畅！
-
-        A = self.bnA1(self.dropoutA1(F.elu(self.lA1(X[:, :125]))))
-        A = self.bnA2(self.dropoutA2(F.elu(self.lA2(A))))
-        A = self.bnA3(self.dropoutA3(F.elu(self.lA3(A))))
-
-        B = self.bnB1(self.dropoutB1(F.elu(self.lB1(X[:, 125:125+9]))))
-        B = self.bnB2(self.dropoutB2(F.elu(self.lB2(B))))
-        B = self.bnB3(self.dropoutB3(F.elu(self.lB3(B))))
-
-        C = self.bnC1(self.dropoutC1(F.elu(self.lC1(X[:, 125+9:125+9+20]))))
-        C = self.bnC2(self.dropoutC2(F.elu(self.lC2(C))))
-        C = self.bnC3(self.dropoutC3(F.elu(self.lC3(C))))
-
-        y = torch.cat((A, B, C), dim=1)
-        y = self.bn1(self.dropout1(F.elu(self.l1(y))))
-        y = self.bn2(self.dropout2(F.elu(self.l2(y))))
-        y = self.bn3(self.dropout3(F.elu(self.l3(y))))
-        y = self.l4(y)
-
-        return y
-
-
 class MlPbSOpt(object):
 
     def __init__(self):
@@ -370,8 +302,48 @@ class MlPbSOpt(object):
         # pipeline
         self.X_high_pipeline = StandardScaler()
         self.y_pipeline = StandardScaler()
-        # ann. what a pity.
-        self.net = MlPbSOptNet()
+        # ann. have fun!
+        bn_momentum = 0.74
+        dropout_p = 0.02
+        self.net_global = Sequential(
+            nn.Conv3d(2, 4, 4),
+            nn.MaxPool3d(2, 2),
+            nn.Conv3d(4, 6, 6),
+            nn.Linear(6 * 3 * 3 * 3, 10),
+            nn.BatchNorm1d(10, momentum=bn_momentum),
+            nn.Dropout(p=dropout_p),
+            nn.Linear(10, 6),
+            nn.BatchNorm1d(6, momentum=bn_momentum),
+            nn.Dropout(p=dropout_p),
+            nn.Linear(6, 3),
+            nn.BatchNorm1d(3, momentum=bn_momentum),
+            nn.Dropout(p=dropout_p)
+        )
+        self.net_high = Sequential(
+            nn.Linear(10, 8),
+            nn.BatchNorm1d(8, momentum=bn_momentum),
+            nn.Dropout(p=dropout_p),
+            nn.Linear(8, 6),
+            nn.BatchNorm1d(6, momentum=bn_momentum),
+            nn.Dropout(p=dropout_p),
+        )
+        self.net_local = Sequential(
+            nn.Linear(125, 25),
+            nn.BatchNorm1d(25, momentum=bn_momentum),
+            nn.Dropout(p=dropout_p),
+            nn.Linear(25, 5),
+            nn.BatchNorm1d(5, momentum=bn_momentum),
+            nn.Dropout(p=dropout_p),
+        )
+        self.net_final = Sequential(
+            nn.Linear(14, 11),
+            nn.BatchNorm1d(11, momentum=bn_momentum),
+            nn.Dropout(p=dropout_p),
+            nn.Linear(11, 8),
+            nn.BatchNorm1d(8, momentum=bn_momentum),
+            nn.Dropout(p=dropout_p),
+            nn.Linear(8, 1)
+        )
 
 
     def parse_train(self, vasp):
@@ -450,55 +422,77 @@ class MlPbSOpt(object):
                     self._y0.append(label_dx)
 
 
-    def train(self, n_epochs=10240, batch_size=128, learning_rate=0.01, optimizer_name='SGD', test_set_size=128):
+    def train(self, n_epochs=8500, batch_size=128, learning_rate=0.01, optimizer_name='SGD', test_set_size=128):
         test_idx = np.random.choice(range(len(self._X)), size=test_set_size)
         train_idx = np.array([i for i in range(len(self._X)) if i not in test_idx])
 
         # train
         # pipeline
-        _X = self.X_pipeline.fit_transform(self._X)[train_idx]
+        _X_local = self._X_local[train_idx]
+        _X_high = self.X_high_pipeline.fit_transform(self._X)[train_idx]
+        _X_global = self._X_global[train_idx]
         _y0 = self.y_pipeline.fit_transform(self._y0)[train_idx]
         # batch: random.choice
         # ann
         criterion = nn.MSELoss()
         optimizer = getattr(optim, optimizer_name)(self.net.parameters(), lr=learning_rate)
         # train
-        self.net.train()
+        self.net_local.train()
+        self.net_high.train()
+        self.net_global.train()
+        self.net_final()
         for epoch in range(n_epochs):
             batch_idx = np.random.choice(range(_X.shape[0]), size=batch_size)
-            X_batch= Variable(torch.FloatTensor(_X[batch_idx]), requires_grad=True)
-            y0_batch = Variable(torch.FloatTensor(_y0[batch_idx]), requires_grad=False)
-            y = self.net(X_batch)
+            #
+            X_local= Variable(torch.FloatTensor(_X_local[batch_idx]), requires_grad=True)
+            X_high= Variable(torch.FloatTensor(_X_high[batch_idx]), requires_grad=True)
+            X_global= Variable(torch.FloatTensor(_X_global[batch_idx]), requires_grad=True)
+            y0 = Variable(torch.FloatTensor(_y0[batch_idx]), requires_grad=False)
+            #
+            y_local = self.net_local(X_local)
+            y_high = self.net_high(X_high)
+            y_global = self.net_global(X_global)
+            X_final = torch.cat((y_local, y_high, y_global))
+            y = self.net_final(X_final)
+            #
             loss = criterion(y, y0_batch)
             optimizer.zero_grad()   # suggested trick
             loss.backward()
             optimizer.step()
-            if epoch % 128 == 0:
+            if epoch % 256 == 0:
                 print 'epoch %s, loss %s'%(epoch, loss.data.numpy()[0])
 
         # test
-        _X = np.array(self._X)[test_idx]
-        _y0 = np.float32(self._y0).flatten()[test_idx]
-        _y = np.float32(self.predict(_X)).flatten()
+        _X_local = np.array(self._X_local)[test_idx]
+        _X_high = np.array(self._X_high)[test_idx]
+        _X_global = np.array(self._X_global)[test_idx]
+        _y0_flat = np.float32(self._y0).flatten()[test_idx]
+        _y_flat = np.float32(self.predict(_X_local, _X_high, _X_global)).flatten()
         print self.__class__.__name__ + '.train: training finished. evaluation on last items: \n actual | predicted'
         for a, b in zip(_y0, _y):
             print a, b
-        a = np.zeros((_y0.shape[0], 2))
-        a[:, 0] = _y0 / _y
-        a[:, 1] = _y / _y0
-        b = np.amax(a, axis=0)
-        return np.sum(b ** 2.5) / 100   # yes, I'm using a different loss. the point, however, is that I don't want to blow up the convergence.
 
 
     def parse_predict(self, gen, cell, makeparam):
         pass  # 未完待续
 
-    def predict(self, _X):
+    def predict(self, _X_local, _X_high, _X_global):
         # pipeline
-        _X = self.X_pipeline.transform(_X)
+        _X_local = self.X_pipeline.transform(_X_local)
         # ann
-        self.net.eval()
-        y = self.net(Variable(torch.FloatTensor(_X), requires_grad=True))
+        self.net_local.eval()
+        self.net_high.eval()
+        self.net_global.eval()
+        self.net_final.eval()
+        X_local= Variable(torch.FloatTensor(_X_local[batch_idx]), requires_grad=True)
+        X_high= Variable(torch.FloatTensor(_X_high[batch_idx]), requires_grad=True)
+        X_global= Variable(torch.FloatTensor(_X_global[batch_idx]), requires_grad=True)
+        #
+        y_local = self.net_local(X_local)
+        y_high = self.net_high(X_high)
+        y_global = self.net_global(X_global)
+        X_final = torch.cat((y_local, y_high, y_global))
+        y = self.net_final(X_final)
         # pipeline
         _y_inverse = self.y_pipeline.inverse_transform(y.data.numpy())
         return _y_inverse
