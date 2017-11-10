@@ -350,13 +350,13 @@ class MlPbSOpt(object):
             nn.Dropout(p=dropout_p),
         ).cuda()
         self.net_global = Sequential(
-            nn.Conv3d(2, 2, kernel_size=2),
+            nn.Conv3d(1, 4, kernel_size=2),
             nn.ReLU(),
             nn.MaxPool3d(2),
-            nn.Conv3d(2, 2, kernel_size=2),
+            nn.Conv3d(4, 8, kernel_size=2),
             nn.ReLU(),
             nn.MaxPool3d(2),
-            Reshape(-1, 2 * 2 * 2 * 2),
+            Reshape(-1, 8 * 2 * 2 * 2),
             nn.Linear(2 * 2 * 2 * 2, 16),
             nn.ELU(),
             nn.BatchNorm1d(16, momentum=bn_momentum),
@@ -435,7 +435,7 @@ class MlPbSOpt(object):
             feature_local = dense_matrix[ix-2:ix+3, iy-2:iy+3, iz-2:iz+3, 0].flatten() * dense_matrix[ix, iy, iz, 0]  #27
             label_dx = dense_matrix[ix, iy, iz, 1]  #dx
 
-            feature_global = np.abs(dense_matrix[ix-6:ix+7, iy-6:iy+7, iz-6:iz+7, 0]) #shape=(13,13,13)
+            feature_global = np.abs([dense_matrix[ix-6:ix+7, iy-6:iy+7, iz-6:iz+7, 0]]) #shape=(1, 13,13,13)
 
             # 四. 关于高级策略
             feature_selfcharge = dense_matrix[ix, iy, iz, 0]  #scalar
