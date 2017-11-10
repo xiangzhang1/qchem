@@ -306,19 +306,13 @@ class MlPbSOpt(object):
         # ann. have fun!
         bn_momentum = 0.74
         dropout_p = 0.02
-        self.net_global = Sequential(
-            nn.Conv3d(2, 4, 4),
-            nn.MaxPool3d(2, 2),
-            nn.Conv3d(4, 6, 6),
-            nn.Linear(6 * 3 * 3 * 3, 10),
-            nn.BatchNorm1d(10, momentum=bn_momentum),
+        self.net_local = Sequential(
+            nn.Linear(125, 25),
+            nn.BatchNorm1d(25, momentum=bn_momentum),
             nn.Dropout(p=dropout_p),
-            nn.Linear(10, 6),
-            nn.BatchNorm1d(6, momentum=bn_momentum),
+            nn.Linear(25, 5),
+            nn.BatchNorm1d(5, momentum=bn_momentum),
             nn.Dropout(p=dropout_p),
-            nn.Linear(6, 3),
-            nn.BatchNorm1d(3, momentum=bn_momentum),
-            nn.Dropout(p=dropout_p)
         )
         self.net_high = Sequential(
             nn.Linear(9, 8),
@@ -328,13 +322,19 @@ class MlPbSOpt(object):
             nn.BatchNorm1d(6, momentum=bn_momentum),
             nn.Dropout(p=dropout_p),
         )
-        self.net_local = Sequential(
-            nn.Linear(125, 25),
-            nn.BatchNorm1d(25, momentum=bn_momentum),
+        self.net_global = Sequential(
+            nn.Conv3d(2, 4, kernel_size=3),
+            nn.MaxPool3d(2),
+            nn.Conv3d(4, 6, kernel_size=2),
+            nn.Linear(6 * 3 * 3 * 3, 10),
+            nn.BatchNorm1d(10, momentum=bn_momentum),
             nn.Dropout(p=dropout_p),
-            nn.Linear(25, 5),
-            nn.BatchNorm1d(5, momentum=bn_momentum),
+            nn.Linear(10, 6),
+            nn.BatchNorm1d(6, momentum=bn_momentum),
             nn.Dropout(p=dropout_p),
+            nn.Linear(6, 3),
+            nn.BatchNorm1d(3, momentum=bn_momentum),
+            nn.Dropout(p=dropout_p)
         )
         self.net_final = Sequential(
             nn.Linear(14, 11),
