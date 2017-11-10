@@ -441,7 +441,7 @@ class MlPbSOpt(object):
         self.net_local.train()
         self.net_high.train()
         self.net_global.train()
-        self.net_final()
+        self.net_final.train()
         for epoch in range(n_epochs):
             batch_idx = np.random.choice(range(_X.shape[0]), size=batch_size)
             #
