@@ -491,7 +491,7 @@ class MlPbSOpt(object):
 
     def predict(self, _X_local, _X_high, _X_global):
         # pipeline
-        _X_local = self.X_pipeline.transform(_X_local)
+        _X_high = self.X_high_pipeline.transform(_X_high)
         # ann
         self.net_local.eval()
         self.net_high.eval()
