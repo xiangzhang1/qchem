@@ -400,6 +400,7 @@ class MlPbSOpt(object):
 
                     feature_global = np.pad(dense_matrix, 5, mode='constant')[ix:ix+11, iy:iy+11, iz:iz+11, 0:2]
                     feature_global[:,:,:,1] = feature_global[:,:,:,0]**2
+                    feature_global = feature_global.transpose((3,0,1,2))
 
                     # 四. 关于高级策略
                     feature_selfcharge = dense_matrix[ix, iy, iz, 0:1]
