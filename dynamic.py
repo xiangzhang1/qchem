@@ -465,6 +465,7 @@ class MlPbSOpt(object):
             y_local = self.net_local(X_local)
             y_high = self.net_high(X_high)
             y_global = self.net_global(X_global)
+            IPython.embed()
             X_final = torch.cat((y_local, y_high, y_global))
             y = self.net_final(X_final)
             #
