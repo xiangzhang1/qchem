@@ -24,10 +24,12 @@ import types
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-
 # scipy
 from scipy import spatial
 from scipy.optimize import minimize
+
+# sklearn
+from sklearn.preprocessing import StandardScaler
 
 # pytorch
 import torch
@@ -36,6 +38,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import TensorDataset, DataLoader
 import torch.optim as optim
+from torch.nn import Sequential
 
 # qchem package
 import qchem

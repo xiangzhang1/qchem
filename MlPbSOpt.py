@@ -64,7 +64,7 @@ for cur in curs:
     m.parse_train(n.vasp)
     print 'parsing complete.'
 
-n = vasp.engine.Map().lookup('master.PbS QD.bare qd testing.crunchit.7 opt')
+n = engine.Map().lookup('master.PbS QD.bare qd testing.crunchit.7 opt')
 vasp = n.vasp
 cell = vasp.optimized_cell
 # continue to dynmaic

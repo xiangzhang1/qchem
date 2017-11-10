@@ -382,20 +382,16 @@ class MlPbSOpt(object):
 
         # 一.
         ccoor = cell.ccoor
-        ccenter = ccoor[cell.ccoor_kdtree().query(np.mean(ccoor, axis=0))[1]]
-        def error_after_transformation(transformation, ccoor=ccoor, a=a):       # note: parallelization doesn't save time.
-            x0, y0, z0, sz, sx, sy = transformation
-            rotation_matrix = shared.euler2mat(sz, sx, sy)
-            ccoor_transformed = np.dot(np.subtract(ccoor, [x0, y0, z0]), rotation_matrix.T)
-            fcoor = ccoor_transformed / a
-            return np.linalg.norm(fcoor - np.around(fcoor))
-        transformation = minimize(fun=error_after_transformation,
-                     x0=np.concatenate((ccenter, [0,0,0]), axis=0),
-                     bounds=[(ccenter[i]-0.2*a, ccenter[i]+0.2*a) for i in range(3)] + [(-.2,.2) for i in range(3)]
+        origin = ccoor[cell.ccoor_kdtree().query(np.mean(ccoor, axis=0))[1]]
+        def error_after_transformation(origin, ccoor=ccoor, a=a):       # note: parallelization doesn't save time.
+            fcoor = (ccoor - origin) / a
+            return np.sum(np.abs(fcoor - np.around(fcoor)))
+        origin = minimize(fun=error_after_transformation,
+                     x0=origin,
+                     bounds=[(origin[i]-0.2*a, origin[i]+0.2*a) for i in range(3)],
+                     tol=1e-10
                     ).x
-        x0, y0, z0, sz, sx, sy = transformation
-        rotation_matrix = shared.euler2mat(sz, sx, sy)
-        ccoor_transformed = np.dot(ccoor - [x0, y0, z0], rotation_matrix.T) + np.around(np.float32([x0, y0, z0]) / a) * a + 5 * a
+        ccoor_transformed = ccoor - origin + np.around(origin / a) * a + 5 * a
         fcoor = ccoor_transformed / a
         rfcoor = np.int32(np.around(fcoor))
 
@@ -417,7 +413,7 @@ class MlPbSOpt(object):
         feature_stoichiometry = np.float32([cell.stoichiometry['Pb'] - cell.stoichiometry['S'], cell.natoms() / 100.0])
         rfcenter = np.mean(rfcoor, axis=0)
 
-        for rfc in fcoor:
+        for rfc in rfcoor:
             ix, iy, iz = rfc
 
             # 三二. 取得 dx 和 local feature
