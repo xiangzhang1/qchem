@@ -336,7 +336,7 @@ class MlPbSOpt(object):
             nn.Dropout(p=dropout_p),
         ).cuda()
         self.net_high = Sequential(
-            nn.Linear(9, 8),
+            nn.Linear(12, 8),
             nn.ELU(),
             nn.BatchNorm1d(8, momentum=bn_momentum),
             nn.Dropout(p=dropout_p),
