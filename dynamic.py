@@ -312,7 +312,7 @@ class MlPbSOpt(object):
         self.y_pipeline = StandardScaler()
         # ann. have fun!
         bn_momentum = 0.74
-        dropout_p = 0.02
+        dropout_p = 0.001
         self.net_local = Sequential(
             nn.Linear(125, 25),
             nn.BatchNorm1d(25, momentum=bn_momentum),
@@ -435,7 +435,7 @@ class MlPbSOpt(object):
                     self._y0.append(label_dx)
 
 
-    def train(self, n_epochs=8500, batch_size=128, learning_rate=0.01, optimizer_name='SGD', test_set_size=128):
+    def train(self, n_epochs=8000, batch_size=64, learning_rate=0.01, optimizer_name='Adam', test_set_size=128):
         test_idx = np.random.choice(range(len(self._X_local)), size=test_set_size)
         train_idx = np.array([i for i in range(len(self._X_local)) if i not in test_idx])
 
@@ -482,7 +482,7 @@ class MlPbSOpt(object):
         _y0_flat = np.float32(self._y0).flatten()[test_idx]
         _y_flat = np.float32(self.predict(_X_local, _X_high, _X_global)).flatten()
         print self.__class__.__name__ + '.train: training finished. evaluation on last items: \n actual | predicted'
-        for a, b in zip(_y0, _y):
+        for a, b in zip(_y0_flat, _y_flat):
             print a, b
 
 
