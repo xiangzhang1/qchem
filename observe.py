@@ -12,9 +12,9 @@ _y0_scaled = _y0_pipeline.fit_transform(_y0)
 # ann
 net = Sequential(
 nn.Linear(1,5),
-nn.ReLU(),
+nn.ELU(),
 nn.Linear(5,5),
-nn.ReLU(),
+nn.ELU(),
 nn.Linear(5,1)
 )
 criterion = nn.MSELoss()
