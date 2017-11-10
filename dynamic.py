@@ -357,7 +357,7 @@ class MlPbSOpt(object):
             nn.ReLU(),
             nn.MaxPool3d(2),
             Reshape(-1, 8 * 2 * 2 * 2),
-            nn.Linear(2 * 2 * 2 * 2, 16),
+            nn.Linear(8 * 2 * 2 * 2, 16),
             nn.ELU(),
             nn.BatchNorm1d(16, momentum=bn_momentum),
             nn.Dropout(p=dropout_p),

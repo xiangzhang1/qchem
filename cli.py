@@ -16,6 +16,7 @@ import IPython
 import numpy as np
 from tqdm import tqdm
 import math
+import itertools
 
 from cStringIO import StringIO
 from fuzzywuzzy import process
