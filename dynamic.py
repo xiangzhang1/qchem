@@ -430,7 +430,7 @@ class MlPbSOpt(object):
         # train
         # pipeline
         _X_local = np.float32(self._X_local)[train_idx]
-        _X_high = self.X_high_pipeline.fit_transform(self._X)[train_idx]
+        _X_high = self.X_high_pipeline.fit_transform(self._X_high)[train_idx]
         _X_global = np.float32(self._X_global)[train_idx]
         _y0 = self.y_pipeline.fit_transform(self._y0)[train_idx]
         # batch: random.choice
