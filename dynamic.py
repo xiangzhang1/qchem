@@ -291,6 +291,13 @@ class MlVaspSpeed(object):
 # MlPbSOpt
 # ==============================================================================
 
+class Reshape(nn.Module):
+    def __init__(self, *args):
+        super(Reshape, self).__init__()
+        self.shape = args
+
+    def forward(self, x):
+        return x.view(self.shape)
 
 class MlPbSOpt(object):
 
@@ -323,9 +330,14 @@ class MlPbSOpt(object):
             nn.Dropout(p=dropout_p),
         )
         self.net_global = Sequential(
-            nn.Conv3d(2, 4, kernel_size=3),
+            nn.Conv3d(2, 4, kernel_size=2),
+            nn.ReLU(),
             nn.MaxPool3d(2),
             nn.Conv3d(4, 6, kernel_size=2),
+            nn.ReLU(),
+            nn.MaxPool3d(2),
+            Reshape(-1, ),
+            nn.MaxPool3d(2),
             nn.Linear(6 * 3 * 3 * 3, 10),
             nn.BatchNorm1d(10, momentum=bn_momentum),
             nn.Dropout(p=dropout_p),
