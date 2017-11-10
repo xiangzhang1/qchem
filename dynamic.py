@@ -473,7 +473,7 @@ class MlPbSOpt(object):
             loss.backward()
             optimizer.step()
             if epoch % 256 == 0:
-                print 'epoch %s, loss %s'%(epoch, loss.data.numpy()[0])
+                print 'epoch %s, loss %s'%(epoch, loss.data.cpu().numpy()[0])
 
         # test
         _X_local = np.array(self._X_local)[test_idx]
