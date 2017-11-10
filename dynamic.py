@@ -468,7 +468,7 @@ class MlPbSOpt(object):
             X_final = torch.cat((y_local, y_high, y_global), dim=1)
             y = self.net_final(X_final)
             #
-            loss = criterion(y, y0_batch)
+            loss = criterion(y, y0)
             optimizer.zero_grad()   # suggested trick
             loss.backward()
             optimizer.step()
