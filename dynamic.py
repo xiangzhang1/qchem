@@ -426,7 +426,6 @@ class MlPbSOpt(object):
                     label_dx = dense_matrix[ix,iy,iz,1:2]
 
                     feature_global = np.pad(dense_matrix, 5, mode='constant')[ix:ix+11, iy:iy+11, iz:iz+11, 0:2]
-                    IPython.embed()
                     feature_global[:,:,:,1] = feature_global[:,:,:,0]**2
 
                     # 四. 关于高级策略
