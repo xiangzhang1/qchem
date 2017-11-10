@@ -457,10 +457,10 @@ class MlPbSOpt(object):
         for epoch in range(n_epochs):
             batch_idx = np.random.choice(range(_X_local.shape[0]), size=batch_size)
             #
-            X_local= Variable(torch.cuda.FloatTensor(_X_local[batch_idx]), requires_grad=True)
-            X_high= Variable(torch.cuda.FloatTensor(_X_high[batch_idx]), requires_grad=True)
-            X_global= Variable(torch.cuda.FloatTensor(_X_global[batch_idx]), requires_grad=True)
-            y0 = Variable(torch.cuda.FloatTensor(_y0[batch_idx]), requires_grad=False)
+            X_local= Variable(torch.FloatTensor(_X_local[batch_idx]), requires_grad=True).cuda()
+            X_high= Variable(torch.FloatTensor(_X_high[batch_idx]), requires_grad=True).cuda()
+            X_global= Variable(torch.FloatTensor(_X_global[batch_idx]), requires_grad=True).cuda()
+            y0 = Variable(torch.FloatTensor(_y0[batch_idx]), requires_grad=False).cuda()
             #
             y_local = self.net_local(X_local)
             y_high = self.net_high(X_high)
