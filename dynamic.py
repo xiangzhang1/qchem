@@ -368,7 +368,7 @@ class MlPbSOpt(object):
         self._X_global = []
         self._y0 = []
         # pipeline
-        self.X_pipeline = StandardScaler()
+        self.X_high_pipeline = StandardScaler()
         self.y_pipeline = StandardScaler()
         # ann. what a pity.
         self.net = MlPbSOptNet()
