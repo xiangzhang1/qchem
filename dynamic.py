@@ -466,7 +466,7 @@ class MlPbSOpt(object):
             y_high = self.net_high(X_high)
             y_global = self.net_global(X_global)
             IPython.embed()
-            X_final = torch.cat((y_local, y_high, y_global))
+            X_final = torch.cat((y_local, y_high, y_global), dim=1)
             y = self.net_final(X_final)
             #
             loss = criterion(y, y0_batch)
