@@ -497,9 +497,9 @@ class MlPbSOpt(object):
         self.net_high.eval()
         self.net_global.eval()
         self.net_final.eval()
-        X_local= Variable(torch.FloatTensor(_X_local[batch_idx]), requires_grad=True)
-        X_high= Variable(torch.FloatTensor(_X_high[batch_idx]), requires_grad=True)
-        X_global= Variable(torch.FloatTensor(_X_global[batch_idx]), requires_grad=True)
+        X_local= Variable(torch.FloatTensor(_X_local), requires_grad=True).cuda()
+        X_high= Variable(torch.FloatTensor(_X_high), requires_grad=True).cuda()
+        X_global= Variable(torch.FloatTensor(_X_global), requires_grad=True).cuda()
         #
         y_local = self.net_local(X_local)
         y_high = self.net_high(X_high)
