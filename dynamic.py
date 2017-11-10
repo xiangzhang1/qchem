@@ -356,7 +356,7 @@ class MlPbSOpt(object):
             nn.BatchNorm1d(12, momentum=bn_momentum),
             nn.Dropout(p=dropout_p),
             nn.Linear(12, 8),
-            nn.BatchNorm1d(6, momentum=bn_momentum),
+            nn.BatchNorm1d(8, momentum=bn_momentum),
             nn.Dropout(p=dropout_p),
             nn.Linear(8, 4),
             nn.BatchNorm1d(4, momentum=bn_momentum),
@@ -364,13 +364,13 @@ class MlPbSOpt(object):
         ).cuda()
         self.net_final = Sequential(
             nn.Linear(15, 12),
-            nn.BatchNorm1d(11, momentum=bn_momentum),
+            nn.BatchNorm1d(12, momentum=bn_momentum),
             nn.Dropout(p=dropout_p),
             nn.Linear(12, 8),
             nn.BatchNorm1d(8, momentum=bn_momentum),
             nn.Dropout(p=dropout_p),
-            nn.Linear(8, 5),
-            nn.BatchNorm1d(5, momentum=bn_momentum),
+            nn.Linear(8, 4),
+            nn.BatchNorm1d(4, momentum=bn_momentum),
             nn.Dropout(p=dropout_p),
             nn.Linear(5, 1)
         ).cuda()
