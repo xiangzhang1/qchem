@@ -372,7 +372,7 @@ class MlPbSOpt(object):
             nn.Linear(8, 4),
             nn.BatchNorm1d(4, momentum=bn_momentum),
             nn.Dropout(p=dropout_p),
-            nn.Linear(5, 1)
+            nn.Linear(4, 1)
         ).cuda()
 
 
