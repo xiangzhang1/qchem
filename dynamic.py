@@ -414,43 +414,40 @@ class MlPbSOpt(object):
             # 数值位: dx, dy, dz
             dense_matrix[ix, iy, iz, 1:] = fcoor[idx_atom] - rfc
 
-        feature_stoichiometry = np.float32([cell.stoichiometry['Pb'], cell.stoichiometry['S']])
+        feature_stoichiometry = np.float32([cell.stoichiometry['Pb'] - cell.stoichiometry['S'], cell.natoms() / 100])
+        center_coordinate = np.mean([[ix,iy,iz] for ix,iy,iz in np.ndindex((Nx,Ny,Nz)) if dense_matrix[ix,iy,iz,0]!=0], axis=0)
 
-        # 五. 对称性
-        dense_matrices  = [dense_matrix[::reverse_x, ::reverse_y, ::reverse_z, :].transpose(order) for reverse_x in [-1,1] for reverse_y in [-1,1] for reverse_z in [-1,1] for order in [(0,1,2,3),(0,2,1,3),(1,0,2,3),(1,2,0,3),(2,1,0,3),(2,0,1,3)]]
-        for dense_matrix in dense_matrices[0:2]:
-            center_coordinate = np.mean([[ix,iy,iz] for ix,iy,iz in np.ndindex((Nx,Ny,Nz)) if dense_matrix[ix,iy,iz,0]!=0], axis=0)
+        for ix, iy, iz in np.ndindex((Nx,Ny,Nz)):
+            if dense_matrix[ix,iy,iz,0] == 0:   continue
+            
+            # 三二. 取得 dx 和 local feature
+            feature_local = dense_matrix[ix-2:ix+3, iy-2:iy+3, iz-2:iz+3, 0].flatten()    # C式拍平，质量保证！
+            label_dx = dense_matrix[ix,iy,iz,1:2]
 
-            for ix, iy, iz in np.ndindex((Nx,Ny,Nz)):
-                if dense_matrix[ix,iy,iz,0] != 0:
-                    # 三二. 取得 dx 和 local feature
-                    feature_local = dense_matrix[ix-2:ix+3, iy-2:iy+3, iz-2:iz+3, 0].flatten()    # C式拍平，质量保证！
-                    label_dx = dense_matrix[ix,iy,iz,1:2]
+            feature_global = np.pad(dense_matrix, 5, mode='constant')[ix:ix+11, iy:iy+11, iz:iz+11, 0:2]
+            feature_global[:,:,:,1] = feature_global[:,:,:,0]**2
+            feature_global = feature_global.transpose((3,0,1,2))
 
-                    feature_global = np.pad(dense_matrix, 5, mode='constant')[ix:ix+11, iy:iy+11, iz:iz+11, 0:2]
-                    feature_global[:,:,:,1] = feature_global[:,:,:,0]**2
-                    feature_global = feature_global.transpose((3,0,1,2))
+            # 四. 关于高级策略
+            feature_selfcharge = dense_matrix[ix, iy, iz, 0:1]
+            feature_local *= feature_selfcharge[0]
+            feature_global *= feature_selfcharge[0]
+            feature_displace_to_center = np.float32([ix,iy,iz]) - center_coordinate
 
-                    # 四. 关于高级策略
-                    feature_selfcharge = dense_matrix[ix, iy, iz, 0:1]
-                    feature_local *= feature_selfcharge[0]
-                    feature_global *= feature_selfcharge[0]
-                    feature_displace_to_center = np.float32([ix,iy,iz]) - center_coordinate
+            nsd1 = next(k for k,g in enumerate(dense_matrix[ix:,iy,iz,0]) if g==0)
+            nsd2 = next(k for k,g in enumerate(dense_matrix[ix:0:-1,iy,iz,0]) if g==0)
+            fdtsx = min(nsd1, nsd2)
+            nsd1 = next(k for k,g in enumerate(dense_matrix[ix,iy:,iz,0]) if g==0)
+            nsd2 = next(k for k,g in enumerate(dense_matrix[ix,iy:0:-1,iz,0]) if g==0)
+            fdtsy = min(nsd1, nsd2)
+            nsd1 = next(k for k,g in enumerate(dense_matrix[ix,iy,iz:,0]) if g==0)
+            nsd2 = next(k for k,g in enumerate(dense_matrix[ix,iy,iz:0:-1,0]) if g==0)
+            fdtsz = min(nsd1, nsd2)
 
-                    nsd1 = next(k for k,g in enumerate(dense_matrix[ix:,iy,iz,0]) if g==0)
-                    nsd2 = next(k for k,g in enumerate(dense_matrix[ix:0:-1,iy,iz,0]) if g==0)
-                    fdtsx = min(nsd1, nsd2)
-                    nsd1 = next(k for k,g in enumerate(dense_matrix[ix,iy:,iz,0]) if g==0)
-                    nsd2 = next(k for k,g in enumerate(dense_matrix[ix,iy:0:-1,iz,0]) if g==0)
-                    fdtsy = min(nsd1, nsd2)
-                    nsd1 = next(k for k,g in enumerate(dense_matrix[ix,iy,iz:,0]) if g==0)
-                    nsd2 = next(k for k,g in enumerate(dense_matrix[ix,iy,iz:0:-1,0]) if g==0)
-                    fdtsz = min(nsd1, nsd2)
-
-                    self._X_local.append(feature_local)
-                    self._X_high.append(np.concatenate((feature_stoichiometry, feature_selfcharge, feature_displace_to_center, [fdtsx, fdtsy, fdtsz])))
-                    self._X_global.append(feature_global)
-                    self._y0.append(label_dx)
+            self._X_local.append(feature_local)
+            self._X_high.append(np.concatenate((feature_stoichiometry, feature_selfcharge, feature_displace_to_center, [fdtsx, fdtsy, fdtsz])))
+            self._X_global.append(feature_global)
+            self._y0.append(label_dx)
 
 
     def train(self, n_epochs=8000, batch_size=64, learning_rate=0.001, optimizer_name='SGD', test_set_size=128):

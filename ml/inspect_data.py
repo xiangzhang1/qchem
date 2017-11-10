@@ -4,10 +4,11 @@ dynamic.global_load()
 m = dynamic.MLS['MLPBSOPT']
 
 _X_local = np.float32(m._X_local)
-_X_high = m.X_high_pipeline.transform(m._X_high)
+_X_high = m.X_high_pipeline.fit_transform(m._X_high)
+_X_global = m.X_high_pipeline.fit_transform(np.float32(m._X_global).reshape((_X_local.shape[0], -1)))
 _y0 = m.y_pipeline.transform(m._y0)
 
-Xdist = spatial.distance.pdist(np.concatenate((_X_local, _X_high), axis=1))
+Xdist = spatial.distance.pdist(_X_global)    #np.concatenate((_X_local, _X_high), axis=1)
 ydist = spatial.distance.pdist(_y0)
 
 # problems identified. cannot guess why. 数值启发方法.
