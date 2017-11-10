@@ -320,7 +320,7 @@ class MlPbSOpt(object):
             nn.Linear(25, 5),
             nn.BatchNorm1d(5, momentum=bn_momentum),
             nn.Dropout(p=dropout_p),
-        )
+        ).cuda()
         self.net_high = Sequential(
             nn.Linear(9, 8),
             nn.BatchNorm1d(8, momentum=bn_momentum),
@@ -328,7 +328,7 @@ class MlPbSOpt(object):
             nn.Linear(8, 6),
             nn.BatchNorm1d(6, momentum=bn_momentum),
             nn.Dropout(p=dropout_p),
-        )
+        ).cuda()
         self.net_global = Sequential(
             nn.Conv3d(2, 5, kernel_size=2),
             nn.ReLU(),
@@ -346,7 +346,7 @@ class MlPbSOpt(object):
             nn.Linear(6, 3),
             nn.BatchNorm1d(3, momentum=bn_momentum),
             nn.Dropout(p=dropout_p)
-        )
+        ).cuda()
         self.net_final = Sequential(
             nn.Linear(14, 11),
             nn.BatchNorm1d(11, momentum=bn_momentum),
@@ -355,7 +355,7 @@ class MlPbSOpt(object):
             nn.BatchNorm1d(8, momentum=bn_momentum),
             nn.Dropout(p=dropout_p),
             nn.Linear(8, 1)
-        )
+        ).cuda()
 
 
     def parse_train(self, vasp):
@@ -457,10 +457,10 @@ class MlPbSOpt(object):
         for epoch in range(n_epochs):
             batch_idx = np.random.choice(range(_X_local.shape[0]), size=batch_size)
             #
-            X_local= Variable(torch.FloatTensor(_X_local[batch_idx]), requires_grad=True)
-            X_high= Variable(torch.FloatTensor(_X_high[batch_idx]), requires_grad=True)
-            X_global= Variable(torch.FloatTensor(_X_global[batch_idx]), requires_grad=True)
-            y0 = Variable(torch.FloatTensor(_y0[batch_idx]), requires_grad=False)
+            X_local= Variable(torch.cuda.FloatTensor(_X_local[batch_idx]), requires_grad=True)
+            X_high= Variable(torch.cuda.FloatTensor(_X_high[batch_idx]), requires_grad=True)
+            X_global= Variable(torch.cuda.FloatTensor(_X_global[batch_idx]), requires_grad=True)
+            y0 = Variable(torch.cuda.FloatTensor(_y0[batch_idx]), requires_grad=False)
             #
             y_local = self.net_local(X_local)
             y_high = self.net_high(X_high)
