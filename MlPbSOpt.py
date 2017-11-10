@@ -51,8 +51,8 @@ curs = [
 # # Crunchit
     # 'master.PbS QD.bare qd testing.crunchit.3 opt',
     # 'master.PbS QD.bare qd testing.crunchit.4 opt',
-    # 'master.PbS QD.bare qd testing.crunchit.5 opt',
-    # 'master.PbS QD.bare qd testing.crunchit.6 opt',
+    'master.PbS QD.bare qd testing.crunchit.5 opt',
+    'master.PbS QD.bare qd testing.crunchit.6 opt',
     'master.PbS QD.bare qd testing.crunchit.7 opt',
 ]
 
