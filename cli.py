@@ -15,15 +15,19 @@ from pprint import pprint
 import IPython
 import numpy as np
 from tqdm import tqdm
+import math
 
 from cStringIO import StringIO
 from fuzzywuzzy import process
-
 import types
+
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
 
 # scipy
 from scipy import spatial
+from scipy.optimize import minimize
 
 # pytorch
 import torch

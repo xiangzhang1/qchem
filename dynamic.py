@@ -380,8 +380,9 @@ class MlPbSOpt(object):
         a = 6.01417/2
         cell = vasp.optimized_cell
 
-        # 三一. 确定初始格子
+        # 一.
         ccoor = cell.ccoor
+        ccenter = ccoor[cell.ccoor_kdtree().query(np.mean(ccoor, axis=0))[1]]
         def error_after_transformation(transformation, ccoor=ccoor, a=a):       # note: parallelization doesn't save time.
             x0, y0, z0, sz, sx, sy = transformation
             rotation_matrix = shared.euler2mat(sz, sx, sy)
@@ -389,63 +390,55 @@ class MlPbSOpt(object):
             fcoor = ccoor_transformed / a
             return np.linalg.norm(fcoor - np.around(fcoor))
         transformation = minimize(fun=error_after_transformation,
-                     x0=[0, 0, 0, 0, 0, 0],
-                     bounds=[(-.8,.8), (-.8,.8), (-.8,.8), (-.2,.2), (-.2,.2), (-.2,.2)]
+                     x0=np.concatenate((ccenter, [0,0,0]), axis=0),
+                     bounds=[(ccenter[i]-0.2*a, ccenter[i]+0.2*a) for i in range(3)] + [(-.2,.2) for i in range(3)]
                     ).x
         x0, y0, z0, sz, sx, sy = transformation
         rotation_matrix = shared.euler2mat(sz, sx, sy)
-        ccoor_transformed = np.dot(np.subtract(ccoor, [x0, y0, z0]), rotation_matrix.T)
+        ccoor_transformed = np.dot(ccoor - [x0, y0, z0], rotation_matrix.T) + np.around(np.float32([x0, y0, z0]) / a) * a + 5 * a
         fcoor = ccoor_transformed / a
-        rfcoor = np.around(fcoor)
+        rfcoor = np.int32(np.around(fcoor))
 
-        # 二. 将稀疏网格转为密集网格
-        Nx = int(math.ceil(np.linalg.norm(cell.base[0]) / a))      # assume 长方体
-        Ny = int(math.ceil(np.linalg.norm(cell.base[1]) / a))
-        Nz = int(math.ceil(np.linalg.norm(cell.base[2]) / a))
+        # 二.
+        Nx = int(math.ceil(np.linalg.norm(cell.base[0]) / a)) + 10      # assume 长方体
+        Ny = int(math.ceil(np.linalg.norm(cell.base[1]) / a)) + 10
+        Nz = int(math.ceil(np.linalg.norm(cell.base[2]) / a)) + 10
         dense_matrix = np.zeros((Nx, Ny, Nz, 4))
         for idx_atom, rfc in enumerate(rfcoor):
             # 坐标
-            ix, iy, iz = np.int32(rfc)
+            ix, iy, iz = rfc
             # 符号位
             idx_ele = 0 if idx_atom < cell.stoichiometry.values()[0] else 1     # OrderedDict顺序     # assume Pb S only
-            symbol = cell.stoichiometry.keys()[idx_ele]
-            feature_n = 1 if symbol=='Pb' else -1
-            dense_matrix[ix, iy, iz, 0] = feature_n
+            ele = cell.stoichiometry.keys()[idx_ele]
+            dense_matrix[ix, iy, iz, 0] = 1 if ele=='Pb' else -1
             # 数值位: dx, dy, dz
-            dense_matrix[ix, iy, iz, 1:] = fcoor[idx_atom] - rfc
+            dense_matrix[ix, iy, iz, 1:4] = fcoor[idx_atom] - rfc
 
-        feature_stoichiometry = np.float32([cell.stoichiometry['Pb'] - cell.stoichiometry['S'], cell.natoms() / 100])
-        center_coordinate = np.mean([[ix,iy,iz] for ix,iy,iz in np.ndindex((Nx,Ny,Nz)) if dense_matrix[ix,iy,iz,0]!=0], axis=0)
+        feature_stoichiometry = np.float32([cell.stoichiometry['Pb'] - cell.stoichiometry['S'], cell.natoms() / 100.0])
+        rfcenter = np.mean(rfcoor, axis=0)
 
-        for ix, iy, iz in np.ndindex((Nx,Ny,Nz)):
-            if dense_matrix[ix,iy,iz,0] == 0:   continue
-            
+        for rfc in fcoor:
+            ix, iy, iz = rfc
+
             # 三二. 取得 dx 和 local feature
-            feature_local = dense_matrix[ix-2:ix+3, iy-2:iy+3, iz-2:iz+3, 0].flatten()    # C式拍平，质量保证！
-            label_dx = dense_matrix[ix,iy,iz,1:2]
+            feature_local = dense_matrix[ix-2:ix+3, iy-2:iy+3, iz-2:iz+3, 0].flatten() * dense_matrix[ix, iy, iz, 0]  #27
+            label_dx = dense_matrix[ix, iy, iz, 1]  #dx
 
-            feature_global = np.pad(dense_matrix, 5, mode='constant')[ix:ix+11, iy:iy+11, iz:iz+11, 0:2]
-            feature_global[:,:,:,1] = feature_global[:,:,:,0]**2
-            feature_global = feature_global.transpose((3,0,1,2))
+            feature_global = np.abs(dense_matrix[ix-6:ix+7, iy-6:iy+7, iz-6:iz+7, 0]) #shape=(13,13,13)
 
             # 四. 关于高级策略
-            feature_selfcharge = dense_matrix[ix, iy, iz, 0:1]
-            feature_local *= feature_selfcharge[0]
-            feature_global *= feature_selfcharge[0]
-            feature_displace_to_center = np.float32([ix,iy,iz]) - center_coordinate
+            feature_selfcharge = dense_matrix[ix, iy, iz, 0]  #scalar
+            feature_displace_to_center = np.float32([ix,iy,iz]) - rfcenter
 
-            nsd1 = next(k for k,g in enumerate(dense_matrix[ix:,iy,iz,0]) if g==0)
-            nsd2 = next(k for k,g in enumerate(dense_matrix[ix:0:-1,iy,iz,0]) if g==0)
-            fdtsx = min(nsd1, nsd2)
-            nsd1 = next(k for k,g in enumerate(dense_matrix[ix,iy:,iz,0]) if g==0)
-            nsd2 = next(k for k,g in enumerate(dense_matrix[ix,iy:0:-1,iz,0]) if g==0)
-            fdtsy = min(nsd1, nsd2)
-            nsd1 = next(k for k,g in enumerate(dense_matrix[ix,iy,iz:,0]) if g==0)
-            nsd2 = next(k for k,g in enumerate(dense_matrix[ix,iy,iz:0:-1,0]) if g==0)
-            fdtsz = min(nsd1, nsd2)
+            nsdx1 = next(k for k,g in enumerate(dense_matrix[ix:,iy,iz,0]) if g==0)
+            nsdx2 = next(k for k,g in enumerate(dense_matrix[ix:0:-1,iy,iz,0]) if g==0)
+            nsdy1 = next(k for k,g in enumerate(dense_matrix[ix,iy:,iz,0]) if g==0)
+            nsdy2 = next(k for k,g in enumerate(dense_matrix[ix,iy:0:-1,iz,0]) if g==0)
+            nsdz1 = next(k for k,g in enumerate(dense_matrix[ix,iy,iz:,0]) if g==0)
+            nsdz2 = next(k for k,g in enumerate(dense_matrix[ix,iy,iz:0:-1,0]) if g==0)
 
             self._X_local.append(feature_local)
-            self._X_high.append(np.concatenate((feature_stoichiometry, feature_selfcharge, feature_displace_to_center, [fdtsx, fdtsy, fdtsz])))
+            self._X_high.append(np.concatenate((feature_stoichiometry, [feature_selfcharge], feature_displace_to_center, [nsdx1, nsdx2, nsdy1, nsdy2, nsdz1, nsdz2])))
             self._X_global.append(feature_global)
             self._y0.append(label_dx)
 
