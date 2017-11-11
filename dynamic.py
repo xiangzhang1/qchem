@@ -383,7 +383,7 @@ class MlPbSOpt(object):
                 # method 3
                 dx = Variable(torch.zeros(3))
                 for sgn in [-2,0,2]:
-                    indices = np.where([row[3] + row[4] == sgn for row in _X_batch])
+                    indices, = np.where([row[3] + row[4] == sgn for row in _X_batch])
                     if not indices: continue
                     IPython.embed()
                     X = Variable(torch.FloatTensor(_X_batch[indices]))
