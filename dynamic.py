@@ -373,7 +373,8 @@ class MlPbSOpt(object):
         # batch: random.choice
         # ann
         criterion = nn.MSELoss()
-        optimizer = getattr(optim, optimizer_name)(list(itertools.chain(net.parameters() for net in self.nets.values())), lr=learning_rate)
+        IPython.embed()
+        optimizer = getattr(optim, optimizer_name)(itertools.chain(net.parameters() for net in self.nets.values()), lr=learning_rate)
         # train
         [net.train() for net in self.nets.values()]
         for epoch in range(n_epochs):
