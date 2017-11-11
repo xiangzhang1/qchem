@@ -379,27 +379,27 @@ class MlPbSOpt(object):
         for epoch in range(n_epochs):
             for _X_batch, _y0_batch in zip(_X[:-50], _y0[:-50]):
 
-            # method 3
-            dx = Variable(torch.zeros(3))
-            for sgn in [-2,0,2]:
-                indices = np.where([row[3] + row[4] == sgn for row in _X_batch])
-                if not indices: continue
-
-                X = Variable(torch.FloatTensor(_X_batch[indices]))
-
-                # # method 1
-                # r = torch.norm(X[:, :3], p=2, dim=1, keepdim=True)      # (N,3) -> (N,1)
-                # rhat = X[:, :3] / r     # (N,3) / (N,1)
-                # dx = self.net(r) * X[:, 3:4] * X[:, 4:5] * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
-                # dx = torch.sum(dx, dim=0, keepdim=False)    # (N,3) -> (3)
-                # # method 2
-                # dx = self.net(X)    #(N,3) * (N,1) * (N,1)
-                # dx = torch.sum(dx, dim=0, keepdim=False)    # (N,3) -> (3)
                 # method 3
-                r = torch.norm(X[:, :3], p=2, dim=1, keepdim=True)      # (N,3) -> (N,1)
-                rhat = X[:, :3] / r     # (N,3) / (N,1)
-                dx = self.nets[sgn](r) * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
-                dx += torch.sum(dx, dim=0, keepdim=False)    # (N,3) -> (3)
+                dx = Variable(torch.zeros(3))
+                for sgn in [-2,0,2]:
+                    indices = np.where([row[3] + row[4] == sgn for row in _X_batch])
+                    if not indices: continue
+
+                    X = Variable(torch.FloatTensor(_X_batch[indices]))
+
+                    # # method 1
+                    # r = torch.norm(X[:, :3], p=2, dim=1, keepdim=True)      # (N,3) -> (N,1)
+                    # rhat = X[:, :3] / r     # (N,3) / (N,1)
+                    # dx = self.net(r) * X[:, 3:4] * X[:, 4:5] * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
+                    # dx = torch.sum(dx, dim=0, keepdim=False)    # (N,3) -> (3)
+                    # # method 2
+                    # dx = self.net(X)    #(N,3) * (N,1) * (N,1)
+                    # dx = torch.sum(dx, dim=0, keepdim=False)    # (N,3) -> (3)
+                    # method 3
+                    r = torch.norm(X[:, :3], p=2, dim=1, keepdim=True)      # (N,3) -> (N,1)
+                    rhat = X[:, :3] / r     # (N,3) / (N,1)
+                    dx = self.nets[sgn](r) * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
+                    dx += torch.sum(dx, dim=0, keepdim=False)    # (N,3) -> (3)
 
             dx0 = Variable(torch.FloatTensor(_y0_batch))
             loss = criterion(dx, dx0)
