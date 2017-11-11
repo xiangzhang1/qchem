@@ -303,41 +303,12 @@ class MlPbSOptScaler(BaseEstimator,TransformerMixin):
     def inverse_transform(self, X):
         return X * self.mean * 1.7
 
-class MlPbSOptNet(nn.Module):
-    def net(self):
-        return Sequential(
-            nn.Linear(1,5),
-            nn.ELU(),
-            nn.Linear(5,10),
-            nn.ELU(),
-            nn.Linear(10,5),
-            nn.ELU(),
-            nn.Linear(5,1)
-        )
-
-    def __init__(self):
-        super(MlPbSOptNet, self).__init__()
-        dropout_p = 0.05
-        self.netPbPb = self.net()
-        self.netSS = self.net()
-        self.netPbS = self.net()
-
-    def forward(self, X):
-        r = torch.norm(X[:, :3], p=2, dim=1, keepdim=True)      # (N,3) -> (N,1)
-        rhat = X[:, :3] / r     # (N,3) / (N,1)
-
-        dx = Variable(torch.zeros(1,3))
-        for i in range(X.size(0)):
-            sgn = X[i].data[3] + X[i].data[4]
-            if sgn == 2:
-                dx += self.netPbPb(r[i]) * X[i,3] * X[i,4] * rhat[i]
-            elif sgn == 0:
-                dx += self.netPbS(r[i]) * X[i,3] * X[i,4] * rhat[i]
-            elif sgn == -2:
-                dx += self.netSS(r[i]) * X[i,3] * X[i,4] * rhat[i]
-
-        return dx.view(1,-1)
-
+def udf_nn(*args):
+    layers = []
+    for i in range(len(args)-1):
+        layers.append(nn.Linear(args[i], args[i+1]))
+        layers.append(nn.ELU())
+    return Sequential(*layers)
 
 class MlPbSOpt(object):
 
@@ -347,11 +318,18 @@ class MlPbSOpt(object):
         self._y0 = []
 
         # pipeline
+        # method 1
         self.X_pipeline = MlPbSOptScaler()
         self.y_pipeline = MlPbSOptScaler()
+        # # method 2
+        # self.X_pipeline = StandardScaler()
+        # self.y_pipeline = Pipeline([
+        #     ('scaler', StandardScaler()),
+        #     ('_10', FunctionTransformer(func=lambda x: x * 10, inverse_func=lambda x: x / 10))
+        # ])
 
         # ann
-        self.net = MlPbSOptNet()
+        self.nets = {-2: udf_nn(1,5,10,5,1), 0:udf_nn(1,5,10,5,1), 2:udf_nn(1,5,10,5,1)}
 
     def parse_train(self, vasp):
         a = 6.01417/2
@@ -398,15 +376,36 @@ class MlPbSOpt(object):
         optimizer = getattr(optim, optimizer_name)(self.net.parameters(), lr=learning_rate)
         # train
         self.net.train()
-        for epoch in tqdm(range(n_epochs)):
+        for epoch in range(n_epochs):
             for _X_batch, _y0_batch in zip(_X[:-50], _y0[:-50]):
-                X = Variable(torch.FloatTensor(_X_batch))
-                dx0 = Variable(torch.FloatTensor(_y0_batch))
-                dx = self.net(X)
-                loss = criterion(dx, dx0)
-                optimizer.zero_grad()   # suggested trick
-                loss.backward()
-                optimizer.step()
+
+            # method 3
+            dx = Variable(torch.zeros(3))
+            for sgn in [-2,0,2]:
+                indices = np.where([row[3] + row[4] == sgn for row in _X_batch])
+                if not indices: continue
+
+                X = Variable(torch.FloatTensor(_X_batch[indices]))
+
+                # # method 1
+                # r = torch.norm(X[:, :3], p=2, dim=1, keepdim=True)      # (N,3) -> (N,1)
+                # rhat = X[:, :3] / r     # (N,3) / (N,1)
+                # dx = self.net(r) * X[:, 3:4] * X[:, 4:5] * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
+                # dx = torch.sum(dx, dim=0, keepdim=False)    # (N,3) -> (3)
+                # # method 2
+                # dx = self.net(X)    #(N,3) * (N,1) * (N,1)
+                # dx = torch.sum(dx, dim=0, keepdim=False)    # (N,3) -> (3)
+                # method 3
+                r = torch.norm(X[:, :3], p=2, dim=1, keepdim=True)      # (N,3) -> (N,1)
+                rhat = X[:, :3] / r     # (N,3) / (N,1)
+                dx = self.nets[sgn](r) * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
+                dx += torch.sum(dx, dim=0, keepdim=False)    # (N,3) -> (3)
+
+            dx0 = Variable(torch.FloatTensor(_y0_batch))
+            loss = criterion(dx, dx0)
+            optimizer.zero_grad()   # suggested trick
+            loss.backward()
+            optimizer.step()
             if epoch % 10 == 0:
                 print 'epoch %s, loss %s' %(epoch, np.asscalar(loss.data.numpy()))
 
