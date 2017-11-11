@@ -65,7 +65,7 @@ for cur in curs:
     print 'parsing complete.'
 
 m2 = dynamic.MlPbSOptL2()
-m2.parse_train(m1.train(n_epochs=1))
+m2.parse_train(*m1.train(n_epochs=1))
 
 m1.train()
 
