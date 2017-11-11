@@ -57,12 +57,25 @@ curs = [
 ]
 
 dynamic.global_load()
-m = dynamic.MlPbSOpt()
+m1 = dynamic.MlPbSOpt()
 for cur in curs:
     n = engine.Map().lookup(cur)
     print 'parsing cur %s' %cur
-    m.parse_train(n.vasp)
+    m1.parse_train(n.vasp)
     print 'parsing complete.'
+
+m2 = dynamic.MlPbSOptL2()
+m2.parse_train(m1.train(n_epochs=1))
+
+m1.train()
+
+
+
+
+
+
+
+# ---------------------------------------
 
 n = engine.Map().lookup('master.PbS QD.bare qd testing.crunchit.7 opt')
 vasp = n.vasp
