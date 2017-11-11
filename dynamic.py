@@ -348,7 +348,7 @@ class MlPbSOpt(object):
             relative_ccoor = ccoor - c
             coor_sgn = np.sign(np.arange(ccoor.shape[0]) - cell.stoichiometry.values()[0] + 0.5) * pbs_order_factor
             sgn = np.sign(idx_atom - cell.stoichiometry.values()[0] + 0.5) * pbs_order_factor
-            feature = np.concatenate((relative_ccoor, [[sgn] for _ in ccoor.shape[0]], np.c_[coor_sgn]), axis=1)
+            feature = np.concatenate((relative_ccoor, np.c_[[sgn] * ccoor.shape[0]], np.c_[coor_sgn]), axis=1)
             feature = np.delete(feature, idx_atom, 0)
             label = c - np.around(c/a)*a
             self._X.append(feature)
