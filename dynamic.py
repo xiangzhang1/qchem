@@ -325,10 +325,10 @@ class MlPbSOpt(object):
         # ann
         dropout_p = 0.05
         self.net = Sequential(
-            nn.Linear(5,30),
+            nn.Linear(5,10),
             nn.ELU(),
             nn.Dropout(p=dropout_p),
-            nn.Linear(30,20),
+            nn.Linear(10,20),
             nn.ELU(),
             nn.Dropout(p=dropout_p),
             nn.Linear(20,10),
@@ -419,6 +419,7 @@ class MlPbSOpt(object):
 
     def predict(self, _X):
         # pipeline
+        import copy
         _X = copy.deepcopy(_X)
         _X[:,:3] = self.X_pipeline.transform(_X[:,:3])
         # ann
@@ -435,5 +436,5 @@ class MlPbSOpt(object):
 
         dx = torch.sum(dx, dim=0, keepdim=False)    # (N,3) -> (3)
         # pipeline
-        _y_inverse = self.y_pipeline.inverse_transform([dx.data.numpy()])[0]
+        _y_inverse = self.y_pipeline.inverse_transform(dx.data.numpy())
         return _y_inverse
