@@ -303,7 +303,7 @@ class MlPbSOptScaler(BaseEstimator,TransformerMixin):
     def inverse_transform(self, X):
         return X * self.mean * 1.7
 
-class MlPbSOptNet(nn.Modele):
+class MlPbSOptNet(nn.Module):
     def net(self):
         return Sequential(
             nn.Linear(1,5),
