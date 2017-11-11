@@ -398,7 +398,7 @@ class MlPbSOpt(object):
                     # method 3
                     r = torch.norm(X[:, :3], p=2, dim=1, keepdim=True)      # (N,3) -> (N,1)
                     rhat = X[:, :3] / r * X[:, 3:4] * X[:, 4:5]     # (N,3) / (N,1)
-                    dxi = self.nets[sgn](r) * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
+                    dxi = self.nets[2](r) * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
                     dx += torch.sum(dxi, dim=0, keepdim=False)    # (N,3) -> (3)
 
                 dx0 = Variable(torch.FloatTensor(_y0_batch))
@@ -458,7 +458,7 @@ class MlPbSOpt(object):
             # method 3
             r = torch.norm(X[:, :3], p=2, dim=1, keepdim=True)      # (N,3) -> (N,1)
             rhat = X[:, :3] / r * X[:, 3:4] * X[:, 4:5]     # (N,3) / (N,1)
-            dxi = self.nets[sgn](r) * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
+            dxi = self.nets[2](r) * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
             dx += torch.sum(dxi, dim=0, keepdim=False)    # (N,3) -> (3)
 
         # pipeline
