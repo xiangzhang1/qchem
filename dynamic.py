@@ -326,10 +326,19 @@ class MlPbSOpt(object):
         self.net = Sequential(
             nn.Linear(3,10),
             nn.ELU(),
+            nn.BatchNorm1d(10),
             nn.Linear(10,10),
             nn.ELU(),
+            nn.BatchNorm1d(10),
             nn.Linear(10,10),
             nn.ELU(),
+            nn.BatchNorm1d(10),
+            nn.Linear(10,10),
+            nn.ELU(),
+            nn.BatchNorm1d(10),
+            nn.Linear(10,10),
+            nn.ELU(),
+            nn.BatchNorm1d(10),
             nn.Linear(10,3)
         )
 
