@@ -328,15 +328,13 @@ class MlPbSOptNet(nn.Module):
 
         dr = r * 0
         for i in range(X.size(0)):
-            row = X[i]
-            rowdata = row.data
-            sgn = rowdata[3] + rowdata[4]
+            sgn = X[i].data[3] + X[i].data[4]
             if sgn == 2:
-                dr[i] = self.netPbPb(row.view(1,-1))
+                dr[i] = self.netPbPb(r[i].view(1,-1))
             elif sgn == 0:
-                dr[i] = self.netPbS(row.view(1,-1))
+                dr[i] = self.netPbS(r[i].view(1,-1))
             elif sgn == -2:
-                dr[i] = self.netSS(row.view(1,-1))
+                dr[i] = self.netSS(r[i].view(1,-1))
 
         dx = dr * X[:, 3:4] * X[:, 4:5] * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
 
