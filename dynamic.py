@@ -323,21 +323,26 @@ class MlPbSOptNet(nn.Module):
         self.netPbS = self.net()
 
     def forward(self, X):
-        result = torch.zeros(X.size())
+        r = torch.norm(X[:, :3], p=2, dim=1, keepdim=True)      # (N,3) -> (N,1)
+        rhat = X[:, :3] / r     # (N,3) / (N,1)
+
+        dr = r * 0
 
         indicesPbPb = torch.nonzero((X[:, 3] + 1) * (X[:, 4] + 1)).view(-1)  # (N) * (N) -> (N)
         if indicesPbPb:
-            result[indicesPbPb] = self.netPbPb(X[indicesPbPb])
+            dr[indicesPbPb] = self.netPbPb(r[indicesPbPb])
 
         indicesSS = torch.nonzero((X[:, 3] - 1) * (X[:, 4] - 1)).view(-1)  # (N) * (N) -> (N)
         if indicesSS:
-            result[indicesSS] = self.netSS(X[indicesSS])
+            dr[indicesSS] = self.netSS(r[indicesSS])
 
         indicesPbS = torch.nonzero(X[:, 3] - X[:, 4]).view(-1)  # (N) * (N) -> (N)
         if indicesPbS:
-            result[indicesPbS] = self.netPbS(X[indicesPbS])
+            dr[indicesPbS] = self.netPbS(r[indicesPbS])
 
-        return result
+        dx = dr * X[:, 3:4] * X[:, 4:5] * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
+
+        return dx
 
 
 class MlPbSOpt(object):
@@ -412,12 +417,9 @@ class MlPbSOpt(object):
                 dx0 = Variable(torch.FloatTensor(_y0_batch))
 
                 # method 1
-                r = torch.norm(X[:, :3], p=2, dim=1, keepdim=True)      # (N,3) -> (N,1)
-                rhat = X[:, :3] / r     # (N,3) / (N,1)
-                dr = self.net(r)    # (N,1) -> (N,1)
-                dx = dr * X[:, 3:4] * X[:, 4:5] * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
+                dx = self.net(X)
                 # # method 2
-                # dx = self.net(X)    #(N,3) * (N,1) * (N,1)
+                # dx = self.net(X)
 
                 dx = torch.sum(dx, dim=0, keepdim=False)    # (N,3) -> (3)
 
