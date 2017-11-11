@@ -404,7 +404,8 @@ class MlPbSOpt(object):
 
     def predict(self, _X):
         # pipeline
-        _X = self.X_pipeline.transform(_X)
+        _X = copy.deepcopy(_X)
+        _X[:,:3] = self.X_pipeline.transform(_X[:,:3])
         # ann
         self.net.eval()
         X = Variable(torch.FloatTensor(_X))
