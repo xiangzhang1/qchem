@@ -550,9 +550,9 @@ class MlPbSOptL2(object):
             #
             X2_ = np.zeros((11,11,11))
             for c in X1_:
-                rc = np.around(c[:3] / a) * a + 11
-                if max(rc) < 11:
-                    X2_[rc] = c[4] * c[5]
+                rc = np.around(c[:3] / a) * a + 5
+                if all(-1<x<11 for x in rc):
+                    X2_[rc] = c[3] * c[4]
             self._X.append(X2_)
             # y2_ = y1_
             self._y0.append(y1_)
