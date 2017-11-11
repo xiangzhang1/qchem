@@ -385,6 +385,7 @@ class MlPbSOpt(object):
                 optimizer.zero_grad()   # suggested trick
                 loss.backward()
                 optimizer.step()
+            if epoch % 10:  print 'epoch %s, loss %s' %(epoch, loss.data.numpy())
 
         # test
         _X = np.array(self._X)[-1]
