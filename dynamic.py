@@ -331,7 +331,7 @@ class MlPbSOpt(object):
             nn.Linear(20,10),
             nn.ELU(),
             nn.Linear(10,3)
-        )
+        ).cuda()
 
 
     def parse_train(self, vasp):
@@ -381,8 +381,8 @@ class MlPbSOpt(object):
         self.net.train()
         for epoch in range(n_epochs):
             for _X_batch, _y0_batch in zip(_X[:-50], _y0[:-50]):
-                X = Variable(torch.FloatTensor(_X_batch))
-                dx0 = Variable(torch.FloatTensor(_y0_batch))
+                X = Variable(torch.FloatTensor(_X_batch)).cuda()
+                dx0 = Variable(torch.FloatTensor(_y0_batch)).cuda()
 
                 # method 1
                 # r = torch.norm(X[:, :3], p=2, dim=1, keepdim=True)      # (N,3) -> (N,1)
@@ -399,7 +399,7 @@ class MlPbSOpt(object):
                 loss.backward()
                 optimizer.step()
             if epoch % 10 == 0:
-                print 'epoch %s, loss %s' %(epoch, np.asscalar(loss.data.numpy()))
+                print 'epoch %s, loss %s' %(epoch, np.asscalar(loss.data.cpu().numpy()))
 
         # test
         print self.__class__.__name__ + '.train: training finished. evaluation on last items: \n actual | predicted'
@@ -419,7 +419,7 @@ class MlPbSOpt(object):
         _X[:,:3] = self.X_pipeline.transform(_X[:,:3])
         # ann
         self.net.eval()
-        X = Variable(torch.FloatTensor(_X))
+        X = Variable(torch.FloatTensor(_X)).cuda()
 
         # method 1
         # r = torch.norm(X[:, :3], p=2, dim=1, keepdim=True)      # (N,3) -> (N,1)
@@ -431,5 +431,5 @@ class MlPbSOpt(object):
 
         dx = torch.sum(dx, dim=0, keepdim=False)    # (N,3) -> (3)
         # pipeline
-        _y_inverse = self.y_pipeline.inverse_transform([dx.data.numpy()])[0]
+        _y_inverse = self.y_pipeline.inverse_transform([dx.data.cpu().numpy()])[0]
         return _y_inverse
