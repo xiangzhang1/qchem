@@ -303,6 +303,42 @@ class MlPbSOptScaler(BaseEstimator,TransformerMixin):
     def inverse_transform(self, X):
         return X * self.mean * 1.7
 
+class MlPbSOptNet(nn.Modele):
+    def net(self):
+        return Sequential(
+            nn.Linear(1,5),
+            nn.ELU(),
+            nn.Linear(5,10),
+            nn.ELU(),
+            nn.Linear(10,5),
+            nn.ELU(),
+            nn.Linear(5,1)
+        )
+
+    def __init__(self):
+        super(MlPbSOptNet, self).__init__()
+        dropout_p = 0.05
+        self.netPbPb = self.net()
+        self.netSS = self.net()
+        self.netPbS = self.net()
+
+    def forward(self, X):
+        result = torch.zeros(X.size())
+
+        indicesPbPb = torch.nonzero((X[:, 3] + 1) * (X[:, 4] + 1)).view(-1)  # (N) * (N) -> (N)
+        if indicesPbPb:
+            result[indicesPbPb] = self.netPbPb(X[indicesPbPb])
+
+        indicesSS = torch.nonzero((X[:, 3] - 1) * (X[:, 4] - 1)).view(-1)  # (N) * (N) -> (N)
+        if indicesSS:
+            result[indicesSS] = self.netSS(X[indicesSS])
+
+        indicesPbS = torch.nonzero(X[:, 3] - X[:, 4]).view(-1)  # (N) * (N) -> (N)
+        if indicesPbS:
+            result[indicesPbS] = self.netPbS(X[indicesPbS])
+
+        return result
+
 
 class MlPbSOpt(object):
 
@@ -323,17 +359,7 @@ class MlPbSOpt(object):
         # ])
 
         # ann
-        dropout_p = 0.05
-        self.net = Sequential(
-            nn.Linear(1,5),
-            nn.ELU(),
-            nn.Linear(5,10),
-            nn.ELU(),
-            nn.Linear(10,5),
-            nn.ELU(),
-            nn.Linear(5,1)
-        )
-
+        self.net = MlPbSOptNet()
 
     def parse_train(self, vasp):
         a = 6.01417/2
@@ -388,7 +414,8 @@ class MlPbSOpt(object):
                 # method 1
                 r = torch.norm(X[:, :3], p=2, dim=1, keepdim=True)      # (N,3) -> (N,1)
                 rhat = X[:, :3] / r     # (N,3) / (N,1)
-                dx = self.net(r) * X[:, 3:4] * X[:, 4:5] * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
+                dr = self.net(r)    # (N,1) -> (N,1)
+                dx = dr * X[:, 3:4] * X[:, 4:5] * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
                 # # method 2
                 # dx = self.net(X)    #(N,3) * (N,1) * (N,1)
 
