@@ -323,22 +323,17 @@ class MlPbSOpt(object):
         ])
 
         # ann
+        dropout_p = 0.05
         self.net = Sequential(
-            nn.Linear(3,10),
+            nn.Linear(5,30),
             nn.ELU(),
-            nn.BatchNorm1d(10),
-            nn.Linear(10,10),
+            nn.Dropout(p=dropout_p)
+            nn.Linear(30,20),
             nn.ELU(),
-            nn.BatchNorm1d(10),
-            nn.Linear(10,10),
+            nn.Dropout(p=dropout_p)
+            nn.Linear(20,10),
             nn.ELU(),
-            nn.BatchNorm1d(10),
-            nn.Linear(10,10),
-            nn.ELU(),
-            nn.BatchNorm1d(10),
-            nn.Linear(10,10),
-            nn.ELU(),
-            nn.BatchNorm1d(10),
+            nn.Dropout(p=dropout_p)
             nn.Linear(10,3)
         )
 
@@ -373,14 +368,14 @@ class MlPbSOpt(object):
             self._y0.append(label)
 
 
-    def train(self, n_epochs=200, learning_rate=0.001, optimizer_name='Adam'):
+    def train(self, n_epochs=200, learning_rate=0.0001, optimizer_name='Adam'):
 
         # train
         # pipeline
         _X = copy.deepcopy(self._X)
-        self.X_pipeline.fit(np.concatenate([_subX[:,:3] for _subX in _X], axis=0))
+        self.X_pipeline.fit(np.concatenate([_subX for _subX in _X], axis=0))
         for i in range(len(_X)):
-            _X[i][:,:3] = self.X_pipeline.transform(_X[i][:,:3])
+            _X[i] = self.X_pipeline.transform(_X[i])
         _y0 = self.y_pipeline.fit_transform(self._y0)
         # batch: random.choice
         # ann
@@ -399,7 +394,7 @@ class MlPbSOpt(object):
                 # dx = self.net(r) * X[:, 3:4] * X[:, 4:5] * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
 
                 # method 2
-                dx = self.net(X[:, :3]) * X[:, 3:4] * X[:, 4:5]    #(N,3) * (N,1) * (N,1)
+                dx = self.net(X) * X[:, 3:4] * X[:, 4:5]    #(N,3) * (N,1) * (N,1)
 
                 dx = torch.sum(dx, dim=0, keepdim=False)    # (N,3) -> (3)
 
@@ -425,7 +420,7 @@ class MlPbSOpt(object):
     def predict(self, _X):
         # pipeline
         _X = copy.deepcopy(_X)
-        _X[:,:3] = self.X_pipeline.transform(_X[:,:3])
+        _X = self.X_pipeline.transform(_X)
         # ann
         self.net.eval()
         X = Variable(torch.FloatTensor(_X))
@@ -436,7 +431,7 @@ class MlPbSOpt(object):
         # dx = self.net(r) * X[:, 3:4] * X[:, 4:5] * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
 
         # method 2
-        dx = self.net(X[:, :3]) * X[:, 3:4] * X[:, 4:5]    #(N,3) * (N,1) * (N,1)
+        dx = self.net(X) * X[:, 3:4] * X[:, 4:5]    #(N,3) * (N,1) * (N,1)
 
         dx = torch.sum(dx, dim=0, keepdim=False)    # (N,3) -> (3)
         # pipeline
