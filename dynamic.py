@@ -305,10 +305,10 @@ class MlPbSOptScaler(BaseEstimator,TransformerMixin):
 
 def udf_nn(*args):
     layers = []
-    for i in range(len(args)-2):
+    for i in range(len(args)-1):
         layers.append(nn.Linear(args[i], args[i+1]))
-        layers.append(nn.ELU())
-    layers.append(nn.Linear(args[i], args[len(args)-1]))
+        if i != len(args)-2:
+            layers.append(nn.ELU())
     return Sequential(*layers)
 
 class MlPbSOpt(object):
