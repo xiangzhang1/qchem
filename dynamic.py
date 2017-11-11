@@ -343,7 +343,7 @@ class MlPbSOpt(object):
         ccoor = ccoor - origin + np.around(origin / a) * a      # on-grid coordinate. vaguely resemble the original cell
 
         # parse and store
-        pbs_order_factor = 1 if cell.stoichiometry.keys[0] == 'Pb' else -1
+        pbs_order_factor = 1 if cell.stoichiometry.keys()[0]=='Pb' else -1
         for idx_atom, c in enumerate(ccoor):
             relative_ccoor = ccoor - c
             coor_sgn = np.sign(np.arange(ccoor.shape[0]) - cell.stoichiometry.values()[0] + 0.5) * pbs_order_factor
