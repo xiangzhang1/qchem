@@ -327,13 +327,13 @@ class MlPbSOpt(object):
         self.net = Sequential(
             nn.Linear(5,30),
             nn.ELU(),
-            nn.Dropout(p=dropout_p)
+            nn.Dropout(p=dropout_p),
             nn.Linear(30,20),
             nn.ELU(),
-            nn.Dropout(p=dropout_p)
+            nn.Dropout(p=dropout_p),
             nn.Linear(20,10),
             nn.ELU(),
-            nn.Dropout(p=dropout_p)
+            nn.Dropout(p=dropout_p),
             nn.Linear(10,3)
         )
 
