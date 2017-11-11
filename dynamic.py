@@ -425,11 +425,11 @@ class MlPbSOpt(object):
         # r = torch.norm(X[:, :3], p=2, dim=1, keepdim=True)      # (N,3) -> (N,1)
         # rhat = X[:, :3] / r     # (N,3) / (N,1)
         # dx = self.net(r) * X[:, 3:4] * X[:, 4:5] * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
-        
+
         # method 2
         dx = self.net(X[:, :3]) * X[:, 3:4] * X[:, 4:5]    #(N,3) * (N,1) * (N,1)
 
         dx = torch.sum(dx, dim=0, keepdim=False)    # (N,3) -> (3)
         # pipeline
-        _y_inverse = self.y_pipeline.inverse_transform(dx.data.numpy())
+        _y_inverse = self.y_pipeline.inverse_transform([dx.data.numpy()])[0]
         return _y_inverse
