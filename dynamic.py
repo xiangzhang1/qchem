@@ -317,13 +317,13 @@ class MlPbSOpt(object):
 
         # ann
         self.net = Sequential(
-            nn.Linear(1,10),
+            nn.Linear(1,20),
             nn.ELU(),
-            nn.Linear(10,10),
+            nn.Linear(20,10),
             nn.ELU(),
-            nn.Linear(10,10),
+            nn.Linear(10,5),
             nn.ELU(),
-            nn.Linear(10,1)
+            nn.Linear(5,1)
         )
 
 
@@ -357,7 +357,7 @@ class MlPbSOpt(object):
             self._y0.append(label)
 
 
-    def train(self, n_epochs=500, learning_rate=0.01, optimizer_name='SGD'):
+    def train(self, n_epochs=200, learning_rate=0.01, optimizer_name='Adam'):
 
         # train
         # pipeline
@@ -373,7 +373,7 @@ class MlPbSOpt(object):
         # train
         self.net.train()
         for epoch in range(n_epochs):
-            for _X_batch, _y0_batch in zip(_X, _y0):
+            for _X_batch, _y0_batch in zip(_X[:-50], _y0[:-50]):
                 X = Variable(torch.FloatTensor(_X_batch))
                 dx0 = Variable(torch.FloatTensor(_y0_batch))
 
@@ -390,11 +390,12 @@ class MlPbSOpt(object):
                 print 'epoch %s, loss %s' %(epoch, np.asscalar(loss.data.numpy()))
 
         # test
-        _X = np.array(self._X)[-1]
-        _y0 = np.float32(self._y0)[-1]
-        _y = np.float32(self.predict(_X))
         print self.__class__.__name__ + '.train: training finished. evaluation on last items: \n actual | predicted'
-        print _y0, _y
+        for i in range(len(self._X)-50, len(self._X)):
+            _X = np.array(self._X)[i]
+            _y0 = np.float32(self._y0)[i]
+            _y = np.float32(self.predict(_X))
+            print _y0, _y
 
 
     def parse_predict(self, gen, cell, makeparam):
