@@ -373,9 +373,9 @@ class MlPbSOpt(object):
         # batch: random.choice
         # ann
         criterion = nn.MSELoss()
-        optimizer = getattr(optim, optimizer_name)(self.net.parameters(), lr=learning_rate)
+        optimizer = getattr(optim, optimizer_name)(itertools.chain(net.parameters() for net in self.nets.values()), lr=learning_rate)
         # train
-        self.net.train()
+        [net.train() for net in self.nets.values()]
         for epoch in range(n_epochs):
             for _X_batch, _y0_batch in zip(_X[:-50], _y0[:-50]):
 
@@ -423,7 +423,6 @@ class MlPbSOpt(object):
 
     def predict(self, _X):
         # pipeline
-        import copy
         _X = copy.deepcopy(_X)
         _X[:,:3] = self.X_pipeline.transform(_X[:,:3])
         # ann
