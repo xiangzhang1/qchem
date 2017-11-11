@@ -312,8 +312,12 @@ class MlPbSOpt(object):
         self._y0 = []
 
         # pipeline
-        self.X_pipeline = MlPbSOptScaler()
-        self.y_pipeline = MlPbSOptScaler()
+        # method 1
+        # self.X_pipeline = MlPbSOptScaler()
+        # self.y_pipeline = MlPbSOptScaler()
+        # method 2
+        self.X_pipeline = StandardScaler()
+        self.y_pipeline = StandardScaler()
 
         # ann
         self.net = Sequential(
