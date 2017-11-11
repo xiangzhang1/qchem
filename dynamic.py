@@ -397,7 +397,7 @@ class MlPbSOpt(object):
                     # dx = torch.sum(dx, dim=0, keepdim=False)    # (N,3) -> (3)
                     # method 3
                     r = torch.norm(X[:, :3], p=2, dim=1, keepdim=True)      # (N,3) -> (N,1)
-                    rhat = X[:, :3] / r     # (N,3) / (N,1)
+                    rhat = X[:, :3] / r * X[:, 3:4] * X[:, 4:5]     # (N,3) / (N,1)
                     dxi = self.nets[sgn](r) * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
                     dx += torch.sum(dxi, dim=0, keepdim=False)    # (N,3) -> (3)
 
@@ -427,14 +427,36 @@ class MlPbSOpt(object):
         _X[:,:3] = self.X_pipeline.transform(_X[:,:3])
         # ann
         self.net.eval()
-        X = Variable(torch.FloatTensor(_X))
 
-        # method 1
-        r = torch.norm(X[:, :3], p=2, dim=1, keepdim=True)      # (N,3) -> (N,1)
-        rhat = X[:, :3] / r     # (N,3) / (N,1)
-        dx = self.net(r) * X[:, 3:4] * X[:, 4:5] * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
+        # # method 1
+        # X = Variable(torch.FloatTensor(_X))
+        # r = torch.norm(X[:, :3], p=2, dim=1, keepdim=True)      # (N,3) -> (N,1)
+        # rhat = X[:, :3] / r     # (N,3) / (N,1)
+        # dx = self.net(r) * X[:, 3:4] * X[:, 4:5] * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
         # # method 2
+        # X = Variable(torch.FloatTensor(_X))
         # dx = self.net(X)    #(N,3) * (N,1) * (N,1)
+
+        # method 3
+        dx = Variable(torch.zeros(3))
+        for sgn in [-2,0,2]:
+            indices, = np.where([row[3] + row[4] == sgn for row in _X])
+            if not len(indices): continue
+            X = Variable(torch.FloatTensor(_X[indices]))
+
+            # # method 1
+            # r = torch.norm(X[:, :3], p=2, dim=1, keepdim=True)      # (N,3) -> (N,1)
+            # rhat = X[:, :3] / r     # (N,3) / (N,1)
+            # dx = self.net(r) * X[:, 3:4] * X[:, 4:5] * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
+            # dx = torch.sum(dx, dim=0, keepdim=False)    # (N,3) -> (3)
+            # # method 2
+            # dx = self.net(X)    #(N,3) * (N,1) * (N,1)
+            # dx = torch.sum(dx, dim=0, keepdim=False)    # (N,3) -> (3)
+            # method 3
+            r = torch.norm(X[:, :3], p=2, dim=1, keepdim=True)      # (N,3) -> (N,1)
+            rhat = X[:, :3] / r * X[:, 3:4] * X[:, 4:5]     # (N,3) / (N,1)
+            dxi = self.nets[sgn](r) * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
+            dx += torch.sum(dxi, dim=0, keepdim=False)    # (N,3) -> (3)
 
         dx = torch.sum(dx, dim=0, keepdim=False)    # (N,3) -> (3)
         # pipeline
