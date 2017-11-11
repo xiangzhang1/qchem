@@ -423,7 +423,7 @@ class MlPbSOpt(object):
             _y = np.float32(self.predict(_X))[0]
             print _y0, _y - _y0
             pass_X.append(_X)
-            pass_y.append()
+            pass_y.append(_y - _y0)
         return pass_X, pass_y
 
     def parse_predict(self, gen, cell, makeparam):
