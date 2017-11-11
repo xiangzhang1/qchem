@@ -352,7 +352,7 @@ class MlPbSOpt(object):
             feature = np.delete(feature, idx_atom, 0)
             label = c - np.around(c/a)*a
             self._X.append(feature)
-            self._y.append(label)
+            self._y0.append(label)
 
 
     def train(self, n_epochs=500, learning_rate=0.01, optimizer_name='SGD', test_set_size=100):
