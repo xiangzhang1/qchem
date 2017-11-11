@@ -292,13 +292,14 @@ class MlPbSOptScaler(BaseEstimator,TransformerMixin):
     def __init__(self):
         self.mean = 0
 
-    def fit(self, X, y=None):
+    def fit(self, X):
         self.mean = np.mean([np.mean(np.abs(subX)) for subX in X])
+        return self
 
-    def transform(self, X, y=None):
+    def transform(self, X):
         return X / self.mean / 1.7
 
-    def inverse_transform(self, X, y=None):
+    def inverse_transform(self, X):
         return X * self.mean * 1.7
 
 
