@@ -293,7 +293,7 @@ class MlPbSOptScaler(BaseEstimator,TransformerMixin):
         self.mean = 0
 
     def fit(self, X):
-        self.mean = np.mean(np.abs(X))
+        self.mean = np.mean([np.mean(np.abs(subX)) for subX in X])
 
     def transform(self, X):
         return X / self.mean / 1.7
@@ -359,7 +359,9 @@ class MlPbSOpt(object):
 
         # train
         # pipeline
-        _X = self.X_pipeline.fit_transform(self._X)
+        _X = self.X_pipeline.fit(self._X)
+        for i in range(len(X)):
+            _X[i] = self.X_pipeline.transform(_X[i])
         _y0 = self.y_pipeline.fit_transform(self._y0)
         # batch: random.choice
         # ann
