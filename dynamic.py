@@ -366,7 +366,7 @@ class MlPbSOpt(object):
         # train
         # pipeline
         _X = copy.deepcopy(self._X)
-        self.X_pipeline.fit([_subX[:,:3] for _subX in _X])
+        self.X_pipeline.fit(np.concatenate([_subX[:,:3] for _subX in _X], axis=0))
         for i in range(len(_X)):
             _X[i][:,:3] = self.X_pipeline.transform(_X[i][:,:3])
         _y0 = self.y_pipeline.fit_transform(self._y0)
