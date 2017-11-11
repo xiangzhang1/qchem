@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import itertools
 import math
 import types
+import copy
 
 # scipy
 from scipy.optimize import minimize
@@ -371,7 +372,7 @@ class MlPbSOpt(object):
         optimizer = getattr(optim, optimizer_name)(self.net.parameters(), lr=learning_rate)
         # train
         self.net.train()
-        for epoch in tqdm(range(n_epochs)):
+        for epoch in range(n_epochs):
             for _X_batch, _y0_batch in zip(_X, _y0):
                 X = Variable(torch.FloatTensor(_X_batch))
                 dx0 = Variable(torch.FloatTensor(_y0_batch))
