@@ -356,14 +356,14 @@ class MlPbSOpt(object):
             self._y0.append(label)
 
 
-    def train(self, n_epochs=500, learning_rate=0.01, optimizer_name='SGD', test_set_size=100):
+    def train(self, n_epochs=500, learning_rate=0.01, optimizer_name='SGD'):
 
         # train
         # pipeline
-        _X = self._X
-        self.X_pipeline.fit(_X)
+        _X = copy.deepcopy(self._X)
+        self.X_pipeline.fit([_subX[:,:3] for _subX in _X)
         for i in range(len(_X)):
-            _X[i] = self.X_pipeline.transform(_X[i])
+            _X[i][:,:3] = self.X_pipeline.transform(_X[i][:,:3])
         _y0 = self.y_pipeline.fit_transform(self._y0)
         # batch: random.choice
         # ann
@@ -385,7 +385,7 @@ class MlPbSOpt(object):
                 optimizer.zero_grad()   # suggested trick
                 loss.backward()
                 optimizer.step()
-            if epoch % 10:  print 'epoch %s, loss %s' %(epoch, loss.data.numpy())
+            if epoch % 10 == 0:
 
         # test
         _X = np.array(self._X)[-1]
