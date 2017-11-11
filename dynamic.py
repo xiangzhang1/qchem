@@ -317,13 +317,13 @@ class MlPbSOpt(object):
 
         # ann
         self.net = Sequential(
-            nn.Linear(1,20),
+            nn.Linear(3,20),
+            nn.ELU(),
+            nn.Linear(20,20),
             nn.ELU(),
             nn.Linear(20,10),
             nn.ELU(),
-            nn.Linear(10,5),
-            nn.ELU(),
-            nn.Linear(5,1)
+            nn.Linear(10,3)
         )
 
 
@@ -357,7 +357,7 @@ class MlPbSOpt(object):
             self._y0.append(label)
 
 
-    def train(self, n_epochs=100, learning_rate=0.0001, optimizer_name='Adam'):
+    def train(self, n_epochs=100, learning_rate=0.001, optimizer_name='Adam'):
 
         # train
         # pipeline
@@ -377,9 +377,14 @@ class MlPbSOpt(object):
                 X = Variable(torch.FloatTensor(_X_batch))
                 dx0 = Variable(torch.FloatTensor(_y0_batch))
 
-                r = torch.norm(X[:, :3], p=2, dim=1, keepdim=True)      # (N,3) -> (N,1)
-                rhat = X[:, :3] / r     # (N,3) / (N,1)
-                dx = self.net(r) * X[:, 3:4] * X[:, 4:5] * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
+                # method 1
+                # r = torch.norm(X[:, :3], p=2, dim=1, keepdim=True)      # (N,3) -> (N,1)
+                # rhat = X[:, :3] / r     # (N,3) / (N,1)
+                # dx = self.net(r) * X[:, 3:4] * X[:, 4:5] * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
+
+                # method 2
+                dx = self.net(X[:, :3]) * X[:, 3:4] * X[:, 4:5]    #(N,3) * (N,1) * (N,1)
+
                 dx = torch.sum(dx, dim=0, keepdim=False)    # (N,3) -> (3)
 
                 loss = criterion(dx, dx0)
@@ -388,7 +393,6 @@ class MlPbSOpt(object):
                 optimizer.step()
             if epoch % 10 == 0:
                 print 'epoch %s, loss %s' %(epoch, np.asscalar(loss.data.numpy()))
-                IPython.embed()
 
         # test
         print self.__class__.__name__ + '.train: training finished. evaluation on last items: \n actual | predicted'
