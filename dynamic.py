@@ -326,19 +326,17 @@ class MlPbSOptNet(nn.Module):
         r = torch.norm(X[:, :3], p=2, dim=1, keepdim=True)      # (N,3) -> (N,1)
         rhat = X[:, :3] / r     # (N,3) / (N,1)
 
-        dr = r * 0
+        dx = torch.zeros(1,3)
         for i in range(X.size(0)):
             sgn = X[i].data[3] + X[i].data[4]
             if sgn == 2:
-                dr[i] = self.netPbPb(r[i].view(1,-1))
+                dx += self.netPbPb(r[i]) * X[i,3] * X[i,4] * rhat[i]
             elif sgn == 0:
-                dr[i] = self.netPbS(r[i].view(1,-1))
+                dx += self.netPbS(r[i]) * X[i,3] * X[i,4] * rhat[i]
             elif sgn == -2:
-                dr[i] = self.netSS(r[i].view(1,-1))
+                dx += self.netSS(r[i]) * X[i,3] * X[i,4] * rhat[i]
 
-        dx = dr * X[:, 3:4] * X[:, 4:5] * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
-
-        return dx
+        return dx.view(1,-1)
 
 
 class MlPbSOpt(object):
@@ -349,15 +347,8 @@ class MlPbSOpt(object):
         self._y0 = []
 
         # pipeline
-        # method 1
         self.X_pipeline = MlPbSOptScaler()
         self.y_pipeline = MlPbSOptScaler()
-        # # method 2
-        # self.X_pipeline = StandardScaler()
-        # self.y_pipeline = Pipeline([
-        #     ('scaler', StandardScaler()),
-        #     ('_10', FunctionTransformer(func=lambda x: x * 10, inverse_func=lambda x: x / 10))
-        # ])
 
         # ann
         self.net = MlPbSOptNet()
@@ -407,18 +398,11 @@ class MlPbSOpt(object):
         optimizer = getattr(optim, optimizer_name)(self.net.parameters(), lr=learning_rate)
         # train
         self.net.train()
-        for epoch in range(n_epochs):
+        for epoch in tqdm(range(n_epochs)):
             for _X_batch, _y0_batch in zip(_X[:-50], _y0[:-50]):
                 X = Variable(torch.FloatTensor(_X_batch))
                 dx0 = Variable(torch.FloatTensor(_y0_batch))
-
-                # method 1
                 dx = self.net(X)
-                # # method 2
-                # dx = self.net(X)
-
-                dx = torch.sum(dx, dim=0, keepdim=False)    # (N,3) -> (3)
-
                 loss = criterion(dx, dx0)
                 optimizer.zero_grad()   # suggested trick
                 loss.backward()
