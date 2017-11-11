@@ -317,13 +317,13 @@ class MlPbSOpt(object):
 
         # ann
         self.net = Sequential(
-            nn.Linear(1,5),
+            nn.Linear(1,10),
             nn.ELU(),
-            nn.Linear(5,5),
+            nn.Linear(10,10),
             nn.ELU(),
-            nn.Linear(5,5),
+            nn.Linear(10,10),
             nn.ELU(),
-            nn.Linear(5,1)
+            nn.Linear(10,1)
         )
 
 
@@ -387,7 +387,7 @@ class MlPbSOpt(object):
                 loss.backward()
                 optimizer.step()
             if epoch % 10 == 0:
-                print 'epoch %s, loss %s' %(epoch, loss)
+                print 'epoch %s, loss %s' %(epoch, np.asscalar(loss.data.numpy()))
 
         # test
         _X = np.array(self._X)[-1]
