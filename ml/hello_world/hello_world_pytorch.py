@@ -15,10 +15,12 @@ nn.Linear(1,5),
 nn.ELU(),
 nn.Linear(5,5),
 nn.ELU(),
+nn.Linear(5,5),
+nn.ELU(),
 nn.Linear(5,1)
 )
 criterion = nn.MSELoss()
-optimizer = optim.Adam(net.parameters(), lr=0.01)
+optimizer = optim.SGD(net.parameters(), lr=0.01)
 
 # batch
 ds = TensorDataset(torch.FloatTensor(_X_scaled), torch.FloatTensor(_y0_scaled))
@@ -37,6 +39,10 @@ for epoch in tqdm(range(n_epochs)):
         optimizer.step()
 
 # test
+_X = np.c_[np.arange(2, 40, 0.1)]
+_y0 = np.c_[1.0 / _X ** 2]
+_X_scaled = _X_pipeline.transform(_X)
+_y0_scaled = _y0_pipeline.transform(_y0)
 net.eval()
 X = Variable(torch.FloatTensor(_X_scaled), requires_grad=True)
 y = net(X)
