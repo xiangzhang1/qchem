@@ -327,18 +327,16 @@ class MlPbSOptNet(nn.Module):
         rhat = X[:, :3] / r     # (N,3) / (N,1)
 
         dr = r * 0
-
-        indicesPbPb = torch.nonzero((X[:, 3] + 1) * (X[:, 4] + 1)).view(-1)  # (N) * (N) -> (N)
-        if indicesPbPb:
-            dr[indicesPbPb] = self.netPbPb(r[indicesPbPb])
-
-        indicesSS = torch.nonzero((X[:, 3] - 1) * (X[:, 4] - 1)).view(-1)  # (N) * (N) -> (N)
-        if indicesSS:
-            dr[indicesSS] = self.netSS(r[indicesSS])
-
-        indicesPbS = torch.nonzero(X[:, 3] - X[:, 4]).view(-1)  # (N) * (N) -> (N)
-        if indicesPbS:
-            dr[indicesPbS] = self.netPbS(r[indicesPbS])
+        for i in range(X.size(0)):
+            row = X[i]
+            rowdata = row.data
+            sgn = rowdata[3] + rowdata[4]
+            if sgn == 2:
+                dr[i] = self.netPbPb(row.view(1,-1))
+            elif sgn == 0:
+                dr[i] = self.netPbS(row.view(1,-1))
+            elif sgn == -2:
+                dr[i] = self.netSS(row.view(1,-1))
 
         dx = dr * X[:, 3:4] * X[:, 4:5] * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
 
