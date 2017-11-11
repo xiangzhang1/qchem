@@ -324,11 +324,11 @@ class MlPbSOpt(object):
 
         # ann
         self.net = Sequential(
-            nn.Linear(3,20),
+            nn.Linear(3,10),
             nn.ELU(),
-            nn.Linear(20,20),
+            nn.Linear(10,10),
             nn.ELU(),
-            nn.Linear(20,10),
+            nn.Linear(10,10),
             nn.ELU(),
             nn.Linear(10,3)
         )
@@ -364,7 +364,7 @@ class MlPbSOpt(object):
             self._y0.append(label)
 
 
-    def train(self, n_epochs=100, learning_rate=0.0001, optimizer_name='Adam'):
+    def train(self, n_epochs=200, learning_rate=0.001, optimizer_name='Adam'):
 
         # train
         # pipeline
