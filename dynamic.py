@@ -313,27 +313,25 @@ class MlPbSOpt(object):
 
         # pipeline
         # method 1
-        # self.X_pipeline = MlPbSOptScaler()
-        # self.y_pipeline = MlPbSOptScaler()
-        # method 2
-        self.X_pipeline = StandardScaler()
-        self.y_pipeline = Pipeline([
-            ('scaler', StandardScaler()),
-            ('_10', FunctionTransformer(func=lambda x: x * 10, inverse_func=lambda x: x / 10))
-        ])
+        self.X_pipeline = MlPbSOptScaler()
+        self.y_pipeline = MlPbSOptScaler()
+        # # method 2
+        # self.X_pipeline = StandardScaler()
+        # self.y_pipeline = Pipeline([
+        #     ('scaler', StandardScaler()),
+        #     ('_10', FunctionTransformer(func=lambda x: x * 10, inverse_func=lambda x: x / 10))
+        # ])
 
         # ann
         dropout_p = 0.05
         self.net = Sequential(
-            nn.Linear(5,40),
+            nn.Linear(1,5),
             nn.ELU(),
-            nn.Linear(40,30),
+            nn.Linear(5,10),
             nn.ELU(),
-            nn.Linear(30,20),
+            nn.Linear(10,5),
             nn.ELU(),
-            nn.Linear(20,10),
-            nn.ELU(),
-            nn.Linear(10,3)
+            nn.Linear(5,1)
         )
 
 
@@ -388,12 +386,11 @@ class MlPbSOpt(object):
                 dx0 = Variable(torch.FloatTensor(_y0_batch))
 
                 # method 1
-                # r = torch.norm(X[:, :3], p=2, dim=1, keepdim=True)      # (N,3) -> (N,1)
-                # rhat = X[:, :3] / r     # (N,3) / (N,1)
-                # dx = self.net(r) * X[:, 3:4] * X[:, 4:5] * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
-
-                # method 2
-                dx = self.net(X) * X[:, 3:4] * X[:, 4:5]    #(N,3) * (N,1) * (N,1)
+                r = torch.norm(X[:, :3], p=2, dim=1, keepdim=True)      # (N,3) -> (N,1)
+                rhat = X[:, :3] / r     # (N,3) / (N,1)
+                dx = self.net(r) * X[:, 3:4] * X[:, 4:5] * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
+                # # method 2
+                # dx = self.net(X)    #(N,3) * (N,1) * (N,1)
 
                 dx = torch.sum(dx, dim=0, keepdim=False)    # (N,3) -> (3)
 
@@ -426,14 +423,13 @@ class MlPbSOpt(object):
         X = Variable(torch.FloatTensor(_X))
 
         # method 1
-        # r = torch.norm(X[:, :3], p=2, dim=1, keepdim=True)      # (N,3) -> (N,1)
-        # rhat = X[:, :3] / r     # (N,3) / (N,1)
-        # dx = self.net(r) * X[:, 3:4] * X[:, 4:5] * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
-
-        # method 2
-        dx = self.net(X) * X[:, 3:4] * X[:, 4:5]    #(N,3) * (N,1) * (N,1)
+        r = torch.norm(X[:, :3], p=2, dim=1, keepdim=True)      # (N,3) -> (N,1)
+        rhat = X[:, :3] / r     # (N,3) / (N,1)
+        dx = self.net(r) * X[:, 3:4] * X[:, 4:5] * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
+        # # method 2
+        # dx = self.net(X)    #(N,3) * (N,1) * (N,1)
 
         dx = torch.sum(dx, dim=0, keepdim=False)    # (N,3) -> (3)
         # pipeline
-        _y_inverse = self.y_pipeline.inverse_transform(dx.data.numpy())
+        _y_inverse = self.y_pipeline.inverse_transform(dx.data.numpy().reshape(1,-1))
         return _y_inverse
