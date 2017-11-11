@@ -357,7 +357,7 @@ class MlPbSOpt(object):
             self._y0.append(label)
 
 
-    def train(self, n_epochs=200, learning_rate=0.01, optimizer_name='Adam'):
+    def train(self, n_epochs=100, learning_rate=0.01, optimizer_name='Adam'):
 
         # train
         # pipeline
@@ -388,6 +388,7 @@ class MlPbSOpt(object):
                 optimizer.step()
             if epoch % 10 == 0:
                 print 'epoch %s, loss %s' %(epoch, np.asscalar(loss.data.numpy()))
+                IPython.embed()
 
         # test
         print self.__class__.__name__ + '.train: training finished. evaluation on last items: \n actual | predicted'
