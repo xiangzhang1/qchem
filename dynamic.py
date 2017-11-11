@@ -360,7 +360,7 @@ class MlPbSOpt(object):
         # train
         # pipeline
         _X = self.X_pipeline.fit(self._X)
-        for i in range(len(X)):
+        for i in range(len(_X)):
             _X[i] = self.X_pipeline.transform(_X[i])
         _y0 = self.y_pipeline.fit_transform(self._y0)
         # batch: random.choice
