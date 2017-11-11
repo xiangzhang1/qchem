@@ -359,7 +359,8 @@ class MlPbSOpt(object):
 
         # train
         # pipeline
-        self.X_pipeline.fit(self._X)
+        _X = self._X
+        self.X_pipeline.fit(_X)
         for i in range(len(_X)):
             _X[i] = self.X_pipeline.transform(_X[i])
         _y0 = self.y_pipeline.fit_transform(self._y0)
