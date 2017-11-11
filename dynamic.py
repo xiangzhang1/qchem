@@ -313,14 +313,14 @@ class MlPbSOpt(object):
 
         # pipeline
         # method 1
-        # self.X_pipeline = MlPbSOptScaler()
-        # self.y_pipeline = MlPbSOptScaler()
+        self.X_pipeline = MlPbSOptScaler()
+        self.y_pipeline = MlPbSOptScaler()
         # method 2
-        self.X_pipeline = StandardScaler()
-        self.y_pipeline = Pipeline([
-            ('scaler', StandardScaler()),
-            ('_10', FunctionTransformer(func=lambda x: x * 10, inverse_func=lambda x: x / 10))
-        ])
+        # self.X_pipeline = StandardScaler()
+        # self.y_pipeline = Pipeline([
+        #     ('scaler', StandardScaler()),
+        #     ('_10', FunctionTransformer(func=lambda x: x * 10, inverse_func=lambda x: x / 10))
+        # ])
 
         # ann
         dropout_p = 0.05
