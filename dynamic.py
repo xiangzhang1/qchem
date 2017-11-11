@@ -398,14 +398,14 @@ class MlPbSOpt(object):
                     # method 3
                     r = torch.norm(X[:, :3], p=2, dim=1, keepdim=True)      # (N,3) -> (N,1)
                     rhat = X[:, :3] / r     # (N,3) / (N,1)
-                    dx = self.nets[sgn](r) * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
-                    dx += torch.sum(dx, dim=0, keepdim=False)    # (N,3) -> (3)
+                    dxi = self.nets[sgn](r) * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
+                    dx += torch.sum(dxi, dim=0, keepdim=False)    # (N,3) -> (3)
 
-            dx0 = Variable(torch.FloatTensor(_y0_batch))
-            loss = criterion(dx, dx0)
-            optimizer.zero_grad()   # suggested trick
-            loss.backward()
-            optimizer.step()
+                dx0 = Variable(torch.FloatTensor(_y0_batch))
+                loss = criterion(dx, dx0)
+                optimizer.zero_grad()   # suggested trick
+                loss.backward()
+                optimizer.step()
             if epoch % 10 == 0:
                 print 'epoch %s, loss %s' %(epoch, np.asscalar(loss.data.numpy()))
 
