@@ -364,7 +364,7 @@ class MlPbSOpt(object):
             self._y0.append(label)
 
 
-    def train(self, n_epochs=100, learning_rate=0.001, optimizer_name='SGD'):
+    def train(self, n_epochs=100, learning_rate=0.0001, optimizer_name='Adam'):
 
         # train
         # pipeline
