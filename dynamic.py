@@ -317,7 +317,10 @@ class MlPbSOpt(object):
         # self.y_pipeline = MlPbSOptScaler()
         # method 2
         self.X_pipeline = StandardScaler()
-        self.y_pipeline = StandardScaler()
+        self.y_pipeline = Pipeline([
+            ('scaler', StandardScaler()),
+            ('_10', FunctionTransformer(func=lambda x: x * 10, inverse_func=lambda x: x / 10))
+        ])
 
         # ann
         self.net = Sequential(
@@ -361,7 +364,7 @@ class MlPbSOpt(object):
             self._y0.append(label)
 
 
-    def train(self, n_epochs=100, learning_rate=0.001, optimizer_name='Adam'):
+    def train(self, n_epochs=100, learning_rate=0.001, optimizer_name='SGD'):
 
         # train
         # pipeline
