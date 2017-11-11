@@ -326,7 +326,7 @@ class MlPbSOptNet(nn.Module):
         r = torch.norm(X[:, :3], p=2, dim=1, keepdim=True)      # (N,3) -> (N,1)
         rhat = X[:, :3] / r     # (N,3) / (N,1)
 
-        dx = Variable(torch.zeros(1,3), requires_grad=True)
+        dx = Variable(torch.zeros(1,3))
         for i in range(X.size(0)):
             sgn = X[i].data[3] + X[i].data[4]
             if sgn == 2:
