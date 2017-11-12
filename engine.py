@@ -918,6 +918,7 @@ class Vasp(object):
             with open(user_config_file) as f:
                 ssh_config.parse(f)
         ssh.load_system_host_keys()
+        print platform
         ssh.connect(platform, username='xzhang1')
         ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command(command)
         return '\n'.join([l.strip() for l in ssh_stdout.readlines()])
