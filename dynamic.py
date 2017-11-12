@@ -313,7 +313,7 @@ def udf_nn(*args):
     return Sequential(*layers)
 
 
-def snap_to_grid(ccoor, a):
+def snap_to_grid(ccoor, a=6.01417/2):
         ccoor = np.copy(ccoor)
         origin = ccoor[cell.ccoor_kdtree().query(np.mean(ccoor, axis=0))[1]]    # closest-to-center atom
         def error_after_transformation(origin, ccoor=ccoor, a=a):       # snap to grid. note: parallelization doesn't save time.
