@@ -843,6 +843,7 @@ class Vasp(object):
         node = self.node()
         path = node.path
         gen = node.gen
+        platform = gen.getkw('platform')
         rpath = path if platform=='dellpc' else self.remote_folder_path
 
         if shared.DEBUG>=2:    print 'calling %s(%s).moonphase' %(self.__class__.__name__, getattr(self,'path',''))
