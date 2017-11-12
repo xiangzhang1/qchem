@@ -25,4 +25,8 @@ for cur in curs:
     m.parse_train(n.vasp)
     print 'parsing complete.'
 
+_y0 = np.copy(m._y0)
+m._X = np.delete(m._X, np.where([np.linalg.norm(c)<0.1 for c in _y0])[0], axis=0)
+m._y0 = np.delete(m._y0, np.where([np.linalg.norm(c)<0.1 for c in _y0])[0], axis=0)
+
 m.train()
