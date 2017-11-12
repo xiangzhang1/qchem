@@ -980,7 +980,7 @@ class Vasp(object):
                 return total_time
         elif info == 'queue_time':
             if platform == 'dellpc' or platform == 'dellpc_gpu':
-                return 0.0
+                return 1.1  # log-friendly
             elif platform in ['nanimo', 'irmik', 'comet', 'edison', 'cori']:
                 output = self.ssh_and_run("sacct -S %s --format=jobname%30,submit,start -u xzhang1 --name=%s" %(self.remote_folder_name)).splitlines()
                 lines = [l.split() for l in output]
@@ -991,7 +991,7 @@ class Vasp(object):
                 now = time.mktime(dateparser.parse('now').timetuple())
                 if start < now - 5184000:
                     raise shared.CustomError('Data is over 2 months old. ')
-                return start - submit
+                return start - submit + 1.1
             else:
                 raise shared.CustomError(self.__class__.__name__ + '.info: invalid platform')
         elif info == 'n_electronic_step':

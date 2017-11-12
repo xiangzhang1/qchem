@@ -95,7 +95,7 @@ class MlVaspSpeedNet(nn.Module):
         self.dropoutB2 = nn.Dropout(p=dropout_p)
         self.lB3 = nn.Linear(3, 1)
 
-        self.lC1 = nn.Linear(4, 2)
+        self.lC1 = nn.Linear(10, 2)
         self.bnC1 = nn.BatchNorm1d(2, momentum=bn_momentum)
         self.dropoutC1 = nn.Dropout(p=dropout_p)
         self.lC2 = nn.Linear(2, 1)
@@ -153,9 +153,9 @@ class MlVaspSpeed(object):
                     ('scaler', StandardScaler())
                 ])),
                 ('C', Pipeline([
-                    ('slice_flatten', FunctionTransformer(func=lambda X: X[:, 8].flatten())),
+                    ('slice_flatten', FunctionTransformer(func=lambda X: X[:, 8:9])),
                     ('labeler', LabelBinarizerPipelineFriendly()),
-                    ('padder', FunctionTransformer(func=lambda X: np.hstack((X, np.zeros((X.shape[0], 4-X.shape[1]))))))
+                    ('padder', FunctionTransformer(func=lambda X: np.hstack((X, np.zeros((X.shape[0], 10-X.shape[1]))))))
                 ]))
             ])),
             ('cast_to_float32', FunctionTransformer(func=np.float32))
@@ -260,7 +260,7 @@ class MlVaspSpeed(object):
         return _y_inverse
 
 
-# inital training script for MlVaspSpeed can be found in scripts/pytorch_learn
+# inital training script for MlVaspSpeed can be found in scripts/ml
 
 
 # MlPbSOpt
@@ -428,3 +428,108 @@ class MlPbSOpt(object):
             dx = self.predict(X)
             cell.ccoor[idx_atom] += dx.reshape(3)
         return cell
+
+
+
+
+# Ml
+# ==============================================================================
+class MlQueueTime(object):
+
+    def __init__(self):
+        # data
+        self._X = []
+        self._y0 = []
+        self._cur = []
+        # pipeline
+        self.X_pipeline = Pipeline([
+            ('cast_to_array', FunctionTransformer(func=np.array)),
+            ('split', FeatureUnion(transformer_list=[
+                ('nnode', Pipeline([
+                    ('slicer', FunctionTransformer(func=lambda X: X[:, :-1])),
+                ])),
+                ('platform', Pipeline([
+                    ('slice_flatten', FunctionTransformer(func=lambda X: X[:, -1:])),
+                    ('labeler', LabelBinarizerPipelineFriendly()),
+                    ('padder', FunctionTransformer(func=lambda X: np.hstack((X, np.zeros((X.shape[0], 10-X.shape[1]))))))
+                ]))
+            ])),
+            ('scaler', StandardScaler())
+        ])
+        self.y_pipeline = Pipeline([
+            ('log', FunctionTransformer(func=np.log, inverse_func=np.exp)),      # reduce information to reasonable
+            ('scaler', StandardScaler())
+        ])
+        # ann. what a pity.
+        self.net = udf_nn(11, 5, 5, 1)
+
+
+    def parse_train(self, node, vasp, gen, cell, makeparam):
+        # OUTPUT
+        _y0 = [vasp.info('queue_time')]
+        # INPUT
+        # -----
+        _X = [
+            int(gen.getkw('nnode')),
+            gen.getkw('platform')
+        ]
+        # COMMENT (posterity)
+        # ------------------
+        _cur = node.default_path(cur=True)
+        # put it here so that no inconsistency will happen
+        self._X.append(_X)
+        self._y0.append(_y0)
+        self._cur.append(_cur)
+        return (_X, _y0, _cur)
+
+
+    def train(self, n_epochs=5800, batch_size=64, learning_rate=0.026, optimizer_name='SGD', test_set_size=5):
+        test_idx = np.random.choice(range(len(self._X)), size=test_set_size)
+        train_idx = np.array([i for i in range(len(self._X)) if i not in test_idx])
+
+        # train
+        # pipeline
+        _X = self.X_pipeline.fit_transform(self._X)[train_idx]
+        _y0 = self.y_pipeline.fit_transform(self._y0)[train_idx]
+        # batch: random.choice
+        # ann
+        criterion = nn.MSELoss()
+        optimizer = getattr(optim, optimizer_name)(self.net.parameters(), lr=learning_rate)
+        # train
+        self.net.train()
+        for epoch in range(n_epochs):
+            batch_idx = np.random.choice(range(_X.shape[0]), size=batch_size)
+            X_batch= Variable(torch.FloatTensor(_X[batch_idx]), requires_grad=True)
+            y0_batch = Variable(torch.FloatTensor(_y0[batch_idx]), requires_grad=False)
+            y = self.net(X_batch)
+            loss = criterion(y, y0_batch)
+            optimizer.zero_grad()   # suggested trick
+            loss.backward()
+            optimizer.step()
+            if epoch % 100 == 0:
+                print 'epoch %s, loss %s'%(epoch, loss.data.numpy()[0])
+
+        # test
+        _X = np.array(self._X)[test_idx]
+        _y0 = np.float32(self._y0).flatten()[test_idx]
+        _y = np.float32(self.predict(_X)).flatten()
+        print self.__class__.__name__ + '.train: training finished. evaluation on last items: \n actual | predicted'
+        for a, b in zip(_y0, _y):
+            print a, b
+
+
+    def parse_predict(self, gen, cell, makeparam):
+        return [[
+            int(gen.getkw('ncore_node')),
+            gen.getkw('platform')
+        ]]
+
+    def predict(self, _X):
+        # pipeline
+        _X = self.X_pipeline.transform(_X)
+        # ann
+        self.net.eval()
+        y = self.net(Variable(torch.FloatTensor(_X), requires_grad=True))
+        # pipeline
+        _y_inverse = self.y_pipeline.inverse_transform(y.data.numpy())
+        return _y_inverse
