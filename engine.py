@@ -858,6 +858,7 @@ class Vasp(object):
 
         node = self.node()
         path = node.path
+        gen = node.gen
 
         if shared.DEBUG>=2:    print 'calling %s(%s).moonphase' %(self.__class__.__name__, getattr(self,'path',''))
 
@@ -872,29 +873,29 @@ class Vasp(object):
                 print self.__class__.__name__ + ' moonphase: could not locate the original path {%s}' %(path)
 
             # vasp_is_running
-            if (self.gen.parse_if('platform=dellpc|platform=dellpc_gpu')):
+            if (gen.parse_if('platform=dellpc|platform=dellpc_gpu')):
                 try:
                     pgrep_output = check_output(['pgrep','vasp'])
                     vasp_is_running = pgrep_output.strip() != ''
                 except CalledProcessError:
                     vasp_is_running = False
-            elif self.gen.parse_if('platform=nanaimo|platform=irmik'):
-                if shared.DEBUG>=2: print self.__class__.__name__ + '.moonphase: asking %s for status of {%s}' %(self.gen.getkw('platform'), path)
-                result = Ssh_and_run(self.gen.getkw('platform'), pseudo_command='squeue', jobname=self.remote_folder_name)
+            elif gen.parse_if('platform=nanaimo|platform=irmik'):
+                if shared.DEBUG>=2: print self.__class__.__name__ + '.moonphase: asking %s for status of {%s}' %(gen.getkw('platform'), path)
+                result = Ssh_and_run(gen.getkw('platform'), pseudo_command='squeue', jobname=self.remote_folder_name)
                 vasp_is_running = ( len(result.splitlines()) > 1 )
             else:
                 raise shared.CustomError(self.__class__.__name__ + '.moonphase: i don\'t know what to do')
 
             # change to vasprun.xml directory
-            if self.gen.parse_if('platform=dellpc|platform=dellpc_gpu'):
+            if gen.parse_if('platform=dellpc|platform=dellpc_gpu'):
                 os.chdir(path)
-            elif self.gen.parse_if('platform=nanaimo|platform=irmik'):
+            elif gen.parse_if('platform=nanaimo|platform=irmik'):
                 # check sshfs mounted
-                tmp_path = '%s/Shared/%s' % (shared.HOME_DIR, self.gen.getkw('platform'))
+                tmp_path = '%s/Shared/%s' % (shared.HOME_DIR, gen.getkw('platform'))
                 if not os.listdir(tmp_path):
-                    raise shared.CustomError(self.__class__.__name__ + '.moonphase: platform %s not mounted using sshfs' %(self.gen.getkw('platform')))
+                    raise shared.CustomError(self.__class__.__name__ + '.moonphase: platform %s not mounted using sshfs' %(gen.getkw('platform')))
                 #
-                tmp_path = '%s/Shared/%s/%s' % (shared.HOME_DIR, self.gen.getkw('platform'), self.remote_folder_name)
+                tmp_path = '%s/Shared/%s/%s' % (shared.HOME_DIR, gen.getkw('platform'), self.remote_folder_name)
                 if not os.path.isfile(tmp_path + '/vasprun.xml'):
                     return 1
                 else:
@@ -948,20 +949,21 @@ class Vasp(object):
 
     def memory_used(self):
         path = self.node().path
-        if self.gen.parse_if('platform=dellpc_gpu'):
+        gen = self.node().gen
+        if gen.parse_if('platform=dellpc_gpu'):
             if not os.path.exists(path + '/gpu.log'):
                 return None
             with open(path + '/gpu.log', 'r') as f:
                 l = np.float_([l.split() for l in f.readlines()])
                 return np.max(l[:,1]) - np.min(l[:, 1])
-        elif self.gen.parse_if('platform=dellpc'):
+        elif gen.parse_if('platform=dellpc'):
             if not os.path.exists(path + '/cpu.log'):
                 return None
             with open(path + '/cpu.log', 'r') as f:
                 l = np.float_([l.split() for l in f.readlines()])
                 return np.max(l[:,1]) - np.min(l[:, 1])
-        elif self.gen.parse_if('platform=nanaimo|platform=irmik'):
-            # output = Ssh_and_run(self.gen.getkw('platform'), pseudo_command='sacct', jobname=self.remote_folder_name).splitlines()
+        elif gen.parse_if('platform=nanaimo|platform=irmik'):
+            # output = Ssh_and_run(gen.getkw('platform'), pseudo_command='sacct', jobname=self.remote_folder_name).splitlines()
             # if len(output) < 3:
             #     return None
             # return float(str.replace('K','000',output[-1]))
@@ -970,6 +972,7 @@ class Vasp(object):
             return None
 
     def time_used(self):
+        path = self.node().path
         if not os.path.exists(path + '/OUTCAR'):
             return None
         with open(path + '/OUTCAR', 'r') as outcar:
