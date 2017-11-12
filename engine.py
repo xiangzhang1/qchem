@@ -981,12 +981,12 @@ class Vasp(object):
             if platform == 'dellpc' or platform == 'dellpc_gpu':
                 return 1.1  # log-friendly
             elif platform in ['nanaimo', 'irmik', 'comet', 'edison', 'cori']:
-                output = self.ssh_and_run("sacct -S 0101 --format=jobname%%30,submit,start -u xzhang1 --name=%s" %(self.remote_folder_name)).splitlines()
+                output = self.ssh_and_run("sacct -S 0101 --format=jobname%%100,submit,start -u xzhang1 --name=%s" %(self.remote_folder_name)).splitlines()
                 lines = [l.split() for l in output]
                 IPython.embed()
-                submit = next(l for l in output if l[0]==self.remote_folder_name)[1]
+                submit = next(l for l in lines if l[0]==self.remote_folder_name)[1]
                 submit = time.mktime(dateparser.parse(submit).timetuple())
-                start = next(l for l in output if l[0]==self.remote_folder_name)[2]
+                start = next(l for l in lines if l[0]==self.remote_folder_name)[2]
                 start = time.mktime(dateparser.parse(start).timetuple())
                 now = time.mktime(dateparser.parse('now').timetuple())
                 if start < now - 5184000:
