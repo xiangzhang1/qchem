@@ -734,6 +734,7 @@ class Vasp(object):
         path = node.path
         gen = node.gen
         name = node.name
+        cell = node.cell
 
         if not getattr(self, 'wrapper', None):
             if os.path.exists(path):
