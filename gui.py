@@ -30,6 +30,15 @@ from apscheduler.triggers.interval import IntervalTrigger
 
 import atexit
 
+# pytorch: always import before importing submodule with torch. otherwise it's gonna blow.
+import torch
+from torch.autograd import Variable
+import torch.nn as nn
+from torch.nn import Sequential
+import torch.nn.functional as F
+from torch.utils.data import TensorDataset, DataLoader
+import torch.optim as optim
+
 # qchem package
 import dynamic
 import shared
