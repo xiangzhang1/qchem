@@ -174,11 +174,11 @@ class MlVaspSpeed(object):
         # preliminary checks
         if vasp.moonphase() != 2:
             raise shared.CustomError(self.__class__.__name__ + '.warning: vasp moonphase is not 2. skipped collect data.')
-        if not os.path.isfile(vasp.path+'/OUTCAR'):
+        if not os.path.isfile(node.path+'/OUTCAR'):
             raise shared.CustomError(self.__class__.__name__ + '.warning: no OUTCAR found. skipped collect data.')
         # parse outcar for time (s) / #elecstep
-        os.chdir(vasp.path)
-        with open(vasp.path + '/OUTCAR', 'r') as f:
+        os.chdir(node.path)
+        with open(node.path + '/OUTCAR', 'r') as f:
             lines = f.readlines()
             # total time
             line = [l for l in lines if 'Total CPU time used' in l]
