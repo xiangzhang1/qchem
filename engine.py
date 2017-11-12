@@ -284,17 +284,20 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         for name in self.kw:
             if len(self.kw[name]) != 1:
                 raise shared.CustomError( self.__class__.__name__+' error: non-unique output. Kw[%s]={%s} has not been restricted to 1 value.' %(name,self.kw[name]) )
-        # Unfortunately, what should have been done in vasp is moved here, for high efficiency.
+        # Overhead prediction. Unfortunately, what should have been done in vasp is moved here, for high efficiency.
         if self.parse_if('engine=vasp'):
+            print '-' * 30 + ' Overheads ' + '-' * 30
+            # Memory
             m = Makeparam(self)
-            # Global data cannot be obtained for multi-node multi-CPU case. ML is not suitable.
-            # These estimations might just also be applicable to GPU.
-            memory_predicted_gb = ( (m.projector_real + m.projector_reciprocal)*int(self.getkw('npar')) + m.wavefunction*float(self.getkw('kpar')) )/1024.0/1024/1024 + int(self.getkw('nnode'))*0.7
+            memory_predicted_gb = ( (m.projector_real + m.projector_reciprocal)*int(self.getkw('npar')) + m.wavefunction*float(self.getkw('kpar')) )/1024.0/1024/1024 + int(self.getkw('nnode'))*0.7    # Global data cannot be obtained for multi-node multi-CPU case. ML is not suitable. Memory estimations might just also be applicable to GPU.
             memory_available_gb = int(self.getkw('nnode')) * int(self.getkw('mem_node'))
-            print self.__class__.__name__ + ' memory usage %s: %s GB used out of %s GB' %('prediction' if memory_available_gb>memory_predicted_gb else 'WARNING', memory_predicted_gb, memory_available_gb)
+            print self.__class__.__name__ + ' memory %s: %s GB used out of %s GB' %('prediction' if memory_available_gb>memory_predicted_gb else 'WARNING', memory_predicted_gb, memory_available_gb)
+            # Queue time
+
+            # Run time
             m = dynamic.MLS['MLVASPSPEED']
             t_elecstep = np.asscalar(m.predict(m.parse_predict(self, cell, Makeparam(self))))
-            print self.__class__.__name__ + ' time usage: time per elecstep ~ %s s. *10 for ionic step. *100 for geomopt. [MlVaspSpeed]' %t_elecstep
+            print self.__class__.__name__ + ' run time: ~ %s s per elecstep. *30 for static. *500 for geomopt. [MlVaspSpeed]' %t_elecstep
 
 
     # 3. nbands, ncore_total, encut
@@ -437,35 +440,6 @@ class Makeparam(object):
         # cleanup
         os.chdir(shared.SCRIPT_DIR)
         shutil.rmtree(tmp_path)
-
-
-
-# Ssh simplifier
-def Ssh_and_run(platform, pseudo_command, jobname=None):
-    # preliminary checks
-    if platform not in ['nanaimo', 'irmik']:
-        raise shared.CustomError('Ssh_and_run: platform {%s} is not supported' %platform)
-    # run
-    interpret = {
-        ('nanaimo', 'squeue'): "squeue -n '%s'" %(jobname),
-        ('irmik', 'squeue'): "squeue -n '%s'" %(jobname),
-        ('nanaimo', 'sacct'): "sacct -S 0101 -u xzhang1 --name=%s" %(jobname),
-        ('irmik', 'sacct'): "sacct -S 0101 -u xzhang1 --name=%s" %(jobname),
-    }
-    command = interpret[(platform, pseudo_command)]
-    # paramiko ssh run command
-    ssh = paramiko.SSHClient()
-    ssh._policy = paramiko.WarningPolicy()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh_config = paramiko.SSHConfig()
-    user_config_file = os.path.expanduser("~/.ssh/config")
-    if os.path.exists(user_config_file):
-        with open(user_config_file) as f:
-            ssh_config.parse(f)
-    ssh.load_system_host_keys()
-    ssh.connect(platform, username='xzhang1')
-    ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command(command)
-    return '\n'.join([l.strip() for l in ssh_stdout.readlines()])
 
 
 
@@ -848,11 +822,13 @@ class Vasp(object):
             with open(filename,'r') as if_:
                 self.log = if_.read()
             # optimized_cell
+            print self.__class__.__name__ + '.compute: collecting optimized_cell'
             if gen.parse_if('opt'):
                 with open('CONTCAR','r') as f_:
                     text = f_.read()
                     setattr(self, 'optimized_cell', Cell(text))
             # training
+            print self.__class__.__name__ + '.compute: collecting data for MLVASPSPEED and MLPBSOPT'
             dynamic.MLS['MLVASPSPEED'].parse_train(node, self, gen, cell, Makeparam(gen))
             if gen.parse_if('opt') and self.n_ionic_steps() < int(gen.getkw('nsw')):
                 dynamic.MLS['MLPBSOPT'].parse_train(node, self)
@@ -867,6 +843,7 @@ class Vasp(object):
         node = self.node()
         path = node.path
         gen = node.gen
+        rpath = path if platform=='dellpc' else self.remote_folder_path
 
         if shared.DEBUG>=2:    print 'calling %s(%s).moonphase' %(self.__class__.__name__, getattr(self,'path',''))
 
@@ -876,56 +853,26 @@ class Vasp(object):
         elif not getattr(self, 'log', None):
 
             # implements the choke mechanism. instead of reporting computable, report choke. unless detects computation complete, then report success/fail
-            if not os.path.exists(path):
-                return -1
-                print self.__class__.__name__ + ' moonphase: could not locate the original path {%s}' %(path)
 
-            # vasp_is_running
-            if (gen.parse_if('platform=dellpc|platform=dellpc_gpu')):
-                try:
-                    pgrep_output = check_output(['pgrep','vasp'])
-                    vasp_is_running = pgrep_output.strip() != ''
-                except CalledProcessError:
-                    vasp_is_running = False
-            elif gen.parse_if('platform=nanaimo|platform=irmik'):
-                if shared.DEBUG>=2: print self.__class__.__name__ + '.moonphase: asking %s for status of {%s}' %(gen.getkw('platform'), path)
-                result = Ssh_and_run(gen.getkw('platform'), pseudo_command='squeue', jobname=self.remote_folder_name)
-                vasp_is_running = ( len(result.splitlines()) > 1 )
-            else:
-                raise shared.CustomError(self.__class__.__name__ + '.moonphase: i don\'t know what to do')
+            '''
+            If vasp is running, return 1.
+            Otherwise, if vasprun.xml doesn't exist, return 1.
+            Otherwise return
+            '''
+            is_running = self.info('is_running')
 
-            # change to vasprun.xml directory
-            if gen.parse_if('platform=dellpc|platform=dellpc_gpu'):
-                os.chdir(path)
-            elif gen.parse_if('platform=nanaimo|platform=irmik'):
-                # check sshfs mounted
-                tmp_path = '%s/Shared/%s' % (shared.HOME_DIR, gen.getkw('platform'))
-                if not os.listdir(tmp_path):
-                    raise shared.CustomError(self.__class__.__name__ + '.moonphase: platform %s not mounted using sshfs' %(gen.getkw('platform')))
-                #
-                tmp_path = '%s/Shared/%s/%s' % (shared.HOME_DIR, gen.getkw('platform'), self.remote_folder_name)
-                if not os.path.isfile(tmp_path + '/vasprun.xml'):
-                    return 1
-                else:
-                    os.chdir(tmp_path)  # this is the only place sshfs is needed: vasprun.xml.
-            else:
-                raise shared.CustomError(self.__class__.__name__ + '.moonphase: i don\'t know what to do')
+            output = self.ssh_and_run('[ -e %s/vasprun.xml ] && echo ok || echo notok' %rpath).splitlines()[0]
+            vasprunxml_exist = output=='ok'
 
-            # inspect vasprun.xml
-            if os.path.isfile('vasprun.xml') and not vasp_is_running :  # and os.path.getmtime('vasprun.xml') > os.path.getmtime(path+'/wrapper') : buggy with sshfs, not needed because vasprun.xml is not copied
-                with open('vasprun.xml','r') as if_:
-                    if if_.read().splitlines()[-1] != '</modeling>':
-                        # print(self.__class__.__name__+'compute FYI: Vasp computation at %s went wrong. vasprun.xml is incomplete. Use .moonphase file to overwrite.' %path)
-                        with open('.moonphase', 'w') as f:  # avoid repeated reading
-                            f.write('-1')
-                        # shared.ML_VASP_MEMORY.take_data(Map().rlookup(attr_dict={'vasp':self}))
-                        return -1
-                    else:
-                        self.compute()
-                        # shared.ML_VASP_MEMORY.take_data(Map().rlookup(attr_dict={'vasp':self}))
-                        return 2
-            else:
+            vasprunxml_lastline = self.ssh_and_run('tail -1 %s/vasprun.xml' %rpath).splitlines()[0]
+
+            if is_running or not vasprunxml_exist:
                 return 1
+            elif '</modeling>' in vasprunxml_lastline:
+                self.compute()
+                return 2
+            else:
+                return -1
 
         else:   # getattr(self,'log',None)!=None
             return 2
@@ -955,48 +902,109 @@ class Vasp(object):
         of_ = open('./POTCAR','a')
         of_.write( if_.read() )
 
-    def memory_used(self):
-        path = self.node().path
-        gen = self.node().gen
-        if gen.parse_if('platform=dellpc_gpu'):
-            if not os.path.exists(path + '/gpu.log'):
-                return None
-            with open(path + '/gpu.log', 'r') as f:
-                l = np.float_([l.split() for l in f.readlines()])
-                return np.max(l[:,1]) - np.min(l[:, 1])
-        elif gen.parse_if('platform=dellpc'):
-            if not os.path.exists(path + '/cpu.log'):
-                return None
-            with open(path + '/cpu.log', 'r') as f:
-                l = np.float_([l.split() for l in f.readlines()])
-                return np.max(l[:,1]) - np.min(l[:, 1])
-        elif gen.parse_if('platform=nanaimo|platform=irmik'):
-            # output = Ssh_and_run(gen.getkw('platform'), pseudo_command='sacct', jobname=self.remote_folder_name).splitlines()
-            # if len(output) < 3:
-            #     return None
-            # return float(str.replace('K','000',output[-1]))
-            raise shared.CustomError(self.__class__.__name__ + '.memory_used: for now, irmik and nanimo stats are unstable.')
-        else:
-            return None
+    def ssh_and_run(self, command):
+        # paramiko ssh run command
+        ssh = paramiko.SSHClient()
+        ssh._policy = paramiko.WarningPolicy()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh_config = paramiko.SSHConfig()
+        user_config_file = os.path.expanduser("~/.ssh/config")
+        if os.path.exists(user_config_file):
+            with open(user_config_file) as f:
+                ssh_config.parse(f)
+        ssh.load_system_host_keys()
+        ssh.connect(platform, username='xzhang1')
+        ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command(command)
+        return '\n'.join([l.strip() for l in ssh_stdout.readlines()])
 
-    def time_used(self):
-        path = self.node().path
-        if not os.path.exists(path + '/OUTCAR'):
-            return None
-        with open(path + '/OUTCAR', 'r') as outcar:
-            lines = outcar.readlines()
-            line = [l for l in lines if 'Total CPU time used' in l]
-            if not line:    return None
-            return float(line.split()[-1])
-
-    def n_ionic_steps(self):
-        path = self.node().path
-        if not os.path.exists(path + '/OSZICAR'):
-            return None
-        with open(path + '/OSZICAR', 'r') as f:
-            lines = f.readlines()
-            line = [l for l in lines if 'F=' in l]
-            return len(line)
+    def info(self, info=None):
+        '''Clerical tool for collecting job status.'''
+        node = self.node()
+        path = node.path
+        gen = node.gen
+        platform = gen.getkw('platform')
+        if info == 'is_running':
+            if platform == 'dellpc' or platform == 'dellpc_gpu':
+                try:
+                    pgrep_output = check_output(['pgrep','vasp'])
+                    return pgrep_output.strip() != ''
+                except CalledProcessError:
+                    return False
+            elif platform in ['nanimo', 'irmik', 'comet', 'edison', 'cori']:
+                if shared.DEBUG>=2: print self.__class__.__name__ + '.moonphase: asking %s for status of {%s}' %(gen.getkw('platform'), path)
+                result = self.ssh_and_run("squeue -n '%s'" %(self.remote_folder_name))
+                return ( len(result.splitlines()) > 1 )
+            else:
+                raise shared.CustomError(self.__class__.__name__ + '.info: invalid platform')
+        elif info == 'memory_used':
+            if gen.parse_if('platform=dellpc_gpu'):
+                if not os.path.exists(path + '/gpu.log'):
+                    raise shared.CustomError(self.__class__.__name__ + '.info: no gpu.log')
+                with open(path + '/gpu.log', 'r') as f:
+                    l = np.float_([l.split() for l in f.readlines()])
+                    return np.max(l[:,1]) - np.min(l[:, 1])
+            elif gen.parse_if('platform=dellpc'):
+                if not os.path.exists(path + '/cpu.log'):
+                    raise shared.CustomError(self.__class__.__name__ + '.info: no cpu.log')
+                with open(path + '/cpu.log', 'r') as f:
+                    l = np.float_([l.split() for l in f.readlines()])
+                    return np.max(l[:,1]) - np.min(l[:, 1])
+            elif platform in ['nanimo', 'irmik']:
+                # output = self.ssh_and_run("sacct -S 0101 -u xzhang1 --name=%s" %(self.remote_folder_name)).splitlines()
+                raise shared.CustomError(self.__class__.__name__ + '.memory_used: for now, irmik and nanimo stats are unusable.')
+            else:
+                raise shared.CustomError(self.__class__.__name__ + '.info: invalid platform')
+        elif info == 'run_time':
+            if vasp.moonphase() != 2:
+                raise shared.CustomError(self.__class__.__name__ + '.warning: vasp moonphase is not 2. skipped collect data.')
+            if not os.path.isfile(node.path+'/OUTCAR'):
+                raise shared.CustomError(self.__class__.__name__ + '.warning: no OUTCAR found. skipped collect data.')
+            # parse outcar for time (s) / #elecstep
+            os.chdir(node.path)
+            with open(node.path + '/OUTCAR', 'r') as f:
+                lines = f.readlines()
+                # total time
+                line = [l for l in lines if 'Total CPU time used' in l]
+                if not line:
+                    raise shared.CustomError(self.__class__.__name__ + '.warning: no Total CPU time line found. skipped collect data.')
+                total_time = float(line[-1].split()[-1])
+                if total_time < 1:
+                    raise shared.CustomError(self.__class__.__name__ + '.warning: total time does not feel right. skipped collect data.')
+                return total_time
+        elif info == 'queue_time':
+            if platform == 'dellpc' or platform == 'dellpc_gpu':
+                return 0.0
+            elif platform in elif platform in ['nanimo', 'irmik', 'comet', 'edison', 'cori']:
+                output = self.ssh_and_run("sacct -S %s --format=jobname%30,submit,start -u xzhang1 --name=%s" %(self.remote_folder_name)).splitlines()
+                lines = [l.split() for l in output]
+                submit = next(l for l in output if l[0]==self.remote_folder_name)[1]
+                submit = time.mktime(dateparser.parse(submit).timetuple())
+                start = next(l for l in output if l[0]==self.remote_folder_name)[2]
+                start = time.mktime(dateparser.parse(start).timetuple())
+                now = time.mktime(dateparser.parse('now').timetuple())
+                if start < now - 5184000:
+                    raise shared.CustomError('Data is over 2 months old. ')
+                return start - submit
+            else:
+                raise shared.CustomError(self.__class__.__name__ + '.info: invalid platform')
+        elif info == 'n_electronic_step':
+            if vasp.moonphase() != 2:
+                raise shared.CustomError(self.__class__.__name__ + '.warning: vasp moonphase is not 2. skipped collect data.')
+            if not os.path.isfile(node.path+'/OUTCAR'):
+                raise shared.CustomError(self.__class__.__name__ + '.warning: no OUTCAR found. skipped collect data.')
+            # parse outcar for time (s) / #elecstep
+            os.chdir(node.path)
+            with open(node.path + '/OUTCAR', 'r') as f:
+                iteration_lines = [l for l in lines if 'Iteration' in l]
+                number_elec_steps = len(iteration_lines)
+            return number_ele_steps
+        elif info == 'n_ionic_step':
+            if not os.path.exists(path + '/OSZICAR'):
+                return None
+            with open(path + '/OSZICAR', 'r') as f:
+                lines = f.readlines()
+                line = [l for l in lines if 'F=' in l]
+                return len(line)
 
 
 #===========================================================================

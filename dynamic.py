@@ -170,29 +170,7 @@ class MlVaspSpeed(object):
 
     def parse_train(self, node, vasp, gen, cell, makeparam):
         # OUTPUT
-        # ------
-        # preliminary checks
-        if vasp.moonphase() != 2:
-            raise shared.CustomError(self.__class__.__name__ + '.warning: vasp moonphase is not 2. skipped collect data.')
-        if not os.path.isfile(node.path+'/OUTCAR'):
-            raise shared.CustomError(self.__class__.__name__ + '.warning: no OUTCAR found. skipped collect data.')
-        # parse outcar for time (s) / #elecstep
-        os.chdir(node.path)
-        with open(node.path + '/OUTCAR', 'r') as f:
-            lines = f.readlines()
-            # total time
-            line = [l for l in lines if 'Total CPU time used' in l]
-            if not line:
-                raise shared.CustomError(self.__class__.__name__ + '.warning: no Total CPU time line found. skipped collect data.')
-            total_time = float(line[-1].split()[-1])
-            if total_time < 1:
-                raise shared.CustomError(self.__class__.__name__ + '.warning: total time does not feel right. skipped collect data.')
-            # number of ionic steps
-            iteration_lines = [l for l in lines if 'Iteration' in l]
-            number_elec_steps = len(iteration_lines)
-            # time per electronic step
-            time_elec_step = total_time / number_elec_steps
-        _y0 = [time_elec_step]
+        _y0 = [vasp.run_time() / vasp.n_electronic_step()]
         # INPUT
         # -----
         _X = [
