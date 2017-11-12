@@ -226,7 +226,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
     @shared.debug_wrap
     def __init__(self, node):
         self.node = ref(node)
-        cell = cell
+        cell = node.cell
         input_ = node.phase + ', ' + node.property
     # 读mod, kw
         self.mod = {}
