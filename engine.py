@@ -905,6 +905,9 @@ class Vasp(object):
 
     def ssh_and_run(self, command):
         platform = self.node().gen.getkw('platform')
+        if platform not in ['dellpc', 'nanaimo', 'irmik']:
+            raise shared.CustomError(self.__class__.__name__ + '.ssh_and_run: unsupported platform')
+            IPython.embed()
         # paramiko ssh run command
         ssh = paramiko.SSHClient()
         ssh._policy = paramiko.WarningPolicy()
