@@ -983,6 +983,7 @@ class Vasp(object):
             elif platform in ['nanaimo', 'irmik', 'comet', 'edison', 'cori']:
                 output = self.ssh_and_run("sacct -S 0101 --format=jobname%%30,submit,start -u xzhang1 --name=%s" %(self.remote_folder_name)).splitlines()
                 lines = [l.split() for l in output]
+                IPython.embed()
                 submit = next(l for l in output if l[0]==self.remote_folder_name)[1]
                 submit = time.mktime(dateparser.parse(submit).timetuple())
                 start = next(l for l in output if l[0]==self.remote_folder_name)[2]
