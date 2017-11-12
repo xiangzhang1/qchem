@@ -904,6 +904,7 @@ class Vasp(object):
         of_.write( if_.read() )
 
     def ssh_and_run(self, command):
+        platform = self.node().gen.getkw('platform')
         # paramiko ssh run command
         ssh = paramiko.SSHClient()
         ssh._policy = paramiko.WarningPolicy()
