@@ -313,21 +313,6 @@ def udf_nn(*args):
     return Sequential(*layers)
 
 
-def snap_to_grid(ccoor, a=6.01417/2):
-        ccoor = np.copy(ccoor)
-        origin = ccoor[cell.ccoor_kdtree().query(np.mean(ccoor, axis=0))[1]]    # closest-to-center atom
-        def error_after_transformation(origin, ccoor=ccoor, a=a):       # snap to grid. note: parallelization doesn't save time.
-            fcoor = (ccoor - origin) / a
-            return np.sum(np.abs(fcoor - np.around(fcoor)))
-        origin = minimize(fun=error_after_transformation,
-                     x0=origin,
-                     bounds=[(origin[i]-0.2*a, origin[i]+0.2*a) for i in range(3)],
-                     tol=1e-10
-                    ).x
-        ccoor = ccoor - origin + np.around(origin / a) * a      # on-grid coordinate. vaguely resemble the original cell
-        return ccoor
-
-
 class MlPbSOpt(object):
 
     def __init__(self):
@@ -346,7 +331,19 @@ class MlPbSOpt(object):
     def parse_train(self, vasp):
         a = 6.01417/2
         cell = vasp.optimized_cell
-        ccoor = snap_to_grid(cell.ccoor)
+
+        ccoor = np.copy(cell.ccoor)
+        origin = ccoor[cell.ccoor_kdtree().query(np.mean(ccoor, axis=0))[1]]    # closest-to-center atom
+        def error_after_transformation(origin, ccoor=ccoor, a=a):       # snap to grid. note: parallelization doesn't save time.
+            fcoor = (ccoor - origin) / a
+            return np.sum(np.abs(fcoor - np.around(fcoor)))
+        origin = minimize(fun=error_after_transformation,
+                     x0=origin,
+                     bounds=[(origin[i]-0.2*a, origin[i]+0.2*a) for i in range(3)],
+                     tol=1e-10
+                    ).x
+        ccoor = ccoor - origin + np.around(origin / a) * a      # on-grid coordinate. vaguely resemble the original cell
+        
         # parse and store
         pbs_order_factor = 1 if cell.stoichiometry.keys()[0]=='Pb' else -1
         for idx_atom, c in enumerate(ccoor):
