@@ -415,19 +415,32 @@ class MlPbSOpt(object):
 
         # test
         print self.__class__.__name__ + '.train: training finished. evaluation on last items: \n actual | predicted'
-        pass_X = []
-        pass_y = []
         for i in range(0, len(self._X)):
             _X = np.array(self._X)[i]
             _y0 = np.float32(self._y0)[i]
             _y = np.float32(self.predict(_X))[0]
-            # print _y0, _y - _y0
-            pass_X.append(_X)
-            pass_y.append(_y - _y0)
-        return pass_X, pass_y
+            print _y0, _y - _y0
 
-    def parse_predict(self, gen, cell, makeparam):
-        pass
+
+
+    def parse_predict(self, cell):  # 1cell-in-many-out. note: on-grid input assumed!
+        a = 6.01417/2
+        ccoor = cell.ccoor
+
+        # parse and store
+        features = []
+        pbs_order_factor = 1 if cell.stoichiometry.keys()[0]=='Pb' else -1
+        for idx_atom, c in enumerate(ccoor):
+            relative_ccoor = ccoor - c
+            coor_sgn = np.sign(np.arange(ccoor.shape[0]) - cell.stoichiometry.values()[0] + 0.5) * pbs_order_factor
+            sgn = np.sign(idx_atom - cell.stoichiometry.values()[0] + 0.5) * pbs_order_factor
+            feature = np.concatenate((relative_ccoor, np.c_[[sgn] * ccoor.shape[0]], np.c_[coor_sgn]), axis=1)
+            feature = np.delete(feature, idx_atom, 0)
+            features.append(feature)
+
+        return features
+
+
 
     def predict(self, _X):  # EXCEPTION: 1-in 1-out. This special ANN doesn't take many-in-many-out
         # pipeline
@@ -473,13 +486,18 @@ class MlPbSOpt(object):
         return _y_inverse
 
 
-
-
-
-
-
-
-
+    def optimize_(self, cell):
+        '''
+        Optimize in place.
+        '''
+        #
+        Xs = self.parse_predict(cell)
+        ccoor = cell.ccoor
+        #
+        for idx_atom in range(cell.natoms()):
+            X = Xs[idx_atom]
+            dx = self.predict(X)
+            cell.ccoor[idx_atom] += dx
 
 
 
@@ -588,19 +606,31 @@ class MlPbSOptF(object):
 
         # test
         print self.__class__.__name__ + '.train: training finished. evaluation on last items: \n actual | predicted'
-        pass_X = []
-        pass_y = []
-        for i in range(0, len(self._X)):
+
+        for i in range(len(self._X)-50, len(self._X)):
             _X = np.array(self._X)[i]
             _y0 = np.float32(self._y0)[i]
             _y = np.float32(self.predict(_X))[0]
-            # print _y0, _y - _y0
-            pass_X.append(_X)
-            pass_y.append(_y - _y0)
-        return pass_X, pass_y
+            print _y0, _y-_y0
 
-    def parse_predict(self, gen, cell, makeparam):
-        pass
+
+    def parse_predict(self, cell):  # 1cell-in-many-out. note: on-grid input assumed!
+        a = 6.01417/2
+        ccoor = cell.ccoor
+
+        # parse and store
+        features = []
+        pbs_order_factor = 1 if cell.stoichiometry.keys()[0]=='Pb' else -1
+        for idx_atom, c in enumerate(ccoor):
+            relative_ccoor = ccoor - c
+            coor_sgn = np.sign(np.arange(ccoor.shape[0]) - cell.stoichiometry.values()[0] + 0.5) * pbs_order_factor
+            sgn = np.sign(idx_atom - cell.stoichiometry.values()[0] + 0.5) * pbs_order_factor
+            feature = np.concatenate((relative_ccoor, np.c_[[sgn] * ccoor.shape[0]], np.c_[coor_sgn]), axis=1)
+            feature = np.delete(feature, idx_atom, 0)
+            features.append(feature)
+
+        return features
+
 
     def predict(self, _X):  # EXCEPTION: 1-in 1-out. This special ANN doesn't take many-in-many-out
         # pipeline
@@ -644,3 +674,25 @@ class MlPbSOptF(object):
         # pipeline
         _y_inverse = self.y_pipeline.inverse_transform(dx.data.numpy().reshape(1,-1))
         return _y_inverse
+
+
+    def optimize_(self, cell, speed=0.1):
+        '''
+        Optimize in place.
+        '''
+        a = 6.01417/2
+        def cost(ccoor, cell=cell, self=self):
+            cell.ccoor = ccoor
+            Xs = self.parse_predict(cell)
+            fs = []
+            for idx_atom in range(cell.natoms()):
+                X = Xs[idx_atom]
+                f = self.predict(X)
+                cell.ccoor[idx_atom] += speed * f
+                fs.append(f)
+            return np.amax(np.abs(fs))
+        ccoor = minimize(fun=self.cost,
+                     x0=cell.ccoor,
+                     bounds=[(row-0.2*a, row+0.2*a) for row in cell.ccoor],
+                    ).x
+        cell.ccoor = ccoor
