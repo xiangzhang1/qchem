@@ -556,7 +556,7 @@ class MlPbSOptL2(object):
                 if all(-1<x<11 for x in rc):
                     X2_[0][rc] = c[3] * c[4]
                     X2_[1][rc] = 1
-            self._X.append(_X2)
+            self._X.append(X2_)
             # y2_ = y1_
             self._y0.append(y1_)
 
