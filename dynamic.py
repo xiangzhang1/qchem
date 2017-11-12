@@ -464,7 +464,7 @@ class MlQueueTime(object):
         self.net = udf_nn(11, 5, 5, 1)
 
 
-    def parse_train(self, node, vasp, gen, cell, makeparam):
+    def parse_train(self, node, gen):
         # OUTPUT
         _y0 = [vasp.info('queue_time')]
         # INPUT
@@ -518,7 +518,7 @@ class MlQueueTime(object):
             print a, b
 
 
-    def parse_predict(self, gen, cell, makeparam):
+    def parse_predict(self, gen):
         return [[
             int(gen.getkw('ncore_node')),
             gen.getkw('platform')
