@@ -902,7 +902,7 @@ class Vasp(object):
         of_ = open('./POTCAR','a')
         of_.write( if_.read() )
 
-    @retry(wait_random_min=1000, wait_random_max=2000)
+    @retry(wait_random_min=1000, wait_random_max=2000, stop_max_attempt_number=7)
     def ssh_and_run(self, command):
         platform = self.node().gen.getkw('platform')
         if platform not in ['dellpc', 'nanaimo', 'irmik']:
