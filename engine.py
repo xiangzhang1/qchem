@@ -755,6 +755,7 @@ class Vasp(object):
                 node.cell = copy.deepcopy(prev.cell)
                 print self.__class__.__name__ + '.compute: prev.vasp.cell overwrites node.cell.'
             if gen.parse_if('mlpbsopt'):
+                print self.__class__.__name__ + '.compute: using the MlPbSOpt module to pre-optimize cell.'
                 node.cell = dynamic.MLS['MLPBSOPT'].optimize(node.cell)
             # write incar etc. Relies on inheritance.
             os.chdir(path)
