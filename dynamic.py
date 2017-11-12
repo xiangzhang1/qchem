@@ -170,7 +170,7 @@ class MlVaspSpeed(object):
 
     def parse_train(self, node, vasp, gen, cell, makeparam):
         # OUTPUT
-        _y0 = [vasp.run_time() / vasp.n_electronic_step()]
+        _y0 = [vasp.info('run_time') / vasp.info('n_electronic_step')]
         # INPUT
         # -----
         _X = [
