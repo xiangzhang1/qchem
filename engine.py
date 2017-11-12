@@ -294,7 +294,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             print self.__class__.__name__ + ' memory usage %s: %s GB used out of %s GB' %('prediction' if memory_available_gb>memory_predicted_gb else 'WARNING', memory_predicted_gb, memory_available_gb)
             m = dynamic.MLS['MLVASPSPEED']
             t_elecstep = np.asscalar(m.predict(m.parse_predict(self, cell, Makeparam(self))))
-            print self.__class__.__name__ + ' time per elecstep ~ %s s. *10 for ionic step. *100 for geomopt.' %t_elecstep
+            print self.__class__.__name__ + ' time usage: time per elecstep ~ %s s. *10 for ionic step. *100 for geomopt. [MlVaspSpeed]' %t_elecstep
 
 
     # 3. nbands, ncore_total, encut
@@ -755,7 +755,7 @@ class Vasp(object):
                 node.cell = copy.deepcopy(prev.cell)
                 print self.__class__.__name__ + '.compute: prev.vasp.cell overwrites node.cell.'
             if gen.parse_if('mlpbsopt'):
-                print self.__class__.__name__ + '.compute: using the MlPbSOpt module to pre-optimize cell.'
+                print self.__class__.__name__ + '.compute: pre-optimizing cell. [MlPbSOpt]'
                 node.cell = dynamic.MLS['MLPBSOPT'].optimize(node.cell)
             # write incar etc. Relies on inheritance.
             os.chdir(path)
