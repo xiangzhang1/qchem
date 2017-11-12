@@ -296,7 +296,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             # Queue time
             m = dynamic.MLS['MLQUEUETIME']
             t = np.asscalar(m.predict(m.parse_predict(self)))
-            print self.__class__.__name__ + ' max queue time: ~ %s h. [MlVaspSpeed]' %(t / 3600.0)
+            print self.__class__.__name__ + ' max queue time: ~ %s h. currently too little data to be reliable. [MlVaspSpeed]' %(t / 3600.0)
             # Run time
             m = dynamic.MLS['MLVASPSPEED']
             t_elecstep = np.asscalar(m.predict(m.parse_predict(self, cell, Makeparam(self))))
@@ -830,9 +830,13 @@ class Vasp(object):
                     setattr(self, 'optimized_cell', Cell(text))
             # training
             print self.__class__.__name__ + '.compute: collecting data for MLVASPSPEED and MLPBSOPT'
-            dynamic.MLS['MLVASPSPEED'].parse_train(node, self, gen, node.cell, Makeparam(gen))
-            if gen.parse_if('opt') and self.n_ionic_steps() < int(gen.getkw('nsw')):
-                dynamic.MLS['MLPBSOPT'].parse_train(node, self)
+            try:
+                dynamic.MLS['MLVASPSPEED'].parse_train(node, self, gen, node.cell, Makeparam(gen))
+                if gen.parse_if('opt') and self.n_ionic_steps() < int(gen.getkw('nsw')):
+                    dynamic.MLS['MLPBSOPT'].parse_train(node, self)
+                dynamic.MLS['MLQUEUETIME'].parse_train(node, self, gen)
+            except shared.CustomError:
+                print 'certain collection skipped. Usually nothing to worry about, CustomError is semantic error.'
 
 
         else:
