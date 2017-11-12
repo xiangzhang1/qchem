@@ -991,7 +991,9 @@ class Vasp(object):
                 now = time.mktime(dateparser.parse('now').timetuple())
                 # if start < now - 5184000:
                 #     raise shared.CustomError('Data is over 2 months old. ')
-                return start - submit + 1.1
+                if start - submit < 10:
+                    raise shared.CustomError(self.__class__.__name__ + '.info: no wait time - good news, but not what I need')
+                return start - submit
             else:
                 raise shared.CustomError(self.__class__.__name__ + '.info: invalid platform')
         elif info == 'n_electronic_step':
