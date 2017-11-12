@@ -963,7 +963,7 @@ class Vasp(object):
             else:
                 raise shared.CustomError(self.__class__.__name__ + '.info: invalid platform')
         elif info == 'run_time':
-            if vasp.moonphase() != 2:
+            if self.moonphase() != 2:
                 raise shared.CustomError(self.__class__.__name__ + '.warning: vasp moonphase is not 2. skipped collect data.')
             if not os.path.isfile(node.path+'/OUTCAR'):
                 raise shared.CustomError(self.__class__.__name__ + '.warning: no OUTCAR found. skipped collect data.')
