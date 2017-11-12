@@ -524,7 +524,7 @@ class MlPbSOptF(object):
             lines = f.readlines()
         i = next(i for i, line in enumerate(lines) if 'TOTAL-FORCE' in line)
         force_lines = lines[i+2: i+2+cell.natoms()]
-        forces = np.float32(force_lines.split())[:, 3:]
+        forces = np.float32([line.split() for line in force_lines])[:, 3:]
 
 
         pbs_order_factor = 1 if cell.stoichiometry.keys()[0]=='Pb' else -1
