@@ -464,7 +464,7 @@ class MlQueueTime(object):
         self.net = udf_nn(11, 5, 5, 1)
 
 
-    def parse_train(self, node, gen):
+    def parse_train(self, node, gen, vasp):
         # OUTPUT
         _y0 = [vasp.info('queue_time')]
         # INPUT
