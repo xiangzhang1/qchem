@@ -357,7 +357,7 @@ class MlPbSOpt(object):
             self._y0.append(label)
 
 
-    def train(self, n_epochs=200, learning_rate=0.001, optimizer_name='Adam'):
+    def train(self, n_epochs=400, learning_rate=0.001, optimizer_name='Adam'):
         # pipeline
         _X = copy.deepcopy(self._X)
         self.X_pipeline.fit(np.concatenate([_subX[:,:3] for _subX in _X], axis=0))
@@ -448,5 +448,5 @@ class MlPbSOpt(object):
         for idx_atom in range(cell.natoms()):
             X = Xs[idx_atom]
             dx = self.predict(X)
-            cell.ccoor[idx_atom] += dx
+            cell.ccoor[idx_atom] += dx.reshape(3)
         return cell

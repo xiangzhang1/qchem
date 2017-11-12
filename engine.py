@@ -754,6 +754,8 @@ class Vasp(object):
             elif prev and getattr(prev, 'cell', None):
                 node.cell = copy.deepcopy(prev.cell)
                 print self.__class__.__name__ + '.compute: prev.vasp.cell overwrites node.cell.'
+            if gen.parse_if('mlpbsopt'):
+                node.cell = dynamic.MLS['MLPBSOPT'].optimize(node.cell)
             # write incar etc. Relies on inheritance.
             os.chdir(path)
             gen.write_incar_kpoints()
@@ -850,7 +852,10 @@ class Vasp(object):
                     text = f_.read()
                     setattr(self, 'optimized_cell', Cell(text))
             # training
-            dynamic.MLS['MLVASPSPEED'].parse_train(node, self, node.gen, node.cell, Makeparam(node.gen))
+            dynamic.MLS['MLVASPSPEED'].parse_train(node, self, gen, cell, Makeparam(gen))
+            if gen.parse_if('opt') and self.n_ionic_steps() < int(gen.getkw('nsw')):
+                dynamic.MLS['MLPBSOPT'].parse_train(node, self)
+
 
         else:
             print self.__class__.__name__ + ' compute: calculation already completed at %s. Why are you here?' %path
@@ -983,6 +988,14 @@ class Vasp(object):
             if not line:    return None
             return float(line.split()[-1])
 
+    def n_ionic_steps(self):
+        path = self.node().path
+        if not os.path.exists(path + '/OSZICAR'):
+            return None
+        with open(path + '/OSZICAR', 'r') as f:
+            lines = f.readlines()
+            line = [l for l in lines if 'F=' in l]
+            return len(line)
 
 
 #===========================================================================
