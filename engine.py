@@ -1003,15 +1003,14 @@ class Vasp(object):
             # parse outcar for time (s) / #elecstep
             os.chdir(node.path)
             with open(node.path + '/OUTCAR', 'r') as f:
-                iteration_lines = [l for l in lines if 'Iteration' in l]
+                iteration_lines = [l for l in f.readlines() if 'Iteration' in l]
                 number_elec_steps = len(iteration_lines)
             return number_ele_steps
         elif info == 'n_ionic_step':
             if not os.path.exists(path + '/OSZICAR'):
                 return None
             with open(path + '/OSZICAR', 'r') as f:
-                lines = f.readlines()
-                line = [l for l in lines if 'F=' in l]
+                line = [l for l in f.readlines() if 'F=' in l]
                 return len(line)
 
 
