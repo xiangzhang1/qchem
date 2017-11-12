@@ -870,7 +870,8 @@ class Vasp(object):
             output = self.ssh_and_run('[ -e %s/vasprun.xml ] && echo ok || echo notok' %rpath).splitlines()[0]
             vasprunxml_exist = output=='ok'
 
-            vasprunxml_lastline = self.ssh_and_run('tail -1 %s/vasprun.xml' %rpath).splitlines()[0]
+            if vasprunxml_exist:
+                vasprunxml_lastline = self.ssh_and_run('tail -1 %s/vasprun.xml' %rpath).splitlines()[0]
 
             if is_running or not vasprunxml_exist:
                 return 1
