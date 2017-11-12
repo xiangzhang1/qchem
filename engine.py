@@ -1004,8 +1004,7 @@ class Vasp(object):
             os.chdir(node.path)
             with open(node.path + '/OUTCAR', 'r') as f:
                 iteration_lines = [l for l in f.readlines() if 'Iteration' in l]
-                number_elec_steps = len(iteration_lines)
-            return number_ele_steps
+                return len(iteration_lines)
         elif info == 'n_ionic_step':
             if not os.path.exists(path + '/OSZICAR'):
                 return None
