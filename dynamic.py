@@ -509,7 +509,7 @@ class MlPbSOptL2(object):
             nn.ELU(),
         )
 
-    def train(self, n_epochs=500, batch_size=64, learning_rate=0.001, optimizer_name='Adam', test_set_size=128):
+    def train(self, n_epochs=1000, batch_size=64, learning_rate=0.001, optimizer_name='Adam', test_set_size=128):
         test_idx = np.random.choice(range(len(self._X)), size=test_set_size)
         train_idx = np.array([i for i in range(len(self._X)) if i not in test_idx])
 
@@ -565,7 +565,7 @@ class MlPbSOptL2(object):
         # pipeline
         _X = np.array(_X)
         shape = _X.shape
-        _X = self.X_pipeline.fit_transform(_X.reshape(shape[0], -1)).reshape(_X.shape)[train_idx]
+        _X = self.X_pipeline.fit_transform(_X.reshape(shape[0], -1)).reshape(_X.shape)
         # ann
         self.net.eval()
         y = self.net(Variable(torch.FloatTensor(_X), requires_grad=True))
