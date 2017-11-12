@@ -855,6 +855,10 @@ class Vasp(object):
 
     @shared.moonphase_wrap
     def moonphase(self):
+
+        node = self.node()
+        path = node.path
+
         if shared.DEBUG>=2:    print 'calling %s(%s).moonphase' %(self.__class__.__name__, getattr(self,'path',''))
 
         if not getattr(self, 'wrapper', None):
@@ -863,9 +867,9 @@ class Vasp(object):
         elif not getattr(self, 'log', None):
 
             # implements the choke mechanism. instead of reporting computable, report choke. unless detects computation complete, then report success/fail
-            if not os.path.exists(self.path):
+            if not os.path.exists(path):
                 return -1
-                print self.__class__.__name__ + ' moonphase: could not locate the original path {%s}' %(self.path)
+                print self.__class__.__name__ + ' moonphase: could not locate the original path {%s}' %(path)
 
             # vasp_is_running
             if (self.gen.parse_if('platform=dellpc|platform=dellpc_gpu')):
@@ -875,7 +879,7 @@ class Vasp(object):
                 except CalledProcessError:
                     vasp_is_running = False
             elif self.gen.parse_if('platform=nanaimo|platform=irmik'):
-                if shared.DEBUG>=2: print self.__class__.__name__ + '.moonphase: asking %s for status of {%s}' %(self.gen.getkw('platform'), self.path)
+                if shared.DEBUG>=2: print self.__class__.__name__ + '.moonphase: asking %s for status of {%s}' %(self.gen.getkw('platform'), path)
                 result = Ssh_and_run(self.gen.getkw('platform'), pseudo_command='squeue', jobname=self.remote_folder_name)
                 vasp_is_running = ( len(result.splitlines()) > 1 )
             else:
@@ -883,7 +887,7 @@ class Vasp(object):
 
             # change to vasprun.xml directory
             if self.gen.parse_if('platform=dellpc|platform=dellpc_gpu'):
-                os.chdir(self.path)
+                os.chdir(path)
             elif self.gen.parse_if('platform=nanaimo|platform=irmik'):
                 # check sshfs mounted
                 tmp_path = '%s/Shared/%s' % (shared.HOME_DIR, self.gen.getkw('platform'))
@@ -899,10 +903,10 @@ class Vasp(object):
                 raise shared.CustomError(self.__class__.__name__ + '.moonphase: i don\'t know what to do')
 
             # inspect vasprun.xml
-            if os.path.isfile('vasprun.xml') and not vasp_is_running :  # and os.path.getmtime('vasprun.xml') > os.path.getmtime(self.path+'/wrapper') : buggy with sshfs, not needed because vasprun.xml is not copied
+            if os.path.isfile('vasprun.xml') and not vasp_is_running :  # and os.path.getmtime('vasprun.xml') > os.path.getmtime(path+'/wrapper') : buggy with sshfs, not needed because vasprun.xml is not copied
                 with open('vasprun.xml','r') as if_:
                     if if_.read().splitlines()[-1] != '</modeling>':
-                        # print(self.__class__.__name__+'compute FYI: Vasp computation at %s went wrong. vasprun.xml is incomplete. Use .moonphase file to overwrite.' %self.path)
+                        # print(self.__class__.__name__+'compute FYI: Vasp computation at %s went wrong. vasprun.xml is incomplete. Use .moonphase file to overwrite.' %path)
                         with open('.moonphase', 'w') as f:  # avoid repeated reading
                             f.write('-1')
                         # shared.ML_VASP_MEMORY.take_data(Map().rlookup(attr_dict={'vasp':self}))
@@ -918,10 +922,11 @@ class Vasp(object):
             return 2
 
     def delete(self):
-        if os.path.isdir(self.path):
-            print 'removing self.path {%s}' %self.path
+        path = self.node().path
+        if os.path.isdir(path):
+            print 'removing self.path {%s}' %path
             os.chdir(shared.SCRIPT_DIR)
-            shutil.rmtree(self.path)
+            shutil.rmtree(path)
 
     def __str__(self):
         #: return log and optimized_cell
@@ -942,16 +947,17 @@ class Vasp(object):
         of_.write( if_.read() )
 
     def memory_used(self):
+        path = self.node().path
         if self.gen.parse_if('platform=dellpc_gpu'):
-            if not os.path.exists(self.path + '/gpu.log'):
+            if not os.path.exists(path + '/gpu.log'):
                 return None
-            with open(self.path + '/gpu.log', 'r') as f:
+            with open(path + '/gpu.log', 'r') as f:
                 l = np.float_([l.split() for l in f.readlines()])
                 return np.max(l[:,1]) - np.min(l[:, 1])
         elif self.gen.parse_if('platform=dellpc'):
-            if not os.path.exists(self.path + '/cpu.log'):
+            if not os.path.exists(path + '/cpu.log'):
                 return None
-            with open(self.path + '/cpu.log', 'r') as f:
+            with open(path + '/cpu.log', 'r') as f:
                 l = np.float_([l.split() for l in f.readlines()])
                 return np.max(l[:,1]) - np.min(l[:, 1])
         elif self.gen.parse_if('platform=nanaimo|platform=irmik'):
@@ -964,9 +970,9 @@ class Vasp(object):
             return None
 
     def time_used(self):
-        if not os.path.exists(self.path + '/OUTCAR'):
+        if not os.path.exists(path + '/OUTCAR'):
             return None
-        with open(self.path + '/OUTCAR', 'r') as outcar:
+        with open(path + '/OUTCAR', 'r') as outcar:
             lines = outcar.readlines()
             line = [l for l in lines if 'Total CPU time used' in l]
             if not line:    return None
