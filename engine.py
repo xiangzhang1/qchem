@@ -989,8 +989,8 @@ class Vasp(object):
                 start = next(l for l in lines if l[0]==self.remote_folder_name)[2]
                 start = time.mktime(dateparser.parse(start).timetuple())
                 now = time.mktime(dateparser.parse('now').timetuple())
-                if start < now - 5184000:
-                    raise shared.CustomError('Data is over 2 months old. ')
+                # if start < now - 5184000:
+                #     raise shared.CustomError('Data is over 2 months old. ')
                 return start - submit + 1.1
             else:
                 raise shared.CustomError(self.__class__.__name__ + '.info: invalid platform')
