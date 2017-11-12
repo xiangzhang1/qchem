@@ -294,7 +294,9 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             memory_available_gb = int(self.getkw('nnode')) * int(self.getkw('mem_node'))
             print self.__class__.__name__ + ' memory %s: %s GB used out of %s GB' %('prediction' if memory_available_gb>memory_predicted_gb else 'WARNING', memory_predicted_gb, memory_available_gb)
             # Queue time
-
+            m = dynamic.MLS['MLQUEUETIME']
+            t = np.asscalar(m.predict(m.parse_predict(self)))
+            print self.__class__.__name__ + ' max queue time: ~ %s h. [MlVaspSpeed]' %(t / 3600.0)
             # Run time
             m = dynamic.MLS['MLVASPSPEED']
             t_elecstep = np.asscalar(m.predict(m.parse_predict(self, cell, Makeparam(self))))
@@ -980,7 +982,7 @@ class Vasp(object):
                 return total_time
         elif info == 'queue_time':
             if platform == 'dellpc' or platform == 'dellpc_gpu':
-                return 1.1  # log-friendly
+                raise shared.CustomError(self.__class__.__name__ + '.info: there is no queue time for dell. Yes, it can be 0, but bad for the data.')
             elif platform in ['nanaimo', 'irmik', 'comet', 'edison', 'cori']:
                 output = self.ssh_and_run("sacct -S 0101 --format=jobname%%100,submit,start -u xzhang1 --name=%s" %(self.remote_folder_name)).splitlines()
                 lines = [l.split() for l in output]
