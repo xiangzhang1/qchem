@@ -509,8 +509,7 @@ class MlPbSOptL2(object):
             nn.ELU(),
             nn.Linear(6, 6),
             nn.ELU(),
-            nn.Linear(6, 3),
-            nn.ELU(),
+            nn.Linear(6, 3)
         )
 
     def train(self, n_epochs=1000, batch_size=64, learning_rate=0.001, optimizer_name='Adam', test_set_size=128):
