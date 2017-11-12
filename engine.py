@@ -918,7 +918,7 @@ class Vasp(object):
         return '\n'.join([l.strip() for l in ssh_stdout.readlines()])
 
     def info(self, info=None):
-        '''Clerical tool for collecting job status.'''
+        '''Accounting tool for collecting job status.'''
         node = self.node()
         path = node.path
         gen = node.gen
