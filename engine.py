@@ -43,6 +43,7 @@ import math
 
 import string
 import random
+from retrying import retry
 
 import matplotlib.pyplot as plt
 import mpl_toolkits.mplot3d.axes3d as p3
@@ -901,7 +902,7 @@ class Vasp(object):
         of_ = open('./POTCAR','a')
         of_.write( if_.read() )
 
-    @shared.debug_wrap
+    @retry(wait_random_min=1000, wait_random_max=2000)
     def ssh_and_run(self, command):
         platform = self.node().gen.getkw('platform')
         if platform not in ['dellpc', 'nanaimo', 'irmik']:
