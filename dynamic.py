@@ -118,7 +118,7 @@ class MlVaspSpeedNet(nn.Module):
         B = self.bnB2(self.dropoutB2(F.elu(self.lB2(B))))
         B = self.lB3(B)
 
-        C = self.bnC1(self.dropoutC1(F.elu(self.lC1(X[:, 8:12]))))
+        C = self.bnC1(self.dropoutC1(F.elu(self.lC1(X[:, 8:]))))
         C = self.lC2(C)
         # C = self.lC3(X[:, 8:12])
 
