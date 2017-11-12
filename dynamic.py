@@ -551,12 +551,11 @@ class MlPbSOptL2(object):
             X1_, y1_ = X1[i], y1[i]
             #
             X2_ = np.zeros((2,11,11,11))    # 2 channels
-            IPython.embed()
             for c in X1_:
                 rc = np.int32(np.around(c[:3] / a)) + 5
                 if all(-1<x<11 for x in rc):
                     X2_[0,rc[0],rc[1],rc[2]] = c[3] * c[4]
-                    X2_[0,rc[0],rc[1],rc[2]] = 1
+                    X2_[1,rc[0],rc[1],rc[2]] = 1
             self._X.append(X2_)
             # y2_ = y1_
             self._y0.append(y1_)
