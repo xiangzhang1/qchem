@@ -288,12 +288,13 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         if self.parse_if('engine=vasp'):
             m = Makeparam(self)
             # Global data cannot be obtained for multi-node multi-CPU case. ML is not suitable.
+            # These estimations might just also be applicable to GPU.
             memory_predicted_gb = ( (m.projector_real + m.projector_reciprocal)*int(self.getkw('npar')) + m.wavefunction*float(self.getkw('kpar')) )/1024.0/1024/1024 + int(self.getkw('nnode'))*0.7
             memory_available_gb = int(self.getkw('nnode')) * int(self.getkw('mem_node'))
             print self.__class__.__name__ + ' memory usage %s: %s GB used out of %s GB' %('prediction' if memory_available_gb>memory_predicted_gb else 'WARNING', memory_predicted_gb, memory_available_gb)
             m = dynamic.MLS['MLVASPSPEED']
             t_elecstep = np.asscalar(m.predict(m.parse_predict(self, cell, Makeparam(self))))
-            print self.__class__.__name__ + ' time per elecstep ~ %s s. highly inaccurate. *10 for ionic step. *100 for geomopt.' %t_elecstep
+            print self.__class__.__name__ + ' time per elecstep ~ %s s. *10 for ionic step. *100 for geomopt.' %t_elecstep
 
 
     # 3. nbands, ncore_total, encut
@@ -396,7 +397,8 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
     # 5. archived functions - may be called externally
     def npar(self):
         return str( int(self.getkw('ncore_node')) * int(self.getkw('nnode')) / int(self.getkw('ncore')) )
-
+    def ncore(self):
+        return str( int(self.getkw('ncore_node')) * int(self.getkw('nnode')) / int(self.getkw('npar')) )
 
 # Makeparam: check memory based on gen.
 # -------------------------------------
