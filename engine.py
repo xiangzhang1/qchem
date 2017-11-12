@@ -710,7 +710,6 @@ class Vasp(object):
         path = node.path
         gen = node.gen
         name = node.name
-        cell = node.cell
 
         if not getattr(self, 'wrapper', None):
             if os.path.exists(path):
@@ -735,8 +734,8 @@ class Vasp(object):
             os.chdir(path)
             gen.write_incar_kpoints()
             with open('POSCAR','w') as f:
-                f.write(str(cell))
-            for symbol in cell.stoichiometry.keys():
+                f.write(str(node.cell))
+            for symbol in node.cell.stoichiometry.keys():
                 self.pot(symbol)
             # setting variables for wrapper
             ncore_total = str(  int(gen.getkw('nnode')) * int(gen.getkw('ncore_node'))  )
@@ -829,7 +828,7 @@ class Vasp(object):
                     setattr(self, 'optimized_cell', Cell(text))
             # training
             print self.__class__.__name__ + '.compute: collecting data for MLVASPSPEED and MLPBSOPT'
-            dynamic.MLS['MLVASPSPEED'].parse_train(node, self, gen, cell, Makeparam(gen))
+            dynamic.MLS['MLVASPSPEED'].parse_train(node, self, gen, node.cell, Makeparam(gen))
             if gen.parse_if('opt') and self.n_ionic_steps() < int(gen.getkw('nsw')):
                 dynamic.MLS['MLPBSOPT'].parse_train(node, self)
 
