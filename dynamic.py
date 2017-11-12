@@ -343,7 +343,7 @@ class MlPbSOpt(object):
                      tol=1e-10
                     ).x
         ccoor = ccoor - origin + np.around(origin / a) * a      # on-grid coordinate. vaguely resemble the original cell
-        
+
         # parse and store
         pbs_order_factor = 1 if cell.stoichiometry.keys()[0]=='Pb' else -1
         for idx_atom, c in enumerate(ccoor):
@@ -442,11 +442,11 @@ class MlPbSOpt(object):
     def optimize(self, cell):
         '''Warning: on-grid input assumed.'''
         #
+        cell = copy.deepcopy(cell)
         Xs = self.parse_predict(cell)
-        ccoor = np.copy(cell.ccoor)
         #
         for idx_atom in range(cell.natoms()):
             X = Xs[idx_atom]
             dx = self.predict(X)
-            ccoor[idx_atom] += dx
-        return
+            cell.ccoor[idx_atom] += dx
+        return cell
