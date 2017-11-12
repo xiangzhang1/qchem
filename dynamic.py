@@ -473,6 +473,10 @@ class MlPbSOpt(object):
         _y_inverse = self.y_pipeline.inverse_transform(dx.data.numpy().reshape(1,-1))
         return _y_inverse
 
+    def predict_plus(self, _X):
+        global MLS
+        return self.predict(_X) + MLS['MlPbSOptL2'].predict(MLS['MlPbSOptL2'].parse_predict([_X]))[0]
+
 
 # MlPbSOpt 级联 第二层
 class Reshape(nn.Module):
@@ -542,8 +546,8 @@ class MlPbSOptL2(object):
         _y0 = np.float32(self._y0)[test_idx]
         _y = np.float32(self.predict(_X))
         print self.__class__.__name__ + '.train: training finished. evaluation on last items: \n actual | predicted'
-        for a, b in zip(_y0, _y):
-            print a, b
+        for a, b in zip(_y0, _y-_y0):
+            print np.linalg.norm(a), np.linalg.norm(b)
 
     def parse_train(self, X1, y1):
         a = 6.01417/2
