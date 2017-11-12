@@ -553,6 +553,7 @@ class MlPbSOptL2(object):
             X2_ = np.zeros((2,11,11,11))    # 2 channels
             for c in X1_:
                 rc = np.int32(np.around(c[:3] / a)) + 5
+                print rc
                 if all(-1<x<11 for x in rc):
                     X2_[0][rc] = c[3] * c[4]
                     X2_[1][rc] = 1
