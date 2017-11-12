@@ -412,7 +412,6 @@ class Makeparam(object):
         tmp_gen = copy.deepcopy(gen)
         tmp_gen.kw['lsorbit'] = ['.FALSE.']
         tmp_gen.kw['isym'] = ['0']
-        tmp_gen.write_incar_kpoints()
         # make dir, write files
         tmp_path = shared.SCRIPT_DIR + '/check_memory_tmp' + ''.join(random.sample(string.ascii_lowercase,4))
         if os.path.exists(tmp_path):
@@ -421,9 +420,9 @@ class Makeparam(object):
         os.chdir(tmp_path)
         tmp_gen.write_incar_kpoints()
         with open('POSCAR','w') as f:
-            f.write(tmp_gen.node().cell.poscar4())
-        for symbol in tmp_gen.node().cell.stoichiometry.keys():
-            tmp_gen.pot(symbol)
+            f.write(gen.node().cell.poscar4())
+        for symbol in gen.node().cell.stoichiometry.keys():
+            gen.pot(symbol)
         # parse output
         try:
             output = check_output([shared.SCRIPT_DIR + '/resource/makeparam']).splitlines()

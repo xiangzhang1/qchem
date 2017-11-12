@@ -1,61 +1,11 @@
-#!/usr/bin/python
-'''
-An environment. Do not paste actions here.
-'''
-
-# common libraries
-import sys
-import os
-import shutil
-import random
-import string
-import dill as pickle
-import time
-from pprint import pprint
-import IPython
-import numpy as np
-from tqdm import tqdm
-
-from cStringIO import StringIO
-from fuzzywuzzy import process
-
-# pytorch
-import torch
-from torch.autograd import Variable
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.utils.data import TensorDataset, DataLoader
-import torch.optim as optim
-
-# qchem package
-import qchem
-import shared
-import dynamic
-import engine
-from shared import ELEMENTS
-
-
-# sys.stdout = open('optimize_MlVaspSpeed_parameters.log', 'w')
-
-print shared.bcolors.OKBLUE + 'Welcome. Libraries loaded.' + shared.bcolors.ENDC
-
 dynamic.global_load()
 m = dynamic.MlVaspSpeed()
 for n in engine.Map().lookup('master').map.traverse():
-    try:
-        n.cell = engine.Cell(str(n.cell))
-        n.gen.cell = n.cell
-        n.vasp.cell = n.cell
-        n.vasp.gen = n.gen
-        n.vasp.optimized_cell = engine.Cell(str(n.vasp.optimized_cell))
-    except AttributeError:
-        pass
-    if getattr(n, 'gen', None) and n.gen.parse_if('engine=vasp') and n.moonphase()==2:
+    if getattr(n, 'vasp', None):
         try:
-            m.parse_train(n, n.vasp, n.vasp.gen, n.vasp.gen.cell, engine.Makeparam(n.vasp.gen))
+            m.parse_train(n, n.vasp, n.gen, n.cell, engine.Makeparam(n.gen))
         except (shared.CustomError, shared.DeferError) as e:
             print 'warning: node %s\'s parsing failed. probably old version.' %n.name ; sys.stdout.flush()
-
 
 
 
