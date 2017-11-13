@@ -832,7 +832,7 @@ class Vasp(object):
             print self.__class__.__name__ + '.compute: collecting data for MLVASPSPEED and MLPBSOPT'
             try:
                 dynamic.MLS['MLVASPSPEED'].parse_train(node, self, gen, node.cell, Makeparam(gen))
-                if gen.parse_if('opt') and self.n_ionic_steps() < int(gen.getkw('nsw')):
+                if gen.parse_if('opt') and self.info('n_ionic_step') < int(gen.getkw('nsw')):
                     dynamic.MLS['MLPBSOPT'].parse_train(node, self)
                 dynamic.MLS['MLQUEUETIME'].parse_train(node, self, gen)
             except shared.CustomError:
@@ -944,7 +944,7 @@ class Vasp(object):
                     return pgrep_output.strip() != ''
                 except CalledProcessError:
                     return False
-            elif platform in ['nanimo', 'irmik', 'comet', 'edison', 'cori']:
+            elif platform in ['nanaimo', 'irmik', 'comet', 'edison', 'cori']:
                 if shared.DEBUG>=2: print self.__class__.__name__ + '.moonphase: asking %s for status of {%s}' %(gen.getkw('platform'), path)
                 result = self.ssh_and_run("squeue -n '%s'" %(self.remote_folder_name))
                 return ( len(result.splitlines()) > 1 )

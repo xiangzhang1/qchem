@@ -335,6 +335,7 @@ class MlPbSOpt(object):
             self._y0.append(label)
 
 
+
     def train(self, n_epochs=400, learning_rate=0.001, optimizer_name='Adam'):
         # pipeline
         _X = copy.deepcopy(self._X)
@@ -376,7 +377,7 @@ class MlPbSOpt(object):
             _X = np.array(self._X)[i]
             _y0 = np.float32(self._y0)[i]
             _y = np.float32(self.predict(_X))[0]
-            print _y0, _y - _y0
+            print _y0, _y
 
     def parse_predict(self, cell):  # 1cell-in-many-out.
         '''Warning: On-grid input assumed.'''
