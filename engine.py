@@ -833,7 +833,7 @@ class Vasp(object):
             try:
                 dynamic.MLS['MLVASPSPEED'].parse_train(node, self, gen, node.cell, Makeparam(gen))
                 if gen.parse_if('opt') and self.info('n_ionic_step') < int(gen.getkw('nsw')):
-                    dynamic.MLS['MLPBSOPT'].parse_train(node, self)
+                    dynamic.MLS['MLPBSOPT'].parse_train(self)
                 dynamic.MLS['MLQUEUETIME'].parse_train(node, self, gen)
             except shared.CustomError:
                 print 'certain collection skipped. Usually nothing to worry about, CustomError is semantic error.'
