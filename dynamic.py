@@ -310,7 +310,7 @@ class MlPbSOpt(object):
     def parse_train(self, vasp):
         # checks
         gen = vasp.node().gen
-        vasprunxml_lastline = vasp.ssh_and_run('tail -1 %s/vasprun.xml' %vasp.node().path).splitlines()[0]
+        vasprunxml_lastline = vasp.ssh_and_run('tail -1 %s/vasprun.xml' %vasp.remote_folder_name).splitlines()[0]
         if not (gen.parse_if('opt') and vasp.info('n_ionic_step') < int(gen.getkw('nsw')) and '</modeling>' in vasprunxml_lastline):
             raise shared.CustomError('{}.compute: not optimization cell, or terminated prematurely. skipped :)'.format(self.__class__.__name__))
 
