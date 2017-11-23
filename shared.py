@@ -26,7 +26,7 @@ from sklearn.preprocessing import LabelBinarizer
 # Fragile lists
 # ELEMENTS
 # CustomError, DeferError, [LookupError]
-# MySFTPClient
+# MySFTPClient, sshs
 # @MWT
 # @moonphase_wrap
 # wraparound error constant
@@ -298,6 +298,7 @@ class MySFTPClient(paramiko.SFTPClient):
             else:
                 raise
 
+sshs = {}
 # ===========================================================================
 
 # MWT: Memorize With Timeout
