@@ -390,7 +390,7 @@ def reset_node():
 def duplicate_node():
     j = request.get_json(force=True)
     parent_node = engine.Map().lookup(j['cur'])
-    n = parent_node.lookup(j['name'])
+    n = parent_node.map.lookup(j['name'])
     parent_node.map.add_node(n.copy())
 
 @app.route('/compute_node', methods=['POST'])
