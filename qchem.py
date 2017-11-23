@@ -225,7 +225,7 @@ class Node(object):
                 text = re.sub(r'\d+$', '', self.name)
                 while True:
                     try:
-                        self.map.lookup(j['cur'] + '.' + text + str(number))
+                        engine.Map().lookup(j['cur'] + '.' + text + str(number))
                     except LookupError:
                         break
                     else:
