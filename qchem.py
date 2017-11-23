@@ -5,6 +5,7 @@ This is the main file. Documentation is moved to the docs/ folder.
 import re
 import os
 import shutil
+import copy
 
 import engine
 import shared
@@ -213,3 +214,25 @@ class Node(object):
                 return parent_node.default_path(cur=cur) + '.' + self.name
             else:
                 return parent_node.default_path() + '/' + re.sub(r"\s+", '_', self.name)
+
+    def copy(self):
+        '''A convenient function for returning a copy with a non-clashing name.'''
+        parent_node = engine.Map().rlookup(node_list = [self], parent=True)
+        new_node = Node('# newnode')
+        for attr in vars(self):
+            if attr == 'name':  # test1 -> test2
+                number = int(re.search(r'\d+$', self.name).group(0)) if re.search(r'\d+$', self.name) else 0
+                text = re.sub(r'\d+$', '', self.name)
+                while True:
+                    try:
+                        self.map.lookup(j['cur'] + '.' + text + str(number))
+                    except LookupError:
+                        break
+                    else:
+                        number += 1
+                new_node.name = text + str(number)
+            elif attr == 'path':
+                pass
+            elif attr in shared.READABLE_ATTR_LIST:
+                setattr(new_node, attr, copy.deepcopy(getattr(self, attr)))
+        return new_node

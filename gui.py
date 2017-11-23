@@ -389,26 +389,9 @@ def reset_node():
 @login_required
 def duplicate_node():
     j = request.get_json(force=True)
-    parent_n = engine.Map().lookup(j['cur'])
-    n = engine.Map().lookup(j['cur']+'.'+j['name'])
-    new_node = qchem.Node('# newnode')
-    for attr in vars(n):
-        if attr == 'name':  # test1 -> test2
-            number = int(re.search(r'\d+$', n.name).group(0)) if re.search(r'\d+$', n.name) else 0
-            text = re.sub(r'\d+$', '', n.name)
-            while True:
-                try:
-                    engine.Map().lookup(j['cur'] + '.' + text + str(number))
-                except LookupError:
-                    break
-                else:
-                    number += 1
-            new_node.name = text + str(number)
-        elif attr == 'path':
-            pass
-        elif attr in shared.READABLE_ATTR_LIST:
-            setattr(new_node, attr, getattr(n,attr))
-    parent_n.map.add_node(new_node)
+    parent_node = n.map.lookup(j['cur'])
+    n = parent_node.lookup(j['name'])
+    parent_node.map.add_node(n.copy())
 
 @app.route('/compute_node', methods=['POST'])
 @patch_through
