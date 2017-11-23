@@ -263,10 +263,20 @@ class MlVaspSpeed(object):
 # inital training script for MlVaspSpeed can be found in scripts/ml
 
 
-# MlPbSOpt
+# MlPbSOpt, f(r)-version
 # ==============================================================================
 
 from sklearn.base import BaseEstimator, TransformerMixin
+
+def udf_nn(*args):
+    layers = []
+    for i in range(len(args)-1):
+        layers.append(nn.Linear(args[i], args[i+1]))
+        if i != len(args)-2:
+            layers.append(nn.ELU())
+    return Sequential(*layers)
+
+
 class MlPbSOptScaler(BaseEstimator,TransformerMixin):
     def __init__(self):
         self.mean = 0
@@ -282,15 +292,6 @@ class MlPbSOptScaler(BaseEstimator,TransformerMixin):
         return X * self.mean * 1.7
 
 
-def udf_nn(*args):
-    layers = []
-    for i in range(len(args)-1):
-        layers.append(nn.Linear(args[i], args[i+1]))
-        if i != len(args)-2:
-            layers.append(nn.ELU())
-    return Sequential(*layers)
-
-
 class MlPbSOpt(object):
 
     def __init__(self):
@@ -301,12 +302,17 @@ class MlPbSOpt(object):
         self.X_pipeline = MlPbSOptScaler()
         self.y_pipeline = Pipeline([
             ('scaler', MlPbSOptScaler()),
-            ('10', FunctionTransformer(func=lambda x: x * 10, inverse_func=lambda x: x / 10))
+            ('10', FunctionTransformer(func=lambda x: x * 5, inverse_func=lambda x: x / 5))
         ])
         # ann
         self.nets = {-2: udf_nn(1,5,10,5,1), 0:udf_nn(1,5,10,5,1), 2:udf_nn(1,5,10,5,1)}
 
     def parse_train(self, vasp):
+        # checks
+        vasprunxml_lastline = self.ssh_and_run('tail -1 %s/vasprun.xml' %vasp.node().path).splitlines()[0]
+        if not (gen.parse_if('opt') and self.info('n_ionic_step') < int(gen.getkw('nsw')) and '</modeling>' in vasprunxml_lastline):
+            raise shared.CustomError('{}.compute: not optimization cell, or terminated prematurely. skipped :)'.format(self.__class__.__name__))
+
         a = 6.01417/2
         cell = vasp.optimized_cell
 
@@ -534,3 +540,8 @@ class MlQueueTime(object):
         # pipeline
         _y_inverse = self.y_pipeline.inverse_transform(y.data.numpy())
         return _y_inverse
+
+
+
+# MlPbSOpt, CE-version
+# ==============================================================================

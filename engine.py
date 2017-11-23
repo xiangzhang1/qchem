@@ -823,20 +823,32 @@ class Vasp(object):
             with open(filename,'r') as if_:
                 self.log = if_.read()
             # optimized_cell
-            print self.__class__.__name__ + '.compute: collecting optimized_cell'
+            print self.__class__.__name__ + '.compute: recording vasp.optimized_cell'
             if gen.parse_if('opt'):
                 with open('CONTCAR','r') as f_:
                     text = f_.read()
                     setattr(self, 'optimized_cell', Cell(text))
-            # training
-            print self.__class__.__name__ + '.compute: collecting data for MLVASPSPEED and MLPBSOPT'
+            # MLVASPSPEED
             try:
+                print self.__class__.__name__ + '.compute: collecting data for MLVASPSPEED'
                 dynamic.MLS['MLVASPSPEED'].parse_train(node, self, gen, node.cell, Makeparam(gen))
-                if gen.parse_if('opt') and self.info('n_ionic_step') < int(gen.getkw('nsw')):
-                    dynamic.MLS['MLPBSOPT'].parse_train(self)
+            except shared.CustomError as e:
+                print(e)
+            print self.__class__.__name__ + '.compute: MLVASPSPEED collection complete'
+            # MLQUEUETIME
+            try:
+                print self.__class__.__name__ + '.compute: collecting data for MLQUEUETIME'
                 dynamic.MLS['MLQUEUETIME'].parse_train(node, self, gen)
-            except shared.CustomError:
-                print 'certain collection skipped. Usually nothing to worry about, CustomError is semantic error.'
+            except shared.CustomError as e:
+                print(e)
+            print self.__class__.__name__ + '.compute: MLQUEUETIME collection complete'
+            # MLPBSOPT
+            try:
+                print self.__class__.__name__ + '.compute: collecting data for MLPBSOPT'
+                dynamic.MLS['MLPBSOPT'].parse_train(self)
+            except shared.CustomError as e:
+                print(e)
+            print self.__class__.__name__ + '.compute: MLPBSOPT collection complete'
 
 
         else:

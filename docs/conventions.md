@@ -33,6 +33,8 @@ no duplicate refs. rlookup must always hold.
 Convention
 ----------
 
+Each module should strive to be self-complete w.r.t. checks. In other words. EAFP.
+
 ML: apply custom scaling; it is much better than StandardScaler or not scaling.
 
 use SI units: bytes, seconds, ...
