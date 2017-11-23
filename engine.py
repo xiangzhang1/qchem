@@ -930,16 +930,20 @@ class Vasp(object):
         if platform == 'dellpc':
             return os.popen(command).read()
         else:
-            ssh = paramiko.SSHClient()
-            ssh._policy = paramiko.WarningPolicy()
-            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            ssh_config = paramiko.SSHConfig()
-            user_config_file = os.path.expanduser("~/.ssh/config")
-            if os.path.exists(user_config_file):
-                with open(user_config_file) as f:
-                    ssh_config.parse(f)
-            ssh.load_system_host_keys()
-            ssh.connect(platform, username='xzhang1')
+            # Establish ssh connection
+            try:
+                ssh = ssh_and_run.ssh
+            except AttributeError:
+                ssh = ssh_and_run.ssh = paramiko.SSHClient()
+                ssh._policy = paramiko.WarningPolicy()
+                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                ssh_config = paramiko.SSHConfig()
+                user_config_file = os.path.expanduser("~/.ssh/config")
+                if os.path.exists(user_config_file):
+                    with open(user_config_file) as f:
+                        ssh_config.parse(f)
+                ssh.load_system_host_keys()
+                ssh.connect(platform, username='xzhang1')
             ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command(command)
             return ssh_stdout.read()
 
