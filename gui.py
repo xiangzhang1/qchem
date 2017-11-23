@@ -389,7 +389,7 @@ def reset_node():
 @login_required
 def duplicate_node():
     j = request.get_json(force=True)
-    parent_node = n.map.lookup(j['cur'])
+    parent_node = engine.Map().lookup(j['cur'])
     n = parent_node.lookup(j['name'])
     parent_node.map.add_node(n.copy())
 
