@@ -517,6 +517,7 @@ def paste_ref():
     n = l[0]
     print 'paste_ref: adding node {%s}' %n.name
     p.map.add_node(n)
+    dynamic.NODES.pop(n.name)
 
 
 @app.route('/add_edge', methods=['POST'])
