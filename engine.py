@@ -1,9 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Gen
-# ===========================================================================
-
+# generic
 import os
 import sys
 import subprocess
@@ -21,46 +19,40 @@ from collections import OrderedDict
 import paramiko
 import IPython
 from itertools import groupby, chain, combinations
+from tqdm import tqdm, trange
+import math
+import string
+import random
+from retrying import retry
+import requests
+import dateparser
+import copy
+from functools import partial
+from weakref import ref
+from textwrap import dedent
 
+# matplotlib
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import time
 import xml.etree.ElementTree as ET
+import matplotlib.animation as animation
+import mpl_toolkits.mplot3d.axes3d as p3
 
-from tqdm import tqdm, trange
-
-from dask import compute, delayed
-from dask.diagnostics import ProgressBar
-import dask.multiprocessing
-
+# scipy
 from scipy.interpolate import Rbf
 from scipy.interpolate import interp1d
 from scipy.optimize import minimize
 from scipy import spatial
 from scipy.linalg import norm
 
-import math
-
-import string
-import random
-from retrying import retry
-
-import matplotlib.pyplot as plt
-import mpl_toolkits.mplot3d.axes3d as p3
-import matplotlib.animation as animation
-
-import copy
-import requests
-import dateparser
-
-from functools import partial
-from weakref import ref
-
+# qchem
 import shared
 import dynamic
 
 
-# ====================================================
+# Gen
+# ===========================================================================
 
 
 class Gen(object):  # Stores the logical structure of keywords and modules. A unique construct deserving a name.
@@ -296,11 +288,11 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             # Queue time
             m = dynamic.MLS['MLQUEUETIME']
             t = np.asscalar(m.predict(m.parse_predict(self)))
-            print self.__class__.__name__ + ' max queue time: ~ %s h. currently too little data to be reliable. [MlVaspSpeed]' %(t / 3600.0)
+            print self.__class__.__name__ + ' max queue time: ~ %s h. currently too little data to be reliable. [MLQUEUETIME]' %(t / 3600.0)
             # Run time
             m = dynamic.MLS['MLVASPSPEED']
             t_elecstep = np.asscalar(m.predict(m.parse_predict(self, cell, Makeparam(self))))
-            print self.__class__.__name__ + ' run time: ~ %s s per elecstep. *30 for static. *500 for geomopt. [MlVaspSpeed]' %t_elecstep
+            print self.__class__.__name__ + ' run time: ~ %s h [%s s / scstep]. [MLVASPSPEED]' %(t_elestep / 3600 * (500 if self.parse_if('opt') else 30), t_elecstep)
 
 
     # 3. nbands, ncore_total, encut
@@ -752,7 +744,7 @@ class Vasp(object):
             # subfile actually runs vasp. wrapper submits the subfile to system.
             self.wrapper = '#!/bin/bash\n' ; self.subfile = '#!/bin/bash\necho $PWD `date` start\necho -------------------------\n'
             if gen.parse_if('platform=dellpc_gpu'):
-                self.subfile += ''' # good indent in python, bad on bash.
+                self.subfile += dedent('''\
                     (while true; do
                         echo `date +%%s` `nvidia-smi | sed -n '9p' | awk '{print $9}'` | sed 's/MiB//g' >> ./gpu.log
                         sleep 3
@@ -761,10 +753,10 @@ class Vasp(object):
                     mpiexec.hydra -n %s /home/xzhang1/src/vasp.5.4.1/bin/vasp_gpu </dev/null
                     mail -s "VASP job finished: {${PWD##*/}}" 8576361405@vtext.com <<<EOM
                     kill "$bgPID"
-                ''' %(ncore_total)
+                    ''' %(ncore_total))
                 self.wrapper += 'nohup ./subfile 2>&1 >> run.log &'
-            if gen.parse_if('platform=dellpc'):
-                self.subfile += '''
+            elif gen.parse_if('platform=dellpc'):
+                self.subfile += dedent('''\
                     (while true; do
                         echo `date +%%s` `free -b | sed -n '2p' | awk '{print $3}'` >> ./cpu.log
                         sleep 3
@@ -773,22 +765,60 @@ class Vasp(object):
                     mpiexec.hydra -n %s /home/xzhang1/src/vasp.5.4.1/bin/vasp_%s </dev/null
                     mail -s "VASP job finished: {${PWD##*/}}" 8576361405@vtext.com <<<EOM
                     kill "$bgPID"
-                ''' %(ncore_total, flavor)
+                    ''' %(ncore_total, flavor))
                 self.wrapper += 'nohup ./subfile 2>&1 >> run.log &'
-            if gen.parse_if('platform=nanaimo'):
-                self.wrapper += 'rsync -avP . nanaimo:~/%s\n' %self.remote_folder_name
-                self.wrapper += 'ssh nanaimo <<EOF\n'
-                self.wrapper += ' cd %s\n' %self.remote_folder_name
-                self.wrapper += ' sbatch --nodes=%s --ntasks=%s --job-name=%s -t 48:00:00 --export=ALL subfile\n' %(gen.getkw('nnode'), ncore_total, self.remote_folder_name)
-                self.wrapper += 'EOF\n'
-                self.subfile += '#!/bin/bash\n. /usr/share/Modules/init/bash\nmodule purge\nmodule load intel\nmodule load impi\nmpirun -np %s /opt/vasp.5.4.4/bin/vasp_%s\n' %(ncore_total, flavor)
-            if gen.parse_if('platform=irmik'):
-                self.wrapper += 'rsync -avP . irmik:~/%s\n' %self.remote_folder_name
-                self.wrapper += 'ssh irmik <<EOF\n'
-                self.wrapper += ' cd %s\n' %self.remote_folder_name
-                self.wrapper += ' sbatch --nodes=%s --ntasks=%s --job-name=%s -t 48:00:00 --export=ALL subfile\n' %(gen.getkw('nnode'), ncore_total, self.remote_folder_name)
-                self.wrapper += 'EOF\n'
-                self.subfile += '#!/bin/bash\n. /usr/share/Modules/init/bash\nmodule purge\nmodule load mvapich2-2.2/intel\nmpirun -np %s /opt/vasp.5.4.4/bin/vasp_%s\n' %(ncore_total, flavor)
+            elif gen.parse_if('platform=nanaimo'):
+                self.wrapper += dedent('''\
+                    rsync -avP . nanaimo:~/%s\n
+                    ssh nanaimo <<EOF
+                      cd %s
+                      sbatch --nodes=%s --ntasks=%s --job-name=%s -t 48:00:00 --export=ALL subfile
+                    EOF''' %(self.remote_folder_name, self.remote_folder_name, gen.getkw('nnode'), ncore_total, self.remote_folder_name))
+                self.subfile += dedent('''\
+                    #!/bin/bash
+                    . /usr/share/Modules/init/bash
+                    module purge
+                    module load intel
+                    module load impi
+                    mpirun -np %s /opt/vasp.5.4.4/bin/vasp_%s''' %(ncore_total, flavor))
+            elif gen.parse_if('platform=irmik'):
+                self.wrapper += dedent('''\
+                    rsync -avP . irmik:~/%s
+                    ssh irmik <<EOF
+                     cd %s
+                     sbatch --nodes=%s --ntasks=%s --job-name=%s -t 48:00:00 --export=ALL subfile
+                    EOF''' %(self.remote_folder_name, self.remote_folder_name, gen.getkw('nnode'), ncore_total, self.remote_folder_name))
+                self.subfile += '''\
+                    #!/bin/bash
+                    . /usr/share/Modules/init/bash
+                    module purge
+                    module load mvapich2-2.2/intel
+                    mpirun -np %s /opt/vasp.5.4.4/bin/vasp_%s''' %(ncore_total, flavor))
+            elif gen.parse_if('platform=nanaimo'):
+                self.wrapper += dedent('''\
+                    rsync -avP . nanaimo:~/%s
+                    ssh nanaimo <<EOF
+                      cd %s
+                      sbatch --nodes=%s --ntasks=%s --job-name=%s -t 48:00:00 --export=ALL subfile
+                    EOF''' %(self.remote_folder_name, self.remote_folder_name, gen.getkw('nnode'), ncore_total, self.remote_folder_name))
+                self.subfile += dedent('''\
+                    #!/bin/bash
+                    . /usr/share/Modules/init/bash
+                    module purge
+                    module load intel
+                    module load impi
+                    mpirun -np %s /opt/vasp.5.4.4/bin/vasp_%s\n''' %(ncore_total, flavor))
+            elif gen.parse_if('platform=edison'):
+                self.wrapper += dedent('''\
+                    rsync -avP . edison:~/%s
+                    ssh edison <<EOF
+                      cd %s
+                      sbatch --nodes=%s --ntasks=%s --job-name=%s -t 36:00:00 --partition=regular subfile
+                    EOF''' %(self.remote_folder_name, self.remote_folder_name, gen.getkw('nnode'), ncore_total, self.remote_folder_name))
+                self.subfile += dedent('''\
+                    #!/bin/bash
+                    module load vasp
+                    srun -n %s vasp_%s\n''' %(ncore_total, flavor))
             self.subfile += 'echo $PWD `date` end \necho -------------------------\n'
             with open('wrapper','w') as of_:
                 of_.write(self.wrapper)
