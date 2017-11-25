@@ -788,7 +788,7 @@ class Vasp(object):
                      cd %s
                      sbatch --nodes=%s --ntasks=%s --job-name=%s -t 48:00:00 --export=ALL subfile
                     EOF''' %(self.remote_folder_name, self.remote_folder_name, gen.getkw('nnode'), ncore_total, self.remote_folder_name))
-                self.subfile += '''\
+                self.subfile += dedent('''\
                     #!/bin/bash
                     . /usr/share/Modules/init/bash
                     module purge
