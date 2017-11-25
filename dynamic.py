@@ -522,6 +522,7 @@ class MlQueueTime(object):
         print self.__class__.__name__ + '.train: training finished. evaluation on last items: \n actual | predicted'
         for a, b in zip(_y0, _y):
             print a, b
+        print self.__class__.__name__ + ': a full queuetime prediction would be time-wasting and messy. This is just an averge, good enough for slow times not not necessary for fast times. :)'
 
 
     def parse_predict(self, gen):

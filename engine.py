@@ -769,56 +769,64 @@ class Vasp(object):
                 self.wrapper += 'nohup ./subfile 2>&1 >> run.log &'
             elif gen.parse_if('platform=nanaimo'):
                 self.wrapper += dedent('''\
-                    rsync -avP . nanaimo:~/%s\n
+                    rsync -avP . nanaimo:~/%s
                     ssh nanaimo <<EOF
                       cd %s
                       sbatch --nodes=%s --ntasks=%s --job-name=%s -t 48:00:00 --export=ALL subfile
-                    EOF''' %(self.remote_folder_name, self.remote_folder_name, gen.getkw('nnode'), ncore_total, self.remote_folder_name))
+                    EOF
+                    ''' %(self.remote_folder_name, self.remote_folder_name, gen.getkw('nnode'), ncore_total, self.remote_folder_name))
                 self.subfile += dedent('''\
                     #!/bin/bash
                     . /usr/share/Modules/init/bash
                     module purge
                     module load intel
                     module load impi
-                    mpirun -np %s /opt/vasp.5.4.4/bin/vasp_%s''' %(ncore_total, flavor))
+                    mpirun -np %s /opt/vasp.5.4.4/bin/vasp_%s
+                    ''' %(ncore_total, flavor))
             elif gen.parse_if('platform=irmik'):
                 self.wrapper += dedent('''\
                     rsync -avP . irmik:~/%s
                     ssh irmik <<EOF
                      cd %s
                      sbatch --nodes=%s --ntasks=%s --job-name=%s -t 48:00:00 --export=ALL subfile
-                    EOF''' %(self.remote_folder_name, self.remote_folder_name, gen.getkw('nnode'), ncore_total, self.remote_folder_name))
+                    EOF
+                    ''' %(self.remote_folder_name, self.remote_folder_name, gen.getkw('nnode'), ncore_total, self.remote_folder_name))
                 self.subfile += dedent('''\
                     #!/bin/bash
                     . /usr/share/Modules/init/bash
                     module purge
                     module load mvapich2-2.2/intel
-                    mpirun -np %s /opt/vasp.5.4.4/bin/vasp_%s''' %(ncore_total, flavor))
+                    mpirun -np %s /opt/vasp.5.4.4/bin/vasp_%s
+                    ''' %(ncore_total, flavor))
             elif gen.parse_if('platform=nanaimo'):
                 self.wrapper += dedent('''\
                     rsync -avP . nanaimo:~/%s
                     ssh nanaimo <<EOF
                       cd %s
                       sbatch --nodes=%s --ntasks=%s --job-name=%s -t 48:00:00 --export=ALL subfile
-                    EOF''' %(self.remote_folder_name, self.remote_folder_name, gen.getkw('nnode'), ncore_total, self.remote_folder_name))
+                    EOF
+                    ''' %(self.remote_folder_name, self.remote_folder_name, gen.getkw('nnode'), ncore_total, self.remote_folder_name))
                 self.subfile += dedent('''\
                     #!/bin/bash
                     . /usr/share/Modules/init/bash
                     module purge
                     module load intel
                     module load impi
-                    mpirun -np %s /opt/vasp.5.4.4/bin/vasp_%s\n''' %(ncore_total, flavor))
+                    mpirun -np %s /opt/vasp.5.4.4/bin/vasp_%s
+                    ''' %(ncore_total, flavor))
             elif gen.parse_if('platform=edison'):
                 self.wrapper += dedent('''\
                     rsync -avP . edison:~/%s
                     ssh edison <<EOF
                       cd %s
                       sbatch --nodes=%s --ntasks=%s --job-name=%s -t 36:00:00 --partition=regular subfile
-                    EOF''' %(self.remote_folder_name, self.remote_folder_name, gen.getkw('nnode'), ncore_total, self.remote_folder_name))
+                    EOF
+                    ''' %(self.remote_folder_name, self.remote_folder_name, gen.getkw('nnode'), ncore_total, self.remote_folder_name))
                 self.subfile += dedent('''\
                     #!/bin/bash
                     module load vasp
-                    srun -n %s vasp_%s\n''' %(ncore_total, flavor))
+                    srun -n %s vasp_%s
+                    ''' %(ncore_total, flavor))
             self.subfile += 'echo $PWD `date` end \necho -------------------------\n'
             with open('wrapper','w') as of_:
                 of_.write(self.wrapper)
