@@ -292,7 +292,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             # Run time
             m = dynamic.MLS['MLVASPSPEED']
             t_elecstep = np.asscalar(m.predict(m.parse_predict(self, cell, Makeparam(self))))
-            print self.__class__.__name__ + ' run time: ~ %s h [%s s / scstep]. [MLVASPSPEED]' %(t_elestep / 3600 * (500 if self.parse_if('opt') else 30), t_elecstep)
+            print self.__class__.__name__ + ' run time: ~ %s h [%s s / scstep]. [MLVASPSPEED]' %(t_elecstep / 3600 * (500 if self.parse_if('opt') else 30), t_elecstep)
 
 
     # 3. nbands, ncore_total, encut
