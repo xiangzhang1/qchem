@@ -613,7 +613,7 @@ class MlPbSOptXCE(object):
         _y0 = np.array(self._y0)[train_idx]
         self.X1_pipeline.fit(np.concatenate(_X1, axis=0))
         _X1 = np.array([self.X1_pipeline.transform(_X1_) for _X1_ in _X1])
-        _y0 = self.y_pipeline.fit_transform(self._y0)
+        _y0 = self.y_pipeline.fit_transform(_y0)
         ce1 = self.ce1
         # batch
         # ann
