@@ -622,20 +622,20 @@ class MlPbSOptXCE(object):
         optimizer = getattr(optim, optimizer_name)(params, lr=learning_rate)
         # train
         ce1.train()
-        indices = tqdm(np.random.randint(low=0, high=len(_X1), size=n_epochs * len(_X1)), leave=False)
+        indices = tqdm(np.random.randint(low=0, high=len(_X1), size=n_epochs * len(_X1)))
         for i in indices:
             X1 = V(_X1[i])
             f0 = C(_y0[i])
 
             f = torch.sum(ce1(X1), keepdim=False, dim=0)
 
-            loss = criterion(f.view(1,-1), f0.view(1,-1))
+            loss = criterion(f, f0)
             optimizer.zero_grad()   # suggested trick
             loss.backward()
             optimizer.step()
 
             if i == 0:
-                indices.set_description('loss %s' %(np.asscalar(loss.data.cpu().numpy())))
+                indices.set_description('y %s, y0 %s, loss %s' %(list(f.data.cpu().numpy()), list(f0.data.cpu().numpy()), np.asscalar(loss.data.cpu().numpy())))
 
         print 'training complete! fuck with the data.'
         IPython.embed()
