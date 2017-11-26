@@ -565,21 +565,22 @@ class MlPbSOptXCE(object):
         # ann
         dropout_p = 0.05
         bn_momentum = 0.74
-        self.ce1 = Sequential(
-            nn.Linear(4, 80),
-            nn.ELU(),
-            nn.BatchNorm1d(80, momentum=bn_momentum),
-            nn.Dropout(p=dropout_p),
-            nn.Linear(80, 30),
-            nn.ELU(),
-            nn.BatchNorm1d(30, momentum=bn_momentum),
-            nn.Dropout(p=dropout_p),
-            nn.Linear(30, 15),
-            nn.ELU(),
-            nn.BatchNorm1d(15, momentum=bn_momentum),
-            nn.Dropout(p=dropout_p),
-            nn.Linear(15, 3)
-        ).cuda()
+        self.ce1 = udf_nn(4, 80, 30, 3)
+        # Sequential(
+        #     nn.Linear(4, 80),
+        #     nn.ELU(),
+        #     nn.BatchNorm1d(80, momentum=bn_momentum),
+        #     nn.Dropout(p=dropout_p),
+        #     nn.Linear(80, 30),
+        #     nn.ELU(),
+        #     nn.BatchNorm1d(30, momentum=bn_momentum),
+        #     nn.Dropout(p=dropout_p),
+        #     nn.Linear(30, 15),
+        #     nn.ELU(),
+        #     nn.BatchNorm1d(15, momentum=bn_momentum),
+        #     nn.Dropout(p=dropout_p),
+        #     nn.Linear(15, 3)
+        # ).cuda()
 
     def parse_X1(self, cell):
         '''
@@ -639,7 +640,7 @@ class MlPbSOptXCE(object):
                 invy = np.array(self.y_pipeline.inverse_transform(_f.reshape(1,-1))[0])
                 invy0 = np.array(self.y_pipeline.inverse_transform(_f0.reshape(1,-1))[0])
                 _loss = np.asscalar(loss.data.cpu().numpy())
-                indices.set_description('y %s, y0 %s, invy %s, invy0 %s, loss %.2f' %(_f, _f0, invy, invy0, _loss))
+                indices.set_description('X %s, y %s, y0 %s, invy %s, invy0 %s, loss %.2f' %(_X1[i], _f, _f0, invy, invy0, _loss))
 
         print 'training complete! fuck with the data.'
         IPython.embed()
