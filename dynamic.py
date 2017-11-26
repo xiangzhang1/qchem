@@ -610,8 +610,8 @@ class MlPbSOptFCE(object):
             f0 = V(_y0[i])
 
             origin = V([0,0,0])
-            X1m = X1.clone()
-            X1m[:,:3] -= origin
+            X1m = X1
+            X1m[:,:3] = X1[:,:3] origin
             e = torch.sum(ce1(X1m), keepdim=False)
             f = torch.autograd.grad(e, origin, create_graph=True)
 
