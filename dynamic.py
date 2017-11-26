@@ -5,7 +5,7 @@ import numpy as np
 import time
 import dill as pickle
 import IPython
-from tqdm import tqdm
+from tqdm import tqdm, trange
 import matplotlib.pyplot as plt
 import itertools
 import math
@@ -606,7 +606,8 @@ class MlPbSOptFCE(object):
         optimizer = getattr(optim, optimizer_name)(params, lr=learning_rate)
         # train
         ce1.train()
-        for epoch in tqdm(range(n_epochs * len(_X1))):
+        t = trange(n_epochs * len(_X1), desc='loss: 0')
+        for epoch in :
             i = np.random.randint(0, len(_X1) - 50)
             X1 = V(_X1[i])
             f0 = C(_y0[i])
@@ -622,8 +623,8 @@ class MlPbSOptFCE(object):
             loss.backward()
             optimizer.step()
 
-            if epoch % 100 == 0:
-                print 'epoch %s, loss %s' %(epoch, np.asscalar(loss.data.numpy()))
+            if epoch % 1000 == 0:
+                t.set_description('loss: %s' %np.asscalar(loss.data.numpy()))
 
     def parse_predict(self, ccoor, natom0):
         return self.parse_X1(ccoor, natom0)
