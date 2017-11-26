@@ -638,9 +638,8 @@ class MlPbSOptXCE(object):
             if np.random.rand() < 1.0 / 200:
                 invy = np.array(self.y_pipeline.inverse_transform(_f.reshape(1,-1))[0])
                 invy0 = np.array(self.y_pipeline.inverse_transform(_f0.reshape(1,-1))[0])
-                pred = np.array(self.predict(_X1[i]))
                 _loss = np.asscalar(loss.data.cpu().numpy())
-                indices.set_description('y %s, y0 %s, invy %s, invy0 %s, pred %s, loss %s' %(_f, _f0, invy, invy0, pred, _loss))
+                indices.set_description('y %s, y0 %s, invy %s, invy0 %s, loss %.2f' %(_f, _f0, invy, invy0, _loss))
 
         print 'training complete! fuck with the data.'
         IPython.embed()
