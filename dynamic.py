@@ -554,9 +554,10 @@ def C(x):
 def irtps(xv):
     x, y, z, sgn = xv
     r = math.sqrt(x**2+y**2+z**2)
+    print [1/r, math.acos(z/r), math.atan(y/x), sgn]
     return [1/r, math.acos(z/r), math.atan(y/x), sgn]
 
-def irtp(xv):
+def rtp(xv):
     x, y, z = xv
     r = math.sqrt(x**2+y**2+z**2)
     return [r, math.acos(z/r), math.atan(y/x)]
@@ -592,7 +593,7 @@ class MlPbSOptFCE(object):
         return X1
 
     def parse_y0(self, vasp):
-        return [irtp(dc) for dc in vasp.optimized_cell.ccoor-vasp.node().cell.ccoor]
+        return [rtp(dc) for dc in vasp.optimized_cell.ccoor-vasp.node().cell.ccoor]
 
     def parse_train(self, vasp):
         '''More of a handle.'''
