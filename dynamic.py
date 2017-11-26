@@ -557,10 +557,13 @@ class MlPbSOptFCE(object):
         self._X1 = []
         self._y0 = []
         # pipeline
-        self.X1_pipeline = StandardScaler(with_mean=False)
-        self.y_pipeline = StandardScaler(with_mean=False)
+        self.X1_pipeline = MlPbSOptScaler()
+        self.y_pipeline = Pipeline([
+            ('scaler', MlPbSOptScaler()),
+            ('10', FunctionTransformer(func=lambda x: x * 15, inverse_func=lambda x: x / 15))
+        ])
         # ann
-        self.ce1 = udf_nn(4, 400, 20, 1)
+        self.ce1 = udf_nn(4, 100, 20, 1)
 
     def parse_X1(self, cell):
         '''
@@ -609,7 +612,6 @@ class MlPbSOptFCE(object):
             X1m[:,:3] = X1[:,:3] - origin
             e = torch.sum(ce1(X1m), keepdim=False)
             f = torch.autograd.grad(e, origin, create_graph=True)[0]
-            IPython.embed()
 
             loss = criterion(f, f0)
             optimizer.zero_grad()   # suggested trick
