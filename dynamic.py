@@ -264,7 +264,7 @@ class MlVaspSpeed(object):
         self.net.eval()
         y = self.net(Variable(torch.FloatTensor(_X), requires_grad=True))
         # pipeline
-        _y_inverse = self.y_pipeline.inverse_transform(y.data.numpy())
+        _y_inverse = self.y_pipeline.inverse_transform(y.data.cpu().numpy())
         return _y_inverse
 
 
@@ -643,4 +643,4 @@ class MlPbSOptFCE(object):
         f = torch.sum(ce1(X1), dim=0, keepdim=False)
 
         # reverse pipeline
-        return list(self.y_pipeline.inverse_transform(f.data.numpy().reshape(1,-1)).reshape(-1))
+        return list(self.y_pipeline.inverse_transform(f.data.cpu().numpy().reshape(1,-1)).reshape(-1))
