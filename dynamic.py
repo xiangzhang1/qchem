@@ -626,8 +626,10 @@ class MlPbSOptXCE(object):
         for i in indices:
             X1 = V(_X1[i])
             f0 = C(_y0[i])
-
             f = torch.sum(ce1(X1), keepdim=False, dim=0)
+            _f = f.data.cpu().numpy()
+            _f0 = f0.data.cpu().numpy()
+            tqdm.write('_f %s, _f0 %s' %(list(_f), list(_f0)))
 
             loss = criterion(f, f0)
             optimizer.zero_grad()   # suggested trick
@@ -635,13 +637,11 @@ class MlPbSOptXCE(object):
             optimizer.step()
 
             if i == 0:
-                _f = f.data.cpu().numpy()
-                _f0 = f0.data.cpu().numpy()
                 invy = self.y_pipeline.inverse_transform(_f.reshape(1,-1))[0]
                 invy0 = self.y_pipeline.inverse_transform(_f0.reshape(1,-1))[0]
                 pred = self.predict(_X1[i])
                 _loss = np.asscalar(loss.data.cpu().numpy())
-                indices.set_description('y %s, y0 %s, invy %s, invy0 %s, pred %s, loss %s' %(list(_f), list(_f0), list(invy), list(invy0), list(pred), _loss))
+                indices.set_description('invy %s, invy0 %s, pred %s, loss %s' %(list(invy), list(invy0), list(pred), _loss))
 
         print 'training complete! fuck with the data.'
         IPython.embed()
