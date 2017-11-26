@@ -563,7 +563,22 @@ class MlPbSOptFCE(object):
             ('10', FunctionTransformer(func=lambda x: x * 15, inverse_func=lambda x: x / 15))
         ])
         # ann
-        self.ce1 = udf_nn(4, 128, 24, 3)
+        dropout_p = 0.05
+        self.ce1 = Sequential(
+            nn.Linear(4, 80),
+            nn.ELU(),
+            nn.BatchNorm1d(80, momentum=bn_momentum),
+            nn.Dropout(p=dropout_p),
+            nn.Linear(80, 30),
+            nn.ELU(),
+            nn.BatchNorm1d(30, momentum=bn_momentum),
+            nn.Dropout(p=dropout_p),
+            nn.Linear(30, 15),
+            nn.ELU(),
+            nn.BatchNorm1d(15, momentum=bn_momentum),
+            nn.Dropout(p=dropout_p),
+            nn.Linear(15, 3)
+        )
 
     def parse_X1(self, cell):
         '''
