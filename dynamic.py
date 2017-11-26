@@ -601,15 +601,15 @@ class MlPbSOptXCE(object):
 
     def parse_train(self, vasp):
         '''More of a handle.'''
-        self._X1 += np.array(self.parse_X1(vasp.node().cell))
-        self._y0 += np.array(self.parse_y0(vasp))
+        self._X1 += list(self.parse_X1(vasp.node().cell))
+        self._y0 += list(self.parse_y0(vasp))
 
     def train(self, n_epochs=200, learning_rate=1E-6, optimizer_name='Adam', loss_name='RMSprop', test_set_size=10):
     # pipeline
         test_idx = np.random.choice(range(len(self._X[:50])), size=test_set_size)
         train_idx = np.array([i for i in range(len(self._X)) if i not in test_idx])
-        _X1 = self._X1[train_idx]
-        _y0 = self._y0[train_idx]
+        _X1 = np.array(self._X1)[train_idx]
+        _y0 = np.array(self._y0)[train_idx]
         self.X1_pipeline.fit_transform(np.concatenate(_X1, axis=0))
         _X1 = np.array([self.X1_pipeline.transform(_X1_) for _X1_ in _X1])
         _y0 = self.y_pipeline.fit_transform(self._y0)
