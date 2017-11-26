@@ -606,8 +606,8 @@ class MlPbSOptXCE(object):
 
     def train(self, n_epochs=200, learning_rate=1E-6, optimizer_name='Adam', loss_name='RMSprop', test_set_size=10):
     # pipeline
-        test_idx = np.random.choice(range(len(self._X[:50])), size=test_set_size)
-        train_idx = np.array([i for i in range(len(self._X)) if i not in test_idx])
+        test_idx = np.random.choice(range(len(self._X1[:50])), size=test_set_size)
+        train_idx = np.array([i for i in range(len(self._X1)) if i not in test_idx])
         _X1 = np.array(self._X1)[train_idx]
         _y0 = np.array(self._y0)[train_idx]
         self.X1_pipeline.fit_transform(np.concatenate(_X1, axis=0))
