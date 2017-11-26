@@ -611,7 +611,7 @@ class MlPbSOptXCE(object):
         train_idx = np.array([i for i in range(total_set_size) if i not in test_idx])
         _X1 = np.array(self._X1)[train_idx]
         _y0 = np.array(self._y0)[train_idx]
-        self.X1_pipeline.fit_transform(np.concatenate(_X1, axis=0))
+        self.X1_pipeline.fit(np.concatenate(_X1, axis=0))
         _X1 = np.array([self.X1_pipeline.transform(_X1_) for _X1_ in _X1])
         _y0 = self.y_pipeline.fit_transform(self._y0)
         ce1 = self.ce1
@@ -635,7 +635,13 @@ class MlPbSOptXCE(object):
             optimizer.step()
 
             if i == 0:
-                indices.set_description('y %s, y0 %s, loss %s' %(list(f.data.cpu().numpy()), list(f0.data.cpu().numpy()), np.asscalar(loss.data.cpu().numpy())))
+                _y = f.data.cpu.numpy()
+                _y0 = f0.data.cpu().numpy()
+                invy = self.y_pipeline.inverse_transform(_y.reshape(1,-1))
+                invy0 = self.y_pipeline.inverse_transform(_y0.reshape(1,-1))
+                pred = self.predict(_X1[i])
+                _loss = np.asscalar(loss.data.cpu().numpy()))
+                indices.set_description('y %s, y0 %s, invy %s, invy0 %s, pred %s, loss %s' %(list(_y), list(_y0), list(invy), list(invy0), list(pred), _loss)
 
         print 'training complete! fuck with the data.'
         IPython.embed()
