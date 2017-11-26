@@ -637,8 +637,8 @@ class MlPbSOptXCE(object):
             if i == 0:
                 _f = f.data.cpu().numpy()
                 _f0 = f0.data.cpu().numpy()
-                invy = self.y_pipeline.inverse_transform(_y.reshape(1,-1))[0]
-                invy0 = self.y_pipeline.inverse_transform(_y0.reshape(1,-1))[0]
+                invy = self.y_pipeline.inverse_transform(_f.reshape(1,-1))[0]
+                invy0 = self.y_pipeline.inverse_transform(_f0.reshape(1,-1))[0]
                 pred = self.predict(_X1[i])
                 _loss = np.asscalar(loss.data.cpu().numpy())
                 indices.set_description('y %s, y0 %s, invy %s, invy0 %s, pred %s, loss %s' %(list(_f), list(_f0), list(invy), list(invy0), list(pred), _loss))
