@@ -604,7 +604,7 @@ class MlPbSOptFCE(object):
         self._X1 += list(self.parse_X1(vasp.node().cell))
         self._y0 += list(self.parse_y0(vasp))
 
-    def train(self, n_epochs=40, learning_rate=1E-4, optimizer_name='Adam', loss_name='MSELoss'):
+    def train(self, n_epochs=200, learning_rate=1E-4, optimizer_name='Adam', loss_name='MSELoss'):
         # pipeline
         self.X1_pipeline.fit(np.concatenate(self._X1, axis=0))
         _X1 = np.array([self.X1_pipeline.transform(_X1_) for _X1_ in self._X1])
@@ -617,15 +617,14 @@ class MlPbSOptFCE(object):
         optimizer = getattr(optim, optimizer_name)(params, lr=learning_rate)
         # train
         ce1.train()
-        t = range(n_epochs * len(_X1))
-        for epoch in t:
-            i = np.random.randint(0, len(_X1) - 50)
+        t = np.random.randint(low=0, high=len(_X1) - 50, size=n_epochs * len(_X1))
+        for i in t:
             X1 = V(_X1[i])
             f0 = C(_y0[i])
 
             f = torch.sum(ce1(X1), keepdim=False, dim=0)
 
-            loss = criterion(f, f0)
+            loss = criterion(f, f0) + (f0 / (f+5E-4)) ** 2
             optimizer.zero_grad()   # suggested trick
             loss.backward()
             optimizer.step()
