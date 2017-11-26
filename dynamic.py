@@ -563,7 +563,7 @@ class MlPbSOptFCE(object):
             ('10', FunctionTransformer(func=lambda x: x * 15, inverse_func=lambda x: x / 15))
         ])
         # ann
-        self.ce1 = udf_nn(4, 100, 20, 1)
+        self.ce1 = udf_nn(4, 128, 24, 3)
 
     def parse_X1(self, cell):
         '''
@@ -588,7 +588,7 @@ class MlPbSOptFCE(object):
         self._X1 += list(self.parse_X1(vasp.node().cell))
         self._y0 += list(self.parse_y0(vasp))
 
-    def train(self, n_epochs=40, learning_rate=1E-5, optimizer_name='Adam'):
+    def train(self, n_epochs=40, learning_rate=1E-4, optimizer_name='Adam'):
         # pipeline
         self.X1_pipeline.fit(np.concatenate(self._X1, axis=0))
         _X1 = np.array([self.X1_pipeline.transform(_X1_) for _X1_ in self._X1])
@@ -607,11 +607,7 @@ class MlPbSOptFCE(object):
             X1 = V(_X1[i])
             f0 = C(_y0[i])
 
-            X1m = X1.clone()
-            origin = V([0,0,0])
-            X1m[:,:3] = X1[:,:3] - origin
-            e = torch.sum(ce1(X1m), keepdim=False)
-            f = torch.autograd.grad(e, origin, create_graph=True)[0]
+            f = torch.sum(ce1(X1), keepdim=False, dim=0)
 
             loss = criterion(f, f0)
             optimizer.zero_grad()   # suggested trick
@@ -632,11 +628,7 @@ class MlPbSOptFCE(object):
         ce1.eval()
         X1 = V(_X1)
 
-        X1m = X1.clone()
-        origin = V([0,0,0])
-        X1m[:,:3] = X1[:,:3] - origin
-        e = torch.sum(ce1(X1m), keepdim=False)
-        f = torch.autograd.grad(e, origin, create_graph=True)[0]
+        f = torch.sum(ce1(X1), dim=0, keepdim=False)
 
         # reverse pipeline
         return list(self.y_pipeline.inverse_transform(f.data.numpy().reshape(1,-1)).reshape(-1))
