@@ -617,7 +617,7 @@ class MlPbSOptFCE(object):
         optimizer = getattr(optim, optimizer_name)(params, lr=learning_rate)
         # train
         ce1.train()
-        t = trange(n_epochs * len(_X1), desc='loss: 0')
+        t = range(n_epochs * len(_X1))
         for epoch in t:
             i = np.random.randint(0, len(_X1) - 50)
             X1 = V(_X1[i])
@@ -629,9 +629,6 @@ class MlPbSOptFCE(object):
             optimizer.zero_grad()   # suggested trick
             loss.backward()
             optimizer.step()
-
-            if epoch % 1000 == 0:
-                t.set_description('loss: %s' %np.asscalar(loss.data.numpy()))
 
     def parse_predict(self, cell):
         return self.parse_X1(cell)
