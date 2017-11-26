@@ -554,8 +554,9 @@ def C(x):
 def irtps(xv):
     x, y, z, sgn = xv
     r = math.sqrt(x**2+y**2+z**2)
-    print [1/r, math.acos(z/r), math.atan(y/x), sgn]
-    return [1/r, math.acos(z/r), math.atan(y/x), sgn]
+    if r==0:
+        IPythone.embed()
+    return [1/r, np.arccos(z/r), math.arctan(y/x), sgn]
 
 def rtp(xv):
     x, y, z = xv
