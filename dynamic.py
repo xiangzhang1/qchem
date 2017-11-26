@@ -547,6 +547,8 @@ class MlQueueTime(object):
 
 def V(x):
     return Variable(torch.FloatTensor(np.array(x)), requires_grad=True)
+def C(x):
+    return Variable(torch.FloatTensor(np.array(x)), requires_grad=False)
 
 class MlPbSOptFCE(object):
 
@@ -607,7 +609,7 @@ class MlPbSOptFCE(object):
         for epoch in range(n_epochs * len(_X1)):
             i = np.random.randint(0, len(_X1) - 50)
             X1 = V(_X1[i])
-            f0 = V(_y0[i])
+            f0 = C(_y0[i])
 
             X1m = X1.clone()
             origin = V([0,0,0])
