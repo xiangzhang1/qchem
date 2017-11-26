@@ -635,7 +635,7 @@ class MlPbSOptXCE(object):
             optimizer.step()
 
             if i == 0:
-                _y = f.data.cpu.numpy()
+                _y = f.data.cpu().numpy()
                 _y0 = f0.data.cpu().numpy()
                 invy = self.y_pipeline.inverse_transform(_y.reshape(1,-1))
                 invy0 = self.y_pipeline.inverse_transform(_y0.reshape(1,-1))
