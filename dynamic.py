@@ -554,7 +554,7 @@ def C(x):
 def irtp(xv):
     x, y, z, sgn = xv
     r = math.sqrt(x**2+y**2+z**2)
-    return [1/r, arccos(z/r), arctan(y/x), sgn]
+    return [1/r, math.arccos(z/r), math.arctan(y/x), sgn]
 
 class MlPbSOptFCE(object):
 
