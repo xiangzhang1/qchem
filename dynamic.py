@@ -636,7 +636,7 @@ class MlPbSOptXCE(object):
             loss.backward()
             optimizer.step()
 
-            if i == 0:
+            if np.random.rand() < 1.0 / 200:
                 invy = self.y_pipeline.inverse_transform(_f.reshape(1,-1))[0]
                 invy0 = self.y_pipeline.inverse_transform(_f0.reshape(1,-1))[0]
                 pred = self.predict(_X1[i])
