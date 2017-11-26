@@ -583,7 +583,7 @@ class MlPbSOptFCE(object):
             dcoorp = np.concatenate((dcoor, np.c_[sgn]), axis=1)
             dcoorp = np.delete(dcoorp, i, axis=0)
             dcoorp = [irtp(dc) for dc in dcoorp]
-            X1.append()
+            X1.append(dcoorp)
         return X1
 
     def parse_y0(self, vasp):
