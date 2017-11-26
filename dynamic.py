@@ -546,9 +546,9 @@ class MlQueueTime(object):
 # ==============================================================================
 
 def V(x):
-    return Variable(torch.FloatTensor(np.array(x)), requires_grad=True)
+    return Variable(torch.FloatTensor(np.array(x)), requires_grad=True).cuda()
 def C(x):
-    return Variable(torch.FloatTensor(np.array(x)), requires_grad=False)
+    return Variable(torch.FloatTensor(np.array(x)), requires_grad=False).cuda()
 
 class MlPbSOptFCE(object):
 
@@ -579,7 +579,7 @@ class MlPbSOptFCE(object):
             nn.BatchNorm1d(15, momentum=bn_momentum),
             nn.Dropout(p=dropout_p),
             nn.Linear(15, 3)
-        )
+        ).cuda()
 
     def parse_X1(self, cell):
         '''
