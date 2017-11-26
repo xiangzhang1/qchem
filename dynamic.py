@@ -551,10 +551,15 @@ def V(x):
 def C(x):
     return Variable(torch.FloatTensor(np.array(x)), requires_grad=False)
 
-def irtp(xv):
+def irtps(xv):
     x, y, z, sgn = xv
     r = math.sqrt(x**2+y**2+z**2)
     return [1/r, math.acos(z/r), math.atan(y/x), sgn]
+
+def irtp(xv):
+    x, y, z = xv
+    r = math.sqrt(x**2+y**2+z**2)
+    return [r, math.acos(z/r), math.atan(y/x)]
 
 class MlPbSOptFCE(object):
 
@@ -582,7 +587,7 @@ class MlPbSOptFCE(object):
             sgn = np.sign((i - natom0 + 0.5) * (np.arange(len(ccoor)) - natom0 + 0.5))
             dcoorp = np.concatenate((dcoor, np.c_[sgn]), axis=1)
             dcoorp = np.delete(dcoorp, i, axis=0)
-            dcoorp = [irtp(dc) for dc in dcoorp]
+            dcoorp = [irtps(dc) for dc in dcoorp]
             X1.append(dcoorp)
         return X1
 
