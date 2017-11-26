@@ -588,7 +588,7 @@ class MlPbSOptFCE(object):
         self._X1 += list(self.parse_X1(vasp.node().cell))
         self._y0 += list(self.parse_y0(vasp))
 
-    def train(self, n_epochs=40, learning_rate=1E-5, optimizer_name='SGD'):
+    def train(self, n_epochs=40, learning_rate=1E-4, optimizer_name='Adam'):
         # pipeline
         self.X1_pipeline.fit(np.concatenate(self._X1, axis=0))
         _X1 = np.array([self.X1_pipeline.transform(_X1_) for _X1_ in self._X1])
@@ -596,7 +596,7 @@ class MlPbSOptFCE(object):
         ce1 = self.ce1
         # batch
         # ann
-        criterion = nn.CrossEntropyLoss()
+        criterion = nn.KLDivLoss()
         params = list(ce1.parameters())
         optimizer = getattr(optim, optimizer_name)(params, lr=learning_rate)
         # train
@@ -609,7 +609,7 @@ class MlPbSOptFCE(object):
 
             f = torch.sum(ce1(X1), keepdim=False, dim=0)
 
-            loss = criterion(f, f0)
+            loss = criterion(f.view(1,-1), f0.view(1,-1))
             optimizer.zero_grad()   # suggested trick
             loss.backward()
             optimizer.step()
