@@ -18,5 +18,5 @@ for cur in curs:
 
 m.train()
 
-for i in range(len(m._X1)-100, len(m._X1)-50):
+for i in range(len(m._X1)-50, len(m._X1)):
     print m._y0[i], m.predict(m._X1[i])
