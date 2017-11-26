@@ -14,7 +14,7 @@ import time
 from pprint import pprint
 import IPython
 import numpy as np
-np.set_printoptions(precision=4, threshold='nan')
+np.set_printoptions(precision=2, threshold='nan')
 from tqdm import tqdm
 import math
 import itertools
