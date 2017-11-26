@@ -550,7 +550,7 @@ def V(x):
 def C(x):
     return Variable(torch.FloatTensor(np.array(x)), requires_grad=False).cuda()
 
-class MlPbSOptFCE(object):
+class MlPbSOptXCE(object):
 
     def __init__(self):
         # data
@@ -604,7 +604,7 @@ class MlPbSOptFCE(object):
         self._X1 += list(self.parse_X1(vasp.node().cell))
         self._y0 += list(self.parse_y0(vasp))
 
-    def train(self, n_epochs=200, learning_rate=1E-4, optimizer_name='Adam', loss_name='MSELoss'):
+    def train(self, n_epochs=200, learning_rate=1E-6, optimizer_name='Adam', loss_name='MSELoss'):
         # pipeline
         self.X1_pipeline.fit(np.concatenate(self._X1, axis=0))
         _X1 = np.array([self.X1_pipeline.transform(_X1_) for _X1_ in self._X1])
@@ -624,7 +624,7 @@ class MlPbSOptFCE(object):
 
             f = torch.sum(ce1(X1), keepdim=False, dim=0)
 
-            loss = criterion(f, f0) + torch.sum((f0 / (f+5E-6)) ** 2, keepdim=False)
+            loss = criterion(f, f0)
             optimizer.zero_grad()   # suggested trick
             loss.backward()
             optimizer.step()
@@ -644,3 +644,123 @@ class MlPbSOptFCE(object):
 
         # reverse pipeline
         return list(self.y_pipeline.inverse_transform(f.data.cpu().numpy().reshape(1,-1)).reshape(-1))
+
+
+
+# ========================
+
+
+class MlPbSOptFCE(object):
+
+    def __init__(self):
+        # data
+        self._X1 = []
+        self._y0 = []
+        # pipeline
+        # self.X1_pipeline = StandardScaler(with_mean=False)
+        # self.y_pipeline = StandardScaler(with_mean=False)
+        # ann
+        self.ce1 = self.ce1 = Sequential(
+            nn.Linear(4, 80),
+            nn.ELU(),
+            nn.BatchNorm1d(80, momentum=bn_momentum),
+            nn.Dropout(p=dropout_p),
+            nn.Linear(80, 10),
+            nn.ELU(),
+            nn.BatchNorm1d(30, momentum=bn_momentum),
+            nn.Dropout(p=dropout_p),
+            nn.Linear(10, 1)
+        ).cuda()
+
+    def parse_X1(self, ccoor, natom0):
+        '''
+        ccoor is coordinates. natom0 is # of Pb atoms (for determining sgn).
+        returns a list.
+        '''
+        X1 = []
+        for i, c in enumerate(ccoor):
+            dcoor = ccoor - c
+            sgn = np.sign((i - natom0 + 0.5) * (np.arange(len(ccoor)) - natom0 + 0.5))
+            dcoorp = np.concatenate((dcoor, np.c_[sgn]), axis=1)
+            X1.append(np.delete(dcoorp, i, axis=0))
+        return X1
+
+    def parse_y0(self, path, natom):
+        os.chdir(path)
+        with open('OUTCAR', 'r') as f:
+            lines = f.readlines()
+        i = next(i for i, line in enumerate(lines) if 'TOTAL-FORCE' in line)
+        force_lines = lines[i+2: i+2+natom]
+        forces = np.float32([line.split() for line in force_lines])[:, 3:]
+        return forces
+
+    def parse_train(self, vasp):
+        '''More of a handle.'''
+        cell = vasp.optimized_cell if getattr(vasp, 'optimized_cell', None) else vasp.node().cell
+        natom0 = cell.stoichiometry.values()[0]
+        natom = sum(cell.stoichiometry.values())
+        path = vasp.node().path
+        self._X1 += list(self.parse_X1(cell.ccoor, natom0))
+        self._y0 += list(self.parse_y0(path, natom))
+
+    def train(self, n_epochs=10, learning_rate=1E-5, optimizer_name='SGD'):
+        # pipeline
+        # self.X1_pipeline.fit(np.concatenate(self._X1, axis=0))
+        # _X1 = np.array([self.X1_pipeline.transform(_X1_) for _X1_ in self._X1])
+        # _y0 = self.y_pipeline.fit_transform(self._y0)
+        _X1 = self._X1
+        _y0 = self._y0
+        ce1 = self.ce1
+        # batch
+        # ann
+        criterion = nn.MSELoss()
+        params = list(ce1.parameters())
+        optimizer = getattr(optim, optimizer_name)(params, lr=learning_rate)
+        # train
+        ce1.train()
+        t = np.random.randint(low=0, high=len(_X1) - 50, size=n_epochs * len(_X1))
+        for counter, i in tqdm(enumerate(t), leave=False):
+            X1 = V(_X1[i])
+            f0 = C(_y0[i])
+
+            X1m = X1.clone()
+            origin = V([0,0,0,0])
+            X1m = X1 - origin
+            e = torch.sum(ce1(X1m), keepdim=False)
+            f = torch.autograd.grad(e, origin, create_graph=True)[0][0:3]
+
+            loss = criterion(f, f0) + torch.sum((f0 / (f+5E-6)) ** 2, keepdim=False)
+            optimizer.zero_grad()   # suggested trick
+            loss.backward()
+            optimizer.step()
+
+            if epoch % 1000 == 0:
+                t.set_description('loss: %s' %np.asscalar(loss.data.numpy()))
+
+    def parse_predict(self, ccoor, natom0):
+        return self.parse_X1(ccoor, natom0)
+
+    def predict_e(self, _X1):
+        # pipeline
+        ce1 = self.ce1
+        # ann
+        ce1.eval()
+        y = torch.sum(ce1(V(_X1)), keepdim=True)
+        # reverse pipeline
+        return y.data.numpy()
+
+    def predict_f(self, _X1):
+        # pipeline
+        ce1 = self.ce1
+        # ann
+        ce1.eval()
+        X1 = V(_X1)
+
+        X1m = X1.clone()
+        origin = V([0,0,0])
+        X1m[:,:3] = X1[:,:3] - origin
+        e = torch.sum(ce1(X1m), keepdim=False)
+        f = torch.autograd.grad(e, origin, create_graph=True)[0]
+
+        # reverse pipeline
+        return f.data.numpy()
