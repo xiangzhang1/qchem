@@ -838,14 +838,11 @@ class Vasp(object):
                     of_.write(self.subfile)
                 os.system('chmod +x subfile')
             if shared.DEBUG <= 0:
-                # os.system('./wrapper')
-                # fork
                 with open(os.devnull, 'r+b', 0) as DEVNULL:
                     subprocess.Popen(['bash', './wrapper'], stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL, preexec_fn=os.setpgrp, close_fds=True)
                 print self.__class__.__name__ + ': computation started. local path   %s   . waiting for filesystem update. ' %path
             else:
-                if shared.DEBUG >= 1: print '-'*50
-                print self.__class__.__name__ + ': wrapper generated at   %s   . waiting for filesystem update. ' %path
+                print '-' * 50 + '\n' + self.__class__.__name__ + ': wrapper generated at   %s   . waiting for filesystem update. ' %path
 
 
         # no log but invoked, only possible from moonphase. write parent.
@@ -961,7 +958,7 @@ class Vasp(object):
         of_ = open('./POTCAR','a')
         of_.write( if_.read() )
 
-    @retry(wait_random_min=1000, wait_random_max=10000, stop_max_attempt_number=20)
+    @retry(wait_random_min=1000, wait_random_max=2000, stop_max_attempt_number=10)
     def ssh_and_run(self, command):
         platform = self.node().gen.getkw('platform')
         if platform not in ['dellpc', 'nanaimo', 'irmik']:

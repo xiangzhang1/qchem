@@ -1,0 +1,30 @@
+dynamic.global_load()
+m = dynamic.MlPbSOptFCE()
+parent = engine.Map().lookup('master.PbS QD.bare qd testing.ml_force')
+for n in :
+    n = engine.Map().lookup(cur)
+    print 'parsing cur %s' %cur
+    m.parse_train(n.vasp)
+    print 'parsing complete.'
+
+m.train()
+
+
+
+# -----------------
+
+for start_cur, end_cur in curs:
+    start_ccoor = engine.Map().lookup(start_cur).cell.ccoor
+    end_ccoor = engine.Map().lookup(end_cur).vasp.optimized_cell.ccoor
+    print 'global shift is %s'%(np.sum(end_ccoor - start_ccoor, axis=0))
+
+# -----------------
+
+
+n = engine.Map().lookup('master.PbS QD.bare qd testing.Q0 Test convergence.Pb55S38.15alt -0_02 opt')
+m.parse_train(n.vasp)
+for i in range(len(m._X)-93, len(m._X)):
+    _X = m._X[i]
+    _y0 = m._y0[i].reshape(-1)
+    _y = m.predict(_X).reshape(-1)
+    print _y0, _y-_y0
