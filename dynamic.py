@@ -629,7 +629,7 @@ class MlPbSOptXCE(object):
 
             f = torch.sum(ce1(X1), keepdim=False, dim=0)
 
-            loss = criterion(f, f0)
+            loss = criterion(f.view(-1,1), f0.view(-1,1))
             optimizer.zero_grad()   # suggested trick
             loss.backward()
             optimizer.step()
