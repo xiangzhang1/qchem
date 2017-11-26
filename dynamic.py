@@ -624,7 +624,7 @@ class MlPbSOptFCE(object):
 
             f = torch.sum(ce1(X1), keepdim=False, dim=0)
 
-            loss = criterion(f, f0) + np.sum((f0 / (f+5E-4)) ** 2)
+            loss = criterion(f, f0) + torch.sum((f0 / (f+5E-6)) ** 2, keepdim=False)
             optimizer.zero_grad()   # suggested trick
             loss.backward()
             optimizer.step()
