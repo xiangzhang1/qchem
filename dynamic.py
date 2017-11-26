@@ -635,7 +635,7 @@ class MlPbSOptXCE(object):
             optimizer.step()
 
             if niter % len(_X1) == 0:
-                tqdm.set_description('loss %s' %(np.asscalar(loss.data.cpu().numpy())))
+                t.set_description('loss %s' %(np.asscalar(loss.data.cpu().numpy())))
 
         print 'training complete! fuck with the data.'
         IPython.embed()
