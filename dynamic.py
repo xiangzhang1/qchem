@@ -588,7 +588,7 @@ class MlPbSOptFCE(object):
         self._X1 += list(self.parse_X1(vasp.node().cell))
         self._y0 += list(self.parse_y0(vasp))
 
-    def train(self, n_epochs=40, learning_rate=1E-4, optimizer_name='Adam'):
+    def train(self, n_epochs=40, learning_rate=1E-4, optimizer_name='Adam', loss_name='MSELoss'):
         # pipeline
         self.X1_pipeline.fit(np.concatenate(self._X1, axis=0))
         _X1 = np.array([self.X1_pipeline.transform(_X1_) for _X1_ in self._X1])
@@ -596,7 +596,7 @@ class MlPbSOptFCE(object):
         ce1 = self.ce1
         # batch
         # ann
-        criterion = nn.KLDivLoss()
+        criterion = getattr(nn, loss_name)()
         params = list(ce1.parameters())
         optimizer = getattr(optim, optimizer_name)(params, lr=learning_rate)
         # train
