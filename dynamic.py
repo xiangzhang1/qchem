@@ -622,8 +622,9 @@ class MlPbSOptXCE(object):
         optimizer = getattr(optim, optimizer_name)(params, lr=learning_rate)
         # train
         ce1.train()
-        t = np.random.randint(low=0, high=len(_X1), size=n_epochs * len(_X1))
-        for niter, i in tqdm(enumerate(t), leave=False):
+        indices = np.random.randint(low=0, high=len(_X1), size=n_epochs * len(_X1))
+        tbanner = tqdm(enumerate(indices), leave=False)
+        for niter, i in tbanner:
             X1 = V(_X1[i])
             f0 = C(_y0[i])
 
@@ -635,7 +636,7 @@ class MlPbSOptXCE(object):
             optimizer.step()
 
             if niter % len(_X1) == 0:
-                t.set_description('loss %s' %(np.asscalar(loss.data.cpu().numpy())))
+                tbanner.set_description('loss %s' %(np.asscalar(loss.data.cpu().numpy())))
 
         print 'training complete! fuck with the data.'
         IPython.embed()
