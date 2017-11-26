@@ -640,7 +640,7 @@ class MlPbSOptXCE(object):
                 invy0 = self.y_pipeline.inverse_transform(_f0.reshape(1,-1))[0]
                 pred = self.predict(_X1[i])
                 _loss = np.asscalar(loss.data.cpu().numpy())
-                indices.set_description('y %s, y0 %s, invy %s, invy0 %s, pred %s, loss %s' %(list(_f), list(_f0), list(invy), list(invy0), list(pred), _loss))
+                indices.set_description('y %s, y0 %s, invy %s, invy0 %s, pred %s, loss %s' %(_f, _f0, invy, invy0, pred, _loss))
 
         print 'training complete! fuck with the data.'
         IPython.embed()
