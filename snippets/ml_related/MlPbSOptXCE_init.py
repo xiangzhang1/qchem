@@ -15,7 +15,7 @@ m = dynamic.MlPbSOptXCE()
 for cur in curs:
     n = engine.Map().lookup(cur)
     m.parse_train(n.vasp)
-m.train(n_epochs=500, optimizer_name='Adam', total_set_size=70, test_set_size=15, learning_rate=0.01)
+m.train(n_epochs=1500, optimizer_name='RMSprop', total_set_size=70, test_set_size=15, learning_rate=0.1)
 
 
 
