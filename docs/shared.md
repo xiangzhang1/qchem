@@ -1,10 +1,10 @@
 Global constants and methods.
 
 __DEBUG__
-* -1 [obsolete]: print to chrome console, not recommended.
-* 0 [non-interactive]: concise stdout, results only
-* 1 [debug]: debug, include vital process info
-* 2 [developer]: debug, include all operations info, breaks when error occurs, interactive
+* -1 [silent]
+* 0 [auto]
+* 1 [manual]
+* 2 [verbose interactive debug]
 
 @MWT: timeout = 10 (ssh) | 2592000 (cell.cdist())
 

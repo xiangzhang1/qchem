@@ -291,6 +291,7 @@ class MlPbSOptScaler(BaseEstimator,TransformerMixin):
 
 
 class MlPbSOpt(object):
+    '''Deprecated.'''
 
     def __init__(self):
         # data
@@ -384,8 +385,7 @@ class MlPbSOpt(object):
             _y = np.float32(self.predict(_X))[0]
             print _y0, _y
 
-    def parse_predict(self, cell):  # 1cell-in-many-out.
-        '''Warning: On-grid input assumed.'''
+    def parse_predict(self, cell): # cell -> (Natom, xyzs)
         a = 6.01417/2
         ccoor = cell.ccoor
         # parse and store
@@ -400,7 +400,7 @@ class MlPbSOpt(object):
             features.append(feature)
         return features
 
-    def predict(self, _X):  # EXCEPTION: 1-in 1-out. This special ANN doesn't take many-in-many-out
+    def predict(self, _X):  # (Natom, xyzs) -> (1, Natom)
         # pipeline
         _X = copy.deepcopy(_X)
         _X[:,:3] = self.X_pipeline.transform(_X[:,:3])
@@ -419,12 +419,11 @@ class MlPbSOpt(object):
             dx += torch.sum(dxi, dim=0, keepdim=False)    # (N,3) -> (3)
 
         # pipeline
-        _y_inverse = self.y_pipeline.inverse_transform(dx.data.numpy().reshape(1,-1))
+        _y_inverse = self.y_pipeline.inverse_transform(dx.data.numpy().reshape(1,-1)).reshape(-1)   # Scaler requries 2D array.
         return _y_inverse
 
 
     def optimize(self, cell):
-        '''Warning: on-grid input assumed.'''
         #
         cell = copy.deepcopy(cell)
         Xs = self.parse_predict(cell)
@@ -432,7 +431,7 @@ class MlPbSOpt(object):
         for idx_atom in range(cell.natoms()):
             X = Xs[idx_atom]
             dx = self.predict(X)
-            cell.ccoor[idx_atom] += dx.reshape(3)
+            cell.ccoor[idx_atom] += dx
         return cell
 
 
@@ -543,7 +542,7 @@ class MlQueueTime(object):
 
 
 
-# MlPbSOpt, CE-version
+# MlPbSOpt, Force-CE-version
 # ==============================================================================
 
 class MlPbSOptCE(object):
@@ -641,7 +640,7 @@ class MlPbSOptCE(object):
             print _y0, _y
 
     def parse_predict(self, cell):  # 1cell-in-many-out.
-        '''Warning: On-grid input assumed.'''
+        print self.__class__.__name__ + ' warning: grid-like input cell assumed.'
         a = 6.01417/2
         ccoor = cell.ccoor
         # parse and store
@@ -680,7 +679,6 @@ class MlPbSOptCE(object):
 
 
     def optimize(self, cell):
-        '''Warning: on-grid input assumed.'''
         #
         cell = copy.deepcopy(cell)
         Xs = self.parse_predict(cell)

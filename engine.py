@@ -721,14 +721,16 @@ class Vasp(object):
             elif prev and getattr(prev, 'cell', None):
                 node.cell = copy.deepcopy(prev.cell)
                 print self.__class__.__name__ + '.compute: prev.vasp.cell overwrites node.cell.'
-            if gen.parse_if('mlpbsopt'):
-                print self.__class__.__name__ + '.compute: pre-optimizing cell. [MlPbSOpt]'
-                node.cell = dynamic.MLS['MLPBSOPT'].optimize(node.cell)
             # write incar etc. Relies on inheritance.
             os.chdir(path)
             gen.write_incar_kpoints()
             with open('POSCAR','w') as f:
-                f.write(str(node.cell))
+                if gen.parse_if('mlpbsopt'):
+                    print self.__class__.__name__ + '.compute: pre-optimizing cell. [MlPbSOpt]'
+                    cell = dynamic.MLS['MLPBSOPT'].optimize(node.cell)
+                else:
+                    cell = node.cell
+                f.write(str(cell))
             for symbol in node.cell.stoichiometry.keys():
                 self.pot(symbol)
             # setting variables for wrapper
