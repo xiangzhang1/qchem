@@ -623,7 +623,7 @@ class MlPbSOptXCE(object):
         # train
         ce1.train()
         t = np.random.randint(low=0, high=len(_X1), size=n_epochs * len(_X1))
-        for i in tqdm(t, leave=False):
+        for niter, i in tqdm(enumerate(t), leave=False):
             X1 = V(_X1[i])
             f0 = C(_y0[i])
 
@@ -633,6 +633,9 @@ class MlPbSOptXCE(object):
             optimizer.zero_grad()   # suggested trick
             loss.backward()
             optimizer.step()
+
+            if niter % len(_X1) == 0:
+                tqdm.set_description('loss %s' %(np.asscalar(loss.data.cpu().numpy())))
 
         print 'training complete! fuck with the data.'
         IPython.embed()
