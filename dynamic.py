@@ -586,7 +586,7 @@ class MlPbSOptFCE(object):
 
     def parse_train(self, vasp):
         '''More of a handle.'''
-        self._X1 += self.parse_X1(vasp.node().cell.ccoor, vasp.node().cell.stoichiometry[0])
+        self._X1 += self.parse_X1(vasp.node().cell.ccoor, vasp.node().cell.stoichiometry.values()[0])
         self._y0 += self.parse_y0(vasp)
 
     def train(self, n_epochs=400, learning_rate=0.001, optimizer_name='Adam'):
