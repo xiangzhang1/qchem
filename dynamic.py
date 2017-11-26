@@ -564,23 +564,16 @@ class MlPbSOptXCE(object):
         ])
         # ann
         dropout_p = 0.05
-        bn_momentum = 0.74
-        self.ce1 = udf_nn(4, 80, 30, 3).cuda()
-        # Sequential(
-        #     nn.Linear(4, 80),
-        #     nn.ELU(),
-        #     nn.BatchNorm1d(80, momentum=bn_momentum),
-        #     nn.Dropout(p=dropout_p),
-        #     nn.Linear(80, 30),
-        #     nn.ELU(),
-        #     nn.BatchNorm1d(30, momentum=bn_momentum),
-        #     nn.Dropout(p=dropout_p),
-        #     nn.Linear(30, 15),
-        #     nn.ELU(),
-        #     nn.BatchNorm1d(15, momentum=bn_momentum),
-        #     nn.Dropout(p=dropout_p),
-        #     nn.Linear(15, 3)
-        # ).cuda()
+        # self.ce1 = udf_nn(4, 80, 30, 3).cuda()
+        self.ce1 = Sequential(
+            nn.Linear(4, 80),
+            nn.ELU(),
+            nn.Dropout(p=dropout_p),
+            nn.Linear(80, 30),
+            nn.ELU(),
+            nn.Dropout(p=dropout_p),
+            nn.Linear(30, 3)
+        ).cuda()
 
     def parse_X1(self, cell):
         '''
