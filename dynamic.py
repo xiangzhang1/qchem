@@ -564,6 +564,7 @@ class MlPbSOptFCE(object):
         ])
         # ann
         dropout_p = 0.05
+        bn_momentum = 0.74
         self.ce1 = Sequential(
             nn.Linear(4, 80),
             nn.ELU(),
