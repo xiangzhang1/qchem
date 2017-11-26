@@ -547,8 +547,14 @@ class MlQueueTime(object):
 
 def V(x):
     return Variable(torch.FloatTensor(np.array(x)), requires_grad=True)
+
 def C(x):
     return Variable(torch.FloatTensor(np.array(x)), requires_grad=False)
+
+def irtp(xv):
+    x, y, z = xv
+    r = math.sqrt(x**2+y**2+z**2)
+    return [1/r, arccos(z/r), arctan(y/x)]
 
 class MlPbSOptFCE(object):
 
@@ -557,13 +563,11 @@ class MlPbSOptFCE(object):
         self._X1 = []
         self._y0 = []
         # pipeline
-        self.X1_pipeline = MlPbSOptScaler()
-        self.y_pipeline = Pipeline([
-            ('scaler', MlPbSOptScaler()),
-            ('10', FunctionTransformer(func=lambda x: x * 15, inverse_func=lambda x: x / 15))
-        ])
+        self.X1_pipeline = StandardScaler()
+        self.y_pipeline = StandardScaler()
         # ann
         self.ce1 = udf_nn(4, 128, 24, 3)
+
 
     def parse_X1(self, cell):
         '''
@@ -577,11 +581,13 @@ class MlPbSOptFCE(object):
             dcoor = ccoor - c
             sgn = np.sign((i - natom0 + 0.5) * (np.arange(len(ccoor)) - natom0 + 0.5))
             dcoorp = np.concatenate((dcoor, np.c_[sgn]), axis=1)
-            X1.append(np.delete(dcoorp, i, axis=0))
+            dcoorp = np.delete(dcoorp, i, axis=0)
+            dcoorp = [irtp(dc) for dc in dcoorp]
+            X1.append()
         return X1
 
     def parse_y0(self, vasp):
-        return vasp.optimized_cell.ccoor - vasp.node().cell.ccoor
+        return [irtp(dc) for dc in vasp.optimized_cell.ccoor-vasp.node().cell.ccoor]
 
     def parse_train(self, vasp):
         '''More of a handle.'''
