@@ -554,9 +554,10 @@ def C(x):
 def irtps(xv):
     x, y, z, sgn = xv
     r = math.sqrt(x**2+y**2+z**2)
-    if r==0:
-        IPythone.embed()
-    return [1/r, np.arccos(z/r), np.arctan(y/x), sgn]
+    result = [np.divide(1,r), np.arccos(np.divide(z,r)), np.arctan(np.divide(y,x)), sgn]
+    if max(result) > 1000000 or min(result) < -100000000:
+        IPython.embed()
+    return result
 
 def rtp(xv):
     x, y, z = xv
