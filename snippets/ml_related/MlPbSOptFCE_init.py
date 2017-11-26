@@ -6,3 +6,6 @@ for n in parent.map:
         m.parse_train(n.vasp)
 
 m.train()
+
+for i in range(len(m._X1)-50, len(m._X1)):
+    print m._y0[i], m.predict_f(m._X1[i])

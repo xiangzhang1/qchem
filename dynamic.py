@@ -557,10 +557,10 @@ class MlPbSOptFCE(object):
         self._X1 = []
         self._y0 = []
         # pipeline
-        self.X1_pipeline = StandardScaler(with_mean=False)
-        self.y_pipelien = StandardScaler(with_mean=False)
+        # self.X1_pipeline = StandardScaler(with_mean=False)
+        # self.y_pipeline = StandardScaler(with_mean=False)
         # ann
-        self.ce1 = udf_nn(4, 20, 20, 1)
+        self.ce1 = udf_nn(4, 100, 20, 1)
 
     def parse_X1(self, ccoor, natom0):
         '''
@@ -593,11 +593,13 @@ class MlPbSOptFCE(object):
         self._X1 += list(self.parse_X1(cell.ccoor, natom0))
         self._y0 += list(self.parse_y0(path, natom))
 
-    def train(self, n_epochs=40, learning_rate=0.001, optimizer_name='Adam'):
+    def train(self, n_epochs=10, learning_rate=1E-5, optimizer_name='Adam'):
         # pipeline
-        self.X1_pipeline.fit(np.concatenate(self._X1, axis=0))
-        _X1 = np.array([self.X1_pipeline.transform(_X1_) for _X1_ in self._X1])
-        _y0 = self.y_pipelien.fit_transform(self._y0)
+        # self.X1_pipeline.fit(np.concatenate(self._X1, axis=0))
+        # _X1 = np.array([self.X1_pipeline.transform(_X1_) for _X1_ in self._X1])
+        # _y0 = self.y_pipeline.fit_transform(self._y0)
+        _X1 = self._X1
+        _y0 = self._y0
         ce1 = self.ce1
         # batch
         # ann
@@ -629,12 +631,27 @@ class MlPbSOptFCE(object):
     def parse_predict(self, ccoor, natom0):
         return self.parse_X1(ccoor, natom0)
 
-    def predict(self, _X1):
+    def predict_e(self, _X1):
         # pipeline
-        _X1 = self.X_pipeline.transform(_X)
         ce1 = self.ce1
         # ann
         ce1.eval()
         y = torch.sum(ce1(V(_X1)), keepdim=True)
         # reverse pipeline
-        return np.asscalar(self.y_pipeline.inverse_transform(y.data.numpy()))
+        return y.data.numpy()
+
+    def predict_f(self, _X1):
+        # pipeline
+        ce1 = self.ce1
+        # ann
+        ce1.eval()
+        X1 = V(_X1)
+
+        X1m = X1.clone()
+        origin = V([0,0,0])
+        X1m[:,:3] = X1[:,:3] - origin
+        e = torch.sum(ce1(X1m), keepdim=False)
+        f = torch.autograd.grad(e, origin, create_graph=True)[0]
+
+        # reverse pipeline
+        return f.data.numpy()
