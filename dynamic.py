@@ -604,7 +604,7 @@ class MlPbSOptXCE(object):
         self._X1 += list(self.parse_X1(vasp.node().cell))
         self._y0 += list(self.parse_y0(vasp))
 
-    def train(self, n_epochs=200, learning_rate=1E-6, optimizer_name='Adam', loss_name='RMSprop', test_set_size=10):
+    def train(self, n_epochs=200, learning_rate=1E-6, optimizer_name='RMSprop', loss_name='MSELoss', test_set_size=10):
     # pipeline
         test_idx = np.random.choice(range(len(self._X1[:50])), size=test_set_size)
         train_idx = np.array([i for i in range(len(self._X1)) if i not in test_idx])
