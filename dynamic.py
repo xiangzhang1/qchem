@@ -554,7 +554,7 @@ def C(x):
 def irtps(xv):
     x, y, z, sgn = xv
     r = math.sqrt(x**2+y**2+z**2)
-    result = [np.divide(1,r), np.arccos(np.divide(z,r)), np.arctan(np.divide(y,x)) if x!=0 or y!=0 else 0, sgn]
+    result = [np.divide(1,r), np.arccos(z/r), np.arctan(y/x) if x!=0 or y!=0 else 0, sgn]
     if not np.isfinite(result).all():
         IPython.embed()
     return result
@@ -562,7 +562,7 @@ def irtps(xv):
 def rtp(xv):
     x, y, z = xv
     r = math.sqrt(x**2+y**2+z**2)
-    return [r, np.arccos(z/r), np.arctan(y/x)]
+    return [r, np.arccos(z/r), np.arctan(y/x) if x!=0 or y!=0 else 0]
 
 class MlPbSOptFCE(object):
 
