@@ -275,7 +275,7 @@ class MlVaspSpeed(object):
 # ==============================================================================
 
 
-class MlPbSOptScaler(BaseEstimator,TransformerMixin):
+class MlPbSOptScaler(BaseEstimator,TransformerMixin):       # THIS IS NOT USEFUL AT ALL! DOES NOT SCALE DIFFERENT DIMENSIONS.
     def __init__(self):
         self.mean = 0
 
@@ -557,9 +557,9 @@ class MlPbSOptXCE(object):
         self._X1 = []
         self._y0 = []
         # pipeline
-        self.X1_pipeline = MlPbSOptScaler()
+        self.X1_pipeline = StandardScaler()
         self.y_pipeline = Pipeline([
-            ('scaler', MlPbSOptScaler()),
+            ('scaler', StandardScaler()),
             ('10', FunctionTransformer(func=lambda x: x * 15, inverse_func=lambda x: x / 15))
         ])
         # ann
