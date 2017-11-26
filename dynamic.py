@@ -588,8 +588,8 @@ class MlPbSOptFCE(object):
         natom0 = cell.stoichiometry.values()[0]
         natom = sum(cell.stoichiometry.values())
         path = vasp.node().path
-        self._X1 += self.parse_X1(cell.ccoor, natom0)
-        self._y0 += self.parse_y0(path, natom)
+        self._X1 += list(self.parse_X1(cell.ccoor, natom0))
+        self._y0 += list(self.parse_y0(path, natom))
 
     def train(self, n_epochs=400, learning_rate=0.001, optimizer_name='Adam'):
         # pipeline
