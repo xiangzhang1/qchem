@@ -604,10 +604,11 @@ class MlPbSOptXCE(object):
         self._X1 += list(self.parse_X1(vasp.node().cell))
         self._y0 += list(self.parse_y0(vasp))
 
-    def train(self, n_epochs=200, learning_rate=1E-6, optimizer_name='RMSprop', loss_name='MSELoss', test_set_size=10):
+    def train(self, n_epochs=200, learning_rate=1E-6, optimizer_name='RMSprop', loss_name='MSELoss', test_set_size=10, total_set_size=None):
     # pipeline
-        test_idx = np.random.choice(range(len(self._X1[:50])), size=test_set_size)
-        train_idx = np.array([i for i in range(len(self._X1)) if i not in test_idx])
+        total_set_size = total_set_size if total_set_size else len(self._y0)
+        test_idx = np.random.choice(range(total_set_size), size=test_set_size)
+        train_idx = np.array([i for i in range(total_set_size) if i not in test_idx])
         _X1 = np.array(self._X1)[train_idx]
         _y0 = np.array(self._y0)[train_idx]
         self.X1_pipeline.fit_transform(np.concatenate(_X1, axis=0))
