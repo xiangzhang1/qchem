@@ -568,10 +568,8 @@ class MlPbSOptXCE(object):
         self.ce1 = Sequential(
             nn.Linear(4, 80),
             nn.ELU(),
-            nn.Dropout(p=dropout_p),
             nn.Linear(80, 30),
             nn.ELU(),
-            nn.Dropout(p=dropout_p),
             nn.Linear(30, 3)
         ).cuda()
 
