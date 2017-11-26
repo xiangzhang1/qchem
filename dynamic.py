@@ -570,8 +570,7 @@ class MlPbSOptFCE(object):
             dcoor = ccoor - c
             sgn = np.sign((i - natom0 + 0.5) * (np.arange(len(ccoor)) - natom0 + 0.5))
             dcoorp = np.concatenate((dcoor, np.c_[sgn]), axis=1)
-            dcoorp.pop(i)
-            X1.append(dcoorp)
+            X1.append(np.delete(dcoorp, i, axis=0))
         return X1
 
     def parse_y0(self, vasp):
