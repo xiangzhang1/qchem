@@ -609,7 +609,7 @@ class MlPbSOptFCE(object):
             X1 = V(_X1[i])
             f0 = V(_y0[i])
 
-            X1m = X1
+            X1m = X1.clone()
             origin = V([0,0,0])
             X1m[:,:3] = X1[:,:3] - origin
             e = torch.sum(ce1(X1m), keepdim=False)
