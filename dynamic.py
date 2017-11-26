@@ -563,15 +563,13 @@ class MlPbSOptXCE(object):
             ('10', FunctionTransformer(func=lambda x: x * 15, inverse_func=lambda x: x / 15))
         ])
         # ann
-        dropout_p = 0.05
+        # dropout_p = 0.05
         # self.ce1 = udf_nn(4, 80, 30, 3).cuda()
         self.ce1 = Sequential(
             nn.Linear(4, 80),
-            nn.ELU(),
-            nn.Dropout(p=dropout_p),
+            nn.ReLU(),
             nn.Linear(80, 30),
-            nn.ELU(),
-            nn.Dropout(p=dropout_p),
+            nn.ReLU(),
             nn.Linear(30, 3)
         ).cuda()
 
