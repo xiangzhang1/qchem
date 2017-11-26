@@ -610,11 +610,11 @@ class MlPbSOptFCE(object):
             f0 = V(_y0[i])
 
             origin = V([0,0,0])
-            X1_[:,:3] = X1_[:,:3] - origin
-            e = torch.sum(ce1(X1_), keepdim=False)
+            X1[:,:3] = X1[:,:3] - origin
+            e = torch.sum(ce1(X1), keepdim=False)
             f = torch.autograd.grad(e, origin, create_graph=True)
 
-            loss = criterion(f, f0_)
+            loss = criterion(f, f0)
             optimizer.zero_grad()   # suggested trick
             loss.backward()
             optimizer.step()
