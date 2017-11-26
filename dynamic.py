@@ -617,6 +617,7 @@ class MlPbSOptFCE(object):
             e = torch.sum(ce1(X1m), keepdim=False)
             f = torch.autograd.grad(e, origin, create_graph=True)
 
+            IPython.embed()
             loss = criterion(f, f0)
             optimizer.zero_grad()   # suggested trick
             loss.backward()
