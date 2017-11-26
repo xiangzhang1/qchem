@@ -573,20 +573,23 @@ class MlPbSOptFCE(object):
             X1.append(np.delete(dcoorp, i, axis=0))
         return X1
 
-    def parse_y0(self, vasp):
-        cell = vasp.optimized_cell
-        os.chdir(vasp.node().path)
+    def parse_y0(self, path, natom):
+        os.chdir(path)
         with open('OUTCAR', 'r') as f:
             lines = f.readlines()
         i = next(i for i, line in enumerate(lines) if 'TOTAL-FORCE' in line)
-        force_lines = lines[i+2: i+2+cell.natoms()]
+        force_lines = lines[i+2: i+2+natom]
         forces = np.float32([line.split() for line in force_lines])[:, 3:]
         return forces
 
     def parse_train(self, vasp):
         '''More of a handle.'''
-        self._X1 += self.parse_X1(vasp.node().cell.ccoor, vasp.node().cell.stoichiometry.values()[0])
-        self._y0 += self.parse_y0(vasp)
+        cell = vasp.optimized_cell if getattr(vasp, 'optimized_cell', None) else vasp.node().cell
+        natom0 = cell.stoichiometry.values()[0]
+        natom = sum(cell.stoichiometry.values())
+        path = vasp.node().path
+        self._X1 += self.parse_X1(cell.ccoor, natom0)
+        self._y0 += self.parse_y0(path, natom)
 
     def train(self, n_epochs=400, learning_rate=0.001, optimizer_name='Adam'):
         # pipeline
