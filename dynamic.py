@@ -593,7 +593,7 @@ class MlPbSOptFCE(object):
         self._X1 += list(self.parse_X1(cell.ccoor, natom0))
         self._y0 += list(self.parse_y0(path, natom))
 
-    def train(self, n_epochs=10, learning_rate=1E-5, optimizer_name='Adam'):
+    def train(self, n_epochs=10, learning_rate=1E-5, optimizer_name='SGD'):
         # pipeline
         # self.X1_pipeline.fit(np.concatenate(self._X1, axis=0))
         # _X1 = np.array([self.X1_pipeline.transform(_X1_) for _X1_ in self._X1])
