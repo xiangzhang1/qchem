@@ -560,7 +560,7 @@ class MlPbSOptFCE(object):
         # self.X1_pipeline = StandardScaler(with_mean=False)
         # self.y_pipeline = StandardScaler(with_mean=False)
         # ann
-        self.ce1 = udf_nn(4, 100, 20, 1)
+        self.ce1 = udf_nn(4, 400, 20, 1)
 
     def parse_X1(self, ccoor, natom0):
         '''
