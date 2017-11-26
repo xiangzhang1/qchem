@@ -607,7 +607,7 @@ class MlPbSOptFCE(object):
         # train
         ce1.train()
         t = trange(n_epochs * len(_X1), desc='loss: 0')
-        for epoch in :
+        for epoch in t:
             i = np.random.randint(0, len(_X1) - 50)
             X1 = V(_X1[i])
             f0 = C(_y0[i])
