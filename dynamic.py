@@ -618,13 +618,13 @@ class MlPbSOptFCE(object):
         # train
         ce1.train()
         t = np.random.randint(low=0, high=len(_X1) - 50, size=n_epochs * len(_X1))
-        for i in t:
+        for i in tqdm(t, leave=False):
             X1 = V(_X1[i])
             f0 = C(_y0[i])
 
             f = torch.sum(ce1(X1), keepdim=False, dim=0)
 
-            loss = criterion(f, f0) + (f0 / (f+5E-4)) ** 2
+            loss = criterion(f, f0) + np.sum((f0 / (f+5E-4)) ** 2)
             optimizer.zero_grad()   # suggested trick
             loss.backward()
             optimizer.step()
