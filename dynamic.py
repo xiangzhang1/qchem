@@ -404,7 +404,7 @@ class MlPbSOptXC1D(object):
         natom0 = cell.stoichiometry.values()[0]
         X1 = []
         for i, ci in enumerate(ccoor):
-            features = np.zeros(13, 13, 13, 2)
+            features = np.zeros((13, 13, 13, 2))
             for j, cj in enumerate(ccoor):
                 ix, iy, iz = np.around((cj - ci) / 3.007) + 6
                 sgn = np.heaviside((i - natom0 + 0.5) * (j - natom0 + 0.5))
