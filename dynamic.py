@@ -383,7 +383,7 @@ class MlQueueTime(object):
 from sklearn import linear_model
 
 def distdict(N):
-    dist = np.unique([np.linalg.norm([i,j,k])*sgn for i in range(N) for j in range(N) for k in range(N) for sgn in (-1,1)])
+    dist = np.unique([round(np.linalg.norm([i,j,k])*sgn, 4) for i in range(N) for j in range(N) for k in range(N) for sgn in (-1,1)])
     ddict = OrderedDict(zip(dist, np.zeros(dist.shape[0])))
     return ddict
 
@@ -414,7 +414,7 @@ class MlPbSOptXC1D(object):
                     x = np.around((cj-ci)/3.007)
                     r = np.linalg.norm(x)
                     sgn = np.sign((i - natom0 + 0.5) * (j - natom0 + 0.5))
-                    coefficients[sgn*r] += x[ix] / r
+                    coefficients[round(sgn*r, 4)] += x[ix] / r
                 X.append(coefficients.values())
         return X
 
