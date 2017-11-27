@@ -433,6 +433,7 @@ class MlPbSOptXC1D(object):
         model = self.model1
         # train
         self.model1.fit(_X1, _y0)
+        IPython.embed(banner1='Inspecting training results...')
 
     def parse_predict(self, cell):
         return self.parse_X1(cell)
