@@ -11,6 +11,7 @@ import itertools
 import math
 import types
 import copy
+from collections import OrderedDict
 
 # scipy
 from scipy.optimize import minimize
@@ -381,6 +382,11 @@ class MlQueueTime(object):
 
 from sklearn import linear_model
 
+def distdict(i):
+    dist = np.unique([np.linalg.norm([i,j,k])*sgn for i in range(i) for j in range(i) for k in range(i) for sgn in (-1,1)])
+    ddict = OrderedDict(zip(dist, np.zeros(dist.shape[0])))
+    return ddict
+
 class MlPbSOptXC1D(object):
 
     def __init__(self):
@@ -391,9 +397,6 @@ class MlPbSOptXC1D(object):
         self.y_pipeline = StandardScaler()
         # ann
         self.model = linear_model.LinearRegression()
-        # self.model = linear_model.MultiTaskLasso()
-        # self.model = linear_model.LassoLars()
-        # self.model = linear_model.ElasticNet()
 
     def parse_X(self, cell):
         '''
@@ -404,14 +407,13 @@ class MlPbSOptXC1D(object):
         natom0 = cell.stoichiometry.values()[0]
         X = []
         for i, ci in enumerate(ccoor):
-            features = np.zeros((13, 13, 13, 2))
+            features = distdict(8)
             for j, cj in enumerate(ccoor):
-                ix, iy, iz = np.int_(np.around((cj - ci) / 3.007) + 6)
-                sgn = int(np.heaviside((i - natom0 + 0.5) * (j - natom0 + 0.5), 0))
-                if ix < 0 or iy < 0 or iz < 0:
-                    raise shared.CustomError
-                features[ix, iy, iz, sgn] += 1
-            X.append(features.flatten())
+                x = np.int_(np.around( (cj-ci)/3.007 ))
+                r = np.linalg.norm(x)
+                sgn = int(np.sign((i - natom0 + 0.5) * (j - natom0 + 0.5), 0))
+                features[sgn*r] += x/r
+            X.append(features.values())
         return X
 
     def parse_y0(self, vasp):
