@@ -15,8 +15,17 @@ m = dynamic.MlPbSOptXCE()
 for cur in curs:
     n = engine.Map().lookup(cur)
     m.parse_train(n.vasp)
-m.train(n_epochs=1500, optimizer_name='RMSprop', total_set_size=70, test_set_size=15, learning_rate=0.1)
+m.train(n_epochs=5000, optimizer_name='Adam', total_set_size=150, test_set_size=15, learning_rate=1E-3)
 
+# learning_rate
+#   1-0.1: to average
+#   0.1 - 1E-3: roughly same
+#   1E-4: no learning
+
+# convergence:
+#   total_set_size=150, 1500 epochs:
+#       significantly worse than linear regression [possibly due to indirect summation]
+#       hard cap w.r.t. time met
 
 
 

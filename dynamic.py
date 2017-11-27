@@ -268,172 +268,7 @@ class MlVaspSpeed(object):
         return _y_inverse
 
 
-# inital training script for MlVaspSpeed can be found in scripts/ml
-
-
-# MlPbSOpt, f(r)-version
-# ==============================================================================
-
-
-class MlPbSOptScaler(BaseEstimator,TransformerMixin):       # THIS IS NOT USEFUL AT ALL! DOES NOT SCALE DIFFERENT DIMENSIONS.
-    def __init__(self):
-        self.mean = 0
-
-    def fit(self, X):
-        self.mean = np.mean([np.mean(np.abs(subX)) for subX in X])
-        return self
-
-    def transform(self, X):
-        return X / self.mean / 1.7
-
-    def inverse_transform(self, X):
-        return X * self.mean * 1.7
-
-
-class MlPbSOpt(object):
-    '''Deprecated.'''
-
-    def __init__(self):
-        # data
-        self._X = []
-        self._y0 = []
-        # pipeline
-        self.X_pipeline = MlPbSOptScaler()
-        self.y_pipeline = Pipeline([
-            ('scaler', MlPbSOptScaler()),
-            ('10', FunctionTransformer(func=lambda x: x * 5, inverse_func=lambda x: x / 5))
-        ])
-        # ann
-        self.nets = {-2: udf_nn(1,5,10,5,1), 0:udf_nn(1,5,10,5,1), 2:udf_nn(1,5,10,5,1)}
-
-    def parse_train(self, vasp):
-        # checks
-        gen = vasp.node().gen
-        vasprunxml_lastline = vasp.ssh_and_run('tail -1 %s/vasprun.xml' %vasp.remote_folder_name).splitlines()[0]
-        if not (gen.parse_if('opt') and vasp.info('n_ionic_step') < int(gen.getkw('nsw')) and '</modeling>' in vasprunxml_lastline):
-            raise shared.CustomError('{}.compute: not optimization cell, or terminated prematurely. skipped :)'.format(self.__class__.__name__))
-
-        a = 6.01417/2
-        cell = vasp.optimized_cell
-
-        ccoor = np.copy(cell.ccoor)
-        origin = ccoor[cell.ccoor_kdtree().query(np.mean(ccoor, axis=0))[1]]    # closest-to-center atom
-        def error_after_transformation(origin, ccoor=ccoor, a=a):       # snap to grid. note: parallelization doesn't save time.
-            fcoor = (ccoor - origin) / a
-            return np.sum(np.abs(fcoor - np.around(fcoor)))
-        origin = minimize(fun=error_after_transformation,
-                     x0=origin,
-                     bounds=[(origin[i]-0.2*a, origin[i]+0.2*a) for i in range(3)],
-                     tol=1e-10
-                    ).x
-        ccoor = ccoor - origin + np.around(origin / a) * a      # on-grid coordinate. vaguely resemble the original cell
-
-        # parse and store
-        pbs_order_factor = 1 if cell.stoichiometry.keys()[0]=='Pb' else -1
-        for idx_atom, c in enumerate(ccoor):
-            relative_ccoor = ccoor - c
-            coor_sgn = np.sign(np.arange(ccoor.shape[0]) - cell.stoichiometry.values()[0] + 0.5) * pbs_order_factor
-            sgn = np.sign(idx_atom - cell.stoichiometry.values()[0] + 0.5) * pbs_order_factor
-            feature = np.concatenate((relative_ccoor, np.c_[[sgn] * ccoor.shape[0]], np.c_[coor_sgn]), axis=1)
-            feature = np.delete(feature, idx_atom, 0)
-            label = c - np.around(c/a)*a
-            self._X.append(feature)
-            self._y0.append(label)
-
-
-
-    def train(self, n_epochs=400, learning_rate=0.001, optimizer_name='Adam'):
-        # pipeline
-        _X = copy.deepcopy(self._X)
-        self.X_pipeline.fit(np.concatenate([_subX[:,:3] for _subX in _X], axis=0))
-        for i in range(len(_X)):
-            _X[i][:,:3] = self.X_pipeline.transform(_X[i][:,:3])
-        _y0 = self.y_pipeline.fit_transform(self._y0)
-        # batch
-        # ann
-        criterion = nn.MSELoss()
-        params = list(self.nets[-2].parameters()) + list(self.nets[0].parameters()) + list(self.nets[2].parameters())
-        optimizer = getattr(optim, optimizer_name)(params, lr=learning_rate)
-        # train
-        [net.train() for net in self.nets.values()]
-        for epoch in range(n_epochs):
-            for _X_batch, _y0_batch in zip(_X[:-50], _y0[:-50]):
-                dx = Variable(torch.zeros(3))
-                for sgn in [-2,0,2]:
-                    indices, = np.where([row[3] + row[4] == sgn for row in _X_batch])
-                    if not len(indices): continue
-                    X = Variable(torch.FloatTensor(_X_batch[indices]))
-
-                    r = torch.norm(X[:, :3], p=2, dim=1, keepdim=True)      # (N,3) -> (N,1)
-                    rhat = X[:, :3] / r * X[:, 3:4] * X[:, 4:5]     # (N,3) / (N,1)
-                    dxi = self.nets[sgn](r) * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
-                    dx += torch.sum(dxi, dim=0, keepdim=False)    # (N,3) -> (3)
-
-                dx0 = Variable(torch.FloatTensor(_y0_batch))
-                loss = criterion(dx, dx0)
-                optimizer.zero_grad()   # suggested trick
-                loss.backward()
-                optimizer.step()
-            if epoch % 10 == 0:
-                print 'epoch %s, loss %s' %(epoch, np.asscalar(loss.data.numpy()))
-
-        # test
-        print self.__class__.__name__ + '.train: training finished. evaluation on last items: \n actual | error'
-        for i in range(len(self._X)-50, len(self._X)):
-            _X = np.array(self._X)[i]
-            _y0 = np.float32(self._y0)[i]
-            _y = np.float32(self.predict(_X))[0]
-            print _y0, _y
-
-    def parse_predict(self, cell): # cell -> (Natom, xyzs)
-        a = 6.01417/2
-        ccoor = cell.ccoor
-        # parse and store
-        features = []
-        pbs_order_factor = 1 if cell.stoichiometry.keys()[0]=='Pb' else -1
-        for idx_atom, c in enumerate(ccoor):
-            relative_ccoor = ccoor - c
-            coor_sgn = np.sign(np.arange(ccoor.shape[0]) - cell.stoichiometry.values()[0] + 0.5) * pbs_order_factor
-            sgn = np.sign(idx_atom - cell.stoichiometry.values()[0] + 0.5) * pbs_order_factor
-            feature = np.concatenate((relative_ccoor, np.c_[[sgn] * ccoor.shape[0]], np.c_[coor_sgn]), axis=1)
-            feature = np.delete(feature, idx_atom, 0)
-            features.append(feature)
-        return features
-
-    def predict(self, _X):  # (Natom, xyzs) -> (1, Natom)
-        # pipeline
-        _X = copy.deepcopy(_X)
-        _X[:,:3] = self.X_pipeline.transform(_X[:,:3])
-        # ann
-        [net.eval() for net in self.nets.values()]
-
-        dx = Variable(torch.zeros(3))
-        for sgn in [-2,0,2]:
-            indices, = np.where([row[3] + row[4] == sgn for row in _X])
-            if not len(indices): continue
-            X = Variable(torch.FloatTensor(_X[indices]))
-
-            r = torch.norm(X[:, :3], p=2, dim=1, keepdim=True)      # (N,3) -> (N,1)
-            rhat = X[:, :3] / r * X[:, 3:4] * X[:, 4:5]     # (N,3) / (N,1)
-            dxi = self.nets[sgn](r) * rhat     # (N,1) * (N,1) * (N,1) * (N,3)
-            dx += torch.sum(dxi, dim=0, keepdim=False)    # (N,3) -> (3)
-
-        # pipeline
-        _y_inverse = self.y_pipeline.inverse_transform(dx.data.numpy().reshape(1,-1)).reshape(-1)   # Scaler requries 2D array.
-        return _y_inverse
-
-
-    def optimize(self, cell):
-        #
-        cell = copy.deepcopy(cell)
-        Xs = self.parse_predict(cell)
-        #
-        for idx_atom in range(cell.natoms()):
-            X = Xs[idx_atom]
-            dx = self.predict(X)
-            cell.ccoor[idx_atom] += dx
-        return cell
-
+# inital training script for MlVaspSpeed can be found in scripts/mly
 
 
 
@@ -542,38 +377,25 @@ class MlQueueTime(object):
 
 
 
-# MlPbSOpt, Force-CE-version
-# ==============================================================================
+# MlPBSOpt_X_CE1_DiscreteLC
 
-def V(x):
-    return Variable(torch.FloatTensor(np.array(x)), requires_grad=True).cuda()
-def C(x):
-    return Variable(torch.FloatTensor(np.array(x)), requires_grad=False).cuda()
+from sklearn import linear_model
 
-class MlPbSOptXCE(object):
+class MlPbSOptXC1D(object):
 
     def __init__(self):
         # data
         self._X1 = []
         self._y0 = []
         # pipeline
-        self.X1_pipeline = StandardScaler()
-        self.y_pipeline = Pipeline([
-            ('scaler', StandardScaler()),
-            ('10', FunctionTransformer(func=lambda x: x * 15, inverse_func=lambda x: x / 15))
-        ])
+        self.y_pipeline = StandardScaler()
         # ann
-        dropout_p = 0.05
-        # self.ce1 = udf_nn(4, 80, 30, 3).cuda()
-        self.ce1 = Sequential(
-            nn.Linear(4, 80),
-            nn.ReLU(),
-            nn.Linear(80, 30),
-            nn.ReLU(),
-            nn.Linear(30, 3)
-        ).cuda()
+        self.model1 = linear_model.LinearRegression()
+        self.model2 = linear_model.MultiTaskLasso()
+        self.model3 = linear_model.LassoLars()
+        self.model4 = linear_model.ElasticNet()
 
-    def parse_X1(self, cell):
+    def parse_X(self, cell):
         '''
         ccoor is coordinates. natom0 is # of Pb atoms (for determining sgn).
         returns a list.
@@ -581,11 +403,15 @@ class MlPbSOptXCE(object):
         ccoor = cell.ccoor
         natom0 = cell.stoichiometry.values()[0]
         X1 = []
-        for i, c in enumerate(ccoor):
-            dcoor = ccoor - c
-            sgn = np.sign((i - natom0 + 0.5) * (np.arange(len(ccoor)) - natom0 + 0.5))
-            dcoorp = np.concatenate((dcoor, np.c_[sgn]), axis=1)
-            X1.append(np.delete(dcoorp, i, axis=0))
+        for i, ci in enumerate(ccoor):
+            features = np.zeros(13, 13, 13, 2)
+            for j, cj in enumerate(ccoor):
+                ix, iy, iz = np.around((cj - ci) / 3.007) + 6
+                sgn = np.heaviside((i - natom0 + 0.5) * (j - natom0 + 0.5))
+                if ix < 0 or iy < 0 or iz < 0:
+                    raise shared.CustomError
+                features[ix, iy, iz, sgn] += 1
+            X1.append(features.flatten())
         return X1
 
     def parse_y0(self, vasp):
@@ -596,58 +422,22 @@ class MlPbSOptXCE(object):
         self._X1 += list(self.parse_X1(vasp.node().cell))
         self._y0 += list(self.parse_y0(vasp))
 
-    def train(self, n_epochs=200, learning_rate=1E-6, optimizer_name='RMSprop', loss_name='MSELoss', test_set_size=10, total_set_size=None):
-    # pipeline
-        total_set_size = total_set_size if total_set_size else len(self._y0)
-        test_idx = np.random.choice(range(total_set_size), size=test_set_size, replace=False)
-        train_idx = np.array([i for i in range(total_set_size) if i not in test_idx])
+    def train(self, test_set_size=10, total_set_size=None):
+        # pipeline
+        total_idx = np.random.choice(range(len(self._y0)), size=total_set_size if total_set_size else len(self._y0), replace=False)
+        test_idx = np.random.choice(total_idx, size=test_set_size, replace=False)
+        train_idx = np.array([i for i in total_idx if i not in test_idx])
         _X1 = np.array(self._X1)[train_idx]
         _y0 = np.array(self._y0)[train_idx]
-        self.X1_pipeline.fit(np.concatenate(_X1, axis=0))
-        _X1 = np.array([self.X1_pipeline.transform(_X1_) for _X1_ in _X1])
         _y0 = self.y_pipeline.fit_transform(_y0)
-        ce1 = self.ce1
-        # batch
-        # ann
-        criterion = getattr(nn, loss_name)()
-        params = list(ce1.parameters())
-        optimizer = getattr(optim, optimizer_name)(params, lr=learning_rate)
+        model = self.model1
         # train
-        ce1.train()
-        indices = tqdm(np.random.randint(low=0, high=len(_X1), size=n_epochs * len(_X1)))
-        for i in indices:
-            X1 = V(_X1[i])
-            f0 = C(_y0[i])
-            f = torch.sum(ce1(X1), keepdim=False, dim=0)
-            _f = f.data.cpu().numpy()
-            _f0 = f0.data.cpu().numpy()
-
-            loss = criterion(f, f0)
-            optimizer.zero_grad()   # suggested trick
-            loss.backward()
-            optimizer.step()
-
-            if np.random.rand() < 1.0 / 200:
-                invy = np.array(self.y_pipeline.inverse_transform(_f.reshape(1,-1))[0])
-                invy0 = np.array(self.y_pipeline.inverse_transform(_f0.reshape(1,-1))[0])
-                _loss = np.asscalar(loss.data.cpu().numpy())
-                indices.set_description('y %s, y0 %s, invy %s, invy0 %s, loss %.2f' %(_f, _f0, invy, invy0, _loss))
-
-        print 'training complete! fuck with the data.'
-        IPython.embed()
+        self.model1.fit(_X1, _y0)
 
     def parse_predict(self, cell):
         return self.parse_X1(cell)
 
     def predict(self, _X1):
-        # pipeline
-        _X1 = self.X1_pipeline.transform(_X1)
-        ce1 = self.ce1
-        # ann
-        ce1.eval()
-        X1 = V(_X1)
-
-        f = torch.sum(ce1(X1), dim=0, keepdim=False)
-
-        # reverse pipeline
-        return list(self.y_pipeline.inverse_transform(f.data.cpu().numpy().reshape(1,-1)).reshape(-1))
+        model = self.model1
+        _y = model.predict(_X1)
+        return self.y_pipeline.inverse_transform(_y)
