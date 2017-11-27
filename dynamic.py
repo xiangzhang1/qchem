@@ -407,7 +407,7 @@ class MlPbSOptXC1D(object):
             features = np.zeros((13, 13, 13, 2))
             for j, cj in enumerate(ccoor):
                 ix, iy, iz = np.around((cj - ci) / 3.007) + 6
-                sgn = np.heaviside((i - natom0 + 0.5) * (j - natom0 + 0.5))
+                sgn = np.heaviside((i - natom0 + 0.5) * (j - natom0 + 0.5), 0)
                 if ix < 0 or iy < 0 or iz < 0:
                     raise shared.CustomError
                 features[ix, iy, iz, sgn] += 1
