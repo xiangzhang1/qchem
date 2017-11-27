@@ -11,7 +11,7 @@ curs = [
 'master.PbS QD.bare qd testing.ml_opt.Pb36S36 rect'
 ]
 
-m = dynamic.MlPbSOptXCE()
+m = dynamic.MlPbSOptXC1D()
 for cur in curs:
     n = engine.Map().lookup(cur)
     m.parse_train(n.vasp)

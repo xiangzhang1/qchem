@@ -381,7 +381,7 @@ class MlQueueTime(object):
 
 from sklearn import linear_model
 
-class MlPbSOptXC1D(object):
+class MlPbSOpt(object):
 
     def __init__(self):
         # data
