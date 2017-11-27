@@ -390,10 +390,10 @@ class MlPbSOptXC1D(object):
         # pipeline
         self.y_pipeline = StandardScaler()
         # ann
-        self.model1 = linear_model.LinearRegression()
-        self.model2 = linear_model.MultiTaskLasso()
-        self.model3 = linear_model.LassoLars()
-        self.model4 = linear_model.ElasticNet()
+        # self.model = linear_model.LinearRegression()
+        self.model = linear_model.MultiTaskLasso()
+        # self.model = linear_model.LassoLars()
+        # self.model = linear_model.ElasticNet()
 
     def parse_X(self, cell):
         '''
@@ -430,9 +430,9 @@ class MlPbSOptXC1D(object):
         _X = np.array(self._X)[train_idx]
         _y0 = np.array(self._y0)[train_idx]
         _y0 = self.y_pipeline.fit_transform(_y0)
-        model = self.model1
+        model = self.model
         # train
-        self.model1.fit(_X, _y0)
+        model.fit(_X, _y0)
 
         # evaluate
         # train
@@ -449,7 +449,7 @@ class MlPbSOptXC1D(object):
         return self.parse_X(cell)
 
     def predict(self, _X):
-        model = self.model1
+        model = self.model
         _y = model.predict(_X)
         return self.y_pipeline.inverse_transform(_y)
 
