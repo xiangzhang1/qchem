@@ -382,8 +382,8 @@ class MlQueueTime(object):
 
 from sklearn import linear_model
 
-def distdict(i):
-    dist = np.unique([np.linalg.norm([i,j,k])*sgn for i in range(i) for j in range(i) for k in range(i) for sgn in (-1,1)])
+def distdict(N):
+    dist = np.unique([np.linalg.norm([i,j,k])*sgn for i in range(N) for j in range(N) for k in range(N) for sgn in (-1,1)])
     ddict = OrderedDict(zip(dist, np.zeros(dist.shape[0])))
     return ddict
 
