@@ -394,7 +394,6 @@ class MlPbSOptXC1D(object):
         self._X = []
         self._y0 = []
         # pipeline
-        self.y_pipeline = StandardScaler()
         # ann
         self.model = linear_model.LinearRegression()
 
@@ -438,7 +437,6 @@ class MlPbSOptXC1D(object):
         train_idx = np.array([i for i in total_idx if i not in test_idx])
         _X = np.array(self._X)[train_idx]
         _y0 = np.array(self._y0)[train_idx]
-        _y0 = self.y_pipeline.fit_transform(_y0)
         model = self.model
         # train
         model.fit(_X, _y0)
@@ -458,9 +456,7 @@ class MlPbSOptXC1D(object):
         return self.parse_X(cell)
 
     def predict(self, _X):
-        model = self.model
-        _y = model.predict(_X)
-        return self.y_pipeline.inverse_transform(_y)
+        return self.model.predict(_X)
 
 
 
