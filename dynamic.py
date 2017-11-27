@@ -385,7 +385,7 @@ class MlPbSOptXC1D(object):
 
     def __init__(self):
         # data
-        self._X1 = []
+        self._X = []
         self._y0 = []
         # pipeline
         self.y_pipeline = StandardScaler()
@@ -395,14 +395,14 @@ class MlPbSOptXC1D(object):
         self.model3 = linear_model.LassoLars()
         self.model4 = linear_model.ElasticNet()
 
-    def parse_X1(self, cell):
+    def parse_X(self, cell):
         '''
         ccoor is coordinates. natom0 is # of Pb atoms (for determining sgn).
         returns a list.
         '''
         ccoor = cell.ccoor
         natom0 = cell.stoichiometry.values()[0]
-        X1 = []
+        X = []
         for i, ci in enumerate(ccoor):
             features = np.zeros((13, 13, 13, 2))
             for j, cj in enumerate(ccoor):
@@ -411,15 +411,15 @@ class MlPbSOptXC1D(object):
                 if ix < 0 or iy < 0 or iz < 0:
                     raise shared.CustomError
                 features[ix, iy, iz, sgn] += 1
-            X1.append(features.flatten())
-        return X1
+            X.append(features.flatten())
+        return X
 
     def parse_y0(self, vasp):
         return vasp.optimized_cell.ccoor - vasp.node().cell.ccoor
 
     def parse_train(self, vasp):
         '''More of a handle.'''
-        self._X1 += list(self.parse_X1(vasp.node().cell))
+        self._X += list(self.parse_X(vasp.node().cell))
         self._y0 += list(self.parse_y0(vasp))
 
     def train(self, test_set_size=10, total_set_size=None):
@@ -427,20 +427,30 @@ class MlPbSOptXC1D(object):
         total_idx = np.random.choice(range(len(self._y0)), size=total_set_size if total_set_size else len(self._y0), replace=False)
         test_idx = np.random.choice(total_idx, size=test_set_size, replace=False)
         train_idx = np.array([i for i in total_idx if i not in test_idx])
-        _X1 = np.array(self._X1)[train_idx]
+        _X = np.array(self._X)[train_idx]
         _y0 = np.array(self._y0)[train_idx]
         _y0 = self.y_pipeline.fit_transform(_y0)
         model = self.model1
         # train
-        self.model1.fit(_X1, _y0)
-        IPython.embed(banner1='Inspecting training results...')
+        self.model1.fit(_X, _y0)
+
+        # evaluate
+        # train
+        _X_train = np.array(self._X)[train_idx]
+        _y0_train = np.array(self._y0)[train_idx]
+        _y_train = self.predict(_X_train)
+        # test
+        _X_test = np.array(self._X)[test_idx]
+        _y0_test = np.array(self._y0)[test_idx]
+        _y_test = self.predict(_X_test)
+        IPython.embed()
 
     def parse_predict(self, cell):
-        return self.parse_X1(cell)
+        return self.parse_X(cell)
 
-    def predict(self, _X1):
+    def predict(self, _X):
         model = self.model1
-        _y = model.predict(_X1)
+        _y = model.predict(_X)
         return self.y_pipeline.inverse_transform(_y)
 
 
