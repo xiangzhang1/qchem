@@ -418,6 +418,7 @@ class MlPbSOptXC1D(object):
         return X
 
     def parse_y0(self, vasp):
+        ccoor = vasp.node().cell.ccoor
         dcoor = vasp.optimized_cell.ccoor - vasp.node().cell.ccoor
         X = []
         for i, ci in enumerate(ccoor):
