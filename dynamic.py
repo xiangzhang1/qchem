@@ -407,18 +407,23 @@ class MlPbSOptXC1D(object):
         natom0 = cell.stoichiometry.values()[0]
         X = []
         for i, ci in enumerate(ccoor):
-            features = distdict(8)
-            for j, cj in enumerate(ccoor):
-                if j==i: continue
-                x = np.int_(np.around( (cj-ci)/3.007 ))
-                r = np.linalg.norm(x)
-                sgn = np.sign((i - natom0 + 0.5) * (j - natom0 + 0.5))
-                features[sgn*r] += x/r
-            X.append(features.values())
+            for ix in range(3):
+                coefficients = distdict(8)
+                for j, cj in enumerate(ccoor):
+                    if j==i: continue
+                    x = np.around((cj-ci)/3.007)
+                    r = np.linalg.norm(x)
+                    sgn = np.sign((i - natom0 + 0.5) * (j - natom0 + 0.5))
+                    coefficients[sgn*r] += x[ix] / r
+                X.append(coefficients.values())
         return X
 
     def parse_y0(self, vasp):
-        return vasp.optimized_cell.ccoor - vasp.node().cell.ccoor
+        X = []
+        for idx_atom in range(len(vasp.node().cell.natoms())):
+            for ix in range(3):
+                X.append(vasp.optimized_cell.ccoor[idx_atom, ix] - vasp.node().cell.ccoor[idx_atom, ix])
+        return X
 
     def parse_train(self, vasp):
         '''More of a handle.'''
