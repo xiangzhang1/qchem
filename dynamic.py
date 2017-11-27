@@ -418,11 +418,18 @@ class MlPbSOptXC1D(object):
         return X
 
     def parse_y0(self, vasp):
+        dcoor = vasp.optimized_cell.ccoor - vasp.node().cell.ccoor
         X = []
-        for idx_atom in range(vasp.node().cell.natoms()):
+        for i, ci in enumerate(ccoor):
+            #
+            dc = dcoor[i]
+            #
+            neighbor = [j for j,cj in enumerate(ccoor) if j!=i and np.linalg.norm(cj-ci)<4]
+            neighbor_avg_dc = np.mean(dcoor[neighbor], axis=0)
+            dc -= neighbor_avg_dc
+            #
             for ix in range(3):
-                label = [vasp.optimized_cell.ccoor[idx_atom, ix] - vasp.node().cell.ccoor[idx_atom, ix]]
-                X.append(label)
+                X.append(dc[ix])
         return X
 
     def parse_train(self, vasp):
