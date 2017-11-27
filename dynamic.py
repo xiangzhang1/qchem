@@ -408,21 +408,22 @@ class MlPbSOptXC1D(object):
         X = []
         for i, ci in enumerate(ccoor):
             for ix in range(3):
-                coefficients = distdict(8)
+                feature = distdict(8)
                 for j, cj in enumerate(ccoor):
                     if j==i: continue
                     x = np.around((cj-ci)/3.007)
                     r = np.linalg.norm(x)
                     sgn = np.sign((i - natom0 + 0.5) * (j - natom0 + 0.5))
-                    coefficients[round(sgn*r, 4)] += x[ix] / r
-                X.append(coefficients.values())
+                    feature[round(sgn*r, 4)] += x[ix] / r
+                X.append(feature.values())
         return X
 
     def parse_y0(self, vasp):
         X = []
         for idx_atom in range(vasp.node().cell.natoms()):
             for ix in range(3):
-                X.append(vasp.optimized_cell.ccoor[idx_atom, ix] - vasp.node().cell.ccoor[idx_atom, ix])
+                label = [vasp.optimized_cell.ccoor[idx_atom, ix] - vasp.node().cell.ccoor[idx_atom, ix]]
+                X.append(label)
         return X
 
     def parse_train(self, vasp):
