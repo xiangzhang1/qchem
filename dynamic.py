@@ -420,7 +420,7 @@ class MlPbSOptXC1D(object):
 
     def parse_y0(self, vasp):
         X = []
-        for idx_atom in range(len(vasp.node().cell.natoms())):
+        for idx_atom in range(vasp.node().cell.natoms()):
             for ix in range(3):
                 X.append(vasp.optimized_cell.ccoor[idx_atom, ix] - vasp.node().cell.ccoor[idx_atom, ix])
         return X
