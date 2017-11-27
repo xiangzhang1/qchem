@@ -409,6 +409,7 @@ class MlPbSOptXC1D(object):
         for i, ci in enumerate(ccoor):
             features = distdict(8)
             for j, cj in enumerate(ccoor):
+                if j==i: continue
                 x = np.int_(np.around( (cj-ci)/3.007 ))
                 r = np.linalg.norm(x)
                 sgn = np.sign((i - natom0 + 0.5) * (j - natom0 + 0.5))
