@@ -390,10 +390,10 @@ class MlPbSOptXC1D(object):
         # pipeline
         self.y_pipeline = StandardScaler()
         # ann
-        # self.model = linear_model.LinearRegression()
+        self.model = linear_model.LinearRegression()
         # self.model = linear_model.MultiTaskLasso()
         # self.model = linear_model.LassoLars()
-        self.model = linear_model.ElasticNet()
+        # self.model = linear_model.ElasticNet()
 
     def parse_X(self, cell):
         '''
