@@ -480,9 +480,9 @@ class MlPbSOptXRNN(object):
         self._X = []
         self._y0 = []
         # pipeline
-        self.X_pipeline = StandardScaler()
+        self.X_pipeline = StandardScaler(with_mean=False)
         self.y_pipeline = Pipeline([
-            ('scaler', StandardScaler()),
+            ('scaler', StandardScaler(with_mean=False)),
             ('15', FunctionTransformer(func=lambda x: x * 15, inverse_func=lambda x: x / 15))
         ])
         # ann
@@ -526,7 +526,7 @@ class MlPbSOptXRNN(object):
 
     def train(self):
         # pipeline
-        _X = self.X_pipeline.fit_transform(pad_sequences(self._X, dtype='float32', maxlen=self.timesteps))
+        _X = self.X_pipeline.fit_transform(pad_sequences(self._X, dtype='float32', maxlen=self.timesteps).reshape(-1, self.data_dim)).reshape(-1, self.timesteps, self.data_dim)
         _y0 = self.y_pipeline.fit_transform(self._y0)
         model = self.model
         # fit
