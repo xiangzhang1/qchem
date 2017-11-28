@@ -501,28 +501,29 @@ class MlPbSOptXRNN(object):
                       metrics=['accuracy'])
 
 
-    def parse_X(self, cell):
-        '''
-        ccoor is coordinates. natom0 is # of Pb atoms (for determining sgn).
-        returns a list.
-        '''
-        ccoor = cell.ccoor
+    def parse_y0(self, vasp):
+
+        ccoor = vasp.optimized_cell.ccoor
         natom0 = cell.stoichiometry.values()[0]
-        X1 = []
+
+        r = np.linalg.norm(ccoor, axis=1, keepdims=True)
+        indices = np.argsort(np.concatenate((ccoor, r), axis=-1), axis=-1)
+
+        X = []
         for i, c in enumerate(ccoor):
             dcoor = ccoor - c
             sgn = np.sign((i - natom0 + 0.5) * (np.arange(len(ccoor)) - natom0 + 0.5))
             dcoorp = np.concatenate((dcoor, np.c_[sgn]), axis=1)
-            X1.append(np.delete(dcoorp, i, axis=0))
-        return X1
+            X.append(np.delete(dcoorp, i, axis=0))
+        X = X[indices]
 
-    def parse_y0(self, vasp):
-        return (vasp.optimized_cell.ccoor - vasp.node().cell.ccoor)[:,0:1]
+        y0 = (ccoor - vasp.node().cell.ccoor)[indices,0:1]
+
+        self._X += list(self.parse_X(vasp.node().cell))
+        self._y0 += list(self.parse_y0(vasp))
 
     def parse_train(self, vasp):
         '''More of a handle.'''
-        self._X += list(self.parse_X(vasp.node().cell))
-        self._y0 += list(self.parse_y0(vasp))
 
     def train(self, batch_size=64, epochs=50):
         # pipeline
