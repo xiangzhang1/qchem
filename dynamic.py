@@ -497,7 +497,7 @@ class MlPbSOptXRNN(object):
             Dense(3)
         ])
         self.model.compile(loss='mean_absolute_percentage_error',
-                      optimizer=optimizer,
+                      optimizer='rmsprop',
                       metrics=['accuracy'])
 
 
