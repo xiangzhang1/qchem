@@ -504,7 +504,7 @@ class MlPbSOptXRNN(object):
     def parse_train(self, vasp):
 
         ccoor = vasp.optimized_cell.ccoor
-        natom0 = cell.stoichiometry.values()[0]
+        natom0 = vasp.optimized_cell.stoichiometry.values()[0]
 
         r = np.linalg.norm(ccoor, axis=1, keepdims=True)
         indices = np.argsort(np.concatenate((ccoor, r), axis=-1), axis=-1)
