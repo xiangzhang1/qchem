@@ -69,8 +69,6 @@ def global_save():
     save(MLS, 'MLS')
     print 'global_save called'
 
-global_load()
-
 # NODES
 # ==============================================================================
 
