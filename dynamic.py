@@ -34,9 +34,6 @@ import torch.nn.functional as F
 from torch.utils.data import TensorDataset, DataLoader
 import torch.optim as optim
 
-# keras wl theano
-import keras
-
 import shared
 
 def udf_nn(*args):
