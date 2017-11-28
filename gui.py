@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#python
 '''GUI and CLI, combined in one'''
 # flask
 from flask import Flask, request, jsonify, session, Response

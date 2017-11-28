@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#python
 '''
 An environment. Do not paste actions here.
 '''

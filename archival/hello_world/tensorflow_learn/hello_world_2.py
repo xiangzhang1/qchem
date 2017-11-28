@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#python
 
 '''
 Getting started with Regression.
