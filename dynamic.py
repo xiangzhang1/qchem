@@ -501,7 +501,7 @@ class MlPbSOptXRNN(object):
                       metrics=['accuracy'])
 
 
-    def parse_y0(self, vasp):
+    def parse_train(self, vasp):
 
         ccoor = vasp.optimized_cell.ccoor
         natom0 = cell.stoichiometry.values()[0]
@@ -521,9 +521,6 @@ class MlPbSOptXRNN(object):
 
         self._X += list(self.parse_X(vasp.node().cell))
         self._y0 += list(self.parse_y0(vasp))
-
-    def parse_train(self, vasp):
-        '''More of a handle.'''
 
     def train(self, batch_size=64, epochs=50):
         # pipeline
