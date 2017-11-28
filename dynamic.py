@@ -495,8 +495,8 @@ class MlPbSOptXRNN(object):
             Dense(8, activation='relu'),
             Dense(1)
         ])
-        self.model.compile(loss='mse',
-                      optimizer='adam',
+        self.model.compile(loss='logcosh',
+                      optimizer='sgd',
                       metrics=['accuracy'])
 
 
