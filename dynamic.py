@@ -527,6 +527,6 @@ class MlPbSOptXRNN(object):
         _y0 = self.y_pipeline.fit_transform(self._y0)
         model = self.model
         # fit
-        model.fit(_X, _y0, batch_size=batch_size, epochs=epochs)
+        model.fit(_X, _y0, batch_size=batch_size, epochs=epochs, shuffle=True)
         _y = model.predict(_X)
         IPython.embed()
