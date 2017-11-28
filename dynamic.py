@@ -497,7 +497,7 @@ class MlPbSOptXRNN(object):
             Dense(3)
         ])
         self.model.compile(loss='mean_absolute_percentage_error',
-                      optimizer='adam',
+                      optimizer='sgd',
                       metrics=['accuracy'])
 
 
@@ -524,12 +524,12 @@ class MlPbSOptXRNN(object):
         self._X += list(self.parse_X(vasp.node().cell))
         self._y0 += list(self.parse_y0(vasp))
 
-    def train(self):
+    def train(self, batch_size=64, epochs=100):
         # pipeline
         _X = self.X_pipeline.fit_transform(pad_sequences(self._X, dtype='float32', maxlen=self.timesteps).reshape(-1, self.data_dim)).reshape(-1, self.timesteps, self.data_dim)
         _y0 = self.y_pipeline.fit_transform(self._y0)
         model = self.model
         # fit
-        model.fit(_X, _y0, batch_size=64, epochs=500)
+        model.fit(_X, _y0, batch_size=batch_size, epochs=epochs)
         _y = model.predict(_X)
         IPython.embed()
