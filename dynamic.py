@@ -494,10 +494,10 @@ class MlPbSOptXRNN(object):
             LSTM(8),
             Dense(8, activation='relu'),
             Dense(24, activation='relu'),
-            Dense(3)
+            Dense(1)
         ])
-        self.model.compile(loss='mean_absolute_percentage_error',
-                      optimizer='rmsprop',
+        self.model.compile(loss='mse',
+                      optimizer='adam',
                       metrics=['accuracy'])
 
 
@@ -517,14 +517,14 @@ class MlPbSOptXRNN(object):
         return X1
 
     def parse_y0(self, vasp):
-        return vasp.optimized_cell.ccoor - vasp.node().cell.ccoor
+        return (vasp.optimized_cell.ccoor - vasp.node().cell.ccoor)[:,0:1]
 
     def parse_train(self, vasp):
         '''More of a handle.'''
         self._X += list(self.parse_X(vasp.node().cell))
         self._y0 += list(self.parse_y0(vasp))
 
-    def train(self, batch_size=64, epochs=100):
+    def train(self, batch_size=64, epochs=50):
         # pipeline
         _X = self.X_pipeline.fit_transform(pad_sequences(self._X, dtype='float32', maxlen=self.timesteps).reshape(-1, self.data_dim)).reshape(-1, self.timesteps, self.data_dim)
         _y0 = self.y_pipeline.fit_transform(self._y0)
