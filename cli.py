@@ -1,9 +1,4 @@
 #!/usr/bin/env python
-'''
-An environment. Do not paste actions here.
-'''
-
-# common libraries
 import sys
 import os
 import shutil
