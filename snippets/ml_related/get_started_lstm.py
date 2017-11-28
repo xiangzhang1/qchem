@@ -50,7 +50,7 @@ y_val = np.array(y_val)
 # Genreate dummy training data
 
 model.fit(x_train, y_train,
-          batch_size=64, epochs=80,
+          batch_size=64, epochs=40,
           validation_data=(x_val, y_val))
 
 y_predict = model.predict(x_val)

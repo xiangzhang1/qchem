@@ -880,12 +880,12 @@ class Vasp(object):
                 print(e)
             print self.__class__.__name__ + '.compute: MLQUEUETIME collection complete'
             # MLPBSOPT
-            try:
-                print self.__class__.__name__ + '.compute: collecting data for MLPBSOPT'
-                dynamic.MLS['MLPBSOPT'].parse_train(self)
-            except shared.CustomError as e:
-                print(e)
-            print self.__class__.__name__ + '.compute: MLPBSOPT collection complete'
+            # try:
+            #     print self.__class__.__name__ + '.compute: collecting data for MLPBSOPT'
+            #     dynamic.MLS['MLPBSOPT'].parse_train(self)
+            # except shared.CustomError as e:
+            #     print(e)
+            # print self.__class__.__name__ + '.compute: MLPBSOPT collection complete'
 
 
         else:
