@@ -518,8 +518,8 @@ class MlPbSOptXRNN(object):
 
         y0 = (ccoor - vasp.node().cell.ccoor)[indices,0:1]
 
-        self._X += list(self.parse_X(vasp.node().cell))
-        self._y0 += list(self.parse_y0(vasp))
+        self._X += list(X)
+        self._y0 += list(y0)
 
     def train(self, batch_size=64, epochs=50):
         # pipeline
