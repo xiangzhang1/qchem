@@ -490,10 +490,9 @@ class MlPbSOptXRNN(object):
         self.data_dim = 4
         self.model = Sequential([
             Masking(mask_value=0.0, input_shape=(self.timesteps, self.data_dim)),
-            LSTM(8, return_sequences=True),
+            LSTM(24, return_sequences=True),
             LSTM(8),
             Dense(8, activation='relu'),
-            Dense(24, activation='relu'),
             Dense(1)
         ])
         self.model.compile(loss='mse',
@@ -507,7 +506,7 @@ class MlPbSOptXRNN(object):
         natom0 = vasp.optimized_cell.stoichiometry.values()[0]
 
         r = np.linalg.norm(ccoor, axis=1, keepdims=True)
-        indices = np.argsort(np.concatenate((ccoor, r), axis=-1), axis=-1)
+        indices = np.lexsort(np.concatenate((ccoor, r), axis=-1).T)
 
         X = []
         for i, c in enumerate(ccoor):
