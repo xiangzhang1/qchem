@@ -1,4 +1,4 @@
-#python
+#!/usr/bin/env python
 '''
 This is the main file. Documentation is moved to the docs/ folder.
 '''

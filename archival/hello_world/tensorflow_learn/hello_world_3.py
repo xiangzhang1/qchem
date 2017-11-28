@@ -1,4 +1,4 @@
-#python
+#!/usr/bin/env python
 '''
 Getting started with pipelines and batches
 '''
