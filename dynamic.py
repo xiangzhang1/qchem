@@ -521,12 +521,12 @@ class MlPbSOptXRNN(object):
 
     def parse_train(self, vasp):
         '''More of a handle.'''
-        self._X1 += list(self.parse_X1(vasp.node().cell))
+        self._X += list(self.parse_X(vasp.node().cell))
         self._y0 += list(self.parse_y0(vasp))
 
     def train(self):
         # pipeline
-        _X = self.X_pipeline.fit_transform(pad_sequences(self._X1, dtype='float32', maxlen=self.timesteps))
+        _X = self.X_pipeline.fit_transform(pad_sequences(self._X, dtype='float32', maxlen=self.timesteps))
         _y0 = self.y_pipeline.fit_transform(self._y0)
         model = self.model
         # fit
