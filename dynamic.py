@@ -501,7 +501,7 @@ class MlPbSOptXRNN(object):
                       metrics=['accuracy'])
 
 
-    def parse_X1(self, cell):
+    def parse_X(self, cell):
         '''
         ccoor is coordinates. natom0 is # of Pb atoms (for determining sgn).
         returns a list.
