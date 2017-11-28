@@ -15,7 +15,7 @@ m = dynamic.MlPbSOptXC1D()
 for cur in curs:
     n = engine.Map().lookup(cur)
     m.parse_train(n.vasp)
-m.train(total_set_size=None, test_set_size=50)
+m.train(total_set_size=None, test_set_size=200)
 
 # learning_rate
 #   1-0.1: to average
