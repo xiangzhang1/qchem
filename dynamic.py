@@ -514,7 +514,7 @@ class MlPbSOptXRNN(object):
             sgn = np.sign((i - natom0 + 0.5) * (np.arange(len(ccoor)) - natom0 + 0.5))
             dcoorp = np.concatenate((dcoor, np.c_[sgn]), axis=1)
             X.append(np.delete(dcoorp, i, axis=0))
-        X = X[indices]
+        X = np.array(X)[indices]
 
         y0 = (ccoor - vasp.node().cell.ccoor)[indices,0:1]
 
