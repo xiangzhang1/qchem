@@ -488,14 +488,14 @@ class MlPbSOptXRNN(object):
         # ann
         self.timesteps = 600
         self.data_dim = 4
-        self.model = Sequential(
+        self.model = Sequential([
             Masking(mask_value=0.0, input_shape=(self.timesteps, self.data_dim)),
             LSTM(8, return_sequences=True),
             LSTM(8),
             Dense(8, activation='relu'),
             Dense(24, activation='relu'),
             Dense(3)
-        )
+        ])
         self.model.compile(loss='mean_absolute_percentage_error',
                       optimizer='adam',
                       metrics=['accuracy'])

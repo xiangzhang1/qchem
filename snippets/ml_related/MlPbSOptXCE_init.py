@@ -11,11 +11,12 @@ curs = [
 'master.PbS QD.bare qd testing.ml_opt.Pb36S36 rect'
 ]
 
-m = dynamic.MlPbSOptXC1D()
+m = dynamic.MlPbSOptXRNN()
 for cur in curs:
     n = engine.Map().lookup(cur)
     m.parse_train(n.vasp)
-m.train(total_set_size=None, test_set_size=200)
+    
+m.train()
 
 # learning_rate
 #   1-0.1: to average
