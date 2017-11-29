@@ -521,7 +521,7 @@ class MlPbSOptXRNN(object):
         self._X += list(X)
         self._y0 += list(y0)
 
-    def train(self, batch_size=64, epochs=50):
+    def train(self, batch_size=64, epochs=500):
         # pipeline
         _X = self.X_pipeline.fit_transform(pad_sequences(self._X, dtype='float32', maxlen=self.timesteps).reshape(-1, self.data_dim)).reshape(-1, self.timesteps, self.data_dim)
         _y0 = self.y_pipeline.fit_transform(self._y0)
