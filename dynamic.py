@@ -548,7 +548,7 @@ class MlPbSOptXRNN(object):
         model = self.model
         data_dim = self.data_dim
         timesteps = self.timesteps
-        _X = self.X_pipeline.fit_transform(pad_sequences(self._X, dtype='float32').reshape(-1, data_dim)).reshape(-1, timesteps, data_dim) # None actually works!
+        _X = self.X_pipeline.fit_transform(pad_sequences(self._X, dtype='float32', maxlen=timesteps).reshape(-1, data_dim)).reshape(-1, timesteps, data_dim) # None actually works!
         _y0 = self.y_pipeline.fit_transform(self._y0)
         # fit
         X_train, X_test, y0_train, y0_test = train_test_split(X, y0, test_size=0.1)
