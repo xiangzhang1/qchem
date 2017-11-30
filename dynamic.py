@@ -548,8 +548,8 @@ class MlPbSOptXRNN(object):
         model = self.model
         data_dim = self.data_dim
         timesteps = self.timesteps
-        _X = self.X_pipeline.fit_transform(pad_sequences(self._X, dtype='float32', maxlen=timesteps).reshape(-1, data_dim)).reshape(-1, timesteps, data_dim) # None actually works!
-        _y0 = self.y_pipeline.fit_transform(self._y0)
+        X = self.X_pipeline.fit_transform(pad_sequences(self._X, dtype='float32', maxlen=timesteps).reshape(-1, data_dim)).reshape(-1, timesteps, data_dim) # None actually works!
+        y0 = self.y_pipeline.fit_transform(self._y0)
         # fit
         X_train, X_test, y0_train, y0_test = train_test_split(X, y0, test_size=0.1)
         model.fit(X_train, y0_train, batch_size=batch_size, epochs=epochs, shuffle=True, validation_data=(X_test, y0_test))
