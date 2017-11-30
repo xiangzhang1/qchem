@@ -534,7 +534,7 @@ class MlPbSOptXRNN(object):
             self._X += list(X)
             self._y0 += list(y0)
 
-    def train(self, batch_size=12, epochs=500):
+    def train(self, batch_size=12, epochs=300):
         # pipeline
         model = self.model
         data_dim = self.data_dim
