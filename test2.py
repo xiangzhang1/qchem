@@ -8,20 +8,24 @@ dynamic.global_load()
 #   elu and relu (all-LSTM) blows up.
 
 curs = [
-'master.PbS QD.bare qd testing.crunchit.3 opt',
-'master.PbS QD.bare qd testing.crunchit.4 opt',
-'master.PbS QD.bare qd testing.crunchit.5 opt',
-'master.PbS QD.bare qd testing.crunchit.6 opt',
-'master.PbS QD.bare qd testing.crunchit.7 opt',
-'master.PbS QD.bare qd testing.crunchit.8 opt0',
-'master.PbS QD.bare qd testing.ml_opt.Pb48S48 rect',
-'master.PbS QD.bare qd testing.ml_opt.Pb72S72 rect',
-'master.PbS QD.bare qd testing.ml_opt.Pb36S36 rect'
+['master.PbS QD.bare qd testing.crunchit.3 opt','master.PbS QD.bare qd testing.crunchit.3 opt'],
+['master.PbS QD.bare qd testing.crunchit.4 opt','master.PbS QD.bare qd testing.crunchit.4 opt'],
+['master.PbS QD.bare qd testing.crunchit.5 opt','master.PbS QD.bare qd testing.crunchit.5 opt'],
+['master.PbS QD.bare qd testing.crunchit.6 opt','master.PbS QD.bare qd testing.crunchit.6 opt'],
+['master.PbS QD.bare qd testing.crunchit.7 opt','master.PbS QD.bare qd testing.crunchit.7 opt'],
+['master.PbS QD.bare qd testing.crunchit.8 opt half-complete','master.PbS QD.bare qd testing.crunchit.8 opt0'],
+['master.PbS QD.bare qd testing.ml_opt.Pb48S48 rect','master.PbS QD.bare qd testing.ml_opt.Pb48S48 rect'],
+['master.PbS QD.bare qd testing.ml_opt.Pb72S72 rect','master.PbS QD.bare qd testing.ml_opt.Pb72S72 rect'],
+['master.PbS QD.bare qd testing.ml_opt.Pb36S36 rect','master.PbS QD.bare qd testing.ml_opt.Pb36S36 rect'],
+['master.PbS QD.bare qd testing.ml_opt.Pb40S40 customshape','master.PbS QD.bare qd testing.ml_opt.Pb40S40 customshape'],
+['master.PbS QD.bare qd testing.ml_opt.Pb80S80 1 13','master.PbS QD.bare qd testing.ml_opt.Pb80S80 1 13'],
+['master.PbS QD.bare qd testing.Q0 Test convergence.Pb55S38.start - regular grid | end - -0_02 | omg i forgot isym0','master.PbS QD.bare qd testing.Q0 Test convergence.Pb55S38.start - regular grid | end - -0_02 | omg i forgot isym0']
 ]
 
 m = dynamic.MlPbSOptXRNN()
-for cur in curs:
-    n = engine.Map().lookup(cur)
-    m.parse_train(n.vasp)
+for bcur, ecur in curs:
+    bn = engine.Map().lookup(bcur)
+    en = engine.Map().lookup(ecur)
+    m.parse_train(bn, en)
 
 m.train()

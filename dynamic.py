@@ -501,17 +501,17 @@ class MlPbSOptXRNN(object):
                       metrics=['accuracy'])
 
 
-    def parse_train(self, vasp):
+    def parse_train(self, bnode, enode):
 
-        bcoor0 = vasp.node().cell.ccoor
-        natom0 = vasp.node().cell.stoichiometry.values()[0]
-        ecoor0 = vasp.optimized_cell.ccoor
+        bcoor0 = bnode.cell.ccoor
+        natom0 = bnode.cell.stoichiometry.values()[0]
+        ecoor0 = enode.vasp.optimized_cell.ccoor
 
         # symmetry transformation wrapper
         symm_matrix = np.array([
             [[0,1,0],[1,0,0],[0,0,1]],
             [[0,0,1],[0,1,0],[1,0,0]],
-            [[1,0,0],[0,0,1],[0,1,0]]
+            [[1,0,0],[0,1,0],[0,0,1]]
         ])
 
         for symm in symm_matrix:
