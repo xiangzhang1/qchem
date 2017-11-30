@@ -24,6 +24,7 @@ from shared import LabelBinarizerPipelineFriendly
 from sklearn.feature_extraction import FeatureHasher
 from sklearn.pipeline import Pipeline, FeatureUnion
 from sklearn import linear_model
+from sklearn.model_selection import train_test_split
 
 # pytorch
 import torch
@@ -475,7 +476,10 @@ from keras.preprocessing.sequence import pad_sequences
 
 class MlPbSOptXRNN(object):
 
-    def __init__(self):
+    def __init__(self, timesteps=600, data_dim=4, loss='mse', optimizer='rmsprop'):
+        # parameters
+        self.timesteps = timesteps
+        self.data_dim = data_dim
         # data
         self._X = []
         self._y0 = []
@@ -486,47 +490,68 @@ class MlPbSOptXRNN(object):
             ('15', FunctionTransformer(func=lambda x: x * 15, inverse_func=lambda x: x / 15))
         ])
         # ann: nsamples * timesteps * data_dim
-        self.timesteps = 600
-        self.data_dim = 4
-        self.model = Sequential([
-            Masking(mask_value=0.0, input_shape=(self.timesteps, self.data_dim)),
-            LSTM(24, return_sequences=True),
-            LSTM(8),
-            Dense(8, activation='relu'),
+        model = Sequential([
+            LSTM(32, input_shape=(None, 4)),
+            Dense(24),
+            Dense(8),
             Dense(1)
         ])
-        self.model.compile(loss='logcosh',
-                      optimizer='sgd',
+        model.compile(loss=loss,
+                      optimizer=optimizer,
                       metrics=['accuracy'])
 
 
     def parse_train(self, vasp):
 
-        ccoor = vasp.optimized_cell.ccoor
-        natom0 = vasp.optimized_cell.stoichiometry.values()[0]
+        bcoor0 = vasp.node().cell.ccoor
+        natom0 = vasp.node().cell.stoichiometry.values()[0]
+        ecoor0 = vasp.optimized_cell.ccoor
 
-        r = np.linalg.norm(ccoor, axis=1, keepdims=True)
-        indices = np.lexsort(np.concatenate((ccoor, r), axis=-1).T)
+        # symmetry transformation wrapper
+        symm_matrix = np.array([
+            np.diag([1,1,1]),
+            np.diag([1,-1,-1]),
+            np.diag([-1,1,-1]),
+            np.diag([-1,-1,1]),
+            [[0,0,1],[1,0,0],[0,1,0]],
+            [[0,0,-1],[-1,0,0],[0,1,0]],
+            [[0,0,1],[-1,0,0],[0,-1,0]],
+            [[0,0,-1],[1,0,0],[0,-1,0]],
+            [[0,1,0],[0,0,1],[1,0,0]],
+            [[0,-1,0],[0,0,1],[-1,0,0]],
+            [[0,-1,0],[0,0,-1],[1,0,0]],
+            [[0,1,0],[0,0,-1],[-1,0,0]]
+        ])
 
-        X = []
-        for i, c in enumerate(ccoor):
-            dcoor = ccoor - c
-            sgn = np.sign((i - natom0 + 0.5) * (np.arange(len(ccoor)) - natom0 + 0.5))
-            dcoorp = np.concatenate((dcoor, np.c_[sgn]), axis=1)
-            X.append(np.delete(dcoorp, i, axis=0))
-        X = np.array(X)[indices]
+        for symm in symm_matrix:
+            bcoor = np.dot(bcoor0, symm)
+            ecoor = np.dot(ecoor0, symm)
 
-        y0 = (ccoor - vasp.node().cell.ccoor)[indices,0:1]
+            r = np.linalg.norm(bcoor, axis=1, keepdims=True)
+            indices = np.lexsort(np.concatenate((bcoor, r), axis=-1).T)
 
-        self._X += list(X)
-        self._y0 += list(y0)
+            X = []
+            for i, c in enumerate(bcoor):
+                dcoor = bcoor - c
+                sgn = np.sign((i - natom0 + 0.5) * (np.arange(len(bcoor)) - natom0 + 0.5))
+                dcoorp = np.concatenate((dcoor, np.c_[sgn]), axis=1)
+                X.append(np.delete(dcoorp, i, axis=0))
+            X = np.array(X)[indices]
 
-    def train(self, batch_size=64, epochs=500):
+            y0 = (ecoor - bcoor)[indices, 0:1]
+
+            self._X += list(X)
+            self._y0 += list(y0)
+
+    def train(self, batch_size=12, epochs=500):
         # pipeline
-        _X = self.X_pipeline.fit_transform(pad_sequences(self._X, dtype='float32', maxlen=self.timesteps).reshape(-1, self.data_dim)).reshape(-1, self.timesteps, self.data_dim)
+        _X = self.X_pipeline.fit_transform(pad_sequences(self._X, dtype='float32').reshape(-1, data_dim)).reshape(-1, timesteps, data_dim) # None actually works!
         _y0 = self.y_pipeline.fit_transform(self._y0)
         model = self.model
         # fit
-        model.fit(_X, _y0, batch_size=batch_size, epochs=epochs, shuffle=True)
-        _y = model.predict(_X)
+        X_train, X_test, y0_train, y0_test = train_test_split(X, y0, test_size=0.1)
+        model.fit(X_train, y0_train, batch_size=batch_size, epochs=epochs, shuffle=True, validation_data=(X_test, y0_test))
+        y = model.predict(X)
         IPython.embed()
+        # fig, ax = plt.subplots(1)
+        # ax.scatter(y0.flatten(), y.flatten())

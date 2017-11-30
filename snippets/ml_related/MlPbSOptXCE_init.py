@@ -2,21 +2,21 @@ dynamic.global_load()
 
 curs = [
 'master.PbS QD.bare qd testing.crunchit.3 opt',
-'master.PbS QD.bare qd testing.crunchit.4 opt',
-'master.PbS QD.bare qd testing.crunchit.5 opt',
-'master.PbS QD.bare qd testing.crunchit.6 opt',
-'master.PbS QD.bare qd testing.crunchit.7 opt',
-'master.PbS QD.bare qd testing.ml_opt.Pb48S48 rect',
-'master.PbS QD.bare qd testing.ml_opt.Pb72S72 rect',
-'master.PbS QD.bare qd testing.ml_opt.Pb36S36 rect'
+# 'master.PbS QD.bare qd testing.crunchit.4 opt',
+# 'master.PbS QD.bare qd testing.crunchit.5 opt',
+# 'master.PbS QD.bare qd testing.crunchit.6 opt',
+# 'master.PbS QD.bare qd testing.crunchit.7 opt',
+# 'master.PbS QD.bare qd testing.ml_opt.Pb48S48 rect',
+# 'master.PbS QD.bare qd testing.ml_opt.Pb72S72 rect',
+# 'master.PbS QD.bare qd testing.ml_opt.Pb36S36 rect'
 ]
 
 m = dynamic.MlPbSOptXRNN()
 for cur in curs:
     n = engine.Map().lookup(cur)
     m.parse_train(n.vasp)
-    
-m.train()
+
+# m.train()
 
 # learning_rate
 #   1-0.1: to average
