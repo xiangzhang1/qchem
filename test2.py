@@ -1,15 +1,3 @@
-import random, string
-from cStringIO import StringIO
-
-from keras.models import Sequential
-from keras.layers import LSTM, Dense, Masking
-from keras.preprocessing.sequence import pad_sequences
-from keras import optimizers
-
-def randomword(length):
-   letters = string.ascii_lowercase
-   return ''.join(random.choice(letters) for i in range(length))
-
 dynamic.global_load()
 
 # any more-than-125 same-length from-scratch training produces 0.
@@ -25,7 +13,7 @@ curs = [
 'master.PbS QD.bare qd testing.crunchit.5 opt',
 'master.PbS QD.bare qd testing.crunchit.6 opt',
 'master.PbS QD.bare qd testing.crunchit.7 opt',
-'master.PbS QD.bare qd testing.crunchit.8 opt',
+'master.PbS QD.bare qd testing.crunchit.8 opt0',
 'master.PbS QD.bare qd testing.ml_opt.Pb48S48 rect',
 'master.PbS QD.bare qd testing.ml_opt.Pb72S72 rect',
 'master.PbS QD.bare qd testing.ml_opt.Pb36S36 rect'
