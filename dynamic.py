@@ -490,13 +490,13 @@ class MlPbSOptXRNN(object):
             ('15', FunctionTransformer(func=lambda x: x * 15, inverse_func=lambda x: x / 15))
         ])
         # ann: nsamples * timesteps * data_dim
-        model = Sequential([
+        self.model = Sequential([
             LSTM(32, input_shape=(None, 4)),
             Dense(24),
             Dense(8),
             Dense(1)
         ])
-        model.compile(loss=loss,
+        self.model.compile(loss=loss,
                       optimizer=optimizer,
                       metrics=['accuracy'])
 
