@@ -543,7 +543,7 @@ class MlPbSOptXRNN(object):
         y0 = self.y_pipeline.fit_transform(self._y0)
         # fit
         X_train, X_test, y0_train, y0_test = train_test_split(X, y0, test_size=0.1)
-        with open('%s/data.pickle', 'wb') as f:
+        with open(shared.SCRATCH_DIR+'/data.pickle', 'wb') as f:
             pickle.dump((X_train, X_test, y0_train, y0_test), f)
         model.fit(X_train, y0_train, batch_size=batch_size, epochs=epochs, shuffle=True, validation_data=(X_test, y0_test))
         y = model.predict(X)
