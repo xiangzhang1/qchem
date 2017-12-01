@@ -41,6 +41,7 @@ from sklearn.preprocessing import LabelBinarizer
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__)) + '/'
 HOME_DIR = os.path.expanduser(os.path.expanduser("~")) + '/'
+SCRATCH_DIR = SCRIPT_DIR + '/.scr'
 
 DEBUG = 0
 print 'shared.py: DEBUG = %s' %(DEBUG)

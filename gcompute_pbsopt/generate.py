@@ -28,4 +28,4 @@ for bcur, ecur in curs:
     en = engine.Map().lookup(ecur)
     m.parse_train(bn, en)
 
-m.train()
+m.train(batch_size=64, epochs=250)
