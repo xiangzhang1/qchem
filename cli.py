@@ -46,4 +46,5 @@ from shared import ELEMENTS
 
 print shared.bcolors.OKBLUE + 'Welcome. Libraries loaded.' + shared.bcolors.ENDC
 
-IPython.embed(banner1='')
+if __name__ == "__main__":
+    IPython.embed(banner1='')

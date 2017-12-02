@@ -378,7 +378,6 @@ class MlQueueTime(object):
         return _y_inverse
 
 
-
 # MlPBSOpt_X_CE1_DiscreteLC
 # =========================
 
@@ -425,39 +424,24 @@ class MlPbSOptXC1D(object):
             #
             dc = dcoor[i]
             #
-            neighbor = [j for j,cj in enumerate(ccoor) if j!=i and np.linalg.norm(cj-ci)<4]
-            neighbor_avg_dc = np.mean(dcoor[neighbor], axis=0)
-            dc -= neighbor_avg_dc
-            #
             for ix in range(3):
                 X.append(dc[ix])
         return X
 
-    def parse_train(self, vasp):
+    def parse_train(self, bnode, enode):
         '''More of a handle.'''
-        self._X += list(self.parse_X(vasp.node().cell))
-        self._y0 += list(self.parse_y0(vasp))
+        self._X += list(self.parse_X(bnode.cell))
+        self._y0 += list(self.parse_y0(enode.vasp))
 
-    def train(self, test_set_size=10, total_set_size=None):
+    def train(self):
         # pipeline
-        total_idx = np.random.choice(range(len(self._y0)), size=total_set_size if total_set_size else len(self._y0), replace=False)
-        test_idx = np.random.choice(total_idx, size=test_set_size, replace=False)
-        train_idx = np.array([i for i in total_idx if i not in test_idx])
-        _X = np.array(self._X)[train_idx]
-        _y0 = np.array(self._y0)[train_idx]
-        model = self.model
+        X_train, X_test, y0_train, y0_test = train_test_split(self._X, self._y0, test_size=0.001)
         # train
-        model.fit(_X, _y0)
+        self.model.fit(X_train, y0_train)
 
         # evaluate
-        # train
-        _X_train = np.array(self._X)[train_idx]
-        _y0_train = np.array(self._y0)[train_idx]
-        _y_train = self.predict(_X_train)
-        # test
-        _X_test = np.array(self._X)[test_idx]
-        _y0_test = np.array(self._y0)[test_idx]
-        _y_test = self.predict(_X_test)
+        y_train = self.model.predict(X_train)
+        y_test = self.model.predict(X_test)
         IPython.embed()
 
     def parse_predict(self, cell):
@@ -467,12 +451,14 @@ class MlPbSOptXC1D(object):
         return self.model.predict(_X)
 
 
+
 # MlPbSOptXRNN
 # ==============================================================================
 
 from keras.models import Sequential
 from keras.layers import LSTM, Dense, Masking
 from keras.preprocessing.sequence import pad_sequences
+from keras.callbacks import ModelCheckpoint, EarlyStopping
 
 class MlPbSOptXRNN(object):
 
@@ -491,8 +477,8 @@ class MlPbSOptXRNN(object):
         ])
         # ann: nsamples * timesteps * data_dim
         self.model = Sequential([
-            LSTM(32, input_shape=(None, 4)),
-            Dense(24),
+            Dense(64, input_shape=(None, 4)),
+            LSTM(4),
             Dense(8),
             Dense(1)
         ])
@@ -509,8 +495,8 @@ class MlPbSOptXRNN(object):
 
         # symmetry transformation wrapper
         symm_matrix = np.array([
-            [[0,1,0],[1,0,0],[0,0,1]],
-            [[0,0,1],[0,1,0],[1,0,0]],
+            # [[0,1,0],[1,0,0],[0,0,1]],
+            # [[0,0,1],[0,1,0],[1,0,0]],
             [[1,0,0],[0,1,0],[0,0,1]]
         ])
 
@@ -543,9 +529,8 @@ class MlPbSOptXRNN(object):
         y0 = self.y_pipeline.fit_transform(self._y0)
         # fit
         X_train, X_test, y0_train, y0_test = train_test_split(X, y0, test_size=0.1)
-        with open(shared.SCRATCH_DIR+'/data.pickle', 'wb') as f:
-            pickle.dump((X_train, X_test, y0_train, y0_test), f)
-        model.fit(X_train, y0_train, batch_size=batch_size, epochs=epochs, shuffle=True, validation_data=(X_test, y0_test))
+        model.fit(X_train, y0_train, batch_size=batch_size, epochs=epochs, shuffle=True, validation_data=(X_test, y0_test), callbacks=[ModelCheckpoint(self.__class__.__name__ + '.model.h5'), EarlyStopping(monitor='loss', patience=20)])
         y = model.predict(X)
+        IPython.embed()
         # fig, ax = plt.subplots(1)
         # ax.scatter(y0.flatten(), y.flatten())
