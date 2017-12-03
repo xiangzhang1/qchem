@@ -13,6 +13,8 @@ np.set_printoptions(precision=2, threshold='nan', suppress=True)
 from tqdm import tqdm
 import math
 import itertools
+import copy
+from datetime import datetime
 
 from cStringIO import StringIO
 from fuzzywuzzy import process
