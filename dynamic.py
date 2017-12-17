@@ -378,219 +378,110 @@ class MlQueueTime(object):
         return _y_inverse
 
 
-# MlPBSOpt_X_CE1_DiscreteLC
-# =========================
 
-def distdict(N):
-    dist = np.unique([round(np.linalg.norm([i,j,k])*sgn, 4) for i in range(N) for j in range(N) for k in range(N) for sgn in (-1,1)])
-    ddict = OrderedDict(zip(dist, np.zeros(dist.shape[0])))
-    return ddict
+# ==================
+# PASTE BELOW
+# ==================
+#ANN_F2
+from torch import nn
+import itertools
 
-class MlPbSOptXC1D(object):
+def V(x):
+    return Variable(torch.FloatTensor(np.array(x)), requires_grad=True)#.cuda()
+def C(x):
+    return Variable(torch.FloatTensor(np.array(x)), requires_grad=False)#.cuda()
 
-    def __init__(self):
-        self._X = []
-        self._y0 = []
-        self.model = linear_model.LinearRegression()
-
-    def parse_train(self, bnode, enode):
-
-        bcoor = bnode.cell.ccoor
-        natom0 = bnode.cell.stoichiometry.values()[0]
-        ecoor = enode.vasp.optimized_cell.ccoor
-        dcoor = ecoor - bcoor
-
-        for i, ci in enumerate(bcoor):
-            for ix in range(3):
-                feature = distdict(8)
-                for j, cj in enumerate(bcoor):
-                    if j==i: continue
-                    x = np.around((cj-ci)/3.007)
-                    r = np.linalg.norm(x)
-                    sgn = np.sign((i - natom0 + 0.5) * (j - natom0 + 0.5))
-                    feature[round(sgn*r, 4)] += x[ix] / r
-                self._X.append(feature.values())
-
-        for i, ci in enumerate(ecoor):
-            #
-            dc = dcoor[i]
-            #
-            neighbor = [j for j,cj in enumerate(ecoor) if j!=i and np.linalg.norm(cj-ci)<4.5]
-            neighbor_avg_dc = np.mean(dcoor[neighbor], axis=0)
-            dc -= neighbor_avg_dc
-            #
-            for ix in range(3):
-                self._y0.append(dc[ix])
-
-    def train(self):
-        self.model.fit(self._X, self._y0)
-
-    def eval(self):
-        return np.array(self._y0), self.model.predict(self._X)
-
-
-# XLasso
-# =========================
-
-class MlPbSOptXLasso(object):
+class ANN201712161829_symmE(object):
 
     def __init__(self):
-        self._X = []
-        self._y0 = []
-        self.model = linear_model.Lasso()
-
-    def parse_train(self, bnode, enode):
-
-        bcoor0 = bnode.cell.ccoor
-        natom0 = bnode.cell.stoichiometry.values()[0]
-        ecoor0 = enode.vasp.optimized_cell.ccoor
-
-        # symmetry transformation wrapper
-        symm_matrix = np.array([
-            [[0,1,0],[1,0,0],[0,0,1]],
-            [[0,0,1],[0,1,0],[1,0,0]],
-            [[1,0,0],[0,1,0],[0,0,1]]
-        ])
-
-        for symm in symm_matrix:
-            bcoor = np.dot(bcoor0, symm)
-            ecoor = np.dot(ecoor0, symm)
-            dcoor = ecoor - bcoor
-
-            for i, ci in enumerate(tqdm(bcoor)):
-                rcoor = np.int_(np.around(bcoor - ci))
-                sgn = np.int_(np.c_[np.heaviside((i - natom0 + 0.5) * (np.arange(len(bcoor)) - natom0 + 0.5), 0)])
-                scoor = np.concatenate((rcoor, sgn), axis=1)
-                #
-                C1 = np.zeros((9, 9, 9, 2))
-                for ix, iy, iz, ic in scoor:
-                    if -5<ix<5 and -5<iy<5 and -5<iz<5:
-                        C1[ix+4, iy+4, iz+4, ic] = 1
-                #
-                C2 = np.zeros((5, 5, 5, 2, 5, 5, 5, 2))
-                for ix, iy, iz, ic in scoor:
-                    for jx, jy, jz, jc in scoor:
-                        if -3<ix<3 and -3<iy<3 and -3<iz<3 and -3<jx<3 and -3<jy<3 and -3<jz<3:
-                            C2[ix+2, iy+2, iz+2, ic, jx+2, jy+2, jz+2, jc] = 1
-                #
-                self._X.append(np.concatenate((C1.flatten(), C2.flatten()), axis=0))
-
-            for i, ci in enumerate(tqdm(ecoor)):
-                #
-                dc = dcoor[i]
-                #
-                neighbor = [j for j,cj in enumerate(ecoor) if j!=i and np.linalg.norm(cj-ci)<4.5]
-                neighbor_avg_dc = np.mean(dcoor[neighbor], axis=0)
-                dc -= neighbor_avg_dc
-                #
-                self._y0.append(dc[0])
-
-    def train(self):
-        self.model.fit(self._X, self._y0)
-
-    def eval(self):
-        return np.array(self._y0), self.model.predict(self._X)
-
-
-# MlPbSOptXRNN
-# ==============================================================================
-
-from keras.models import Sequential
-from keras.layers import LSTM, Dense, Masking
-from keras.preprocessing.sequence import pad_sequences
-from keras.callbacks import ModelCheckpoint, EarlyStopping, TerminateOnNaN
-
-class MlPbSOptXRNN(object):
-
-    def __init__(self, timesteps=600, data_dim=4, loss='mse', optimizer='adam', model=None):
-        # parameters
-        self.timesteps = timesteps
-        self.data_dim = data_dim
         # data
-        self._X = []
-        self._y0 = []
-        # pipeline
-        self.X_pipeline = StandardScaler(with_mean=False)
-        self.y_pipeline = Pipeline([
-            ('scaler', StandardScaler(with_mean=False)),
-            ('15', FunctionTransformer(func=lambda x: x * 15, inverse_func=lambda x: x / 15))
-        ])
-        # ann: nsamples * timesteps * data_dim
-        self.model = Sequential([
-            LSTM(64, input_shape=(None, 4)),
-            Dense(4, activation='tanh'),
-            Dense(4, activation='tanh'),
-            Dense(1)
-        ]) if not model else model
-        self.model.compile(loss=loss,
-                      optimizer=optimizer,
-                      metrics=['accuracy'])
+        self._coors = []
+        self._sgns = []
+        self._y0s = []
+        # config
+        Rc = [3, 6]
+        Rs = [0, 1, 1.4, 1.7, 2, 3]
+        eta = [0, 0.5, 1, 1.5]
+        zeta = [0.5, 1.5, 2.5]
+        lamda = [0, 1, 2]
+        self._pars = np.float32(list(itertools.product(Rc, Rs, eta, zeta, lamda)))
+        # ann
+        p=0.2
+        self.nn = nn.Sequential(
+            nn.Linear(len(self._pars), 16),
+            nn.ReLU(),
+            nn.Dropout(p),
+            nn.Linear(16, 16),
+            nn.ReLU(),
+            nn.Dropout(p),
+            nn.Linear(16, 1)
+        )#.cuda()
 
+    '''parse related'''
+    def parse_train(self, vasp):
+        '''More of a handle.'''
+        cell = vasp.optimized_cell if getattr(vasp, 'optimized_cell', None) else vasp.node().cell
+        natom0 = cell.stoichiometry.values()[0]
+        natom = cell.natoms()
+        path = vasp.node().path
+        ccoor = cell.ccoor
 
-    def parse_train(self, bnode, enode, neighbor=False):
+        sgn = np.sign(np.arange(len(ccoor)) - natom0 + 0.5)
 
-        bcoor0 = bnode.cell.ccoor
-        natom0 = bnode.cell.stoichiometry.values()[0]
-        ecoor0 = enode.vasp.optimized_cell.ccoor
+        os.chdir(path)
+        with open('OUTCAR', 'r') as f:
+            lines = f.readlines()
+        line = [line.split() for line in lines if 'energy without' in line][-1]
+        e = np.float32(4)
 
-        # symmetry transformation wrapper
-        symm_matrix = np.array([
-            [[0,1,0],[1,0,0],[0,0,1]],
-            [[0,0,1],[0,1,0],[1,0,0]],
-            [[1,0,0],[0,1,0],[0,0,1]]
-        ])
+        self._coors.append(ccoor / 3.007)   #(natom, 3)
+        self._sgns.append(sgn)  # (natom)
+        self._y0s.append([e]) # 1
 
-        for symm in symm_matrix:
-            bcoor = np.dot(bcoor0, symm)
-            ecoor = np.dot(ecoor0, symm)
+    '''train related'''
+    def train(self):
+        # ann
+        criterion = nn.MSELoss()
+        params = list(self.nn.parameters())
+        optimizer = optim.RMSprop(params, lr=0.001)
+        # train
+        self.nn.train()
+        for epoch in range(100):
+            i = np.random.randint(0, len(self._coors))
+            Xi = V(self._coors[i])
+            sgni = V(self._sgns[i])
+            E0 = C(self._y0s[i])
+            pars = C(self._pars)
 
-            r = np.linalg.norm(bcoor, axis=1, keepdims=True)
-            indices = np.lexsort(np.concatenate((bcoor, r), axis=-1).T)
+            XiDotXj = torch.mm(Xi, torch.transpose(Xi, 0, 1))
+            R2i = torch.diag(XiDotXj)
+            R2ij = R2i.unsqueeze(0) + R2i.unsqueeze(1) - 2 * XiDotXj
+            Rij = torch.sqrt(R2ij)
+            sgnij = torch.mm(sgni.unsqueeze(0), sgni.unsqueeze(1))
 
-            X = []
-            for i, c in enumerate(bcoor):
-                dcoor = bcoor - c
-                sgn = np.sign((i - natom0 + 0.5) * (np.arange(len(bcoor)) - natom0 + 0.5))
-                dcoorp = np.concatenate((dcoor, np.c_[sgn]), axis=1)
-                X.append(np.delete(dcoorp, i, axis=0))
-            X = np.array(X)[indices]
+            cosThetaijk = (XiDotXj.unsqueeze(0) - XiDotXj.unsqueeze(1) - XiDotXj.unsqueeze(2) + R2i) / (Rij.unsqueeze(2) * Rij.unsqueeze(1))
 
-            if not neighbor:
-                y0 = (ecoor - bcoor)[indices, 0:1]
-            else:
-                y0 = []
-                dcoor = ecoor - bcoor
-                for i, ci in enumerate(ecoor):
-                    #
-                    dc = dcoor[i]
-                    #
-                    neighbor = [j for j,cj in enumerate(ecoor) if j!=i and np.linalg.norm(cj-ci)<4.5]
-                    neighbor_avg_dc = np.mean(dcoor[neighbor], axis=0)
-                    dc -= neighbor_avg_dc
-                    #
-                    y0.append(dc[0:1])
+            featureList = []
+            for _pars_ in tqdm(self._pars):
+                Rc, Rs, eta, zeta, lamda = [float(_) for _ in _pars_]
+                fc_Rij_ = (1 - torch.sigmoid(Rij / Rc * 4)) * 2 * sgnij
+                e_eta_Rij_Rs = torch.exp(-1 * eta * (Rij - Rs)**2)
+                product = fc_Rij_ * e_eta_Rij_Rs
+                lamda_cosThetaijk_zeta = (1 + lamda * cosThetaijk) ** zeta * 2**(1-zeta)
+                feature = torch.mean(lamda_cosThetaijk_zeta * product.unsqueeze(0) * product.unsqueeze(1) * product.unsqueeze(2))
+                featureList.append(feature)
+            features = torch.stack(featureList).view(1, -1)
 
-            self._X += list(X)
-            self._y0 += list(y0)
+            E = self.nn(features).view(1)
+            IPython.embed()
+            loss = criterion(E, E0).view(1)
 
-    def train(self, batch_size=256, epochs=1250):
-        # pipeline
-        model = self.model
-        data_dim = self.data_dim
-        timesteps = self.timesteps
-        X = self.X_pipeline.fit_transform(pad_sequences(self._X, dtype='float32', maxlen=timesteps).reshape(-1, data_dim)).reshape(-1, timesteps, data_dim) # None actually works!
-        y0 = self.y_pipeline.fit_transform(self._y0)
-        # fit
-        with open('in.pickle', 'wb') as f:
-            pickle.dump((X, y0, batch_size, epochs), f)
-        model.save('model.h5')
-        # model.fit(X, y0, batch_size=batch_size, epochs=epochs, verbose=1, shuffle=True, callbacks=[ModelCheckpoint(self.__class__.__name__ + '.model.h5'), TerminateOnNan()])   # Don't early stop
+            optimizer.zero_grad()   # suggested trick
+            loss.backward()
+            optimizer.step()
 
-    def eval(self):
-        model = self.model
-        data_dim = self.data_dim
-        timesteps = self.timesteps
-        X = self.X_pipeline.fit_transform(pad_sequences(self._X, dtype='float32', maxlen=timesteps).reshape(-1, data_dim)).reshape(-1, timesteps, data_dim) # None actually works!
-        y0 = self.y_pipeline.fit_transform(self._y0)
-        y = model.predict(X)
-        return y0, y
+            if epoch % 50 == 0:
+                _E = E.data.cpu().numpy()
+                _E0 = E0.data.cpu().numpy()
+                rel_loss = np.linalg.norm(_E-_E0) / np.linalg.norm(_E0)
+                tqdm.write('%s \t %s' % (epoch, rel_loss) )

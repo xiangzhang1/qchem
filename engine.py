@@ -711,10 +711,9 @@ class Vasp(object):
             os.makedirs(path)
             os.chdir(path)
             if gen.parse_if('icharg=1|icharg=11'):
-                shutil.copyfile(prev.path+'/CHG', path+'/CHG')
-                shutil.copyfile(prev.path+'/CHGCAR', path+'/CHGCAR')
+                subprocess.Popen(['rsync', '-a', '-h', '--info=progress2', prev.path+'/CHG', path+'/CHG'], stdout=sys.stdout, stderr=sys.stderr).wait()
             if gen.parse_if('icharg=0|icharg=10|istart=1|istart=2'):
-                shutil.copyfile(prev.path+'/WAVECAR', path+'/WAVECAR')
+                subprocess.Popen(['rsync', '-a', '-h', '--info=progress2', prev.path+'/WAVECAR', path+'/WAVECAR'], stdout=sys.stdout, stderr=sys.stderr).wait()
             if prev and getattr(prev, 'vasp', None) and getattr(prev.vasp, 'optimized_cell', None):
                 node.cell = copy.deepcopy(prev.vasp.optimized_cell)
                 print self.__class__.__name__ + '.compute: prev.vasp.optimized_cell overwrites node.cell.'
@@ -769,7 +768,7 @@ class Vasp(object):
                     kill "$bgPID"
                     ''' %(ncore_total, flavor))
                 self.wrapper += 'nohup ./subfile 2>&1 >> run.log &'
-            elif gen.parse_if('platform=nanaimo'):
+            elif gen.parse_if('platform=nanaimo'):  # netspeed is ~50M/s. compression might slow it down.
                 self.wrapper += dedent('''\
                     rsync -avP . nanaimo:~/%s
                     ssh nanaimo <<EOF
@@ -795,10 +794,11 @@ class Vasp(object):
                     ''' %(self.remote_folder_name, self.remote_folder_name, gen.getkw('nnode'), ncore_total, self.remote_folder_name))
                 self.subfile += dedent('''\
                     #!/bin/bash
-                    . /usr/share/Modules/init/bash
-                    module purge
-                    module load mvapich2-2.2/intel
-                    mpirun -np %s /opt/vasp.5.4.4/bin/vasp_%s
+                    # . /usr/share/Modules/init/bash
+                    # module purge
+                    # module load mvapich2-2.2/intel
+                    # mpirun -np %%s /opt/vasp.5.4.4/bin/vasp_%%s
+                    mpirun -np %s vasp_%s
                     ''' %(ncore_total, flavor))
             elif gen.parse_if('platform=nanaimo'):
                 self.wrapper += dedent('''\
@@ -838,8 +838,11 @@ class Vasp(object):
                     of_.write(self.subfile)
                 os.system('chmod +x subfile')
             if shared.DEBUG <= 0:
-                with open(os.devnull, 'r+b', 0) as DEVNULL:
-                    subprocess.Popen(['bash', './wrapper'], stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL, preexec_fn=os.setpgrp, close_fds=True)
+                print self.__class__.__name__ + ': running wrapper'
+                # these lines don't look right.
+                # with open(os.devnull, 'r+b', 0) as DEVNULL:
+                #     subprocess.Popen(['bash', './wrapper'], stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL, preexec_fn=os.setpgrp, close_fds=True)
+                subprocess.Popen(['bash','./wrapper'], stdout=sys.stdout, stderr=sys.stderr).wait()
                 print self.__class__.__name__ + ': computation started. local path   %s   . waiting for filesystem update. ' %path
             else:
                 print '-' * 50 + '\n' + self.__class__.__name__ + ': wrapper generated at   %s   . waiting for filesystem update. ' %path
@@ -938,7 +941,7 @@ class Vasp(object):
         if os.path.isdir(path):
             print 'removing self.path {%s}' %path
             os.chdir(shared.SCRIPT_DIR)
-            shutil.rmtree(path)
+            subprocess.Popen(['trash', path], stdout=sys.stdout, stderr=sys.stderr).wait()
 
     def __str__(self):
         #: return log and optimized_cell

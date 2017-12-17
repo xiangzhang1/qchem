@@ -348,7 +348,7 @@ class MWT(object):
 # @moonphase_wrap
 
 def moonphase_wrap(func):
-    @MWT(timeout=10)
+    @MWT(timeout=60)
     @wraps(func)
     def wrapped(self, *args, **kwargs):
         if getattr(self,'path',None) and os.path.isfile(self.path + '/.moonphase'):

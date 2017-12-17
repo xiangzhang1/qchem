@@ -8,7 +8,6 @@ main_gui.html: user level API
 
 Grammar
 -------
-
 import PEP8
 
 text __var__
@@ -32,6 +31,7 @@ no duplicate refs. rlookup must always hold.
 
 Convention
 ----------
+bands[] -> nbands. nelectrons. natoms. ncore is a parameter; ncores is how many cores we have.
 
 Each module should strive to be self-complete w.r.t. checks. In other words. EAFP.
 

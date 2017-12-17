@@ -72,7 +72,7 @@ scheduler = BackgroundScheduler()
 scheduler.start()
 atexit.register(lambda: scheduler.shutdown()) # Shut down the scheduler when exiting the app
 
-print shared.bcolors.BOLD  + shared.bcolors.FAIL + 'GUI serves as a crutch, or even only a browser. There is no point in implementing full functionality.' + shared.bcolors.ENDC
+print shared.bcolors.BOLD  + shared.bcolors.FAIL + 'GUI serves as a crutch, or even only a browser. It is intuitive, but slow. There is no point in implementing full functionality.' + shared.bcolors.ENDC
 
 
 
