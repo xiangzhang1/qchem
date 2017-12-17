@@ -387,9 +387,9 @@ from torch import nn
 import itertools
 
 def V(x):
-    return Variable(torch.FloatTensor(np.array(x)), requires_grad=True)#.cuda()
+    return Variable(torch.FloatTensor(np.array(x)), requires_grad=True).cuda()
 def C(x):
-    return Variable(torch.FloatTensor(np.array(x)), requires_grad=False)#.cuda()
+    return Variable(torch.FloatTensor(np.array(x)), requires_grad=False).cuda()
 
 class ANN201712161829_symmE(object):
 
@@ -415,7 +415,7 @@ class ANN201712161829_symmE(object):
             nn.ReLU(),
             nn.Dropout(p),
             nn.Linear(16, 1)
-        )#.cuda()
+        ).cuda()
 
     '''parse related'''
     def parse_train(self, vasp):
