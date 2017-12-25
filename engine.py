@@ -7,7 +7,6 @@ import sys
 import subprocess
 import re
 import numpy as np
-np.set_printoptions(precision=3)
 import scipy
 import shutil
 from pprint import pprint
@@ -49,6 +48,9 @@ from scipy.linalg import norm
 # qchem
 import shared
 import dynamic
+
+# ase: some of its libraries are fantastic.
+import ase
 
 
 # Gen
@@ -199,7 +201,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
     def pot(self, symbol):
         if len(shared.ELEMENTS[symbol].pot) == 0:
             raise shared.CustomError(' pot: POTCAR for '+symbol+' not found.')
-        path = shared.SCRIPT_DIR + '/resource/paw_pbe/'+shared.ELEMENTS[symbol].pot + '/POTCAR'
+        path = shared.SCRIPT_DIR + '/resource/potpaw_PBE/'+shared.ELEMENTS[symbol].pot + '/POTCAR'
         if_ = open(path,'r')
         of_ = open('./POTCAR','a')
         of_.write( if_.read() )
@@ -731,7 +733,7 @@ class Vasp(object):
                     cell = node.cell
                 f.write(str(cell))
             for symbol in node.cell.stoichiometry.keys():
-                self.pot(symbol)
+                gen.pot(symbol)
             # setting variables for wrapper
             ncore_total = str(  int(gen.getkw('nnode')) * int(gen.getkw('ncore_node'))  )
             if gen.parse_if('spin=ncl'):
@@ -951,15 +953,6 @@ class Vasp(object):
             return self.log
         else:
             return 'moonphase is not 2, nothing here'
-
-
-    def pot(self, symbol):
-        if len(shared.ELEMENTS[symbol].pot) == 0:
-            raise shared.CustomError(' pot: POTCAR for '+symbol+' not found.')
-        path = shared.SCRIPT_DIR + '/resource/paw_pbe/'+shared.ELEMENTS[symbol].pot + '/POTCAR'
-        if_ = open(path,'r')
-        of_ = open('./POTCAR','a')
-        of_.write( if_.read() )
 
     @retry(wait_random_min=1000, wait_random_max=2000, stop_max_attempt_number=10)
     def ssh_and_run(self, command):

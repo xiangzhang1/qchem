@@ -9,7 +9,7 @@ import time
 from pprint import pprint
 import IPython
 import numpy as np
-np.set_printoptions(precision=2, threshold='nan', suppress=True)
+np.set_printoptions(precision=6, threshold='nan', suppress=True)
 from tqdm import tqdm
 import math
 import itertools

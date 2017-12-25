@@ -382,106 +382,14 @@ class MlQueueTime(object):
 # ==================
 # PASTE BELOW
 # ==================
-#ANN_F2
-from torch import nn
-import itertools
 
-def V(x):
-    return Variable(torch.FloatTensor(np.array(x)), requires_grad=True).cuda()
-def C(x):
-    return Variable(torch.FloatTensor(np.array(x)), requires_grad=False).cuda()
 
-class ANN201712161829_symmE(object):
 
-    def __init__(self):
-        # data
-        self._coors = []
-        self._sgns = []
-        self._y0s = []
-        # config
-        Rc = [3, 6]
-        Rs = [0, 1, 1.4, 1.7, 2, 3]
-        eta = [0, 0.5, 1, 1.5]
-        zeta = [0.5, 1.5, 2.5]
-        lamda = [0, 1, 2]
-        self._pars = np.float32(list(itertools.product(Rc, Rs, eta, zeta, lamda)))
-        # ann
-        p=0.2
-        self.nn = nn.Sequential(
-            nn.Linear(len(self._pars), 16),
-            nn.ReLU(),
-            nn.Dropout(p),
-            nn.Linear(16, 16),
-            nn.ReLU(),
-            nn.Dropout(p),
-            nn.Linear(16, 1)
-        ).cuda()
 
-    '''parse related'''
-    def parse_train(self, vasp):
-        '''More of a handle.'''
-        cell = vasp.optimized_cell if getattr(vasp, 'optimized_cell', None) else vasp.node().cell
-        natom0 = cell.stoichiometry.values()[0]
-        natom = cell.natoms()
-        path = vasp.node().path
-        ccoor = cell.ccoor
 
-        sgn = np.sign(np.arange(len(ccoor)) - natom0 + 0.5)
 
-        os.chdir(path)
-        with open('OUTCAR', 'r') as f:
-            lines = f.readlines()
-        line = [line.split() for line in lines if 'energy without' in line][-1]
-        e = np.float32(4)
 
-        self._coors.append(ccoor / 3.007)   #(natom, 3)
-        self._sgns.append(sgn)  # (natom)
-        self._y0s.append([e]) # 1
 
-    '''train related'''
-    def train(self):
-        # ann
-        criterion = nn.MSELoss()
-        params = list(self.nn.parameters())
-        optimizer = optim.RMSprop(params, lr=0.001)
-        # train
-        self.nn.train()
-        for epoch in range(100):
-            i = np.random.randint(0, len(self._coors))
-            Xi = V(self._coors[i])
-            sgni = V(self._sgns[i])
-            E0 = C(self._y0s[i])
-            pars = C(self._pars)
 
-            XiDotXj = torch.mm(Xi, torch.transpose(Xi, 0, 1))
-            R2i = torch.diag(XiDotXj)
-            R2ij = R2i.unsqueeze(0) + R2i.unsqueeze(1) - 2 * XiDotXj
-            Rij = torch.sqrt(R2ij)
-            sgnij = torch.mm(sgni.unsqueeze(0), sgni.unsqueeze(1))
 
-            cosThetaijk = (XiDotXj.unsqueeze(0) - XiDotXj.unsqueeze(1) - XiDotXj.unsqueeze(2) + R2i) / (Rij.unsqueeze(2) * Rij.unsqueeze(1))
-
-            featureList = []
-            for _pars_ in tqdm(self._pars):
-                Rc, Rs, eta, zeta, lamda = [float(_) for _ in _pars_]
-                fc_Rij_ = (1 - torch.sigmoid(Rij / Rc * 4)) * 2 * sgnij
-                e_eta_Rij_Rs = torch.exp(-1 * eta * (Rij - Rs)**2)
-                product = fc_Rij_ * e_eta_Rij_Rs
-                lamda_cosThetaijk_zeta = (1 + lamda * cosThetaijk) ** zeta * 2**(1-zeta)
-                feature = torch.mean(lamda_cosThetaijk_zeta * product.unsqueeze(0) * product.unsqueeze(1) * product.unsqueeze(2))
-                featureList.append(feature)
-            features = torch.stack(featureList).view(1, -1)
-
-            E = self.nn(features).view(1)
-            IPython.embed()
-            loss = criterion(E, E0).view(1)
-
-            optimizer.zero_grad()   # suggested trick
-            loss.backward()
-            optimizer.step()
-
-            if epoch % 50 == 0:
-                _E = E.data.cpu().numpy()
-                _E0 = E0.data.cpu().numpy()
-                rel_loss = np.linalg.norm(_E-_E0) / np.linalg.norm(_E0)
-                tqdm.write('%s \t %s' % (epoch, rel_loss) )
+#
