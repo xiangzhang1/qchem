@@ -288,14 +288,14 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             memory_predicted_gb = ( (m.projector_real + m.projector_reciprocal)*int(self.getkw('npar')) + m.wavefunction*float(self.getkw('kpar')) )/1024.0/1024/1024 + int(self.getkw('nnode'))*0.7    # Global data cannot be obtained for multi-node multi-CPU case. ML is not suitable. Memory estimations might just also be applicable to GPU.
             memory_available_gb = int(self.getkw('nnode')) * int(self.getkw('mem_node'))
             print self.__class__.__name__ + ' memory %s: %s GB used out of %s GB' %('prediction' if memory_available_gb>memory_predicted_gb else 'WARNING', memory_predicted_gb, memory_available_gb)
-            # Queue time
-            m = dynamic.MLS['MLQUEUETIME']
-            t = np.asscalar(m.predict(m.parse_predict(self)))
-            print self.__class__.__name__ + ' max queue time: ~ %s h. currently too little data to be reliable. [MLQUEUETIME]' %(t / 3600.0)
-            # Run time
-            m = dynamic.MLS['MLVASPSPEED']
-            t_elecstep = np.asscalar(m.predict(m.parse_predict(self, cell, Makeparam(self))))
-            print self.__class__.__name__ + ' run time: ~ %s h [%s s / scstep]. [MLVASPSPEED]' %(t_elecstep / 3600 * (500 if self.parse_if('opt') else 30), t_elecstep)
+            # # Queue time
+            # m = dynamic.services['MLQUEUETIME']
+            # t = np.asscalar(m.predict(m.parse_predict(self)))
+            # print self.__class__.__name__ + ' max queue time: ~ %s h. currently too little data to be reliable. [MLQUEUETIME]' %(t / 3600.0)
+            # # Run time
+            # m = dynamic.services['MLVASPSPEED']
+            # t_elecstep = np.asscalar(m.predict(m.parse_predict(self, cell, Makeparam(self))))
+            # print self.__class__.__name__ + ' run time: ~ %s h [%s s / scstep]. [MLVASPSPEED]' %(t_elecstep / 3600 * (500 if self.parse_if('opt') else 30), t_elecstep)
 
 
     # 3. nbands, ncore_total, encut
@@ -573,10 +573,10 @@ class Map(object):
 
     def lookup(self, name):
         if name == 'master':
-            if name in dynamic.NODES:   return dynamic.NODES['master']
+            if name in dynamic.nodes:   return dynamic.nodes['master']
             else: raise shared.CustomError('找不到master了，求喂食')
-        elif name in dynamic.NODES:
-            return dynamic.NODES.pop(name)
+        elif name in dynamic.nodes:
+            return dynamic.nodes.pop(name)
         elif any([x.name == name for x in self._dict]):
             return [x for x in self._dict if x.name == name][0]
         elif '.' in name:
@@ -729,7 +729,7 @@ class Vasp(object):
             with open('POSCAR','w') as f:
                 if gen.parse_if('mlpbsopt'):
                     print self.__class__.__name__ + '.compute: pre-optimizing cell. [MlPbSOpt]'
-                    cell = dynamic.MLS['MLPBSOPT'].optimize(node.cell)
+                    # cell = dynamic.services['MLPBSOPT'].optimize(node.cell)
                 else:
                     cell = node.cell
                 f.write(str(cell))
@@ -872,23 +872,23 @@ class Vasp(object):
                     text = f_.read()
                     setattr(self, 'optimized_cell', Cell(text))
             # MLVASPSPEED
-            try:
-                print self.__class__.__name__ + '.compute: collecting data for MLVASPSPEED'
-                dynamic.MLS['MLVASPSPEED'].parse_train(node, self, gen, node.cell, Makeparam(gen))
-            except shared.CustomError as e:
-                print(e)
-            print self.__class__.__name__ + '.compute: MLVASPSPEED collection complete'
-            # MLQUEUETIME
-            try:
-                print self.__class__.__name__ + '.compute: collecting data for MLQUEUETIME'
-                dynamic.MLS['MLQUEUETIME'].parse_train(node, self, gen)
-            except shared.CustomError as e:
-                print(e)
-            print self.__class__.__name__ + '.compute: MLQUEUETIME collection complete'
+            # try:
+            #     print self.__class__.__name__ + '.compute: collecting data for MLVASPSPEED'
+            #     dynamic.services['MLVASPSPEED'].parse_train(node, self, gen, node.cell, Makeparam(gen))
+            # except shared.CustomError as e:
+            #     print(e)
+            # print self.__class__.__name__ + '.compute: MLVASPSPEED collection complete'
+            # # MLQUEUETIME
+            # try:
+            #     print self.__class__.__name__ + '.compute: collecting data for MLQUEUETIME'
+            #     dynamic.services['MLQUEUETIME'].parse_train(node, self, gen)
+            # except shared.CustomError as e:
+            #     print(e)
+            # print self.__class__.__name__ + '.compute: MLQUEUETIME collection complete'
             # MLPBSOPT
             # try:
             #     print self.__class__.__name__ + '.compute: collecting data for MLPBSOPT'
-            #     dynamic.MLS['MLPBSOPT'].parse_train(self)
+            #     dynamic.services['MLPBSOPT'].parse_train(self)
             # except shared.CustomError as e:
             #     print(e)
             # print self.__class__.__name__ + '.compute: MLPBSOPT collection complete'

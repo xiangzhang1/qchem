@@ -69,26 +69,26 @@ def load(middlename, datetime=None):
         return pickle.load(f)
 
 def global_load():
-    global NODES, MLS
-    NODES = load('NODES')
-    SERVICES = load('SERVICES')
+    global nodes, services
+    nodes = load('nodes')
+    services = load('services')
     print 'global_load called'
 
 def global_save():
-    global NODES, MLS
-    save(NODES, 'NODES')
-    save(SERVICES, 'SERVICES')
+    global nodes, services
+    save(nodes, 'nodes')
+    save(services, 'services')
     print 'global_save called'
 
-# NODES
+# nodes
 # ==============================================================================
 
-NODES = {}
+nodes = {}
 
 # ML
 # ==============================================================================
 
-SERVICES = {}
+services = {}
 
 # MC_gen_queuetime
 # ==============================================================================

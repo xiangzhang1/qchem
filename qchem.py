@@ -20,7 +20,7 @@ import dynamic
 This is where everything started.
 For a new project, do one of the following:
 - qchem.Import(f.read())
-- dynamic.NODES['master'] = qchem.Node('# master\n\nmap:\n\n')
+- dynamic.nodes['master'] = qchem.Node('# master\n\nmap:\n\n')
 GUI serves as a crutch only. We no longer aim to maintain global compatibility.
 '''
 
@@ -34,10 +34,10 @@ def Import(text):
     while l:
         # print 'Import: parsing %s' %(l[-1].splitlines()[0] if l[-1].splitlines() else '')
         n = Node(l.pop())
-        # name must not be in NODES
-        if n.name in dynamic.NODES:
-            raise shared.CustomError(' Import: Node name %s is in already in NODES.' %n.name)
-        dynamic.NODES[n.name] = n
+        # name must not be in nodes
+        if n.name in dynamic.nodes:
+            raise shared.CustomError(' Import: Node name %s is in already in nodes.' %n.name)
+        dynamic.nodes[n.name] = n
 
 
 
@@ -46,7 +46,7 @@ def Import(text):
 class Node(object):
 
     def __init__(self, text='# newnode'):
-        # parses 1 node at a time. searches in NODES.
+        # parses 1 node at a time. searches in nodes.
         # default to a newnode
 
         namevalpairs = text.split('\n\n')
