@@ -29,6 +29,7 @@ import copy
 from functools import partial
 from weakref import ref
 from textwrap import dedent
+import itertools
 
 # matplotlib
 from mpl_toolkits.mplot3d import Axes3D
@@ -509,8 +510,8 @@ class Cell(object):
         result = '\n'.join( [x for i,x in enumerate(result.splitlines()) if i!=5] )
         return result
 
-
-
+    def symb_sgn(self):
+        return list(itertools.chain.from_iterable([[symbol] * atomcount for symbol,atomcount in self.stoichiometry.items()]))
 
 
 

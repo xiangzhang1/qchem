@@ -28,6 +28,7 @@ from scipy import spatial
 from scipy.optimize import minimize
 
 # sklearn
+import sklearn
 from sklearn.preprocessing import StandardScaler
 
 # pytorch
@@ -38,6 +39,10 @@ import torch.nn.functional as F
 from torch.utils.data import TensorDataset, DataLoader
 import torch.optim as optim
 from torch.nn import Sequential
+
+# parallel
+import joblib
+from joblib import Parallel, delayed
 
 # qchem package
 import qchem
