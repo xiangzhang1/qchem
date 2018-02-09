@@ -49,7 +49,7 @@ import qchem
 import shared
 import dynamic
 import engine
-from shared import ELEMENTS
+from shared import elements
 
 print shared.bcolors.OKBLUE + 'Welcome. Libraries loaded.' + shared.bcolors.ENDC
 

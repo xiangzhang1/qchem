@@ -42,7 +42,7 @@ import torch.optim as optim
 # qchem package
 import dynamic
 import shared
-from shared import ELEMENTS
+from shared import elements
 import qchem
 import engine
 

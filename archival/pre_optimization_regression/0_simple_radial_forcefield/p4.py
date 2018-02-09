@@ -21,7 +21,7 @@ from fuzzywuzzy import process
 import qchem
 import shared
 import engine
-from shared import ELEMENTS
+from shared import elements
 
 dynamic.load(dynamic.nodes, 'nodes')
 

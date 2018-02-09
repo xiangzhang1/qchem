@@ -24,7 +24,7 @@ from sklearn.preprocessing import LabelBinarizer
 # =====
 # DEBUG option, SCRIPT_DIR, HOME_DIR
 # Fragile lists
-# ELEMENTS
+# elements
 # CustomError, DeferError, [LookupError]
 # MySFTPClient, sshs
 # @MWT
@@ -76,7 +76,7 @@ COLOR_PALETTE = {-1: '#a94442', 0: '#000000',  1: '#8a6d3b', 2: '#3c763d', -2: '
 
 
 
-# Element, ELEMENTS
+# Element, elements
 # ===========================================================================
 
 class lazyattr(object):
@@ -143,7 +143,7 @@ class Element(object):
         adict = {}
         if self.eleconfig.startswith('['):
             base = self.eleconfig.split(' ', 1)[0][1:-1]
-            adict.update(ELEMENTS[base].eleconfig_dict)
+            adict.update(elements[base].eleconfig_dict)
         for e in self.eleconfig.split()[bool(adict):]:
             adict[(int(e[0]), e[1])] = int(e[2:]) if len(e) > 2 else 1
         return adict
@@ -257,8 +257,8 @@ def word_wrap(text, linelen=80, indent=0, joinstr="\n"):
         result.append(" ".join(line))
     return joinstr.join(result)
 
-ELEMENTS = ElementsDict()
-ELEMENTS.import_()
+elements = ElementsDict()
+elements.import_()
 
 
 # ===========================================================================

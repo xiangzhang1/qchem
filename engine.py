@@ -54,6 +54,21 @@ import dynamic
 import ase
 
 
+# TOC
+# ===========================================================================
+# Part I. Componenets
+# -----------------------------------------
+# Gen, Makeparam
+# Cell
+# Map
+# Dummy
+# Vasp, ssh_and_run
+# Electron - Grepen, Dos, Bands, Charge, Errors
+# compare_and_X, Compare
+# Part II. Services
+# -----------------------------------------
+# MC_gen_queuetime
+
 # Gen
 # ===========================================================================
 
@@ -691,7 +706,32 @@ class Map(object):
 # Vasp
 # ===========================================================================
 
-
+@retry(wait_random_min=1000, wait_random_max=2000, stop_max_attempt_number=10)
+def ssh_and_run(platform, command):
+    # self.node().gen.getkw('platform')
+    if platform not in ['dellpc', 'nanaimo', 'irmik']:
+        raise shared.CustomError('ssh_and_run: unsupported platform %s' %platform)
+    # paramiko ssh run command
+    if platform == 'dellpc':
+        return os.popen(command).read()
+    else:
+        try:
+            ssh = shared.sshs[platform]
+            if not ssh.get_transport().is_active():
+                raise shared.CustomError
+        except (KeyError, shared.CustomError) as e:
+            ssh = shared.sshs[platform] = paramiko.SSHClient()
+            ssh._policy = paramiko.WarningPolicy()
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            ssh_config = paramiko.SSHConfig()
+            user_config_file = os.path.expanduser("~/.ssh/config")
+            if os.path.exists(user_config_file):
+                with open(user_config_file) as f:
+                    ssh_config.parse(f)
+            ssh.load_system_host_keys()
+            ssh.connect(platform, username='xzhang1')
+        ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command(command)
+        return ssh_stdout.read()
 
 
 class Vasp(object):
@@ -954,33 +994,6 @@ class Vasp(object):
             return self.log
         else:
             return 'moonphase is not 2, nothing here'
-
-    @retry(wait_random_min=1000, wait_random_max=2000, stop_max_attempt_number=10)
-    def ssh_and_run(self, command):
-        platform = self.node().gen.getkw('platform')
-        if platform not in ['dellpc', 'nanaimo', 'irmik']:
-            raise shared.CustomError(self.__class__.__name__ + '.ssh_and_run: unsupported platform')
-        # paramiko ssh run command
-        if platform == 'dellpc':
-            return os.popen(command).read()
-        else:
-            try:
-                ssh = shared.sshs[platform]
-                if not ssh.get_transport().is_active():
-                    raise shared.CustomError
-            except (KeyError, shared.CustomError) as e:
-                ssh = shared.sshs[platform] = paramiko.SSHClient()
-                ssh._policy = paramiko.WarningPolicy()
-                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                ssh_config = paramiko.SSHConfig()
-                user_config_file = os.path.expanduser("~/.ssh/config")
-                if os.path.exists(user_config_file):
-                    with open(user_config_file) as f:
-                        ssh_config.parse(f)
-                ssh.load_system_host_keys()
-                ssh.connect(platform, username='xzhang1')
-            ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command(command)
-            return ssh_stdout.read()
 
     def info(self, info=None):
         '''Accounting tool for collecting job status.'''
@@ -1823,3 +1836,26 @@ class Md(Dummy):
             # plt.show()
             print 'movied saved at   %s    .' %prev.path
             line_ani.save('traj_%s.mp4' %(re.sub(r'(\W|\s)+', '', prev.name)), fps=5, writer="avconv", codec="libx264")
+
+
+
+# ==============================================================================
+# Services
+# ==============================================================================
+
+# MC_gen_queuetime
+# ==============================================================================
+class MC_gen_queuetime(object):
+
+    def __init__(self):
+
+        # historical_data
+        columns = pd.MultiIndex.from_tuples([('queue', 'T'), ('queue', 'S'), ('queue', 'UID'), ('wait_time', 'wait_time')])
+        index = pd.MultiIndex.from_tuples([], names=['platform', 'jobid', 'jobids'])
+        self.historical_data  = pd.DataFrame([], columns=columns, index=index)
+
+        # model
+        self.parameters = pd.DataFrame([], columns=['C', 'beta_FS', 'p_FF_max', 'p_FF_min', 'beta_FF_S'], index=['nanaimo','irmik','edison', 'comet'])
+        self.parameters.index.name = 'platform'
+
+    def gather_X(self, platform):
