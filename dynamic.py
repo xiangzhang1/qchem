@@ -33,14 +33,6 @@ from sklearn.pipeline import Pipeline, FeatureUnion
 from sklearn import linear_model
 from sklearn.model_selection import train_test_split
 
-# pytorch
-import torch
-from torch.autograd import Variable
-import torch.nn as nn
-from torch.nn import Sequential
-import torch.nn.functional as F
-from torch.utils.data import TensorDataset, DataLoader
-import torch.optim as optim
 
 # parallel
 from joblib import Parallel, delayed

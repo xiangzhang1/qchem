@@ -1,14 +1,25 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# generic
+# scientific kit
+import numpy as np
+np.seterr(divide='ignore', invalid='ignore')
+import scipy
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# date
+import time
+import datetime
+
+# sys
 import os
 import sys
 import subprocess
-import re
-import numpy as np
-import scipy
 import shutil
+
+# generic
+import re
 from pprint import pprint
 import tempfile
 import hashlib
@@ -24,7 +35,6 @@ import string
 import random
 from retrying import retry
 import requests
-import dateparser
 import copy
 from functools import partial
 from weakref import ref
@@ -706,9 +716,8 @@ class Map(object):
 # Vasp
 # ===========================================================================
 
-@retry(wait_random_min=1000, wait_random_max=2000, stop_max_attempt_number=10)
+#@retry(wait_random_min=1000, wait_random_max=2000, stop_max_attempt_number=10)
 def ssh_and_run(platform, command):
-    # self.node().gen.getkw('platform')
     if platform not in ['dellpc', 'nanaimo', 'irmik']:
         raise shared.CustomError('ssh_and_run: unsupported platform %s' %platform)
     # paramiko ssh run command
@@ -962,11 +971,11 @@ class Vasp(object):
             '''
             is_running = self.info('is_running')
 
-            output = self.ssh_and_run('[ -e %s/vasprun.xml ] && echo ok || echo notok' %rpath).splitlines()[0]
+            output = ssh_and_run(platform=self.node().gen.getkw('platform'), command='[ -e %s/vasprun.xml ] && echo ok || echo notok' %rpath).splitlines()[0]
             vasprunxml_exist = output=='ok'
 
             if vasprunxml_exist:
-                vasprunxml_lastline = self.ssh_and_run('tail -1 %s/vasprun.xml' %rpath).splitlines()[0]
+                vasprunxml_lastline = ssh_and_run(platform=self.node().gen.getkw('platform'), command='tail -1 %s/vasprun.xml' %rpath).splitlines()[0]
 
             if is_running or not vasprunxml_exist:
                 return 1
@@ -1010,7 +1019,7 @@ class Vasp(object):
                     return False
             elif platform in ['nanaimo', 'irmik', 'comet', 'edison', 'cori']:
                 if shared.DEBUG>=2: print self.__class__.__name__ + '.moonphase: asking %s for status of {%s}' %(gen.getkw('platform'), path)
-                result = self.ssh_and_run("squeue -n '%s'" %(self.remote_folder_name))
+                result = ssh_and_run(platform=self.node().gen.getkw('platform'), command="squeue -n '%s'" %(self.remote_folder_name))
                 return ( len(result.splitlines()) > 1 )
             else:
                 raise shared.CustomError(self.__class__.__name__ + '.info: invalid platform')
@@ -1053,7 +1062,7 @@ class Vasp(object):
             if platform == 'dellpc' or platform == 'dellpc_gpu':
                 raise shared.CustomError(self.__class__.__name__ + '.info: there is no queue time for dell. Yes, it can be 0, but bad for the data.')
             elif platform in ['nanaimo', 'irmik', 'comet', 'edison', 'cori']:
-                output = self.ssh_and_run("sacct -S 0101 --format=jobname%%100,submit,start -u xzhang1 --name=%s" %(self.remote_folder_name)).splitlines()
+                output = ssh_and_run(platform=self.node().gen.getkw('platform'), command="sacct -S 0101 --format=jobname%%100,submit,start -u xzhang1 --name=%s" %(self.remote_folder_name)).splitlines()
                 lines = [l.split() for l in output]
                 submit = next(l for l in lines if l[0]==self.remote_folder_name)[1]
                 submit = time.mktime(dateparser.parse(submit).timetuple())
@@ -1850,12 +1859,65 @@ class MC_gen_queuetime(object):
     def __init__(self):
 
         # historical_data
-        columns = pd.MultiIndex.from_tuples([('queue', 'T'), ('queue', 'S'), ('queue', 'UID'), ('wait_time', 'wait_time')])
-        index = pd.MultiIndex.from_tuples([], names=['platform', 'jobid', 'jobids'])
-        self.historical_data  = pd.DataFrame([], columns=columns, index=index)
+        self.historical_data = pd.DataFrame([],
+                                            columns=pd.Index(['platform', 'jobid', 'jobids','T', 'S', 'UID', 'wait_time']),
+                                            )
 
         # model
-        self.parameters = pd.DataFrame([], columns=['C', 'beta_FS', 'p_FF_max', 'p_FF_min', 'beta_FF_S'], index=['nanaimo','irmik','edison', 'comet'])
-        self.parameters.index.name = 'platform'
+        self.parameters = pd.DataFrame([],
+                                       columns=pd.Index(['C', 'beta_FS', 'p_FF_max', 'p_FF_min', 'beta_FF_S'], name='parameter'),
+                                       index=pd.Index(['nanaimo','irmik','edison','comet'], name='platform')
+                                       )
 
-    def gather_X(self, platform):
+
+    def gather_Xy(self, platform):
+        # generate sacct text
+        starttime = (datetime.datetime.now() + datetime.timedelta(-10)).strftime('%Y-%m-%d')    # 90 days ago
+        sacct_text = ssh_and_run(platform=platform, command='sacct --starttime %s --format=jobid,timelimit,nnodes,user,submit,start,end --allusers' %starttime)
+        sacct_text = [l.split() for l in sacct_text.splitlines()]
+        # parse sacct text
+        df = pd.DataFrame(sacct_text,
+                          columns=['jobid','T','S','UID','submit','start','end']
+                          )
+        df[['jobid','S']] = df[['jobid','S']] \
+                                .apply(pd.to_numeric, errors='coerce')
+        df['T'] = df['T'].str.replace('-', ' days ') \
+                         .apply(pd.to_timedelta, errors='coerce')
+        df[['submit','start','end']] = df[['submit','start','end']] \
+                                       .apply(pd.to_datetime, errors='coerce')
+        df['wait_time'] = df['start'] - df['submit']
+        df = df.drop([0,1]).dropna()
+        # generate historical_data table
+        historical_data = []
+        earliest = df['end'].iloc[0]
+        with tqdm(total=df.shape[0], leave=False) as pbar:
+            for i, row in df[df['submit'] > earliest].iterrows():
+                pbar.update(1)
+                queue = df[(df['submit'] < row['submit']) & (df['end'] > row['submit'])]
+                queue = queue[['jobid', 'T', 'S', 'UID', 'wait_time']]
+                queue['jobids'] = queue['jobid']
+                queue['jobid'] = row['jobid']
+                queue['platform'] = platform
+                queue['wait_time'] = row['wait_time']
+                queue = queue.set_index(['platform', 'jobid', 'jobids'])
+                historical_data.append(queue)
+        historical_data = pd.concat(historical_data)
+        return historical_data
+
+    def gather_X(self, remote_folder_name, platform):
+        # generate squeue_text
+        squeue_text = ssh_and_run(platform=platform, command='squeue -o "%j %C %l %u"')
+        squeue_text = [l.split() for l in squeue_text.splitlines()]
+        df = pd.DataFrame(squeue_text,
+                          columns=['T','S','UID']
+                          )
+        df['S'] = df['S'].apply(pd.to_numeric, errors='coerce')
+        df['T'] = df['T'].str.replace('-', ' days ') \
+                         .apply(pd.to_timedelta, errors='coerce')
+        return df
+
+    def learn_from():
+        self.historical_data = pd.concat([self.gather_Xy(platform) for platform in ['nanaimo', 'irmik', 'edison', 'comet']])
+
+    def train():
+        pass

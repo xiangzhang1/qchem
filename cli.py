@@ -1,4 +1,27 @@
 #!/usr/bin/env python
+# scientific kit
+import numpy as np
+np.seterr(divide='ignore', invalid='ignore')
+import scipy
+from scipy import spatial
+from scipy.optimize import minimize
+import pandas as pd
+pd.set_option('display.width', 1000)
+import matplotlib.pyplot as plt
+
+# date
+import time
+import datetime
+
+# sys
+import os
+import sys
+import subprocess
+import shutil
+
+# ase: some of its libraries are fantastic.
+import ase
+
 import sys
 import os
 import shutil
@@ -8,13 +31,11 @@ import dill as pickle
 import time
 from pprint import pprint
 import IPython
-import numpy as np
-np.set_printoptions(precision=6, threshold='nan', suppress=True)
 from tqdm import tqdm
 import math
 import itertools
 import copy
-from datetime import datetime
+import datetime
 
 from cStringIO import StringIO
 from fuzzywuzzy import process
@@ -23,22 +44,12 @@ import types
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-# scipy
-from scipy import spatial
-from scipy.optimize import minimize
-
 # sklearn
 import sklearn
 from sklearn.preprocessing import StandardScaler
 
-# pytorch
-import torch
-from torch.autograd import Variable
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.utils.data import TensorDataset, DataLoader
-import torch.optim as optim
-from torch.nn import Sequential
+# keras
+import keras
 
 # parallel
 import joblib
