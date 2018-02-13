@@ -40,12 +40,7 @@ from torch.utils.data import TensorDataset, DataLoader
 import torch.optim as optim
 
 # qchem package
-import dynamic
-import shared
-from shared import elements
-import qchem
-import engine
-
+from qchem import shared, dynamic, engine, graph
 
 # logging
 # if shared.DEBUG <= 0:
@@ -367,7 +362,7 @@ def request_():  # either merge json, or use dynamic.nodes['master']     # yep, 
 def new_node():
     j = request.get_json(force=True)
     n = engine.Map().lookup(j['cur'])
-    n.map.add_node(qchem.Node())
+    n.map.add_node(graph.Node())
 
 @app.route('/del_node', methods=['POST'])
 @patch_through
@@ -472,7 +467,7 @@ def edit():
             if x.name == node.name:
                 raise shared.CustomError('gui edit: edit is not in place and relies on name search. one child node has same name {%s} as parent, which may cause confusion.' %node.name)
             dynamic.nodes[x.name] = x
-    qchem.Import(j['text'])
+    graph.Import(j['text'])
     #  update
     if node.name in dynamic.nodes:
         new_node = node.map.lookup(node.name)#pop
