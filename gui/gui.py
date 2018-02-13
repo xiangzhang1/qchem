@@ -40,7 +40,7 @@ from torch.utils.data import TensorDataset, DataLoader
 import torch.optim as optim
 
 # qchem package
-from qchem import shared, dynamic, engine, graph
+import shared, dynamic, engine, graph
 
 # logging
 # if shared.DEBUG <= 0:

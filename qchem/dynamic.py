@@ -63,13 +63,13 @@ def load(middlename, datetime=None):
 def global_load():
     global nodes, services
     nodes = load('nodes')
-    services = load('services')
+    # services = load('services')
     print 'global_load called'
 
 def global_save():
     global nodes, services
     save(nodes, 'nodes')
-    save(services, 'services')
+    # save(services, 'services')
     print 'global_save called'
 
 # nodes
