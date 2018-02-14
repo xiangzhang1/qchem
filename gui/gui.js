@@ -616,6 +616,11 @@ s.bind('clickStage', function(e) {
 //   console.log('clipboard is ', clipboard);
 //   console.log('but result is ','cut_name' in clipboard?'yes':'no');
 // });
+if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {  // on ipad, double click stage to go up
+  s.bind('doubleClickStage', function(e) {
+    back();
+  });
+}
 
 function dist(x1,y1,x2,y2) {
   var dx = x1-x2;
