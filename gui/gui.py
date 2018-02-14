@@ -118,7 +118,7 @@ def login_required(func):
     def wrapped(*args, **kwargs):
         # auth
         auth = request.authorization
-        if not auth or auth.username!='xzhang1' or hashlib.sha1(auth.password).hexdigest()!='95a35a853743ababe18658965bb71615f1edaae9':
+        if not auth or auth.username!='xzhang1' or hashlib.sha1(auth.password).hexdigest()!='04a8e9fc933e4113ca82035de6a9fc22a9ac4765':
             print 'bad username/pswd detected: %s | %s' %(auth.username, hashlib.sha1(auth.password).hexdigest())
             return Response('Bad username/pswd', 403, {'WWW-Authenticate': 'Basic realm="Need login."'})
         else:
@@ -560,4 +560,3 @@ def copy_path():
 
 #app.run(host='127.0.0.1',port='5000', debug = False, ssl_context=('cert/domain.crt','cert/domain.key'))
 app.run(host='0.0.0.0', port=5000, debug=False)
-
