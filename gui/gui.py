@@ -42,7 +42,7 @@ from torch.utils.data import TensorDataset, DataLoader
 import torch.optim as optim
 
 # qchem package
-import shared, dynamic, engine, graph
+from qchem import shared, dynamic, engine, graph
 
 # logging
 # if shared.DEBUG <= 0:
@@ -61,7 +61,7 @@ logging.basicConfig()
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
-Compress(app)   # compress response
+#Compress(app)   # compress respons#e
 
 
 # cron server using apscheduler
@@ -560,3 +560,4 @@ def copy_path():
 
 #app.run(host='127.0.0.1',port='5000', debug = False, ssl_context=('cert/domain.crt','cert/domain.key'))
 app.run(host='0.0.0.0', port=5000, debug=False)
+
