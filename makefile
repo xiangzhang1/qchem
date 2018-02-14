@@ -6,5 +6,5 @@ pull:
 	git pull
 gui:
 	git pull ; ./gui/gui.py
-package:
+export:
 	tar --exclude gui.py -zcf gui.tar.gz gui
