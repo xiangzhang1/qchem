@@ -1,6 +1,6 @@
 overlay/** DATA STRUCTURE AND FUNCTIONS **/
 // flask_url = 'http://52.205.255.228:8080';       // the security is fine, unless in airport where someone sniffs your data. but at home or school, fine.
-flask_url = 'http://dellpcxzhang1.dyndns.org:5000';
+flask_url = 'https://dellpcxzhang1.dyndns.org:5000';
 // flask_url = 'http://localhost:5000';
 master = { id: 'master', name: 'master', label: 'master', map: { nodes: [], edges: [] } } ;
 cur = 'master';

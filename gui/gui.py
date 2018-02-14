@@ -558,5 +558,5 @@ def copy_path():
 
 # ===========================================================================
 
-#app.run(host='127.0.0.1',port='5000', debug = False, ssl_context=('cert/domain.crt','cert/domain.key'))
-app.run(host='0.0.0.0', port=5000, debug=False)
+app.run(host='0.0.0.0',port='5000', debug = False, ssl_context=('/home/xzhang1/.openssh/mycert.pem','cert/mykey.pem'))
+# app.run(host='0.0.0.0', port=5000, debug=False)
