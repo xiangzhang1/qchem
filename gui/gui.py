@@ -30,6 +30,8 @@ from apscheduler.triggers.interval import IntervalTrigger
 
 import atexit
 
+import hashlib
+
 # pytorch: always import before importing submodule with torch. otherwise it's gonna blow.
 import torch
 from torch.autograd import Variable
@@ -67,7 +69,7 @@ scheduler = BackgroundScheduler()
 scheduler.start()
 atexit.register(lambda: scheduler.shutdown()) # Shut down the scheduler when exiting the app
 
-print shared.bcolors.BOLD  + shared.bcolors.FAIL + 'GUI serves as a crutch, or even only a browser. It is intuitive, but slow. There is no point in implementing full functionality.' + shared.bcolors.ENDC
+# print shared.bcolors.BOLD  + shared.bcolors.FAIL + 'GUI serves as a crutch, or even only a browser. It is intuitive, but slow. There is no point in implementing full functionality.' + shared.bcolors.ENDC
 
 
 
@@ -116,8 +118,8 @@ def login_required(func):
     def wrapped(*args, **kwargs):
         # auth
         auth = request.authorization
-        if not auth or auth.username!='xzhang1' or auth.password!='5vRPz7Ngm8rNS3Sg':
-            print 'bad username/pswd detected: %s | %s' %(auth.username, auth.password)
+        if not auth or auth.username!='xzhang1' or hashlib.sha1(auth.password).hexdigest()!='95a35a853743ababe18658965bb71615f1edaae9':
+            print 'bad username/pswd detected: %s | %s' %(auth.username, hashlib.sha1(auth.password).hexdigest())
             return Response('Bad username/pswd', 403, {'WWW-Authenticate': 'Basic realm="Need login."'})
         else:
             return func(*args, **kwargs)
