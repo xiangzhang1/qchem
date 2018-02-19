@@ -4,7 +4,3 @@ push:
 	git add -A ; git commit -am 'automated push' ; git push
 pull:
 	git pull
-gui:
-	git pull ; ./gui/gui.py
-export:
-	tar --exclude gui.py -zcf gui.tar.gz gui
