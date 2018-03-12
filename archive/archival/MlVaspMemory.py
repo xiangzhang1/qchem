@@ -20,7 +20,7 @@ class MlVaspMemory(object):
         self.n_X_A, self.n_hidden_A1, self.n_hidden_A2, self.n_y_A = 8, 8, 4, 1
         self.n_X_B, self.n_hidden_B1, self.n_hidden_B2, self.n_y_B = 2, 4, 4, 1
         self.n_X, self.n_y = 10, 1
-        self.path = shared.SCRIPT_DIR + 'data/' + str.upper(self.__class__.__name__)
+        self.path = shared.script_dir + 'data/' + str.upper(self.__class__.__name__)
 
         # first ANN dump
         tf.reset_default_graph()

@@ -1,4 +1,4 @@
-Global constants, methods, and (persisting) variables.
+Global constants, methods, and (persisting) variables. Note that np.pi is not capitalized.
 
 __DEBUG__
 * -1 [silent]

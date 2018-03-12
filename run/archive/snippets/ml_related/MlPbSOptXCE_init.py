@@ -1,4 +1,4 @@
-shared.NODES = shared.load('NODES')
+shared.nodes = shared.load('nodes')
 
 curs = [
 'master.PbS QD.bare qd testing.crunchit.3 opt',

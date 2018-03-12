@@ -226,7 +226,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
     def pot(self, symbol):
         if len(shared.ELEMENTS[symbol].pot) == 0:
             raise shared.CustomError(' pot: POTCAR for '+symbol+' not found.')
-        path = shared.SCRIPT_DIR + '/resource/potpaw_PBE/'+shared.ELEMENTS[symbol].pot + '/POTCAR'
+        path = shared.script_dir + '/resource/potpaw_PBE/'+shared.ELEMENTS[symbol].pot + '/POTCAR'
         if_ = open(path,'r')
         of_ = open('./POTCAR','a')
         of_.write( if_.read() )
@@ -262,7 +262,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         if not [x for x in input_ if x.startswith('engine')]:
             raise shared.CustomError(self.__class__.__name__+': __init__: no engine=x found. Input_: {%s}' %input_)
         engine_name = [x for x in input_ if x.startswith('engine')][0].split('=')[1].strip()
-        with open(shared.SCRIPT_DIR + '/conf/engine.gen.' + engine_name + '.conf') as conf:
+        with open(shared.script_dir + '/conf/engine.gen.' + engine_name + '.conf') as conf:
             lines = conf.read().splitlines()
             for line in [ [p.strip() for p in l.split(':')] for l in lines if not l.startswith('#') ]:
                 if len(line) < 4: raise shared.CustomError('bad conf grammar error: needs 3 colons per line least in {%s}' %line)
@@ -427,7 +427,7 @@ class Makeparam(object):
         tmp_gen.kw['lsorbit'] = ['.FALSE.']
         tmp_gen.kw['isym'] = ['0']
         # make dir, write files
-        tmp_path = shared.SCRIPT_DIR + '/check_memory_tmp' + ''.join(random.sample(string.ascii_lowercase,4))
+        tmp_path = shared.script_dir + '/check_memory_tmp' + ''.join(random.sample(string.ascii_lowercase,4))
         if os.path.exists(tmp_path):
             shutil.rmtree(tmp_path)
         os.mkdir(tmp_path)
@@ -439,7 +439,7 @@ class Makeparam(object):
             gen.pot(symbol)
         # parse output
         try:
-            output = check_output([shared.SCRIPT_DIR + '/resource/makeparam']).splitlines()
+            output = check_output([shared.script_dir + '/resource/makeparam']).splitlines()
         except CalledProcessError:
             raise shared.CustomError(self.__class__.__name__ + ' error: makeparam failed with non-zero exit status. possibly memory error. give it up man :)')
         try:
@@ -451,7 +451,7 @@ class Makeparam(object):
             print '\n'.join(output)
             raise shared.CustomError(tmp_gen.__class__.__name__ + ' error: makeparam output illegal. Check POSCAR4 format and memory leak in directory {%s}.' %tmp_path)
         # cleanup
-        os.chdir(shared.SCRIPT_DIR)
+        os.chdir(shared.script_dir)
         shutil.rmtree(tmp_path)
 
 
@@ -589,10 +589,10 @@ class Map(object):
 
     def lookup(self, name):
         if name == 'master':
-            if name in shared.NODES:   return shared.NODES['master']
+            if name in shared.nodes:   return shared.nodes['master']
             else: raise shared.CustomError('找不到master了，求喂食')
-        elif name in shared.NODES:
-            return shared.NODES.pop(name)
+        elif name in shared.nodes:
+            return shared.nodes.pop(name)
         elif any([x.name == name for x in self._dict]):
             return [x for x in self._dict if x.name == name][0]
         elif '.' in name:
@@ -983,7 +983,7 @@ class Vasp(object):
         path = self.node().path
         if os.path.isdir(path):
             print 'removing self.path {%s}' %path
-            os.chdir(shared.SCRIPT_DIR)
+            os.chdir(shared.script_dir)
             subprocess.Popen(['trash', path], stdout=sys.stdout, stderr=sys.stderr).wait()
 
     def __str__(self):
@@ -1113,7 +1113,7 @@ class Dummy(object):
     def delete(self):
         print 'removing folder {%s}' %self.path
         if os.path.isdir(self.path):
-            os.chdir(shared.SCRIPT_DIR)
+            os.chdir(shared.script_dir)
             shutil.rmtree(self.path)
 
 

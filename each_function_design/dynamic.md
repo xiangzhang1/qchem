@@ -3,7 +3,7 @@ State variables. Contain precious data. We don't want to lose them.
 _load_(), _save_()
 Generic load and dump
 
-_NODES_
+_nodes_
 Dict of nodes. Usually just 'master', except when copy-and-pasting.
 
 _MLS_

@@ -262,9 +262,9 @@ def combine_json(new_json, old_json=None):
 @login_required
 def get_docs_list():
     j = {'filenames':[]}
-    for fname in os.listdir(shared.SCRIPT_DIR+'/docs'):
+    for fname in os.listdir(shared.script_dir+'/docs'):
         j['filenames'].append('docs/'+fname)
-    for fname in os.listdir(shared.SCRIPT_DIR+'/conf'):
+    for fname in os.listdir(shared.script_dir+'/conf'):
         j['filenames'].append('conf/'+fname)
     return jsonify(j)
 
@@ -273,7 +273,7 @@ def get_docs_list():
 @login_required
 def open_docs():
     fname = request.get_json(force=True)['fname']
-    filename = shared.SCRIPT_DIR+'/'+fname
+    filename = shared.script_dir+'/'+fname
     with open(filename,'r') as f:
         return jsonify({'text':f.read()})
 
@@ -313,14 +313,14 @@ def shutdown():
 @patch_through
 @login_required
 def dump_nodes():
-    shared.save(shared.NODES, 'NODES')
+    shared.save(shared.nodes, 'nodes')
 
 # either load latest, or load a specific datetime_postfix.
 @app.route('/load_nodes', methods=['GET','POST'])
 @patch_through
 @login_required
 def load_nodes():
-    shared.NODES = shared.load('NODES')
+    shared.nodes = shared.load('nodes')
 
 @app.route('/load_sigma', methods=['GET','POST'])
 @return_through
@@ -342,9 +342,9 @@ def get_dumps_list():
     print 'Note: function is archaic. Middlename will not be the same for every entity.'
     j = {'datetime_postfixs':[]}
     l = []
-    for fname in os.listdir(shared.SCRIPT_DIR+'/data/'):
-        if fname.startswith('shared.NODES.dump.'):
-            l.append(fname.replace('shared.NODES.dump.',''))
+    for fname in os.listdir(shared.script_dir+'/data/'):
+        if fname.startswith('shared.nodes.dump.'):
+            l.append(fname.replace('shared.nodes.dump.',''))
     l.sort(reverse=True)
     j['datetime_postfixs'] = l[:5]
     return jsonify(j)
@@ -368,7 +368,7 @@ def get_dumps_list():
 @app.route('/request_', methods=['POST','GET'])
 @return_through
 @login_required
-def request_():  # either merge json, or use shared.NODES['master']     # yep, this is the magic function.
+def request_():  # either merge json, or use shared.nodes['master']     # yep, this is the magic function.
     if request.method == 'POST':
         old_json = request.get_json(force=True)
         if shared.DEBUG >= 2: print 'before to_json' + '*'*70
@@ -488,10 +488,10 @@ def edit():
         for x in node.map if getattr(node,'map',None) else []:
             if x.name == node.name:
                 raise shared.CustomError('gui edit: edit is not in place and relies on name search. one child node has same name {%s} as parent, which may cause confusion.' %node.name)
-            shared.NODES[x.name] = x
+            shared.nodes[x.name] = x
     graph.Import(j['text'])
     #  update
-    if node.name in shared.NODES:
+    if node.name in shared.nodes:
         new_node = node.map.lookup(node.name)#pop
     else:
         raise shared.CustomError(node.__class__.__name__ + ': edit: You have not defined a same-name node (aka node with name %s which would have been read)' %(node.name))
@@ -503,7 +503,7 @@ def edit():
 @return_through
 @login_required
 def make_connection():
-    if 'master' in shared.NODES and getattr(shared.NODES['master'], 'map', None):
+    if 'master' in shared.nodes and getattr(shared.nodes['master'], 'map', None):
         statuscolor = shared.COLOR_PALETTE[2]
     else:
         statuscolor = shared.COLOR_PALETTE[-1]
@@ -517,7 +517,7 @@ def cut_ref():
     j = request.get_json(force=True)
     n = engine.Map().lookup(j['cur']+'.'+j['name'])
     p = engine.Map().lookup(j['cur'])
-    shared.NODES[n.name] = n
+    shared.nodes[n.name] = n
     p.map.del_node(n)
 
 @app.route('/paste_ref', methods=['POST'])
@@ -526,15 +526,15 @@ def cut_ref():
 def paste_ref():
     j = request.get_json(force=True)
     p = engine.Map().lookup(j['cur'])
-    l = [n for n in shared.NODES.values() if n!=engine.Map().lookup('master')]
+    l = [n for n in shared.nodes.values() if n!=engine.Map().lookup('master')]
     if not l:
-        raise shared.CustomError('paste_ref error: shared.NODES only contains master. nothing pastable')
+        raise shared.CustomError('paste_ref error: shared.nodes only contains master. nothing pastable')
     if len(l) > 1:
         print 'paste_ref warning: more than one nodes pastable. pastable nodes are [%s]' %([n.name for n in l])
     n = l[0]
     print 'paste_ref: adding node {%s}' %n.name
     p.map.add_node(n)
-    shared.NODES.pop(n.name)
+    shared.nodes.pop(n.name)
 
 
 @app.route('/add_edge', methods=['POST'])

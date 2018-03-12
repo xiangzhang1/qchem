@@ -1,6 +1,6 @@
 from scipy import spatial
 
-shared.NODES = shared.load('NODES')
+shared.nodes = shared.load('nodes')
 m = dynamic.MLS['MLPBSOPT']
 
 _X_local = np.float32(m._X_local)

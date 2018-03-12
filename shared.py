@@ -19,29 +19,40 @@ import traceback, sys, code
 from StringIO import StringIO
 from sklearn.preprocessing import LabelBinarizer
 
+'''
+TOC is not ordered.
 
-# INDEX
-# =====
-# DEBUG option, SCRIPT_DIR, HOME_DIR
-# Fragile lists
-# elements
-# CustomError, DeferError, [LookupError]
-# MySFTPClient, sshs
-# @MWT
-# @moonphase_wrap
-# wraparound error constant
-# @log_wrap
-# bcolors (different from Fragile lists)
-# @debug_wrap
-# pipeline-friendly LabelBinary
-# euler2mat
+Program-wide configuration
+- verbose
+- home_dir, script_dir, scratch_dir, data_dir
+- sshs: open ssh connections
 
-#
+Helper functions and constants
+- euler2mat: generate rotation matrices
+- bcolors: print color to stdout
+- CustomError, DeferError, [LookupError]: understandable errors
+- save/load: pickle-based variable persistency
+- elements: periodic table database
+
+Function decorators
+- @MWT: Memorize With Timeout
+
+Shitty program-wide configurations
+- a few fragile lists
+- @moonphase_wrap
+- @log_wrap
+- @debug_wrap
+'''
+
+
 # ===========================================================================
 
-SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__)) + '/'
-HOME_DIR = os.path.expanduser(os.path.expanduser("~")) + '/'
-SCRATCH_DIR = SCRIPT_DIR + '/.scr'
+script_dir = os.path.dirname(os.path.realpath(__file__)) + '/'
+home_dir = os.path.expanduser(os.path.expanduser("~")) + '/'
+scratch_dir = script_dir + '/.scr'
+
+# verbose
+# ===========================================================================
 
 DEBUG = 0
 
@@ -51,12 +62,12 @@ DEBUG = 0
 # - automatic version control
 # shorter code
 def save(obj, middlename):      # Note! Where defined, above which obj pickled.
-    filepath = shared.SCRIPT_DIR + '/data/dynamic.%s.pickle.'%(middlename) + time.strftime('%Y%m%d%H%M%S')
+    filepath = shared.script_dir + '/data/dynamic.%s.pickle.'%(middlename) + time.strftime('%Y%m%d%H%M%S')
     with open(filepath,'wb') as dumpfile:
         pickle.dump(obj, dumpfile, protocol=pickle.HIGHEST_PROTOCOL)
 
 def load(middlename, datetime=None):
-    filepath = shared.SCRIPT_DIR + '/data/' + sorted([x for x in os.listdir(shared.SCRIPT_DIR + '/data/') if x.startswith('dynamic.%s.pickle.%s'%(middlename, datetime if datetime else ''))])[-1]
+    filepath = shared.script_dir + '/data/' + sorted([x for x in os.listdir(shared.script_dir + '/data/') if x.startswith('dynamic.%s.pickle.%s'%(middlename, datetime if datetime else ''))])[-1]
     with open(filepath, 'rb') as f:
         return pickle.load(f)
 
@@ -90,7 +101,7 @@ COLOR_PALETTE = {-1: '#a94442', 0: '#000000',  1: '#8a6d3b', 2: '#3c763d', -2: '
 
 
 
-# Element, elements
+# element: periodic table database
 # ===========================================================================
 
 class lazyattr(object):
@@ -215,7 +226,7 @@ class ElementsDict(object):
             self._dict[element.name] = element
 
     def import_(self):
-        infile = open(SCRIPT_DIR + 'conf/shared.element.conf','r')
+        infile = open(script_dir + 'conf/shared.element.conf','r')
         lines = [[field.strip() for field in line.split(':')] for line in infile.read().splitlines()]
         header = lines[0]
         for line_idx, line in enumerate(lines):
@@ -277,8 +288,6 @@ elements.import_()
 
 # ===========================================================================
 
-# Exceptions
-
 class CustomError(Exception):
     pass
 
@@ -286,38 +295,13 @@ class CustomError(Exception):
 class DeferError(Exception):   # DeferError name seems to conflict
     pass
 
+# sshs: open ssh connections
 # ===========================================================================
-
-# MySFTPClient: A wrapper for paramiko
-
-class MySFTPClient(paramiko.SFTPClient):
-    '''extension of paramiko SFTPClient'''
-
-    def put_dir(self, source, target):
-        ''' Uploads the contents of the source directory to the target path. The
-            target directory needs to exists. All subdirectories in source are
-            created under target.'''
-        for item in os.listdir(source):
-            if os.path.isfile(os.path.join(source, item)):
-                self.put(os.path.join(source, item), '%s/%s' % (target, item))
-            else:
-                self.mkdir('%s/%s' % (target, item), ignore_existing=True)
-                self.put_dir(os.path.join(source, item), '%s/%s' % (target, item))
-
-    def mkdir(self, path, mode=511, ignore_existing=False):
-        '''Augments mkdir by adding an option to not fail if the folder exists'''
-        try:
-            super(MySFTPClient, self).mkdir(path, mode)
-        except IOError:
-            if ignore_existing:
-                pass
-            else:
-                raise
 
 sshs = {}
-# ===========================================================================
 
-# MWT: Memorize With Timeout
+# @MWT: Memorize With Timeout
+# ===========================================================================
 
 class MWT(object):
     """Memoize With Timeout"""
@@ -359,8 +343,6 @@ class MWT(object):
 
 # ===========================================================================
 
-# @moonphase_wrap
-
 def moonphase_wrap(func):
     @MWT(timeout=60)
     @wraps(func)
@@ -377,8 +359,6 @@ def moonphase_wrap(func):
 
 
 # ===========================================================================
-
-# @log_wrap
 
 class Logger(object):
     def __init__(self):
@@ -411,8 +391,6 @@ def log_wrap(func):
 
 # ===========================================================================
 
-# @bcolors
-
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -425,8 +403,6 @@ class bcolors:
 
 
 # ===========================================================================
-
-# debug_wrap
 
 def debug_wrap(func):
     @wraps(func)
@@ -448,20 +424,6 @@ def debug_wrap(func):
         else:
             return func(*args, **kwargs)
     return wrapped
-
-
-
-# ===========================================================================
-
-class LabelBinarizerPipelineFriendly(LabelBinarizer):
-     def fit(self, X, y=None):
-         """this would allow us to fit the model based on the X input."""
-         super(LabelBinarizerPipelineFriendly, self).fit(X)
-     def transform(self, X, y=None):
-         return super(LabelBinarizerPipelineFriendly, self).transform(X)
-
-     def fit_transform(self, X, y=None):
-         return super(LabelBinarizerPipelineFriendly, self).fit(X).transform(X)
 
 
 # ===========================================================================

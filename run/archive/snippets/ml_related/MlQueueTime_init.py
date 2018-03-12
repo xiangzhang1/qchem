@@ -1,4 +1,4 @@
-shared.NODES = shared.load('NODES')
+shared.nodes = shared.load('nodes')
 m = dynamic.MlQueueTime()
 for n in engine.Map().lookup('master').map.traverse():
     if getattr(n, 'vasp', None):

@@ -23,7 +23,7 @@ import shared
 import engine
 from shared import elements
 
-dynamic.load(shared.NODES, 'nodes')
+dynamic.load(shared.nodes, 'nodes')
 
 def get_error(x):
     import numpy as np
