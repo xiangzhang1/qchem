@@ -44,7 +44,21 @@ HOME_DIR = os.path.expanduser(os.path.expanduser("~")) + '/'
 SCRATCH_DIR = SCRIPT_DIR + '/.scr'
 
 DEBUG = 0
-print 'shared.py: DEBUG = %s' %(DEBUG)
+
+# Pickle-based variable persistency
+# ===========================================================================
+# - save to data directory
+# - automatic version control
+# shorter code
+def save(obj, middlename):      # Note! Where defined, above which obj pickled.
+    filepath = shared.SCRIPT_DIR + '/data/dynamic.%s.pickle.'%(middlename) + time.strftime('%Y%m%d%H%M%S')
+    with open(filepath,'wb') as dumpfile:
+        pickle.dump(obj, dumpfile, protocol=pickle.HIGHEST_PROTOCOL)
+
+def load(middlename, datetime=None):
+    filepath = shared.SCRIPT_DIR + '/data/' + sorted([x for x in os.listdir(shared.SCRIPT_DIR + '/data/') if x.startswith('dynamic.%s.pickle.%s'%(middlename, datetime if datetime else ''))])[-1]
+    with open(filepath, 'rb') as f:
+        return pickle.load(f)
 
 # Fragile lists:
 # ===========================================================================

@@ -1,4 +1,4 @@
-dynamic.global_load()
+shared.NODES = shared.load('NODES')
 m = dynamic.MlVaspSpeed()
 for n in engine.Map().lookup('master').map.traverse():
     if getattr(n, 'vasp', None):

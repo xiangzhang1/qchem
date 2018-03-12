@@ -19,7 +19,7 @@ curs = [
     ['master.PbS QD.bare qd testing.crunchit.7 opt', 'master.PbS QD.bare qd testing.crunchit.7 opt'],
 ]
 
-dynamic.global_load()
+shared.NODES = shared.load('NODES')
 m = dynamic.MlPbSOpt()
 for start_cur, cur in curs:
     n = engine.Map().lookup(cur)

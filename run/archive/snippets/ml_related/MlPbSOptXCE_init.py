@@ -1,4 +1,4 @@
-dynamic.global_load()
+shared.NODES = shared.load('NODES')
 
 curs = [
 'master.PbS QD.bare qd testing.crunchit.3 opt',

@@ -313,14 +313,14 @@ def shutdown():
 @patch_through
 @login_required
 def dump_nodes():
-    dynamic.global_save()
+    shared.save(shared.NODES, 'NODES')
 
 # either load latest, or load a specific datetime_postfix.
 @app.route('/load_nodes', methods=['GET','POST'])
 @patch_through
 @login_required
 def load_nodes():
-    dynamic.global_load()
+    shared.NODES = shared.load('NODES')
 
 @app.route('/load_sigma', methods=['GET','POST'])
 @return_through
@@ -343,8 +343,8 @@ def get_dumps_list():
     j = {'datetime_postfixs':[]}
     l = []
     for fname in os.listdir(shared.SCRIPT_DIR+'/data/'):
-        if fname.startswith('dynamic.nodes.dump.'):
-            l.append(fname.replace('dynamic.nodes.dump.',''))
+        if fname.startswith('shared.NODES.dump.'):
+            l.append(fname.replace('shared.NODES.dump.',''))
     l.sort(reverse=True)
     j['datetime_postfixs'] = l[:5]
     return jsonify(j)
@@ -368,7 +368,7 @@ def get_dumps_list():
 @app.route('/request_', methods=['POST','GET'])
 @return_through
 @login_required
-def request_():  # either merge json, or use dynamic.nodes['master']     # yep, this is the magic function.
+def request_():  # either merge json, or use shared.NODES['master']     # yep, this is the magic function.
     if request.method == 'POST':
         old_json = request.get_json(force=True)
         if shared.DEBUG >= 2: print 'before to_json' + '*'*70
@@ -488,10 +488,10 @@ def edit():
         for x in node.map if getattr(node,'map',None) else []:
             if x.name == node.name:
                 raise shared.CustomError('gui edit: edit is not in place and relies on name search. one child node has same name {%s} as parent, which may cause confusion.' %node.name)
-            dynamic.nodes[x.name] = x
+            shared.NODES[x.name] = x
     graph.Import(j['text'])
     #  update
-    if node.name in dynamic.nodes:
+    if node.name in shared.NODES:
         new_node = node.map.lookup(node.name)#pop
     else:
         raise shared.CustomError(node.__class__.__name__ + ': edit: You have not defined a same-name node (aka node with name %s which would have been read)' %(node.name))
@@ -503,7 +503,7 @@ def edit():
 @return_through
 @login_required
 def make_connection():
-    if 'master' in dynamic.nodes and getattr(dynamic.nodes['master'], 'map', None):
+    if 'master' in shared.NODES and getattr(shared.NODES['master'], 'map', None):
         statuscolor = shared.COLOR_PALETTE[2]
     else:
         statuscolor = shared.COLOR_PALETTE[-1]
@@ -517,7 +517,7 @@ def cut_ref():
     j = request.get_json(force=True)
     n = engine.Map().lookup(j['cur']+'.'+j['name'])
     p = engine.Map().lookup(j['cur'])
-    dynamic.nodes[n.name] = n
+    shared.NODES[n.name] = n
     p.map.del_node(n)
 
 @app.route('/paste_ref', methods=['POST'])
@@ -526,15 +526,15 @@ def cut_ref():
 def paste_ref():
     j = request.get_json(force=True)
     p = engine.Map().lookup(j['cur'])
-    l = [n for n in dynamic.nodes.values() if n!=engine.Map().lookup('master')]
+    l = [n for n in shared.NODES.values() if n!=engine.Map().lookup('master')]
     if not l:
-        raise shared.CustomError('paste_ref error: dynamic.nodes only contains master. nothing pastable')
+        raise shared.CustomError('paste_ref error: shared.NODES only contains master. nothing pastable')
     if len(l) > 1:
         print 'paste_ref warning: more than one nodes pastable. pastable nodes are [%s]' %([n.name for n in l])
     n = l[0]
     print 'paste_ref: adding node {%s}' %n.name
     p.map.add_node(n)
-    dynamic.nodes.pop(n.name)
+    shared.NODES.pop(n.name)
 
 
 @app.route('/add_edge', methods=['POST'])

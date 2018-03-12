@@ -1,7 +1,7 @@
 from scipy import spatial, optimize
 from numpy.polynomial import polynomial as P
 np.set_printoptions(precision=4, linewidth=250)
-dynamic.global_load()
+shared.NODES = shared.load('NODES')
 
 n = engine.Map().lookup('master.PbS QD.bare qd testing.crunchit.4 opt')
 bcoor = n.cell.ccoor
