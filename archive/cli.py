@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+'''Deprecated. I used to use this one for GUI, but after discovering Jupyter, IPython just doesn't quite cut it.'''
 # scientific kit
 import numpy as np
 np.seterr(divide='ignore', invalid='ignore')
@@ -18,9 +19,6 @@ import os
 import sys
 import subprocess
 import shutil
-
-# ase: some of its libraries are fantastic.
-import ase
 
 import sys
 import os
@@ -55,14 +53,10 @@ import keras
 import joblib
 from joblib import Parallel, delayed
 
+# import ase
+
 # qchem package
-import qchem
-import shared
-import dynamic
-import engine
-from shared import elements
+from qchem import shared, dynamic, engine, graph
 
-print shared.bcolors.OKBLUE + 'Welcome. Libraries loaded.' + shared.bcolors.ENDC
 
-if __name__ == "__main__":
-    IPython.embed(banner1='')
+
