@@ -1,3 +1,1 @@
-dynamic - - engine - qchem - gui
-         |
-shared  -
+shared - engine - qchem - gui
