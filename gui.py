@@ -45,14 +45,14 @@ logging.basicConfig()
 
 
 '''
-TOC
+gui.py
 =========================================
-Flask basic config, cron-like apscheduler
+- Flask basic config, cron-like apscheduler
+- @login_required: Login security decorator
 
 '''
 
 
-# ======================================================================
 # Flask basic config
 # ======================================================================
 
@@ -66,25 +66,10 @@ scheduler = BackgroundScheduler()
 scheduler.start()
 atexit.register(lambda: scheduler.shutdown()) # Shut down the scheduler when exiting the app
 
-# print shared.bcolors.BOLD  + shared.bcolors.FAIL + 'GUI serves as a crutch, or even only a browser. It is intuitive, but slow. There is no point in implementing full functionality.' + shared.bcolors.ENDC
 
-
-
-
-
-
-
-
-
-
-
-
-# ======================================================================
-# Shitty magic screw-with-stdout functions
-# Patches output and expected CustomError through; login security
+# Login security decorator
 # ======================================================================
 
-# login security
 def login_required(func):
     @wraps(func)
     def wrapped(*args, **kwargs):
@@ -97,10 +82,9 @@ def login_required(func):
             return func(*args, **kwargs)
     return wrapped
 
-# for testing
-@app.route('/hello_world')
-def hellowworld():
-    return 'hello, world!'
+
+# Helper functions
+# ======================================================================
 
 # a random id generator
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
@@ -175,14 +159,7 @@ def combine_json(new_json, old_json=None):
                 oldj = [oldj for oldj in traverse_json(old_json) if oldj[0]==newj[0]][0]
             else:
                 best_jam = process.extractOne(newj[1], [oldj[1] for oldj in traverse_json(old_json)])
-                if best_jam[1] > 50:
-                    #print '*='*50
-                    #print 'yeah found match'
-                    #print '-new-'*20
-                    #print newj
-                    #print '-old-'*20
-                    #print oldj
-                    #print '*='*50
+                if best_jam[1] > 50: # yeah, found match
                     oldj = [oldj for oldj in traverse_json(old_json) if oldj[1]==best_jam[0]][0]
                 else:
                     oldj = [oldj[0], oldj[1], {}]
@@ -217,37 +194,8 @@ def combine_json(new_json, old_json=None):
 
 
 
-# ========================================================================
 # Clerical: get docs, shutdown GUI, invoke IPython
 # ========================================================================
-
-'''Note: Still functional, but deleted from gui.html. Returns a list of docs.'''
-@app.route('/get_docs_list', methods=['GET'])
-@return_through
-@login_required
-def get_docs_list():
-    j = {'filenames':[]}
-    for fname in os.listdir(shared.script_dir+'/docs'):
-        j['filenames'].append('docs/'+fname)
-    for fname in os.listdir(shared.script_dir+'/conf'):
-        j['filenames'].append('conf/'+fname)
-    return jsonify(j)
-
-@app.route('/open_docs', methods=['POST'])
-@return_through
-@login_required
-def open_docs():
-    fname = request.get_json(force=True)['fname']
-    filename = shared.script_dir+'/'+fname
-    with open(filename,'r') as f:
-        return jsonify({'text':f.read()})
-
-'''Note: Functional but deleted. You can use this call to start an IPython session in command line, effectively safely sharing variables. This is my old way of having GUI + CLI.'''
-@app.route('/ipython', methods=['GET'])
-@login_required
-def ipython():
-    '''invokes embedded ipython'''
-    IPython.embed()
 
 @app.route('/shutdown', methods=['GET', 'POST'])
 @login_required
@@ -284,7 +232,6 @@ def load_nodes():
     shared.nodes = shared.load('nodes')
 
 @app.route('/load_sigma', methods=['GET','POST'])
-@return_through
 @login_required
 def load_sigma():
     return jsonify(dynamic.load('sigma'))
@@ -296,7 +243,6 @@ def dump_sigma():
 
 
 @app.route('/get_dumps_list', methods=['GET'])
-@return_through
 @login_required
 def get_dumps_list():
     print 'Note: function is archaic. Middlename will not be the same for every entity.'
@@ -325,8 +271,13 @@ def get_dumps_list():
 # ======================================================================
 
 
+# for testing
+@app.route('/hello_world')
+def helloworld():
+    return 'hello, world!'
+
+
 @app.route('/request_', methods=['POST','GET'])
-@return_through
 @login_required
 def request_():  # either merge json, or use shared.nodes['master']     # yep, this is the magic function.
     if request.method == 'POST':
@@ -394,7 +345,6 @@ def stop_setinterval_compute_node():
     scheduler.remove_job('setinterval_compute_job')
 
 @app.route('/get_text', methods=['POST'])
-@return_through
 @login_required
 def get_text():
     j = request.get_json(force=True)
@@ -450,7 +400,6 @@ def edit():
 
 
 @app.route('/make_connection', methods=['GET'])
-@return_through
 @login_required
 def make_connection():
     if 'master' in shared.nodes and getattr(shared.nodes['master'], 'map', None):
@@ -500,7 +449,6 @@ def del_edge():
     n.map.del_edge(j['src'],j['dst'])
 
 @app.route('/copy_remote_folder_name', methods=['POST'])
-@return_through
 @login_required
 def copy_remote_folder_name():
     j = request.get_json(force=True)
@@ -511,7 +459,6 @@ def copy_remote_folder_name():
         return jsonify({'remote_folder_name':'remote_folder_name_not_assigned'})
 
 @app.route('/copy_path', methods=['POST'])
-@return_through
 @login_required
 def copy_path():
     j = request.get_json(force=True)
