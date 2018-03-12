@@ -38,10 +38,10 @@ Function decorators
 - @MWT: Memorize With Timeout
 
 Shitty program-wide configurations
+- @moonphase_wrap: decorator for object method .moonphase(), respect .moonphase file.
+- @log_wrap: decorator for object method .compute(), pipe stdout to stdout and self.log. 3-swap should be robust.
+- @debug_wrap: decorator for object method .__init__(), auto launch debugger at error, useful for GUI.
 - a few fragile lists
-- @moonphase_wrap
-- @log_wrap
-- @debug_wrap
 '''
 
 
@@ -373,10 +373,10 @@ class Logger(object):
         sys.stdout.flush()
 
 def log_wrap(func):
-    @debug_wrap
     @wraps(func)
     def wrapped(self, *args, **kwargs):
         # change stdout to dual-pipe
+        original_stdout = sys.stdout
         sys.stdout = Logger()
         # pipe to both stdout and sys.stdout.log->self.log
         print '\n'
@@ -385,7 +385,7 @@ def log_wrap(func):
         print '*' * len('*' * 30 + ' ' + self.__class__.__name__ + ' @ ' + os.getcwd() + ' ' + '*' * 30 + '\n\n')
         self.log = sys.stdout.log.getvalue()    # sys.stdout now is the Logger object.
         # change stdout back
-        sys.stdout = sys.__stdout__
+        sys.stdout = original_stdout
         return result
     return wrapped
 

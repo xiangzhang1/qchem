@@ -8,7 +8,6 @@ from flask_compress import Compress
 
 # common libraries
 import sys
-sys.dont_write_bytecode = True
 import os
 import shutil
 import random
@@ -32,37 +31,35 @@ import atexit
 import thread
 import hashlib
 
-# pytorch: always import before importing submodule with torch. otherwise it's gonna blow.
-import torch
-from torch.autograd import Variable
-import torch.nn as nn
-from torch.nn import Sequential
-import torch.nn.functional as F
-from torch.utils.data import TensorDataset, DataLoader
-import torch.optim as optim
-
 # qchem package
 from qchem import shared, dynamic, engine, graph
 
 # logging
-# if shared.DEBUG <= 0:
-#     import logging
-#     log = logging.getLogger('werkzeug')
-#     log.setLevel(logging.ERROR)
-# logging.basicConfig(filename='error.log',level=logging.DEBUG)
-# class NoParsingFilter(logging.Filter):
-#    def filter(self, record):
-#        return not '/make_connection' in record.getMessage()
-# log.addFilter(NoParsingFilter())
-# not quite sure what I should do...
 import logging
 logging.basicConfig()
+
+
+
+
+
+
+
+'''
+TOC
+=========================================
+Flask basic config, cron-like apscheduler
+
+'''
+
+
+# ======================================================================
+# Flask basic config
+# ======================================================================
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
 #Compress(app)   # compress respons#e
-
 
 # cron server using apscheduler
 scheduler = BackgroundScheduler()
@@ -83,41 +80,9 @@ atexit.register(lambda: scheduler.shutdown()) # Shut down the scheduler when exi
 
 
 # ======================================================================
+# Shitty magic screw-with-stdout functions
 # Patches output and expected CustomError through; login security
 # ======================================================================
-
-'''If DEBUG < 0, all output is returned to browser's console. Useful if you want to monitor stdout and stderr from browser.'''
-def patch_through(func):
-    @wraps(func)
-    def wrapped(*args, **kwargs):
-        if shared.DEBUG >= 0:
-            func(*args, **kwargs)
-            return jsonify( {'status':'debug'} )
-        else:
-            sep = '\n' + '-' * 30 + '\n'
-            septop = '=' * 30 + '\n'
-            sepbot = '\n' + '=' * 30
-            sys.stdout = mystdout = StringIO()
-            try:
-                func(*args, **kwargs)
-                sys.stdout  = sys.__stdout__
-                return '%s %s %s gui.py: %s success %s' %( septop, mystdout.getvalue(),  sep,  func.__name__ , sepbot)
-            except shared.CustomError as e:  # or shared.CustomError
-                sys.stdout  = sys.__stdout__
-                return '%s %s %s %s %s gui.py: %s failed %s' %(  septop,  mystdout.getvalue(),  sep,  e,  sep,   func.__name__ , sepbot )
-    return wrapped
-
-def return_through(func):
-    @wraps(func)
-    def wrapped(*args, **kwargs):
-        if shared.DEBUG >= 0 :
-            return func(*args, **kwargs)
-        else:
-            try:
-                return func(*args, **kwargs)
-            except shared.CustomError as e:
-                return jsonify( {'error':str(e) } )
-    return wrapped
 
 # login security
 def login_required(func):
@@ -279,14 +244,12 @@ def open_docs():
 
 '''Note: Functional but deleted. You can use this call to start an IPython session in command line, effectively safely sharing variables. This is my old way of having GUI + CLI.'''
 @app.route('/ipython', methods=['GET'])
-@patch_through
 @login_required
 def ipython():
     '''invokes embedded ipython'''
     IPython.embed()
 
 @app.route('/shutdown', methods=['GET', 'POST'])
-@patch_through
 @login_required
 def shutdown():
     func = request.environ.get('werkzeug.server.shutdown')
@@ -303,21 +266,19 @@ def shutdown():
 
 
 
-    
+
 # ======================================================================
 # Save / Load
 # ======================================================================
 
 
 @app.route('/dump_nodes', methods=['GET'])
-@patch_through
 @login_required
 def dump_nodes():
     shared.save(shared.nodes, 'nodes')
 
 # either load latest, or load a specific datetime_postfix.
 @app.route('/load_nodes', methods=['GET','POST'])
-@patch_through
 @login_required
 def load_nodes():
     shared.nodes = shared.load('nodes')
@@ -329,7 +290,6 @@ def load_sigma():
     return jsonify(dynamic.load('sigma'))
 
 @app.route('/dump_sigma', methods=['POST'])
-@patch_through
 @login_required
 def dump_sigma():
     dynamic.save(request.get_json(force=True), 'sigma')
@@ -361,7 +321,7 @@ def get_dumps_list():
 
 
 # ======================================================================
-# The real qchem functions
+# A lot of wrappers
 # ======================================================================
 
 
@@ -379,7 +339,6 @@ def request_():  # either merge json, or use shared.nodes['master']     # yep, t
 
 
 @app.route('/new_node', methods=['POST'])
-@patch_through
 @login_required
 def new_node():
     j = request.get_json(force=True)
@@ -387,7 +346,6 @@ def new_node():
     n.map.add_node(graph.Node())
 
 @app.route('/del_node', methods=['POST'])
-@patch_through
 @login_required
 def del_node():
     j = request.get_json(force=True)
@@ -395,14 +353,12 @@ def del_node():
     node.delete()
 
 @app.route('/reset_node', methods=['POST'])
-@patch_through
 @login_required
 def reset_node():
     j = request.get_json(force=True)
     engine.Map().lookup(j['cur']).reset()
 
 @app.route('/duplicate_node', methods=['POST'])
-@patch_through
 @login_required
 def duplicate_node():
     j = request.get_json(force=True)
@@ -411,14 +367,12 @@ def duplicate_node():
     parent_node.map.add_node(n.copy())
 
 @app.route('/compute_node', methods=['POST'])
-@patch_through
 @login_required
 def compute_node():
     j = request.get_json(force=True)
     engine.Map().lookup(j['cur']).compute(proposed_name=j['name'])  #delegate to parent, suggest compute name
 
 @app.route('/setinterval_compute_node', methods=['POST'])
-@patch_through
 @login_required
 def setinterval_compute_node():
 
@@ -435,7 +389,6 @@ def setinterval_compute_node():
         replace_existing=True)
 
 @app.route('/stop_setinterval_compute_node', methods=['GET'])
-@patch_through
 @login_required
 def stop_setinterval_compute_node():
     scheduler.remove_job('setinterval_compute_job')
@@ -450,7 +403,6 @@ def get_text():
 
 
 @app.route('/edit_vars', methods=['POST'])
-@patch_through
 @login_required
 def edit_vars():
     # Node() format input. Less powerful than edit, but more intuitive.
@@ -467,7 +419,6 @@ def edit_vars():
         setattr(n, name, value)
 
 @app.route('/del_attr', methods=['POST'])
-@patch_through
 @login_required
 def del_attr():
     # get cur and attr_name, and delete
@@ -476,7 +427,6 @@ def del_attr():
     delattr(n, j['attr_name'])
 
 @app.route('/edit', methods=['POST'])
-@patch_through
 @login_required
 def edit():
     # Import format input. Not in place.
@@ -511,7 +461,6 @@ def make_connection():
 
 
 @app.route('/cut_ref', methods=['POST'])
-@patch_through
 @login_required
 def cut_ref():
     j = request.get_json(force=True)
@@ -521,7 +470,6 @@ def cut_ref():
     p.map.del_node(n)
 
 @app.route('/paste_ref', methods=['POST'])
-@patch_through
 @login_required
 def paste_ref():
     j = request.get_json(force=True)
@@ -538,7 +486,6 @@ def paste_ref():
 
 
 @app.route('/add_edge', methods=['POST'])
-@patch_through
 @login_required
 def add_edge():
     j = request.get_json(force=True)
@@ -546,7 +493,6 @@ def add_edge():
     n.map.add_edge(j['src'],j['dst'])
 
 @app.route('/del_edge', methods=['POST'])
-@patch_through
 @login_required
 def del_edge():
     j = request.get_json(force=True)
@@ -576,22 +522,22 @@ def copy_path():
         return jsonify({'path':'path_not_assigned'})
 
 
-    
-    
-    
-    
-    
-    
-    
 
-    
-    
+
+
+
+
+
+
+
+
+
 # ======================================================================
 # Run the app!
 # ======================================================================
 
 def flaskThread():
-    app.run(host='0.0.0.0',port=5000, debug = False, 
+    app.run(host='0.0.0.0',port=5000, debug = False,
                 ssl_context=('/home/xzhang1/.openssl/mycert.pem','/home/xzhang1/.openssl/mykey.pem'))
 
 def GUI(safe=True):

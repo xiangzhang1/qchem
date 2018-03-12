@@ -243,7 +243,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
 
     # 2. construct main data structure ; perform add-on analysis
     # ----------------------------------------------------------
-    @shared.debug_wrap
+
     def __init__(self, node):
         self.node = ref(node)
         cell = node.cell
@@ -507,7 +507,6 @@ class Cell(object):
     def nelectrons(self):
         return sum( [self.stoichiometry[symbol] * shared.ELEMENTS[symbol].pot_zval for symbol in self.stoichiometry] )
 
-    @shared.debug_wrap
     def __str__(self):
 
         result = self.name+'\n'
@@ -537,7 +536,6 @@ class Cell(object):
 
 class Map(object):
 
-    @shared.debug_wrap
     def rlookup(self, attr_dict={}, node_list=[], parent=False, prev=False, prev2=False):
         '''
         reverse lookup. find the node specified by attr_dict and is in node_list.
@@ -1124,7 +1122,7 @@ class Dummy(object):
 
 class Grepen(object):
 
-    @shared.debug_wrap
+
     @shared.log_wrap
     def __init__(self, electron):
 
@@ -1246,7 +1244,7 @@ class Bands(object):
         return [ [ Rbf(self.kpts[:,0], self.kpts[:,1], self.kpts[:,2], self.bands[idx_spin, idx_band])
                            for idx_band in range(self.grepen.nbands) ] for idx_spin in range(self.nspins_bands) ]
 
-    @shared.debug_wrap
+
     @shared.log_wrap
     def __init__(self, electron):
         ZERO = 0.01
@@ -1335,7 +1333,7 @@ class Bands(object):
 # executes population analysis
 class Charge(object):
 
-    @shared.debug_wrap
+
     @shared.log_wrap
     def __init__(self, electron):
         if electron.dos.norbitals_pdos > len(shared.ELEMENTS.orbitals):
@@ -1424,7 +1422,7 @@ class Charge(object):
 
 class Errors(object):
 
-    @shared.debug_wrap
+
     @shared.log_wrap
     def __init__(self, electron):
 

@@ -43,8 +43,6 @@ primary engines have the compute method; others can have str() or predict() but 
 
 don't over-optimize.
 
-recompute() method + debug_wrap for migration
-
 LBYL to avoid extra indentation.
 
 Use the `custom-fold` package for cross-platform editing.
