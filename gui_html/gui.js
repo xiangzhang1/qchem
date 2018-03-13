@@ -59,8 +59,8 @@ function make_connection() {
         $('#navbar-status').html('&#9679;');
         $('#navbar-status').css('color',d.statuscolor);
         // INITIALIZATION CONSTANTS.
-        ALL_ATTR_LIST = d.ALL_ATTR_LIST;
-        READABLE_ATTR_LIST = d.READABLE_ATTR_LIST;
+        attributes_printable = d.attributes_printable;
+        attributes_in = d.attributes_in;
         DEBUG = d.DEBUG;
         // // other
         // console.log('make_connection success, returned d', d)
@@ -378,7 +378,7 @@ function edit_vars_addfield(){
     if (key.length<2) {
       throw 'New key length smaller than 2. Wth?';
     }
-    if (READABLE_ATTR_LIST.indexOf(key)==-1 || $(`.edit_vars_textarea#${key}`).length!=0) {
+    if (attributes_in.indexOf(key)==-1 || $(`.edit_vars_textarea#${key}`).length!=0) {
       throw 'Key is not illegal. not added.';
     }
     $('form#edit_vars_form').append(`
@@ -515,12 +515,12 @@ var config = {
         //get keys list and sort it
         var tmp_key_list = Object.keys(node);
         tmp_key_list.sort(function (a,b){
-          return ALL_ATTR_LIST.indexOf(a) - ALL_ATTR_LIST.indexOf(b);
+          return attributes_printable.indexOf(a) - attributes_printable.indexOf(b);
         });
         //print
         for (var i=0; i<tmp_key_list.length; i++) {
           key = tmp_key_list[i];
-          if (ALL_ATTR_LIST.indexOf(key)!=-1 && key!='map') {
+          if (attributes_printable.indexOf(key)!=-1 && key!='map') {
             var rows = node[key].split(/\r\n|\r|\n/).length;
             var cols = Math.max.apply(Math, node[key].split(/\r\n|\r|\n/).map(function (el) { return el.length })); // Yeah, I don't know either. https://stackoverflow.com/questions/6043471/get-maximum-length-of-javascript-array-element
             node.tmp += `<div class="form-group">

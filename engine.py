@@ -62,21 +62,17 @@ import shared
 # ase: some of its libraries are fantastic.
 import ase
 
-
-# TOC
-# ===========================================================================
-# Part I. Componenets
-# -----------------------------------------
-# Gen, Makeparam
-# Cell
-# Map
-# Dummy
-# Vasp, ssh_and_run
-# Electron - Grepen, Dos, Bands, Charge, Errors
-# compare_and_X, Compare
-# Part II. Services
-# -----------------------------------------
-# MC_gen_queuetime
+'''
+TOC
+===========================================================================
+Gen, Makeparam
+Cell
+Map
+Dummy
+Vasp, ssh_and_run
+Electron - Grepen, Dos, Bands, Charge, Errors
+compare_and_X, Compare
+'''
 
 # Gen
 # ===========================================================================
@@ -1834,79 +1830,3 @@ class Md(Dummy):
             # plt.show()
             print 'movied saved at   %s    .' %prev.path
             line_ani.save('traj_%s.mp4' %(re.sub(r'(\W|\s)+', '', prev.name)), fps=5, writer="avconv", codec="libx264")
-
-
-
-# ==============================================================================
-# Services
-# ==============================================================================
-
-# MC_gen_queuetime
-# ==============================================================================
-class MC_gen_queuetime(object):
-
-    def __init__(self):
-
-        # historical_data
-        self.historical_data = pd.DataFrame([],
-                                            columns=pd.Index(['platform', 'jobid', 'jobids','T', 'S', 'UID', 'wait_time']),
-                                            )
-
-        # model
-        self.parameters = pd.DataFrame([],
-                                       columns=pd.Index(['C', 'beta_FS', 'p_FF_max', 'p_FF_min', 'beta_FF_S'], name='parameter'),
-                                       index=pd.Index(['nanaimo','irmik','edison','comet'], name='platform')
-                                       )
-
-
-    def gather_Xy(self, platform):
-        # generate sacct text
-        starttime = (datetime.datetime.now() + datetime.timedelta(-10)).strftime('%Y-%m-%d')    # 90 days ago
-        sacct_text = ssh_and_run(platform=platform, command='sacct --starttime %s --format=jobid,timelimit,nnodes,user,submit,start,end --allusers' %starttime)
-        sacct_text = [l.split() for l in sacct_text.splitlines()]
-        # parse sacct text
-        df = pd.DataFrame(sacct_text,
-                          columns=['jobid','T','S','UID','submit','start','end']
-                          )
-        df[['jobid','S']] = df[['jobid','S']] \
-                                .apply(pd.to_numeric, errors='coerce')
-        df['T'] = df['T'].str.replace('-', ' days ') \
-                         .apply(pd.to_timedelta, errors='coerce')
-        df[['submit','start','end']] = df[['submit','start','end']] \
-                                       .apply(pd.to_datetime, errors='coerce')
-        df['wait_time'] = df['start'] - df['submit']
-        df = df.drop([0,1]).dropna()
-        # generate historical_data table
-        historical_data = []
-        earliest = df['end'].iloc[0]
-        with tqdm(total=df.shape[0], leave=False) as pbar:
-            for i, row in df[df['submit'] > earliest].iterrows():
-                pbar.update(1)
-                queue = df[(df['submit'] < row['submit']) & (df['end'] > row['submit'])]
-                queue = queue[['jobid', 'T', 'S', 'UID', 'wait_time']]
-                queue['jobids'] = queue['jobid']
-                queue['jobid'] = row['jobid']
-                queue['platform'] = platform
-                queue['wait_time'] = row['wait_time']
-                queue = queue.set_index(['platform', 'jobid', 'jobids'])
-                historical_data.append(queue)
-        historical_data = pd.concat(historical_data)
-        return historical_data
-
-    def gather_X(self, remote_folder_name, platform):
-        # generate squeue_text
-        squeue_text = ssh_and_run(platform=platform, command='squeue -o "%j %C %l %u"')
-        squeue_text = [l.split() for l in squeue_text.splitlines()]
-        df = pd.DataFrame(squeue_text,
-                          columns=['T','S','UID']
-                          )
-        df['S'] = df['S'].apply(pd.to_numeric, errors='coerce')
-        df['T'] = df['T'].str.replace('-', ' days ') \
-                         .apply(pd.to_timedelta, errors='coerce')
-        return df
-
-    def learn_from():
-        self.historical_data = pd.concat([self.gather_Xy(platform) for platform in ['nanaimo', 'irmik', 'edison', 'comet']])
-
-    def train():
-        pass

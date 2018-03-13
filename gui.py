@@ -39,17 +39,14 @@ import logging
 logging.basicConfig()
 
 
-
-
-
-
-
 '''
 gui.py
 =========================================
 - Flask basic config, cron-like apscheduler
 - @login_required: Login security decorator
-
+- gui-sigma API: all sorts of shitty translations
+- A lot of wrappers
+- Run flask
 '''
 
 
@@ -83,42 +80,51 @@ def login_required(func):
     return wrapped
 
 
-# Helper functions
+
+# gui-sigma API: all sorts of shitty translations
 # ======================================================================
 
-# a random id generator
-def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
-    return ''.join(random.choice(chars) for _ in range(size))
-
-# json translation api
-def to_json(n):
+def node_to_json(n):
+    '''
+    Recursively transform a node and all its printable attributes to a JSON object.
+    Note that attributes are not involved, only the map attribute.
+    '''
     new_json = {}
-    # beautify_json
+    # beautify
+    # - use name for label and id
+    # - use
     new_json['label']=new_json['id']=n.name
-    new_json['color'] = shared.COLOR_PALETTE[n.moonphase()]
-    # to_json
+    new_json['color'] = shared.color_palette[n.moonphase()]
+    # node_to_json
     for attr_name in vars(n):
-        if attr_name != 'map':
+        if attr_name != 'map' and attr_name in shared.attributes_printable:
             new_json[attr_name] = str( getattr(n,attr_name,None) )
         if attr_name == 'map':
             map_json = {'nodes': [], 'edges':[]}
             for src in n.map._dict:
-                map_json['nodes'].append( to_json(src) )
+                map_json['nodes'].append( node_to_json(src) )
                 for dst in n.map._dict[src]:
-                    map_json['edges'].append( {'id': id_generator(), 'source': src.name, 'target': dst.name, 'type' : 'arrow', 'color': shared.COLOR_PALETTE[min(src.moonphase(), dst.moonphase())] } )  # beautify
+                    map_json['edges'].append( {'id': id_generator(), 'source': src.name, 'target': dst.name, 'type' : 'arrow', 'color': shared.color_palette[min(src.moonphase(), dst.moonphase())] } )  # beautify
                 for dst in n.map._dict2[src] if src in n.map._dict2 else []:
-                    map_json['edges'].append( {'id': id_generator(), 'source': src.name, 'target': dst.name, 'type' : 'tapered', 'color': shared.COLOR_PALETTE[min(src.moonphase(), dst.moonphase())] } )
+                    map_json['edges'].append( {'id': id_generator(), 'source': src.name, 'target': dst.name, 'type' : 'tapered', 'color': shared.color_palette[min(src.moonphase(), dst.moonphase())] } ) # type-II connection rendered as tapered
             new_json['map'] = map_json
     return new_json
 
-def traverse_json(j, cur_prefix=None):      # returns a triplet: [cur,   jam_for_fuzzy_match,   [graphical properties to transfer]    ]
+def recursive_flatten_json(j, cur_prefix=None):
+    '''
+    returns a list of [
+        cur eg. master.PbS QD.test,
+        jam 'name phase property Pb S 44 46' for fuzzy matching sigma-json and nodes-json,
+        [graphical properties to transfer]
+    ]
+    '''
     if cur_prefix:
         cur = cur_prefix + '.' + j['name']
     else:
         cur = j['name']
     result = []
     jam = ''
-    other = {}
+    attributes_sigmaonly = {}
     for key in j:
         # cur
         # jam
@@ -126,21 +132,18 @@ def traverse_json(j, cur_prefix=None):      # returns a triplet: [cur,   jam_for
             jam += ' ' + j[key]
         elif key == 'cell':
             jam += ' ' + j[key].splitlines()[5] + j[key].splitlines()[6]
-        # graphical properties
-        #wtf#elif key in ['id', 'label'] or ':' in key:
-        #wtf#   pass
-        elif key in shared.ALL_ATTR_LIST:
+        elif key in shared.attributes_printable:
             pass
         else:
-            other[key] = j[key]
-    result.append([cur, jam, other])
+            attributes_sigmaonly[key] = j[key]
+    result.append([cur, jam, attributes_sigmaonly])
 
     if 'map' in j and 'nodes' in j['map']:
         for subj in j['map']['nodes']:
-            result += traverse_json(subj, cur)
+            result += recursive_flatten_json(subj, cur)
     return result
 
-def lookup_json(j, cur):
+def lookup_cur_in_json(j, cur):
     if cur == 'master':
         return j    # note that the behavior is slightly different from qchem and sigmajs. the reason is that master is not global.
     elif '.' not in cur:
@@ -148,19 +151,24 @@ def lookup_json(j, cur):
         if l:
             return l[0]
         else:
-            raise KeyError('lookup_json: cannot find %s under current node' %cur)
+            raise KeyError('lookup_cur_in_json: cannot find %s under current node' %cur)
     else:
-        return lookup_json(lookup_json(j,cur.split('.')[0]), '.'.join(cur.split('.')[1:]))
+        return lookup_cur_in_json(lookup_cur_in_json(j,cur.split('.')[0]), '.'.join(cur.split('.')[1:]))
 
 def combine_json(new_json, old_json=None):
+    '''
+    receives a json from sigma
+    receives a new json converted from updated shared.nodes
+    fuzzy inherit x,y (we don't want the graph to mess up every time we update shared.nodes)
+    '''
     if old_json:
-        for newj in traverse_json(new_json):
-            if( any([oldj[0]==newj[0] for oldj in traverse_json(old_json)]) ):
-                oldj = [oldj for oldj in traverse_json(old_json) if oldj[0]==newj[0]][0]
+        for newj in recursive_flatten_json(new_json):
+            if( any([oldj[0]==newj[0] for oldj in recursive_flatten_json(old_json)]) ):
+                oldj = [oldj for oldj in recursive_flatten_json(old_json) if oldj[0]==newj[0]][0]
             else:
-                best_jam = process.extractOne(newj[1], [oldj[1] for oldj in traverse_json(old_json)])
+                best_jam = process.extractOne(newj[1], [oldj[1] for oldj in recursive_flatten_json(old_json)])
                 if best_jam[1] > 50: # yeah, found match
-                    oldj = [oldj for oldj in traverse_json(old_json) if oldj[1]==best_jam[0]][0]
+                    oldj = [oldj for oldj in recursive_flatten_json(old_json) if oldj[1]==best_jam[0]][0]
                 else:
                     oldj = [oldj[0], oldj[1], {}]
                 if 'x' in oldj[2] and 'y' in oldj[2]:
@@ -169,9 +177,9 @@ def combine_json(new_json, old_json=None):
             for key in oldj[2]:
                 if oldj[2][key] and key not in newj[2]:
                     newj[2][key] = oldj[2][key]
-                    lookup_json(new_json,newj[0])[key] = oldj[2][key]
-    for newj in traverse_json(new_json):
-        tmp = lookup_json(new_json, newj[0])
+                    lookup_cur_in_json(new_json,newj[0])[key] = oldj[2][key]
+    for newj in recursive_flatten_json(new_json):
+        tmp = lookup_cur_in_json(new_json, newj[0])
         if 'x' not in tmp or 'y' not in tmp:
             tmp['x'] = random.uniform(0,1)
             tmp['y'] = random.uniform(0,1)
@@ -183,40 +191,11 @@ def combine_json(new_json, old_json=None):
             tmp['read_cam0:y'] = 250 * tmp['y']
     return new_json
 
+def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
+    return ''.join(random.choice(chars) for _ in range(size))
 
 
-
-
-
-
-
-
-
-
-
-# Clerical: get docs, shutdown GUI, invoke IPython
-# ========================================================================
-
-@app.route('/shutdown', methods=['GET', 'POST'])
-@login_required
-def shutdown():
-    func = request.environ.get('werkzeug.server.shutdown')
-    if func is None:
-        raise RuntimeError('Not running with the Werkzeug Server')
-    func()
-    print 'Server shutting down... Thanks for using qchem.'
-
-
-
-
-
-
-
-
-
-
-# ======================================================================
-# Save / Load
+# A lot of wrappers
 # ======================================================================
 
 
@@ -241,53 +220,30 @@ def load_sigma():
 def dump_sigma():
     dynamic.save(request.get_json(force=True), 'sigma')
 
-
-@app.route('/get_dumps_list', methods=['GET'])
+@app.route('/shutdown', methods=['GET', 'POST'])
 @login_required
-def get_dumps_list():
-    print 'Note: function is archaic. Middlename will not be the same for every entity.'
-    j = {'datetime_postfixs':[]}
-    l = []
-    for fname in os.listdir(shared.script_dir+'/data/'):
-        if fname.startswith('shared.nodes.dump.'):
-            l.append(fname.replace('shared.nodes.dump.',''))
-    l.sort(reverse=True)
-    j['datetime_postfixs'] = l[:5]
-    return jsonify(j)
-
-
-
-
-
-
-
-
-
-
-
-
-# ======================================================================
-# A lot of wrappers
-# ======================================================================
-
+def shutdown():
+    func = request.environ.get('werkzeug.server.shutdown')
+    if func is None:
+        raise RuntimeError('Not running with the Werkzeug Server')
+    func()
+    print 'Server shutting down... Thanks for using qchem.'
 
 # for testing
 @app.route('/hello_world')
 def helloworld():
     return 'hello, world!'
 
-
 @app.route('/request_', methods=['POST','GET'])
 @login_required
 def request_():  # either merge json, or use shared.nodes['master']     # yep, this is the magic function.
     if request.method == 'POST':
         old_json = request.get_json(force=True)
-        if shared.DEBUG >= 2: print 'before to_json' + '*'*70
-        new_json = to_json(engine.Map().lookup('master'))
-        if shared.DEBUG >= 2: print 'after to_json' + '*'*70
+        if shared.DEBUG >= 2: print 'before node_to_json' + '*'*70
+        new_json = node_to_json(engine.Map().lookup('master'))
+        if shared.DEBUG >= 2: print 'after node_to_json' + '*'*70
         new_json = combine_json(new_json, old_json)
         return jsonify( new_json )
-
 
 @app.route('/new_node', methods=['POST'])
 @login_required
@@ -362,7 +318,7 @@ def edit_vars():
     for name,value in j.iteritems():
         if name == 'name' and ('.' in value or ',' in value or '=' in value):
             raise shared.CustomError('dot, comma and equal sign cannot be in name. ')
-        if name not in shared.READABLE_ATTR_LIST:
+        if name not in shared.attributes_in:
             continue
         if getattr(engine, name.title(), None):
             value = getattr(engine, name.title())(value)
@@ -403,10 +359,10 @@ def edit():
 @login_required
 def make_connection():
     if 'master' in shared.nodes and getattr(shared.nodes['master'], 'map', None):
-        statuscolor = shared.COLOR_PALETTE[2]
+        statuscolor = shared.color_palette[2]
     else:
-        statuscolor = shared.COLOR_PALETTE[-1]
-    return jsonify({'statuscolor':statuscolor, 'ALL_ATTR_LIST': shared.ALL_ATTR_LIST, 'READABLE_ATTR_LIST': shared.READABLE_ATTR_LIST, 'DEBUG': shared.DEBUG})
+        statuscolor = shared.color_palette[-1]
+    return jsonify({'statuscolor':statuscolor, 'attributes_printable': shared.attributes_printable, 'attributes_in': shared.attributes_in, 'DEBUG': shared.DEBUG})
 
 
 @app.route('/cut_ref', methods=['POST'])
@@ -469,18 +425,7 @@ def copy_path():
         return jsonify({'path':'path_not_assigned'})
 
 
-
-
-
-
-
-
-
-
-
-
-# ======================================================================
-# Run the app!
+# Run flask
 # ======================================================================
 
 def flaskThread():

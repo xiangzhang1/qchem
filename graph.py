@@ -9,7 +9,6 @@ import copy
 
 import engine
 import shared
-import dynamic
 
 # ==================================================
 
@@ -19,24 +18,24 @@ import dynamic
 '''
 This is where everything started.
 For a new project, do one of the following:
-- qchem.Import(f.read())
-- shared.nodes['master'] = qchem.Node('# master\n\nmap:\n\n')
+- graph.Import(f.read())
+- shared.nodes['master'] = graph.Node('# master\n\nmap:\n\n')
 GUI serves as a crutch only. We no longer aim to maintain global compatibility.
 '''
 
 def Import(text):
     # partial syntax check
     if '#' not in text:
-        raise shared.CustomError('qchem.Import: bad syntax. Your text is {%s}.' %text)
+        raise shared.CustomError('qchem.Import: bad syntax, no # in text. Your text is {%s}.' %text)
     l = re.split('^#+\s*', text, flags=re.MULTILINE) ; l.pop(0)
     l = ['# '+x for x in l]
 
     while l:
-        # print 'Import: parsing %s' %(l[-1].splitlines()[0] if l[-1].splitlines() else '')
+        print 'Import: parsing proposed node %s' %l[-1].splitlines()[0]
         n = Node(l.pop())
         # name must not be in nodes
         if n.name in shared.nodes:
-            raise shared.CustomError(' Import: Node name %s is in already in nodes.' %n.name)
+            raise shared.CustomError('Import: Node name %s is in already in shared.nodes.' %n.name)
         shared.nodes[n.name] = n
 
 
@@ -52,10 +51,9 @@ class Node(object):
         namevalpairs = text.split('\n\n')
 
         # node.name
-        #: partial grammar check
+        # grammar check
         if len(namevalpairs[0].splitlines()) != 1 or not namevalpairs[0].startswith('#'):
             raise shared.CustomError(self.__class__.__name__ +': __init__: Titleline format is #name:opt. Your titleline is: {%s}' %namevalpairs[0])
-        #;
         titleline = namevalpairs.pop(0).rstrip().lstrip('# ')
         l = [x.strip() for x in titleline.split(':')]
         self.name = l[0]
@@ -64,35 +62,31 @@ class Node(object):
         # node.__dict__
         while namevalpairs:
             namevalpair = namevalpairs.pop(0)
-            #: skip check
+            # skip check
             if not namevalpair.rstrip():
                 continue
             name = namevalpair.split('\n')[0].strip(': ')
-            if name not in shared.READABLE_ATTR_LIST:
+            if name not in shared.attributes_in:
                 continue
-            #;
             value = namevalpair.split('\n',1)[1] if len(namevalpair.split('\n',1))>1 else ''
             if getattr(engine, name.title(), None):
                 value = getattr(engine, name.title())(value)
             setattr(self, name, value)
 
-        #: test gen if possible
+        # test gen if possible
         if getattr(self,'cell',None) and getattr(self,'phase',None) and getattr(self,'property',None):
-           test_gen = engine.Gen(self)
-        #;
+           engine.Gen(self)
 
 
     def reset(self):
         # reset moonphase = 1. remove all non-readable attributes.
         # remove engine
         if getattr(self, 'gen', None):
-            engine_name = self.gen.getkw('engine')
-            engine_ = getattr(self,self.gen.getkw('engine'),None)
             if getattr(self,self.gen.getkw('engine'),None):
                 getattr(self,self.gen.getkw('engine'),None).delete()
         # remove all
         for varname in vars(self).keys():
-            if varname not in shared.READABLE_ATTR_LIST:
+            if varname not in shared.attributes_in:
                 delattr(self, varname)
                 print self.__class__.__name__ + '.reset: attribute {%s} deleted' %varname
         if getattr(self, 'path', None):
@@ -155,13 +149,8 @@ class Node(object):
             # important inherits
             parent = engine.Map().rlookup(node_list=[self], parent=True)
             for vname in vars(parent):
-                if vname in shared.INHERITABLE_ATTR_LIST and not getattr(self, vname, None):
+                if vname in shared.attributes_inheritable and not getattr(self, vname, None):
                     setattr(self, vname, getattr(parent,vname))
-            prev = engine.Map().rlookup(node_list=[self], prev=True)
-            if prev:
-                for vname in vars(prev):
-                    if vname in shared.PREV_INHERITABLE_ATTR_LIST and not getattr(self, vname, None):
-                        setattr(self, vname, getattr(prev,vname))
             if not getattr(self, 'cell', None) or not getattr(self, 'phase', None):
                 raise shared.CustomError(self.__class__.__name__ + '.compute: cell or phase is missing. Either make sure parent has something you can inherit, or enter them.')
             if not getattr(self, 'path', None):
@@ -233,6 +222,6 @@ class Node(object):
                 new_node.name = text + str(number)
             elif attr == 'path':
                 pass
-            elif attr in shared.READABLE_ATTR_LIST:
+            elif attr in shared.attributes_in:
                 setattr(new_node, attr, copy.deepcopy(getattr(self, attr)))
         return new_node

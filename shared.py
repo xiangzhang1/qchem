@@ -18,6 +18,7 @@ import time
 import traceback, sys, code
 from StringIO import StringIO
 from sklearn.preprocessing import LabelBinarizer
+import inspect
 
 '''
 TOC is not ordered.
@@ -33,6 +34,7 @@ Helper functions and constants
 - CustomError, DeferError, [LookupError]: understandable errors
 - save/load: pickle-based variable persistency
 - elements: periodic table database
+- color_palette
 
 Function decorators
 - @MWT: Memorize With Timeout
@@ -71,33 +73,21 @@ def load(middlename, datetime=None):
     with open(filepath, 'rb') as f:
         return pickle.load(f)
 
-# Fragile lists:
+# duck typing: define a node duck by attributes
 # ===========================================================================
+attributes_define = ['phase', 'cell', 'property', 'map'] # attributes that define a node. they're immutable and represent the cornerstone of qchem's logic.
+attributes_pcrelated = ['path', 'name', 'comment']       # accessories to the real logic
+attributes_in = attributes_define + attributes_pcrelated # input attributes
+# used in:
+# - qchem.Node.__init__
+# - sigma.edit_vars_addfield
 
-#  all non-sigma-bullshit attributes, in the order printed (sigma.clickNode)
-#  - gui.combine.json
-#  - sigma.clickNode (catch: map is not printed in sigma)
-ALL_ATTR_LIST = ['property','phase','cell','comment','path','name','gen','vasp','electron','map']   #important as it is, we shall not print 'prev'
+attributes_inheritable = ['phase']                         # these will be auto-inherited unless already exist
 
-#  input attributes, not gen etc.
-#  - qchem.Node.__init__
-#  - sigma.edit_vars_addfield
-READABLE_ATTR_LIST = ['name','phase','cell','property','map','comment','path']
-
-#  for the inherit feature.
-#  - qchem.Node.compute
-INHERITABLE_ATTR_LIST = ['phase']   # , 'cell': cell is inherited from prev
-PREV_INHERITABLE_ATTR_LIST = ['cell']
-
-
-# UI-specific behavior
-
-## gui.traverse_json: fuzzy match jam recipe
-
-## gui.*beautify* recipe: name -> id
-
-## gui|sigma . palette
-COLOR_PALETTE = {-1: '#a94442', 0: '#000000',  1: '#8a6d3b', 2: '#3c763d', -2: '#000000'}   # text-*
+attributes_printable = attributes_in + [_[0] for _ in inspect.getmembers(engine, inspect.isclass)]
+# used in:
+# - gui.combine.json
+# - sigma.clickNode (catch: map is not printed in sigma)
 
 
 
@@ -284,6 +274,10 @@ def word_wrap(text, linelen=80, indent=0, joinstr="\n"):
 
 elements = ElementsDict()
 elements.import_()
+
+# ===========================================================================
+
+color_palette = {-1: '#a94442', 0: '#000000',  1: '#8a6d3b', 2: '#3c763d', -2: '#000000'}
 
 
 # ===========================================================================
