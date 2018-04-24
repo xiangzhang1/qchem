@@ -32,7 +32,7 @@ import thread
 import hashlib
 
 # qchem package
-from qchem import shared, dynamic, engine, graph
+from qchem import shared, engine, graph
 
 # logging
 import logging
@@ -213,12 +213,12 @@ def load_nodes():
 @app.route('/load_sigma', methods=['GET','POST'])
 @login_required
 def load_sigma():
-    return jsonify(dynamic.load('sigma'))
+    return jsonify(shared.load('sigma'))
 
 @app.route('/dump_sigma', methods=['POST'])
 @login_required
 def dump_sigma():
-    dynamic.save(request.get_json(force=True), 'sigma')
+    shared.save(request.get_json(force=True), 'sigma')
 
 @app.route('/shutdown', methods=['GET', 'POST'])
 @login_required

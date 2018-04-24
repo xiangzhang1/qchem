@@ -19,9 +19,12 @@ import traceback, sys, code
 from StringIO import StringIO
 from sklearn.preprocessing import LabelBinarizer
 import inspect
+import dill as pickle
 
 '''
 TOC is not ordered.
+
+nodes
 
 Program-wide configuration
 - verbose
@@ -47,6 +50,9 @@ Shitty program-wide configurations
 '''
 
 
+nodes = []
+
+
 # ===========================================================================
 
 script_dir = os.path.dirname(os.path.realpath(__file__)) + '/'
@@ -64,12 +70,12 @@ DEBUG = 0
 # - automatic version control
 # shorter code
 def save(obj, middlename):      # Note! Where defined, above which obj pickled.
-    filepath = shared.script_dir + '/data/dynamic.%s.pickle.'%(middlename) + time.strftime('%Y%m%d%H%M%S')
+    filepath = script_dir + '/data/dynamic.%s.pickle.'%(middlename) + time.strftime('%Y%m%d%H%M%S')
     with open(filepath,'wb') as dumpfile:
         pickle.dump(obj, dumpfile, protocol=pickle.HIGHEST_PROTOCOL)
 
 def load(middlename, datetime=None):
-    filepath = shared.script_dir + '/data/' + sorted([x for x in os.listdir(shared.script_dir + '/data/') if x.startswith('dynamic.%s.pickle.%s'%(middlename, datetime if datetime else ''))])[-1]
+    filepath = script_dir + '/data/' + sorted([x for x in os.listdir(script_dir + '/data/') if x.startswith('dynamic.%s.pickle.%s'%(middlename, datetime if datetime else ''))])[-1]
     with open(filepath, 'rb') as f:
         return pickle.load(f)
 
@@ -84,7 +90,7 @@ attributes_in = attributes_define + attributes_pcrelated # input attributes
 
 attributes_inheritable = ['phase']                         # these will be auto-inherited unless already exist
 
-attributes_printable = attributes_in + [_[0] for _ in inspect.getmembers(engine, inspect.isclass)]
+attributes_printable = ['property','phase','cell','comment','path','name','gen','vasp','electron','map']
 # used in:
 # - gui.combine.json
 # - sigma.clickNode (catch: map is not printed in sigma)
