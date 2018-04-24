@@ -72,11 +72,15 @@ def login_required(func):
     def wrapped(*args, **kwargs):
         # auth
         auth = request.authorization
-        if not auth or auth.username!='xzhang1' or hashlib.sha1(auth.password).hexdigest()!='04a8e9fc933e4113ca82035de6a9fc22a9ac4765':
+	if not auth:
+	    print 'no username/pswd!'
+            return Response('Bad username/pswd', 403, {'WWW-Authenticate': 'Basic realm="Need login."'})
+        elif auth.username!='xzhang1' or hashlib.sha1(auth.password).hexdigest()!='d1ddfb5774938e88bc4702e9851677a9ade5fc68':
             print 'bad username/pswd detected: %s | %s' %(auth.username, hashlib.sha1(auth.password).hexdigest())
             return Response('Bad username/pswd', 403, {'WWW-Authenticate': 'Basic realm="Need login."'})
         else:
-            return func(*args, **kwargs)
+            result = func(*args, **kwargs)
+	    return 'success!' if result is None else result
     return wrapped
 
 
@@ -203,15 +207,13 @@ def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
 @login_required
 def dump_nodes():
     shared.save(shared.nodes, 'nodes')
-    return 'success'
-
+    
 # either load latest, or load a specific datetime_postfix.
 @app.route('/load_nodes', methods=['GET','POST'])
 @login_required
 def load_nodes():
     shared.nodes = shared.load('nodes')
-    return 'success'
-
+    
 @app.route('/load_sigma', methods=['GET','POST'])
 @login_required
 def load_sigma():
@@ -221,8 +223,7 @@ def load_sigma():
 @login_required
 def dump_sigma():
     shared.save(request.get_json(force=True), 'sigma')
-    return 'success'
-
+    
 @app.route('/shutdown', methods=['GET', 'POST'])
 @login_required
 def shutdown():
@@ -231,8 +232,7 @@ def shutdown():
         raise RuntimeError('Not running with the Werkzeug Server')
     func()
     print 'Server shutting down... Thanks for using qchem.'
-    return 'success'
-
+    
 # for testing
 @app.route('/hello_world')
 def helloworld():
@@ -255,23 +255,20 @@ def new_node():
     j = request.get_json(force=True)
     n = engine.Map().lookup(j['cur'])
     n.map.add_node(graph.Node())
-    return 'success'
-
+    
 @app.route('/del_node', methods=['POST'])
 @login_required
 def del_node():
     j = request.get_json(force=True)
     node = engine.Map().lookup(j['cur']+'.'+j['name'])
     node.delete()
-    return 'success'
-
+    
 @app.route('/reset_node', methods=['POST'])
 @login_required
 def reset_node():
     j = request.get_json(force=True)
     engine.Map().lookup(j['cur']).reset()
-    return 'success'
-
+    
 @app.route('/duplicate_node', methods=['POST'])
 @login_required
 def duplicate_node():
@@ -279,15 +276,13 @@ def duplicate_node():
     parent_node = engine.Map().lookup(j['cur'])
     n = parent_node.map.lookup(j['name'])
     parent_node.map.add_node(n.copy())
-    return 'success'
-
+    
 @app.route('/compute_node', methods=['POST'])
 @login_required
 def compute_node():
     j = request.get_json(force=True)
     engine.Map().lookup(j['cur']).compute(proposed_name=j['name'])  #delegate to parent, suggest compute name
-    return 'success'
-
+    
 @app.route('/setinterval_compute_node', methods=['POST'])
 @login_required
 def setinterval_compute_node():
@@ -303,14 +298,12 @@ def setinterval_compute_node():
         id='setinterval_compute_job',
         name='setinterval compute job',
         replace_existing=True)
-    return 'success'
-
+    
 @app.route('/stop_setinterval_compute_node', methods=['GET'])
 @login_required
 def stop_setinterval_compute_node():
     scheduler.remove_job('setinterval_compute_job')
-    return 'success'
-
+    
 @app.route('/get_text', methods=['POST'])
 @login_required
 def get_text():
@@ -334,8 +327,7 @@ def edit_vars():
         if getattr(engine, name.title(), None):
             value = getattr(engine, name.title())(value)
         setattr(n, name, value)
-    return 'success'
-
+    
 @app.route('/del_attr', methods=['POST'])
 @login_required
 def del_attr():
@@ -343,8 +335,7 @@ def del_attr():
     j = request.get_json(force=True)
     n = engine.Map().lookup(j['cur'])
     delattr(n, j['attr_name'])
-    return 'success'
-
+    
 @app.route('/edit', methods=['POST'])
 @login_required
 def edit():
@@ -366,11 +357,9 @@ def edit():
         raise shared.CustomError(node.__class__.__name__ + ': edit: You have not defined a same-name node (aka node with name %s which would have been read)' %(node.name))
     for varname in vars(new_node):
         setattr(node, varname, getattr(new_node, varname))
-    return 'success'
-
+    
 
 @app.route('/make_connection', methods=['GET'])
-@login_required
 def make_connection():
     if 'master' in shared.nodes and getattr(shared.nodes['master'], 'map', None):
         statuscolor = shared.color_palette[2]
@@ -387,8 +376,7 @@ def cut_ref():
     p = engine.Map().lookup(j['cur'])
     shared.nodes[n.name] = n
     p.map.del_node(n)
-    return 'success'
-
+    
 @app.route('/paste_ref', methods=['POST'])
 @login_required
 def paste_ref():
@@ -403,8 +391,7 @@ def paste_ref():
     print 'paste_ref: adding node {%s}' %n.name
     p.map.add_node(n)
     shared.nodes.pop(n.name)
-    return 'success'
-
+    
 
 @app.route('/add_edge', methods=['POST'])
 @login_required
@@ -412,16 +399,14 @@ def add_edge():
     j = request.get_json(force=True)
     n = engine.Map().lookup(j['cur'])
     n.map.add_edge(j['src'],j['dst'])
-    return 'success'
-
+    
 @app.route('/del_edge', methods=['POST'])
 @login_required
 def del_edge():
     j = request.get_json(force=True)
     n = engine.Map().lookup(j['cur'])
     n.map.del_edge(j['src'],j['dst'])
-    return 'success'
-
+    
 @app.route('/copy_remote_folder_name', methods=['POST'])
 @login_required
 def copy_remote_folder_name():
