@@ -1,0 +1,53 @@
+# singlepoint (kpar :)
+
+phase:
+pbs, bulk
+
+property:
+engine=vasp, eigenfunction, spin=para, read=n,
+good, bader,
+platform=dellpc
+
+cell:
+Pb4 S4
+1
+6.01252	0.0	0.0
+0.0	6.01252	0.0
+0.0	0.0	6.01252
+Pb  S
+4  4
+Direct
+0.0 0.0 0.0
+0.0 0.5 0.5
+0.5 0.0 0.5
+0.5 0.5 0.0
+0.5 0.0 0.0
+0.5 0.5 0.5
+0.0 0.0 0.5
+0.0 0.5 0.0
+
+# Charge
+
+phase:
+pbs, bulk
+
+property:
+engine=electron, charge
+
+cell:
+Pb4 S4
+1
+6.01417	0.0	0.0
+0.0	6.01417	0.0
+0.0	0.0	6.01417
+Pb  S
+4  4
+Direct
+0.0 0.0 0.0
+0.0 0.5 0.5
+0.5 0.0 0.5
+0.5 0.5 0.0
+0.5 0.0 0.0
+0.5 0.5 0.5
+0.0 0.0 0.5
+0.0 0.5 0.0

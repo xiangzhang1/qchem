@@ -278,8 +278,8 @@ def word_wrap(text, linelen=80, indent=0, joinstr="\n"):
         result.append(" ".join(line))
     return joinstr.join(result)
 
-elements = ElementsDict()
-elements.import_()
+ELEMENTS = ElementsDict()
+ELEMENTS.import_()
 
 # ===========================================================================
 
@@ -344,7 +344,7 @@ class MWT(object):
 # ===========================================================================
 
 def moonphase_wrap(func):
-    @MWT(timeout=60)
+    @MWT(timeout=10)
     @wraps(func)
     def wrapped(self, *args, **kwargs):
         if getattr(self,'path',None) and os.path.isfile(self.path + '/.moonphase'):
@@ -370,7 +370,7 @@ class Logger(object):
         self.log.write(message)
 
     def flush(self):
-        sys.stdout.flush()
+        pass
 
 def log_wrap(func):
     @wraps(func)

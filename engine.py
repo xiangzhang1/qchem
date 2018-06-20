@@ -1282,6 +1282,7 @@ class Bands(object):
         print 'bandgap is often between interpolated and raw bandgap.'
         if electron.grepen.is_kpoints_mesh:
             self.bandgaps_interp = [ [] for idx_spin in range(self.nspins_bands) ]
+            self.min_kpt_dist = np.amin( spatial.distance.pdist(self.kpts, metric='Euclidean'), axis=None )   # spatial.distance.pdist() produces a list of distances. amin() produces minimum for flattened input
             # optimize for each spin and each band
             for idx_spin in range(self.nspins_bands):
                 ZERO = 0.01
