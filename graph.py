@@ -151,7 +151,7 @@ class Node(object):
             for vname in vars(parent):
                 if vname in shared.attributes_inheritable and not getattr(self, vname, None):
                     setattr(self, vname, getattr(parent,vname))
-            if not getattr(self, 'cell', None) or not getattr(self, 'phase', None):
+            if getattr(self, 'cell', None) is None or getattr(self, 'phase', None) is None:
                 raise shared.CustomError(self.__class__.__name__ + '.compute: cell or phase is missing. Either make sure parent has something you can inherit, or enter them.')
             if not getattr(self, 'path', None):
                 if shared.DEBUG >= 2:
