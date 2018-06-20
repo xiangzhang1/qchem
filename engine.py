@@ -748,9 +748,9 @@ class Vasp(object):
             os.makedirs(path)
             os.chdir(path)
             if gen.parse_if('icharg=1|icharg=11'):
-                subprocess.Popen(['rsync', '-a', '-h', '--info=progress2', prev.path+'/CHG', path+'/CHG'], stdout=sys.stdout, stderr=sys.stderr).wait()
+                subprocess.Popen(['rsync', '-a', '-h', '--info=progress2', prev.path+'/CHG', path+'/CHG']).wait()
             if gen.parse_if('icharg=0|icharg=10|istart=1|istart=2'):
-                subprocess.Popen(['rsync', '-a', '-h', '--info=progress2', prev.path+'/WAVECAR', path+'/WAVECAR'], stdout=sys.stdout, stderr=sys.stderr).wait()
+                subprocess.Popen(['rsync', '-a', '-h', '--info=progress2', prev.path+'/WAVECAR', path+'/WAVECAR']).wait()
             if prev and getattr(prev, 'vasp', None) and getattr(prev.vasp, 'optimized_cell', None):
                 node.cell = copy.deepcopy(prev.vasp.optimized_cell)
                 print self.__class__.__name__ + '.compute: prev.vasp.optimized_cell overwrites node.cell.'
@@ -891,7 +891,7 @@ class Vasp(object):
             # download folder
             if gen.parse_if('platform=nanaimo|platform=irmik|platform=hodduk'):
                 print '%s.compute: copying remote folder {%s} back to path {%s}' %(self.__class__.__name__, self.remote_folder_name, path)
-                subprocess.Popen(['rsync', '-a', '-h', '--info=progress2', '%s:%s/' %(gen.getkw('platform'),self.remote_folder_name), '%s'%path], stdout=sys.stdout, stderr=sys.stderr).wait()
+                subprocess.Popen(['rsync', '-a', '-h', '--info=progress2', '%s:%s/' %(gen.getkw('platform'),self.remote_folder_name), '%s'%path]).wait()
                 #os.system('scp -r /home/xzhang1/Shared/%s/%s/ %s' %(gen.getkw('platform'), self.remote_folder_name, path))
                 print self.__class__.__name__ + '.compute: copy complete.'
             # log
@@ -978,7 +978,7 @@ class Vasp(object):
         if os.path.isdir(path):
             print 'removing self.path {%s}' %path
             os.chdir(shared.script_dir)
-            subprocess.Popen(['trash', path], stdout=sys.stdout, stderr=sys.stderr).wait()
+            subprocess.Popen(['trash', path]).wait()
 
     def __str__(self):
         #: return log and optimized_cell
