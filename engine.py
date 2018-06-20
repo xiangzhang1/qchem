@@ -1090,7 +1090,7 @@ class Dummy(object):
 
     def compute(self):
         if not os.path.isdir(self.path):
-            os.mkdirs(self.path)
+            os.makedirs(self.path)
             self.log = 'Made directory %s' % (self.path)
         else:
             self.log = 'Identified directory %s' % (self.path)
