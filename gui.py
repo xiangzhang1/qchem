@@ -207,13 +207,13 @@ def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
 @login_required
 def dump_nodes():
     shared.save(shared.nodes, 'nodes')
-    
+
 # either load latest, or load a specific datetime_postfix.
 @app.route('/load_nodes', methods=['GET','POST'])
 @login_required
 def load_nodes():
     shared.nodes = shared.load('nodes')
-    
+
 @app.route('/load_sigma', methods=['GET','POST'])
 @login_required
 def load_sigma():
@@ -223,7 +223,7 @@ def load_sigma():
 @login_required
 def dump_sigma():
     shared.save(request.get_json(force=True), 'sigma')
-    
+
 @app.route('/shutdown', methods=['GET', 'POST'])
 @login_required
 def shutdown():
@@ -232,7 +232,7 @@ def shutdown():
         raise RuntimeError('Not running with the Werkzeug Server')
     func()
     print 'Server shutting down... Thanks for using qchem.'
-    
+
 # for testing
 @app.route('/hello_world')
 def helloworld():
@@ -255,20 +255,20 @@ def new_node():
     j = request.get_json(force=True)
     n = engine.Map().lookup(j['cur'])
     n.map.add_node(graph.Node())
-    
+
 @app.route('/del_node', methods=['POST'])
 @login_required
 def del_node():
     j = request.get_json(force=True)
     node = engine.Map().lookup(j['cur']+'.'+j['name'])
     node.delete()
-    
+
 @app.route('/reset_node', methods=['POST'])
 @login_required
 def reset_node():
     j = request.get_json(force=True)
     engine.Map().lookup(j['cur']).reset()
-    
+
 @app.route('/duplicate_node', methods=['POST'])
 @login_required
 def duplicate_node():
@@ -276,13 +276,13 @@ def duplicate_node():
     parent_node = engine.Map().lookup(j['cur'])
     n = parent_node.map.lookup(j['name'])
     parent_node.map.add_node(n.copy())
-    
+
 @app.route('/compute_node', methods=['POST'])
 @login_required
 def compute_node():
     j = request.get_json(force=True)
     engine.Map().lookup(j['cur']).compute(proposed_name=j['name'])  #delegate to parent, suggest compute name
-    
+
 @app.route('/setinterval_compute_node', methods=['POST'])
 @login_required
 def setinterval_compute_node():
@@ -298,12 +298,12 @@ def setinterval_compute_node():
         id='setinterval_compute_job',
         name='setinterval compute job',
         replace_existing=True)
-    
+
 @app.route('/stop_setinterval_compute_node', methods=['GET'])
 @login_required
 def stop_setinterval_compute_node():
     scheduler.remove_job('setinterval_compute_job')
-    
+
 @app.route('/get_text', methods=['POST'])
 @login_required
 def get_text():
@@ -327,7 +327,7 @@ def edit_vars():
         if getattr(engine, name.title(), None):
             value = getattr(engine, name.title())(value)
         setattr(n, name, value)
-    
+
 @app.route('/del_attr', methods=['POST'])
 @login_required
 def del_attr():
@@ -335,7 +335,7 @@ def del_attr():
     j = request.get_json(force=True)
     n = engine.Map().lookup(j['cur'])
     delattr(n, j['attr_name'])
-    
+
 @app.route('/edit', methods=['POST'])
 @login_required
 def edit():
@@ -357,7 +357,7 @@ def edit():
         raise shared.CustomError(node.__class__.__name__ + ': edit: You have not defined a same-name node (aka node with name %s which would have been read)' %(node.name))
     for varname in vars(new_node):
         setattr(node, varname, getattr(new_node, varname))
-    
+
 
 @app.route('/make_connection', methods=['GET'])
 def make_connection():
@@ -376,7 +376,7 @@ def cut_ref():
     p = engine.Map().lookup(j['cur'])
     shared.nodes[n.name] = n
     p.map.del_node(n)
-    
+
 @app.route('/paste_ref', methods=['POST'])
 @login_required
 def paste_ref():
@@ -391,7 +391,7 @@ def paste_ref():
     print 'paste_ref: adding node {%s}' %n.name
     p.map.add_node(n)
     shared.nodes.pop(n.name)
-    
+
 
 @app.route('/add_edge', methods=['POST'])
 @login_required
@@ -399,14 +399,14 @@ def add_edge():
     j = request.get_json(force=True)
     n = engine.Map().lookup(j['cur'])
     n.map.add_edge(j['src'],j['dst'])
-    
+
 @app.route('/del_edge', methods=['POST'])
 @login_required
 def del_edge():
     j = request.get_json(force=True)
     n = engine.Map().lookup(j['cur'])
     n.map.del_edge(j['src'],j['dst'])
-    
+
 @app.route('/copy_remote_folder_name', methods=['POST'])
 @login_required
 def copy_remote_folder_name():
@@ -427,6 +427,10 @@ def copy_path():
     except:
         return jsonify({'path':'path_not_assigned'})
 
+@app.route('/ipython')
+@login_required
+def ipython():
+    IPython.embed()
 
 # Run flask
 # ======================================================================
