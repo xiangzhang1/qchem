@@ -1089,13 +1089,11 @@ class Dummy(object):
         self.gen = node.gen
 
     def compute(self):
-        os.mkdir(self.path)
-        prev = Map().rlookup(attr_dict={'dummy':self}, prev=True)
         if not os.path.isdir(self.path):
             os.mkdirs(self.path)
-        dcmp = dircmp(Map().rlookup('dummy',self).path, self.path)
-        if dcmp.left_only or dcmp.right_only or dcmp.diff_files:
-            shutil.copytree(Map().rlookup('dummy',self).path, self.path)
+            self.log = 'Made directory %s' % (self.path)
+        else:
+            self.log = 'Identified directory %s' % (self.path)
 
     @shared.moonphase_wrap
     def moonphase(self):

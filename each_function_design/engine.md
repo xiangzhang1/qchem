@@ -98,7 +98,7 @@ Computes `makeparam` on gen input, except that isym=0 and lsorbit=.false.
 
 Dummy
 =========================================================================
-Boilerplate.
+Either creates or identifies a directory.
 
 
 
