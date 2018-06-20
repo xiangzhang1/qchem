@@ -879,7 +879,7 @@ class Vasp(object):
                 # these lines don't look right.
                 # with open(os.devnull, 'r+b', 0) as DEVNULL:
                 #     subprocess.Popen(['bash', './wrapper'], stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL, preexec_fn=os.setpgrp, close_fds=True)
-                subprocess.Popen(['bash','./wrapper'], stdout=sys.stdout, stderr=sys.stderr).wait()
+                subprocess.Popen(['bash','./wrapper']).wait()
                 print self.__class__.__name__ + ': computation started. local path   %s   . waiting for filesystem update. ' %path
             else:
                 print '-' * 50 + '\n' + self.__class__.__name__ + ': wrapper generated at   %s   . waiting for filesystem update. ' %path
