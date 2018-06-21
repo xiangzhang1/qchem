@@ -5,7 +5,7 @@ flask_url = 'https://dellpcxzhang1.dyndns.org:5000';
 master = { id: 'master', name: 'master', label: 'master', map: { nodes: [], edges: [] } } ;
 cur = 'master';
 clipboard = { };  // store pre-drag x|y; store cut-paste name; store path and remote_folder_name
-DEBUG = 0;
+VERBOSE = 0;
 
 
 var spinner = {
@@ -61,7 +61,7 @@ function make_connection() {
         // INITIALIZATION CONSTANTS.
         attributes_printable = d.attributes_printable;
         attributes_in = d.attributes_in;
-        DEBUG = d.DEBUG;
+        VERBOSE = d.VERBOSE;
         // // other
         // console.log('make_connection success, returned d', d)
       })

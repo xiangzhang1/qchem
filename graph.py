@@ -26,7 +26,7 @@ GUI serves as a crutch only. We no longer aim to maintain global compatibility.
 def Import(text):
     # partial syntax check
     if '#' not in text:
-        raise shared.CustomError('qchem.Import: bad syntax, no # in text. Your text is {%s}.' %text)
+        raise shared.IllDefinedError('qchem.Import: bad syntax, no # in text. Your text is {%s}.' %text)
     l = re.split('^#+\s*', text, flags=re.MULTILINE) ; l.pop(0)
     l = ['# '+x for x in l]
 
@@ -35,7 +35,7 @@ def Import(text):
         n = Node(l.pop())
         # name must not be in nodes
         if n.name in shared.nodes:
-            raise shared.CustomError('Import: Node name %s is in already in shared.nodes.' %n.name)
+            raise shared.IllDefinedError('Import: Node name %s is in already in shared.nodes.' %n.name)
         shared.nodes[n.name] = n
 
 
@@ -53,7 +53,7 @@ class Node(object):
         # node.name
         # grammar check
         if len(namevalpairs[0].splitlines()) != 1 or not namevalpairs[0].startswith('#'):
-            raise shared.CustomError(self.__class__.__name__ +': __init__: Titleline format is #name:opt. Your titleline is: {%s}' %namevalpairs[0])
+            raise shared.IllDefinedError(self.__class__.__name__ +': __init__: Titleline format is #name:opt. Your titleline is: {%s}' %namevalpairs[0])
         titleline = namevalpairs.pop(0).rstrip().lstrip('# ')
         l = [x.strip() for x in titleline.split(':')]
         self.name = l[0]
@@ -126,7 +126,7 @@ class Node(object):
 
     def compute(self, proposed_name=None):
 
-        if shared.DEBUG >= 0:
+        if shared.VERBOSE >= 0:
             print 'computing node {%s}' %(self.default_path())
 
         if getattr(self, 'map', None):
@@ -134,11 +134,11 @@ class Node(object):
             l = [x for x in self.map if x.moonphase()==0 and not [n for n in self.map if n.moonphase()!=2 and x in self.map[n]]]
             #: consider the proposed name
             if not l:
-                raise shared.CustomError( self.__class__.__name__ + ': nothing to compute in parent node {%s]' %self.name )
+                raise shared.IllDefinedError( self.__class__.__name__ + ': nothing to compute in parent node {%s]' %self.name )
             if proposed_name:
                 tmp_l = [x for x in l if x.name == proposed_name]
                 if not tmp_l:
-                    raise shared.CustomError( self.__class__.__name__ + '.compute: cannot found proposed_name {%s} in map' %proposed_name)
+                    raise shared.IllDefinedError( self.__class__.__name__ + '.compute: cannot found proposed_name {%s} in map' %proposed_name)
                 n = tmp_l[0]
             else:
             #;
@@ -152,9 +152,9 @@ class Node(object):
                 if vname in shared.attributes_inheritable and not getattr(self, vname, None):
                     setattr(self, vname, getattr(parent,vname))
             if getattr(self, 'cell', None) is None or getattr(self, 'phase', None) is None:
-                raise shared.CustomError(self.__class__.__name__ + '.compute: cell or phase is missing. Either make sure parent has something you can inherit, or enter them.')
+                raise shared.IllDefinedError(self.__class__.__name__ + '.compute: cell or phase is missing. Either make sure parent has something you can inherit, or enter them.')
             if not getattr(self, 'path', None):
-                if shared.DEBUG >= 2:
+                if shared.VERBOSE >= 2:
                     self.path = raw_input('Provide path for node {%s}, empty to use default:' %self.name)    # counterpart implemented in sigmajs
                     if not self.path.strip():   self.path = self.default_path()
                 else:   # silent mode
@@ -174,12 +174,12 @@ class Node(object):
                 engine_class = getattr(engine, self.gen.getkw('engine').title())
                 engine_ = engine_class(self)
                 setattr(self, self.gen.getkw('engine'), engine_)
-            if shared.DEBUG >= 2:
+            if shared.VERBOSE >= 2:
                 print self.__class__.__name__ + '.compute: computing engine %s' %(self.gen.getkw('engine'))
             getattr(self, self.gen.getkw('engine')).compute()
 
         else:
-            raise shared.CustomError(self.__class___.__name__ + ': compute: Node %s is not computable.' %self.name)
+            raise shared.IllDefinedError(self.__class___.__name__ + ': compute: Node %s is not computable.' %self.name)
 
     def delete(self):
         if getattr(self, 'gen', None):

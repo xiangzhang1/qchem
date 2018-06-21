@@ -243,9 +243,9 @@ def helloworld():
 def request_():  # either merge json, or use shared.nodes['master']     # yep, this is the magic function.
     if request.method == 'POST':
         old_json = request.get_json(force=True)
-        if shared.DEBUG >= 2: print 'before node_to_json' + '*'*70
+        if shared.VERBOSE >= 2: print 'before node_to_json' + '*'*70
         new_json = node_to_json(engine.Map().lookup('master'))
-        if shared.DEBUG >= 2: print 'after node_to_json' + '*'*70
+        if shared.VERBOSE >= 2: print 'after node_to_json' + '*'*70
         new_json = combine_json(new_json, old_json)
         return jsonify( new_json )
 
@@ -321,7 +321,7 @@ def edit_vars():
     n = engine.Map().lookup(j.pop('cur'))
     for name,value in j.iteritems():
         if name == 'name' and ('.' in value or ',' in value or '=' in value):
-            raise shared.CustomError('dot, comma and equal sign cannot be in name. ')
+            raise shared.IllDefinedError('dot, comma and equal sign cannot be in name. ')
         if name not in shared.attributes_in:
             continue
         if getattr(engine, name.title(), None):
@@ -347,14 +347,14 @@ def edit():
     if 'map:' in j['text']:
         for x in node.map if getattr(node,'map',None) else []:
             if x.name == node.name:
-                raise shared.CustomError('gui edit: edit is not in place and relies on name search. one child node has same name {%s} as parent, which may cause confusion.' %node.name)
+                raise shared.IllDefinedError('gui edit: edit is not in place and relies on name search. one child node has same name {%s} as parent, which may cause confusion.' %node.name)
             shared.nodes[x.name] = x
     graph.Import(j['text'])
     #  update
     if node.name in shared.nodes:
         new_node = node.map.lookup(node.name)#pop
     else:
-        raise shared.CustomError(node.__class__.__name__ + ': edit: You have not defined a same-name node (aka node with name %s which would have been read)' %(node.name))
+        raise shared.IllDefinedError(node.__class__.__name__ + ': edit: You have not defined a same-name node (aka node with name %s which would have been read)' %(node.name))
     for varname in vars(new_node):
         setattr(node, varname, getattr(new_node, varname))
 
@@ -365,7 +365,7 @@ def make_connection():
         statuscolor = shared.color_palette[2]
     else:
         statuscolor = shared.color_palette[-1]
-    return jsonify({'statuscolor':statuscolor, 'attributes_printable': shared.attributes_printable, 'attributes_in': shared.attributes_in, 'DEBUG': shared.DEBUG})
+    return jsonify({'statuscolor':statuscolor, 'attributes_printable': shared.attributes_printable, 'attributes_in': shared.attributes_in, 'VERBOSE': shared.VERBOSE})
 
 
 @app.route('/cut_ref', methods=['POST'])
@@ -384,7 +384,7 @@ def paste_ref():
     p = engine.Map().lookup(j['cur'])
     l = [n for n in shared.nodes.values() if n!=engine.Map().lookup('master')]
     if not l:
-        raise shared.CustomError('paste_ref error: shared.nodes only contains master. nothing pastable')
+        raise shared.IllDefinedError('paste_ref error: shared.nodes only contains master. nothing pastable')
     if len(l) > 1:
         print 'paste_ref warning: more than one nodes pastable. pastable nodes are [%s]' %([n.name for n in l])
     n = l[0]
