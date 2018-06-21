@@ -134,7 +134,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             self.kw_internal_set.add(kwname)
         elif '!' not in expression and 'null' not in expression and '(' not in expression and '|' not in expression and '&' not in expression:    ## parse <modname>
             modname = expression
-            self.mod[modname] = [True]
+            self.mod[modname] = set((True))
             self.mod_legal_set.add(modname)
         else:                               ## parse <if expression>
             result = self.parse_if(expression)
