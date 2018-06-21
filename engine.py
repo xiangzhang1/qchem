@@ -261,22 +261,23 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         i_attempt = 0
         while i_attempt < 3 and len(self.require)>0:
             for line in copy.copy(self.require):
-                if self.parse_if(line[0]):
-                    try:
+                try:
+                    # note that both parse_if (no keyword found) and parse_require (require not met) can raise MaybeTemporaryError, meaning defer
+                    if self.parse_if(line[0]):
                         self.parse_require(line[1])
                         self.require.remove(line)
-                    except shared.MaybeTemporaryError:
-                        if i_attempt < 2:
-                            if shared.VERBOSE >= 1:
-                                print self.__class__.__name__+'.__init__ info: during round %s, optional parse_require results in empty set, and is deferred to next round. Expression is { %s : %s : %s }.' % (i_attempt, line[0],line[1],line[3])
-                        elif line[2] == 'optional':
-                            if shared.VERBOSE >= 1:
-                                print self.__class__.__name__+'.__init__ warning: during final round, optional parse_require still results in empty set. Expression is { %s : %s : %s }.' % (line[0],line[1],line[3])
-                        else:
-                            raise shared.IllDefinedError( self.__class__.__name__+'.__init__ error: during final round, non-optional parse_require still produces empty set. Expression is { %s : %s :  %s }.' % (line[0],line[1],line[3]) )
-                else:
-                    if shared.VERBOSE >= 2:
-                        print self.__class__.__name__+'.__init__ info: during round %s, a parse_require\'s parse_if is not met, and is deferred to next round. Expression is { %s : %s : %s }.' % (i_attempt, line[0],line[1],line[3])
+                    # unmet parse_if also meaning defer
+                    else:
+                        raise shared.MaybeTemporaryError
+                except shared.MaybeTemporaryError:
+                    if i_attempt < 2:
+                        if shared.VERBOSE >= 1:
+                            print self.__class__.__name__+'.__init__ info: during round %s, optional parse_require (or parse_if with kw-not-found) results in empty set, and is deferred to next round. Expression is { %s : %s : %s }.' % (i_attempt, line[0],line[1],line[3])
+                    elif line[2] == 'optional':
+                        if shared.VERBOSE >= 1:
+                            print self.__class__.__name__+'.__init__ warning: during final round, optional parse_require (or parse_if with kw-not-found) still results in empty set. Expression is { %s : %s : %s }.' % (line[0],line[1],line[3])
+                    else:
+                        raise shared.IllDefinedError( self.__class__.__name__+'.__init__ error: during final round, non-optional parse_require (or parse_if with kw-not-found) still produces empty set. Expression is { %s : %s :  %s }.' % (line[0],line[1],line[3]) )
         # 检验
         ## Entering the last phase. Data structure of self.mod and self.kw simplifies.
         for modname in set(self.mod.keys())-self.mod_legal_set:
