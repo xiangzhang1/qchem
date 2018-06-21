@@ -23,14 +23,11 @@ var spinner = {
          },0 );
     }
 }
-
-
-
 // spinner.stop()
 
 //login.
 var username = prompt("Username:", "xzhang1");
-var password = prompt("Password:", "");
+var password = prompt("Password:", "Zeppola");
 
 
 var ajaxPending = false;
@@ -111,7 +108,6 @@ function copyTextToClipboard(text) {
 
   // Avoid flash of white box if rendered for any reason.
   textArea.style.background = 'transparent';
-
 
   textArea.value = text;
 
@@ -259,13 +255,13 @@ function log(d) {
     console.log(d);
 }
 
-function import_markdown(){
-    $.get(flask_url + '/reset_NODES', function(){
-        $.get(flask_url + '/import_markdown', function(){
-            $.get(flask_url + '/request_', read);
-        });
-    });
-}
+// function import_markdown(){
+//     $.get(flask_url + '/reset_NODES', function(){
+//         $.get(flask_url + '/import_markdown', function(){
+//             $.get(flask_url + '/request_', read);
+//         });
+//     });
+// }
 function new_(){
     $.get(flask_url + '/new_', log)
     .then(function(){
@@ -279,33 +275,31 @@ function save(){
 }
 function load(){
     $.get(flask_url + '/load_nodes', function(){
-
-
         $.get(flask_url + '/load_sigma', function(d){ read(d, refresh);});
     });
 }
-function ipython(){
-    $.ajax({
-        url: flask_url + '/ipython',
-        success: log,
-        async: true     // async is a mentality. you start something, show a spinner, complete something, hide spinner; the fact that it's in series doesn't mean it's synchronous. ajax is async!
-    });
-    console.log('hiding spinner during ipython; however, flask is still occupied and no get/post will go through.')
-    spinner.stop();
-}
+// function ipython(){
+//     $.ajax({
+//         url: flask_url + '/ipython',
+//         success: log,
+//         async: true     // async is a mentality. you start something, show a spinner, complete something, hide spinner; the fact that it's in series doesn't mean it's synchronous. ajax is async!
+//     });
+//     console.log('hiding spinner during ipython; however, flask is still occupied and no get/post will go through.')
+//     spinner.stop();
+// }
 function shutdown(){
     //global cur
     $.get(flask_url + '/shutdown', log);
     alert("Shutdown complete. ")
 }
 
-function load_datetime(datetime){
-    $.post(flask_url + '/load_nodes', JSON.stringify({'datetime':datetime}), function(d){
-        $.post(flask_url + '/load_sigma', JSON.stringify({'datetime':datetime}), function(d){
-            read(d, refresh)
-        });
-    });
-}
+// function load_datetime(datetime){
+//     $.post(flask_url + '/load_nodes', JSON.stringify({'datetime':datetime}), function(d){
+//         $.post(flask_url + '/load_sigma', JSON.stringify({'datetime':datetime}), function(d){
+//             read(d, refresh)
+//         });
+//     });
+// }
 function refresh(err, data, cb){
     $.post(flask_url + '/request_', JSON.stringify(master), function(d){
         read(d);
@@ -326,7 +320,6 @@ function del_node(err, name, cb){
             if(cb) cb();
         });
     });
-
 }
 function reset_node(name){
     //global cur
