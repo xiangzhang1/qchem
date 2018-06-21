@@ -56,7 +56,7 @@ require (incl kw/mod, in / !in / complex_funcname, incl rec) [in1 means unique v
 functions
 
 流程:
-读mod{name:valset=set((True))}, kw{name:valset}
+读mod{name:valset={True}}, kw{name:valset}
 	参数值统一用valset限制，string格式，理想情况为单值
 执行require
 	冲突要求：
