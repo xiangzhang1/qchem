@@ -243,7 +243,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         self.mod_legal_set = set()
         input_ = [p.strip() for p in input_.split(',') if p.rstrip()]
         for item in input_:
-            self.parse_require(item,True)
+            self.parse_require(item)
         # 执行require
         self.require = []
         if not [x for x in input_ if x.startswith('engine')]:
