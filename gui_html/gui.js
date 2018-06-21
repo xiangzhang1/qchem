@@ -263,10 +263,7 @@ function log(d) {
 //     });
 // }
 function new_(){
-    $.get(flask_url + '/new_', log)
-    .then(function(){
-        refresh();  // then must follow a promise. either use q promise, or $.get returns a promise.
-    });
+    $.get(flask_url + '/new_', log);
 }
 function save(){
     $.post(flask_url + '/dump_sigma', JSON.stringify(master), function(d){  // d var is 'bad' only in the sense that your collaborators don't understand.
@@ -304,7 +301,7 @@ function refresh(err, data, cb){
 
 function new_node(){
     //global cur
-    $.post(flask_url + '/new_node', JSON.stringify({'cur':cur, 'name':'newnode'}), refresh);
+    $.post(flask_url + '/new_node', JSON.stringify({'cur':cur, 'name':'newnode'}), log);
 }
 function del_node(err, name, cb){
     //global cur
@@ -316,20 +313,20 @@ function del_node(err, name, cb){
 }
 function reset_node(name){
     //global cur
-    $.post(flask_url + '/reset_node', JSON.stringify({'cur':cur + '.' + name}), refresh);
+    $.post(flask_url + '/reset_node', JSON.stringify({'cur':cur + '.' + name}), log);
 }
 function compute_node(name){
     //global cur
     //var name, path_prefix
     refresh(null, null, function(){ //necessary since path needs to be reread
-        $.post(flask_url + '/compute_node', JSON.stringify({'cur':cur, 'name':name}), refresh);
+        $.post(flask_url + '/compute_node', JSON.stringify({'cur':cur, 'name':name}), log);
     });
 }
 function setinterval_compute_node(name){
-    $.post(flask_url + '/setinterval_compute_node', JSON.stringify({'cur':cur, 'name':name}), refresh);
+    $.post(flask_url + '/setinterval_compute_node', JSON.stringify({'cur':cur, 'name':name}), log);
 }
 function stop_setinterval_compute_node(){
-    $.get(flask_url + '/stop_setinterval_compute_node', refresh);
+    $.get(flask_url + '/stop_setinterval_compute_node', log);
 }
 
 function paste_ref(){
@@ -386,13 +383,13 @@ function add_edge(src, dst) {
   //var src, dst
   //global cur
   //allow double add edge mechanism
-  $.post(flask_url + '/add_edge', JSON.stringify({'src':src, 'dst':dst, 'cur':cur}), refresh);
+  $.post(flask_url + '/add_edge', JSON.stringify({'src':src, 'dst':dst, 'cur':cur}), log);
 }
 function del_edge(src, dst) {
   //var src, dst
   //global cur
   //allow double add edge mechanism
-  $.post(flask_url + '/del_edge', JSON.stringify({'src':src, 'dst':dst, 'cur':cur}), refresh);
+  $.post(flask_url + '/del_edge', JSON.stringify({'src':src, 'dst':dst, 'cur':cur}), log);
 }
 
 function edit_node(name){
@@ -423,7 +420,7 @@ function submit_edit(name) {
       //var name, text
       text = $('#edit_node').val();
       j = {'cur':cur+'.'+name, 'text':text};
-      $.post(flask_url + '/edit', JSON.stringify(j), refresh);
+      $.post(flask_url + '/edit', JSON.stringify(j), log);
 }
 
 function copy_cur(name) {
