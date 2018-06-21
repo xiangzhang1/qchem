@@ -101,7 +101,13 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         else:   # literal
             return expression
 
-    def parse_require(self, expression, run=False):  # Executes a require expression. Accepts empty expression as True.
+    def parse_require(self, expression, run=False):
+        # Executes a require expression. Accepts empty expression as True.
+        # run=False means 'test it, if unsuccessful it is fine just let return know and print a warning'
+        # run=True means 'must be successful!'
+        # WORK IN PROGRESS
+        # what if final run, but optional? print in 2 places? horrible idea!
+        # END WORK IN PROGRESS
         if len(expression.splitlines()) > 1:    # one line, then strip
             raise shared.CustomError(self.__class__.__name__ + '.parse_require: expression {%s} contains line break' %expression)
         expression = expression.strip()
@@ -133,9 +139,17 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             kwname = re.sub('internal', '', expression).strip()
             self.kw_internal_set.add(kwname)
             return True
+        # WORK IN PROGRESS
+        elif '!' not in expression and 'null' not in expression and '(' not in expression and '|' not in expression and '&' not in expression:    ## parse <modname>
+            result = (self.mod[modname] if modname in self.mod else set()) | set([True])
+            if run and bool(result):        ### output
+                self.mod[modname] = result
+            self.mod_legal_set.add(modname)
+            return bool(result)
+        # END WORK IN PROGRESS
         else:                               ## parse <if expression>
             result = self.parse_if(expression)
-            if not result and shared.DEBUG >= 1:
+            if not run and not result and shared.DEBUG >= 1:
                 print self.__class__.__name__ + ' parse_require warning: parse_require results in empty set, deferred: expression {%s}' %(expression)
             return result
 
@@ -234,7 +248,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         self.node = ref(node)
         cell = node.cell
         input_ = node.phase + ', ' + node.property
-    # 读mod, kw
+        # 读mod, kw
         self.mod = {}
         self.kw = {}
         self.kw_legal_set = set()
@@ -243,18 +257,19 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         input_ = [p.strip() for p in input_.split(',') if p.rstrip()]
         for item in input_:
             self.parse_require(item,True)
-    # 执行require
+        # 执行require
         self.require = []
         if not [x for x in input_ if x.startswith('engine')]:
             raise shared.CustomError(self.__class__.__name__+': __init__: no engine=x found. Input_: {%s}' %input_)
         engine_name = [x for x in input_ if x.startswith('engine')][0].split('=')[1].strip()
+        ## round 1
         with open(shared.script_dir + '/conf/engine.gen.' + engine_name + '.conf') as conf:
             lines = conf.read().splitlines()
             for line in [ [p.strip() for p in l.split(':')] for l in lines if not l.startswith('#') ]:
                 if len(line) < 4: raise shared.CustomError('bad conf grammar error: needs 3 colons per line least in {%s}' %line)
                 for part in [p.strip() for p in line[1].split(',') ]:
                     try:
-                        if self.parse_if(line[0]) and self.parse_require(part, run=False) and line[2 ]!='optional':
+                        if self.parse_if(line[0]) and self.parse_require(part, run=False) and line[2]!='optional':
                             self.parse_require(part, run=True)
                         else:
                             self.require.append([line[0],part,line[2],line[3]])
@@ -279,7 +294,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
                     print self.__class__.__name__+' __init__ round 2 warning: parse_require result in empty set. optional and aborted. Expression is { %s : %s : %s }.' % (line[0],line[1],line[3])
                 else:
                     raise shared.CustomError( self.__class__.__name__+' __init__ round 2 error: parse_require still produces empty set. Expression is { %s : %s :  %s }.' % (line[0],line[1],line[3]) )
-        #  检验
+        # 检验
         ## Entering the last phase. Data structure of self.mod and self.kw simplifies.
         for modname in set(self.mod.keys())-self.mod_legal_set:
             print self.__class__.__name__+' warning: illegal name. Mod {%s} is not in mod_legal_set and has been ignored. Mod_legal_set={%s}' %(modname,self.mod_legal_set)
@@ -290,7 +305,8 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         for name in self.kw:
             if len(self.kw[name]) != 1:
                 raise shared.CustomError( self.__class__.__name__+' error: non-unique output. Kw[%s]={%s} has not been restricted to 1 value.' %(name,self.kw[name]) )
-        # Overhead prediction. Unfortunately, what should have been done in vasp is moved here, for high efficiency.
+        # 无关紧要
+        ## Overhead prediction. Unfortunately, what should have been done in vasp is moved here, for high efficiency.
         if self.parse_if('engine=vasp'):
             print '-' * 30 + ' Overheads ' + '-' * 30
             # Memory
@@ -298,7 +314,6 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             memory_predicted_gb = ( (m.projector_real + m.projector_reciprocal)*int(self.getkw('npar')) + m.wavefunction*float(self.getkw('kpar')) )/1024.0/1024/1024 + int(self.getkw('nnode'))*0.7    # Global data cannot be obtained for multi-node multi-CPU case. ML is not suitable. Memory estimations might just also be applicable to GPU.
             memory_available_gb = int(self.getkw('nnode')) * int(self.getkw('mem_node'))
             print self.__class__.__name__ + ' memory %s: %s GB used out of %s GB' %('prediction' if memory_available_gb>memory_predicted_gb else 'WARNING', memory_predicted_gb, memory_available_gb)
-            # Queue time; run time
 
     # 3. nbands, ncore_total, encut
     # -----------------------------
