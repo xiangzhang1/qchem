@@ -293,13 +293,6 @@ function shutdown(){
     alert("Shutdown complete. ")
 }
 
-// function load_datetime(datetime){
-//     $.post(flask_url + '/load_nodes', JSON.stringify({'datetime':datetime}), function(d){
-//         $.post(flask_url + '/load_sigma', JSON.stringify({'datetime':datetime}), function(d){
-//             read(d, refresh)
-//         });
-//     });
-// }
 function refresh(err, data, cb){
     $.post(flask_url + '/request_', JSON.stringify(master), function(d){
         read(d);
@@ -590,7 +583,7 @@ var config = {
     cssClass: 'list-group sigma-tooltip',
     renderer: function() {
       var result = `<a href="#" onclick="back()" class="list-group-item">back</a>
-      <a href="#" onclick="refresh()" class="list-group-item">refresh</a>
+      <!-- <a href="#" onclick="refresh()" class="list-group-item">refresh</a> -->
       <a href="#" onclick="new_node()" class="list-group-item">new node</a>
       <a href="#" onclick="paste_ref()" class="list-group-item">paste</a>`;
       return result;
