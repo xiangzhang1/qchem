@@ -645,4 +645,5 @@ dragListener.bind('dragend', function(event) {
     }
   }
   delete clipboard.pre_drag_x; delete clipboard.pre_drag_y; delete clipboard.post_drag_x; delete clipboard.post_drag_y;
+  s.refresh();
 });
