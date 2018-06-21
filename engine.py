@@ -262,14 +262,13 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         while i_attempt < 3 and len(self.require)>0:
             for line in copy.copy(self.require):
                 try:
-                    # note that both parse_if (no keyword found) and parse_require (require not met) can raise MaybeTemporaryError, meaning defer
+                    # 0. both parse_if (no keyword found) and parse_require (require not met) can raise MaybeTemporaryError, resulting in a defer
                     if self.parse_if(line[0]):
                         self.parse_require(line[1])
                         self.require.remove(line)
-                    # unmet parse_if also meaning defer
-                    else:
-                        raise shared.MaybeTemporaryError
+                    # 2. but if parse_if just failed, it's an irrelevant line; let it slip.
                 except shared.MaybeTemporaryError:
+                    # 1. in case of MaybeTemporaryError-caused defer, if i_attempt=2, special action needs to be taken.
                     if i_attempt < 2:
                         if shared.VERBOSE >= 1:
                             print self.__class__.__name__+'.__init__ info: during round %s, optional parse_require (or parse_if with kw-not-found) results in empty set, and is deferred to next round. Expression is { %s : %s : %s }.' % (i_attempt, line[0],line[1],line[3])
