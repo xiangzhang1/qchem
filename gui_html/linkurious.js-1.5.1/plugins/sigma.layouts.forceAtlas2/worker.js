@@ -118,7 +118,7 @@
 
     function np(i, p) {
 
-      // DEBUG: safeguards
+      // VERBOSE: safeguards
       if ((i % W.ppn) !== 0)
         throw 'np: non correct (' + i + ').';
       if (i !== parseInt(i))
@@ -133,7 +133,7 @@
 
     function ep(i, p) {
 
-      // DEBUG: safeguards
+      // VERBOSE: safeguards
       if ((i % W.ppe) !== 0)
         throw 'ep: non correct (' + i + ').';
       if (i !== parseInt(i))
@@ -148,7 +148,7 @@
 
     function rp(i, p) {
 
-      // DEBUG: safeguards
+      // VERBOSE: safeguards
       if ((i % W.ppr) !== 0)
         throw 'rp: non correct (' + i + ').';
       if (i !== parseInt(i))
@@ -161,7 +161,7 @@
               'Inexistant region property given (' + p + ').';
     }
 
-    // DEBUG
+    // VERBOSE
     function nan(v) {
       if (isNaN(v))
         throw 'NaN alert!';

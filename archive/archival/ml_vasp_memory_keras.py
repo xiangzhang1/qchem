@@ -38,13 +38,13 @@ class Ml_vasp_memory(object):
         label = [node.vasp.memory_used()]
         if not node.vasp.memory_used():
             print self.__class__.__name__ + ': cannot extract memory used. Aborted. '
-        if shared.DEBUG >= 1: print self.__class__.__name__ + ': taking data... ',
+        if shared.VERBOSE >= 1: print self.__class__.__name__ + ': taking data... ',
         if not any([np.linalg.norm(input_ - row) < ZERO for row in self.X_train]):
             self.X_train = np.append(self.X_train, input_, axis=0)
             self.Y_train = np.append(self.Y_train, label, axis=0)
-            if shared.DEBUG >= 1: print 'Complete.'
+            if shared.VERBOSE >= 1: print 'Complete.'
         else:
-            if shared.DEBUG >= 1: print 'Skipped.'
+            if shared.VERBOSE >= 1: print 'Skipped.'
 
     def scale_and_fit(self):
         # scale
@@ -71,7 +71,7 @@ class Ml_vasp_memory(object):
                             gen.ncore_total()
                          ]])
         Y_test = self.scale_and_predict(X_test)
-        if shared.DEBUG >= 2:   print 'X_test is %s; Y_test is %s' %(X_test, Y_test)
+        if shared.VERBOSE >= 2:   print 'X_test is %s; Y_test is %s' %(X_test, Y_test)
         return np.asscalar(Y_test)
 
     def make_prediction2(self, gen):

@@ -1,6 +1,6 @@
 Global constants, methods, and (persisting) variables. Note that np.pi is not capitalized.
 
-__DEBUG__
+__VERBOSE__
 * -1 [silent]
 * 0 [auto]
 * 1 [manual]
@@ -8,7 +8,7 @@ __DEBUG__
 
 @MWT: timeout = 10 (ssh) | 2592000 (cell.cdist())
 
-__CustomError__, __DeferError__: data is inconsistent. sometimes it simply means 'recalculate, man'.
+__IllDefinedError__, __MaybeTemporaryError__: data is inconsistent. sometimes it simply means 'recalculate, man'.
 
 
 Element, ELEMENTS

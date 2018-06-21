@@ -84,11 +84,11 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
     # ---------------------------------------
     def getkw(self, kwname):
         if kwname not in self.kw:
-            raise shared.DeferError(self.__class__.__name__ + '. getkw: keyword {%s} not found, DeferError raised' %(kwname))
+            raise shared.MaybeTemporaryError(self.__class__.__name__ + '. getkw: keyword {%s} not found' %(kwname))
         if len(self.kw[kwname]) != 1:
-            raise shared.DeferError(self.__class__.__name__ + '.getkw: self.kw[%s] does not have 1 unique value {%s}, DeferError raised' %(kwname, self.kw[kwname]))
+            raise shared.MaybeTemporaryError(self.__class__.__name__ + '.getkw: self.kw[%s] does not have 1 unique value {%s}' %(kwname, self.kw[kwname]))
         if not isinstance(next(iter(self.kw[kwname])), basestring):
-            raise shared.CustomError(self.__class__.__name__ + '.getkw: value {%s} of kw {%s} is not string' % (next(iter(self.kw[kwname])), kwname))
+            raise shared.IllDefinedError(self.__class__.__name__ + '.getkw: value {%s} of kw {%s} is not string' % (next(iter(self.kw[kwname])), kwname))
         return next(iter(self.kw[kwname]))
 
     def evaluate(self, expression):
@@ -96,20 +96,17 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         if expression.startswith('(') and expression.endswith(')'):
             func = getattr(self, re.sub('\(|\)', '', expression).strip())
             if not func:
-                raise shared.CustomError(self.__class__.__name__+' error:  bad conf file error. Unable to find function {%s}' % re.sub('\(|\)', '', expression))
+                raise shared.IllDefinedError(self.__class__.__name__+' error:  bad conf file error. Unable to find function {%s}' % re.sub('\(|\)', '', expression))
             return func()
         else:   # literal
             return expression
 
-    def parse_require(self, expression, run=False):
-        # Executes a require expression. Accepts empty expression as True.
-        # run=False means 'test it, if unsuccessful it is fine just let return know and print a warning'
-        # run=True means 'must be successful!'
-        # WORK IN PROGRESS
-        # what if final run, but optional? print in 2 places? horrible idea!
-        # END WORK IN PROGRESS
+    def parse_require(self, expression):
+        # Either
+        # - complete a requirement (and return None)
+        # - raise MaybeTemporaryError
         if len(expression.splitlines()) > 1:    # one line, then strip
-            raise shared.CustomError(self.__class__.__name__ + '.parse_require: expression {%s} contains line break' %expression)
+            raise shared.IllDefinedError(self.__class__.__name__ + '.parse_require: expression {%s} contains line break' %expression)
         expression = expression.strip()
         operation_map = {
                 '=': lambda x, y: x & y,
@@ -125,37 +122,27 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
                 result = operation_map[operator](self.kw[kwname], kwvalset)
             else:
                 result = operation_map[operator](kwvalset, kwvalset)
-            if run and bool(result):
+            if bool(result):
                 self.kw[kwname] = result
-                if shared.DEBUG >= 1:
+                if shared.VERBOSE >= 1:
                     print self.__class__.__name__ + ' parse_require: gave kw {%s} value {%s}' % (kwname, result)
-            if run and not bool(result):
-                raise shared.CustomError(self.__class__.__name__ + ' parse_require run=True error: parse_require results in empty set: kwname {%s}, value {%s}, required value {%s}' % (kwname, self.kw[kwname] if kwname in self.kw else 'null', kwvalset))
-            if not run and not bool(result) and shared.DEBUG >= 1:
-                print self.__class__.__name__ + ' parse_require warning: parse_require results in empty set, deferred: kwname {%s}, value {%s}, required_value {%s}' %(kwname, self.kw[kwname] if kwname in self.kw else 'null', kwvalset)
+            else:
+                raise shared.MaybeTemporaryError
             self.kw_legal_set.add(kwname)
-            return bool(result)
         elif 'internal' in expression:      ## parse <kwname internal>
             kwname = re.sub('internal', '', expression).strip()
             self.kw_internal_set.add(kwname)
-            return True
-        # WORK IN PROGRESS
         elif '!' not in expression and 'null' not in expression and '(' not in expression and '|' not in expression and '&' not in expression:    ## parse <modname>
-            result = (self.mod[modname] if modname in self.mod else set()) | set([True])
-            if run and bool(result):        ### output
-                self.mod[modname] = result
+            self.mod[modname] = [True]
             self.mod_legal_set.add(modname)
-            return bool(result)
-        # END WORK IN PROGRESS
         else:                               ## parse <if expression>
             result = self.parse_if(expression)
-            if not run and not result and shared.DEBUG >= 1:
-                print self.__class__.__name__ + ' parse_require warning: parse_require results in empty set, deferred: expression {%s}' %(expression)
-            return result
+            if not result:
+                raise shared.MaybeTemporaryError
 
     def parse_if(self,expression):  # recursively evaluate complex if condition. accepts empty expression.
         if ',' in expression:
-            raise shared.CustomError( self.__class__.__name__ + ' parse_if error: "," in if expression {%s} in engine.gen.*.conf. Did you mean to use "&"?' %expression)
+            raise shared.IllDefinedError( self.__class__.__name__ + ' parse_if error: "," in if expression {%s} in engine.gen.*.conf. Did you mean to use "&"?' %expression)
         operation_map = {
                 '&&': lambda x, y: x and y,
                 '||': lambda x, y: x or y,
@@ -221,11 +208,11 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
                     outfile.write(high_symmetry_symbol_dict[self.getkw('struk')][kpoints[idx+1]]+'\n')
                     outfile.write('\n')
             else:
-                raise shared.CustomError(self.__class__.__name__ + '.write_incar_kpoints: kpoints starter looks wrong')
+                raise shared.IllDefinedError(self.__class__.__name__ + '.write_incar_kpoints: kpoints starter looks wrong')
 
     def pot(self, symbol):
         if len(shared.ELEMENTS[symbol].pot) == 0:
-            raise shared.CustomError(' pot: POTCAR for '+symbol+' not found.')
+            raise shared.IllDefinedError(' pot: POTCAR for '+symbol+' not found.')
         path = shared.script_dir + '/resource/potpaw_PBE/'+shared.ELEMENTS[symbol].pot + '/POTCAR'
         if_ = open(path,'r')
         of_ = open('./POTCAR','a')
@@ -260,40 +247,35 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         # 执行require
         self.require = []
         if not [x for x in input_ if x.startswith('engine')]:
-            raise shared.CustomError(self.__class__.__name__+': __init__: no engine=x found. Input_: {%s}' %input_)
+            raise shared.IllDefinedError(self.__class__.__name__+': __init__: no engine=x found. Input_: {%s}' %input_)
         engine_name = [x for x in input_ if x.startswith('engine')][0].split('=')[1].strip()
-        ## round 1
+        # 读engine.gen.*.conf，放满self.require
         with open(shared.script_dir + '/conf/engine.gen.' + engine_name + '.conf') as conf:
             lines = conf.read().splitlines()
             for line in [ [p.strip() for p in l.split(':')] for l in lines if not l.startswith('#') ]:
-                if len(line) < 4: raise shared.CustomError('bad conf grammar error: needs 3 colons per line least in {%s}' %line)
+                if len(line) < 4: raise shared.IllDefinedError('bad conf grammar error: needs 3 colons per line least in {%s}' %line)
                 for part in [p.strip() for p in line[1].split(',') ]:
+                    self.require.append([line[0],part,line[2],line[3]])
+        # 执行三次self.require
+        i_attempt = 0
+        while i_attempt < 3 and len(self.require)>0:
+            for line in copy.copy(self.require):
+                if self.parse_if(line[0]):
                     try:
-                        if self.parse_if(line[0]) and self.parse_require(part, run=False) and line[2]!='optional':
-                            self.parse_require(part, run=True)
-                        else:
-                            self.require.append([line[0],part,line[2],line[3]])
-                    except shared.DeferError:
-                            self.require.append([line[0],part,line[2],line[3]])
-        ## round 2+: got a 'no' or 'optional' in first round
-        continue_flag = True
-        while continue_flag:
-            continue_flag = False
-            for line in self.require:
-                try:
-                    if self.parse_if(line[0]) and self.parse_require(line[1],False):
-                        self.parse_require(line[1],True)
-                        continue_flag = True
+                        self.parse_require(line[1])
                         self.require.remove(line)
-                except shared.DeferError:
-                    pass
-        ## round last: the 'no' is final
-        for line in self.require:
-            if self.parse_if(line[0]):
-                if line[2] == 'optional':
-                    print self.__class__.__name__+' __init__ round 2 warning: parse_require result in empty set. optional and aborted. Expression is { %s : %s : %s }.' % (line[0],line[1],line[3])
+                    except shared.MaybeTemporaryError:
+                        if i_attempt < 2:
+                            if shared.VERBOSE >= 1:
+                                print self.__class__.__name__+'.__init__ info: during round %s, optional parse_require results in empty set, and is deferred to next round. Expression is { %s : %s : %s }.' % (i_attempt, line[0],line[1],line[3])
+                        elif line[2] == 'optional':
+                            if shared.VERBOSE >= 1:
+                                print self.__class__.__name__+'.__init__ warning: during final round, optional parse_require still results in empty set. Expression is { %s : %s : %s }.' % (line[0],line[1],line[3])
+                        else:
+                            raise shared.IllDefinedError( self.__class__.__name__+'.__init__ error: during final round, non-optional parse_require still produces empty set. Expression is { %s : %s :  %s }.' % (line[0],line[1],line[3]) )
                 else:
-                    raise shared.CustomError( self.__class__.__name__+' __init__ round 2 error: parse_require still produces empty set. Expression is { %s : %s :  %s }.' % (line[0],line[1],line[3]) )
+                    if shared.VERBOSE >= 2:
+                        print self.__class__.__name__+'.__init__ info: during round %s, a parse_require\'s parse_if is not met, and is deferred to next round. Expression is { %s : %s : %s }.' % (i_attempt, line[0],line[1],line[3])
         # 检验
         ## Entering the last phase. Data structure of self.mod and self.kw simplifies.
         for modname in set(self.mod.keys())-self.mod_legal_set:
@@ -304,7 +286,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             del self.kw[kwname]
         for name in self.kw:
             if len(self.kw[name]) != 1:
-                raise shared.CustomError( self.__class__.__name__+' error: non-unique output. Kw[%s]={%s} has not been restricted to 1 value.' %(name,self.kw[name]) )
+                raise shared.IllDefinedError( self.__class__.__name__+' error: non-unique output. Kw[%s]={%s} has not been restricted to 1 value.' %(name,self.kw[name]) )
         # 无关紧要
         ## Overhead prediction. Unfortunately, what should have been done in vasp is moved here, for high efficiency.
         if self.parse_if('engine=vasp'):
@@ -331,7 +313,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         elif self.parse_if('spin=afm|spin=fm'):
             nbands = cell.nelectrons() / 2 + sum(cell.stoichiometry.values()) / 2
         else:
-            raise shared.CustomError(self.__class__.__name__+'spin variable is not fm, afm or para, cannot compute nbands')
+            raise shared.IllDefinedError(self.__class__.__name__+'spin variable is not fm, afm or para, cannot compute nbands')
         # nbands change based on parallel
         nbands = math.ceil(nbands / int(self.getkw('npar'))) * int(self.getkw('npar'))
         return str(int(nbands))
@@ -369,7 +351,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         elif kpoints[0] in 'L' and len(kpoints)>2:
             return True
         else:
-            raise shared.CustomError(self.__class__.__name__ + '.kpointscheck: kpoints format wrong. ')
+            raise shared.IllDefinedError(self.__class__.__name__ + '.kpointscheck: kpoints format wrong. ')
         if kpoints[0] == 'M':
             print self.__class__.__name__ + '.kpointscheck warning: In general, for low-symmetry cells it is sometimes difficult to symmetrize the k-mesh if it is not centered on Gamma. For hexagonal cell, it becomes indeed impossible.'
         return True
@@ -442,7 +424,7 @@ class Makeparam(object):
         try:
             output = check_output([shared.script_dir + '/resource/makeparam']).splitlines()
         except CalledProcessError:
-            raise shared.CustomError(self.__class__.__name__ + ' error: makeparam failed with non-zero exit status. possibly memory error. give it up man :)')
+            raise shared.IllDefinedError(self.__class__.__name__ + ' error: makeparam failed with non-zero exit status. possibly memory error. give it up man :)')
         try:
             self.arraygrid = int( next(l for l in output if 'arrays on large grid' in l).split()[7] )
             self.wavefunction = int( next(l for l in output if 'sets of wavefunctions' in l).split()[4] )
@@ -450,7 +432,7 @@ class Makeparam(object):
             self.projector_reciprocal = abs(int( next(l for l in output if 'projectors in reciprocal space' in l).split()[4] ))
         except StopIteration, KeyError:
             print '\n'.join(output)
-            raise shared.CustomError(tmp_gen.__class__.__name__ + ' error: makeparam output illegal. Check POSCAR4 format and memory leak in directory {%s}.' %tmp_path)
+            raise shared.IllDefinedError(tmp_gen.__class__.__name__ + ' error: makeparam output illegal. Check POSCAR4 format and memory leak in directory {%s}.' %tmp_path)
         # cleanup
         os.chdir(shared.script_dir)
         shutil.rmtree(tmp_path)
@@ -483,9 +465,9 @@ class Cell(object):
             self.ccoor = np.dot(fcoor, self.base)
             for fcoor_ in fcoor:
                 if len(fcoor_)!=3:
-                    raise shared.CustomError(self.__class__.__name__+'__init__: bad format. Coordinate line {%s}' %fcoor_)
+                    raise shared.IllDefinedError(self.__class__.__name__+'__init__: bad format. Coordinate line {%s}' %fcoor_)
         else:
-            raise shared.CustomError(self.__class__.__name__+'__init__: unsupported POSCAR5 format. ')
+            raise shared.IllDefinedError(self.__class__.__name__+'__init__: unsupported POSCAR5 format. ')
 
     def fcoor(self):
         return np.dot(self.ccoor, np.linalg.inv(self.base))
@@ -547,7 +529,7 @@ class Map(object):
         l.add(self.lookup('master'))
         # basic checks
         if not attr_dict and not node_list:
-            raise shared.CustomError(self.__class__.__name__ + '.rlookup: empty attr_dict and node_list provided')
+            raise shared.IllDefinedError(self.__class__.__name__ + '.rlookup: empty attr_dict and node_list provided')
         # find the node specified by attr_dict OR node_list
         primary = set()
         for n in l:
@@ -583,13 +565,13 @@ class Map(object):
             pass
         # post-process
         if len(result)>1:
-            raise shared.CustomError('RLookup: result is not unique. Criterion is: attr_dict: %s, node_list: %s, parent=%s, prev=%s, prev2=%s' %(attr_dict, [x.name for x in node_list]), parent, prev, prev2)
+            raise shared.IllDefinedError('RLookup: result is not unique. Criterion is: attr_dict: %s, node_list: %s, parent=%s, prev=%s, prev2=%s' %(attr_dict, [x.name for x in node_list]), parent, prev, prev2)
         return next(iter(result)) if result else None
 
     def lookup(self, name):
         if name == 'master':
             if name in shared.nodes:   return shared.nodes['master']
-            else: raise shared.CustomError('找不到master了，求喂食')
+            else: raise shared.IllDefinedError('找不到master了，求喂食')
         elif name in shared.nodes:
             return shared.nodes.pop(name)
         elif any([x.name == name for x in self._dict]):
@@ -628,7 +610,7 @@ class Map(object):
                 m = self._dict if line[1]=='->' else self._dict2
                 m[src] = [dst] if src not in m else m[src]+[dst]
             else:
-                raise shared.CustomError(self.__class__.__name__ + '__init__: src -> dst. 3 parts needed')
+                raise shared.IllDefinedError(self.__class__.__name__ + '__init__: src -> dst. 3 parts needed')
 
 
     def add_node(self, node):
@@ -636,7 +618,7 @@ class Map(object):
         # same name / same node exceptions are not allowed.
         # we're moving references around, so renaming is bad. instead, use 'duplicate' command intead.
         if any([x.name==node.name for x in self._dict]):
-            raise shared.CustomError(self.__class__.__name__+' add_node: node with name {%s} already in self._dict. We\'re moving references around, so auto-renaming is bad. Use duplicate if only input is needed.' %node.name)
+            raise shared.IllDefinedError(self.__class__.__name__+' add_node: node with name {%s} already in self._dict. We\'re moving references around, so auto-renaming is bad. Use duplicate if only input is needed.' %node.name)
         else:
             self._dict[node] = []
 
@@ -644,7 +626,7 @@ class Map(object):
         #if [n for n in self._dict if n.name==name]:
         #    node = [n for n in self._dict if n.name==name][0]
         #else:
-        #    raise shared.CustomError(self.__class__.__name__ + ' del_node error: node {%s} not found in self. Since we are deleting by name, we had better be sure.' %name)
+        #    raise shared.IllDefinedError(self.__class__.__name__ + ' del_node error: node {%s} not found in self. Since we are deleting by name, we had better be sure.' %name)
         for m in (self._dict, self._dict2):
             m.pop(node,None)
             for n in m:
@@ -654,7 +636,7 @@ class Map(object):
         src = self.lookup(src_name)
         dst = self.lookup(dst_name)
         if src in self._dict[dst] or (dst in self._dict2 and src in self._dict2[dst]):
-            raise shared.CustomError(self.__class__.__name__ + ' add_edge: dst %s -> src %s link exists' %(dst_name, src_name))
+            raise shared.IllDefinedError(self.__class__.__name__ + ' add_edge: dst %s -> src %s link exists' %(dst_name, src_name))
         if dst in self._dict[src]:
             self._dict[src].remove(dst)
             self._dict2[src] = self._dict2[src]+[dst] if src in self._dict2 else [dst]
@@ -668,13 +650,13 @@ class Map(object):
         src = self.lookup(src_name)
         dst = self.lookup(dst_name)
         if src in self._dict[dst] or dst in self._dict2 and src in self._dict2[dst]:
-            raise shared.CustomError(self.__class__.__name__ + ' del_edge: dst %s -> src %s link exists' %(dst_name, src_name))
+            raise shared.IllDefinedError(self.__class__.__name__ + ' del_edge: dst %s -> src %s link exists' %(dst_name, src_name))
         if dst in self._dict[src]:
             self._dict[src].remove(dst)
         elif dst in self._dict2[src]:
             self._dict2[src].remove(dst)
         else:
-            raise shared.CustomError(self.__class__.__name__ + ' del_edge: no edge to delete')
+            raise shared.IllDefinedError(self.__class__.__name__ + ' del_edge: no edge to delete')
 
     def __str__(self):
         result = ''
@@ -709,7 +691,7 @@ class Map(object):
 #@retry(wait_random_min=1000, wait_random_max=2000, stop_max_attempt_number=10)
 def ssh_and_run(platform, command):
     if platform not in ['dellpc', 'nanaimo', 'irmik']:
-        raise shared.CustomError('ssh_and_run: unsupported platform %s' %platform)
+        raise shared.IllDefinedError('ssh_and_run: unsupported platform %s' %platform)
     # paramiko ssh run command
     if platform == 'dellpc':
         return os.popen(command).read()
@@ -717,8 +699,8 @@ def ssh_and_run(platform, command):
         try:
             ssh = shared.sshs[platform]
             if not ssh.get_transport().is_active():
-                raise shared.CustomError
-        except (KeyError, shared.CustomError) as e:
+                raise shared.IllDefinedError
+        except (KeyError, shared.IllDefinedError) as e:
             ssh = shared.sshs[platform] = paramiko.SSHClient()
             ssh._policy = paramiko.WarningPolicy()
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -739,7 +721,7 @@ class Vasp(object):
         self.node = ref(node)
 
     def compute(self):
-        if shared.DEBUG>=2:    print 'calling %s(%s).compute' %(self.__class__.__name__, getattr(self,'path',''))
+        if shared.VERBOSE>=2:    print 'calling %s(%s).compute' %(self.__class__.__name__, getattr(self,'path',''))
 
         node = self.node()
         prev = Map().rlookup(node_list=[node], prev=True)
@@ -749,7 +731,7 @@ class Vasp(object):
 
         if not getattr(self, 'wrapper', None):
             if os.path.exists(path):
-                raise shared.CustomError( self.__class__.__name__ + ' __init__: path {%s} already exists. enforcing strictly, you need to remove it manually.' %path )
+                raise shared.IllDefinedError( self.__class__.__name__ + ' __init__: path {%s} already exists. enforcing strictly, you need to remove it manually.' %path )
             os.makedirs(path)
             os.chdir(path)
             if gen.parse_if('icharg=1|icharg=11'):
@@ -877,7 +859,7 @@ class Vasp(object):
                 with open('subfile','w') as of_:
                     of_.write(self.subfile)
                 os.system('chmod +x subfile')
-            if shared.DEBUG <= 0:
+            if shared.VERBOSE <= 0:
                 print self.__class__.__name__ + ': running wrapper'
                 # these lines don't look right.
                 # with open(os.devnull, 'r+b', 0) as DEVNULL:
@@ -912,21 +894,21 @@ class Vasp(object):
             # try:
             #     print self.__class__.__name__ + '.compute: collecting data for MLVASPSPEED'
             #     dynamic.services['MLVASPSPEED'].parse_train(node, self, gen, node.cell, Makeparam(gen))
-            # except shared.CustomError as e:
+            # except shared.IllDefinedError as e:
             #     print(e)
             # print self.__class__.__name__ + '.compute: MLVASPSPEED collection complete'
             # # MLQUEUETIME
             # try:
             #     print self.__class__.__name__ + '.compute: collecting data for MLQUEUETIME'
             #     dynamic.services['MLQUEUETIME'].parse_train(node, self, gen)
-            # except shared.CustomError as e:
+            # except shared.IllDefinedError as e:
             #     print(e)
             # print self.__class__.__name__ + '.compute: MLQUEUETIME collection complete'
             # MLPBSOPT
             # try:
             #     print self.__class__.__name__ + '.compute: collecting data for MLPBSOPT'
             #     dynamic.services['MLPBSOPT'].parse_train(self)
-            # except shared.CustomError as e:
+            # except shared.IllDefinedError as e:
             #     print(e)
             # print self.__class__.__name__ + '.compute: MLPBSOPT collection complete'
 
@@ -943,7 +925,7 @@ class Vasp(object):
         platform = gen.getkw('platform')
         rpath = path if platform=='dellpc' else self.remote_folder_name
 
-        if shared.DEBUG>=2:    print 'calling %s(%s).moonphase' %(self.__class__.__name__, getattr(self,'path',''))
+        if shared.VERBOSE>=2:    print 'calling %s(%s).moonphase' %(self.__class__.__name__, getattr(self,'path',''))
 
         if not getattr(self, 'wrapper', None):
             return 0
@@ -1006,34 +988,34 @@ class Vasp(object):
                 except CalledProcessError:
                     return False
             elif platform in ['nanaimo', 'irmik', 'comet', 'edison', 'cori']:
-                if shared.DEBUG>=2: print self.__class__.__name__ + '.moonphase: asking %s for status of {%s}' %(gen.getkw('platform'), path)
+                if shared.VERBOSE>=2: print self.__class__.__name__ + '.moonphase: asking %s for status of {%s}' %(gen.getkw('platform'), path)
                 result = ssh_and_run(platform=self.node().gen.getkw('platform'), command="squeue -n '%s'" %(self.remote_folder_name))
                 return ( len(result.splitlines()) > 1 )
             else:
-                raise shared.CustomError(self.__class__.__name__ + '.info: invalid platform')
+                raise shared.IllDefinedError(self.__class__.__name__ + '.info: invalid platform')
         elif info == 'memory_used':
             if gen.parse_if('platform=dellpc_gpu'):
                 if not os.path.exists(path + '/gpu.log'):
-                    raise shared.CustomError(self.__class__.__name__ + '.info: no gpu.log')
+                    raise shared.IllDefinedError(self.__class__.__name__ + '.info: no gpu.log')
                 with open(path + '/gpu.log', 'r') as f:
                     l = np.float_([l.split() for l in f.readlines()])
                     return np.max(l[:,1]) - np.min(l[:, 1])
             elif gen.parse_if('platform=dellpc'):
                 if not os.path.exists(path + '/cpu.log'):
-                    raise shared.CustomError(self.__class__.__name__ + '.info: no cpu.log')
+                    raise shared.IllDefinedError(self.__class__.__name__ + '.info: no cpu.log')
                 with open(path + '/cpu.log', 'r') as f:
                     l = np.float_([l.split() for l in f.readlines()])
                     return np.max(l[:,1]) - np.min(l[:, 1])
             elif platform in ['nanimo', 'irmik']:
                 # output = self.ssh_and_run("sacct -S 0101 -u xzhang1 --name=%s" %(self.remote_folder_name)).splitlines()
-                raise shared.CustomError(self.__class__.__name__ + '.memory_used: for now, irmik and nanimo stats are unusable.')
+                raise shared.IllDefinedError(self.__class__.__name__ + '.memory_used: for now, irmik and nanimo stats are unusable.')
             else:
-                raise shared.CustomError(self.__class__.__name__ + '.info: invalid platform')
+                raise shared.IllDefinedError(self.__class__.__name__ + '.info: invalid platform')
         elif info == 'run_time':
             if self.moonphase() != 2:
-                raise shared.CustomError(self.__class__.__name__ + '.warning: vasp moonphase is not 2. skipped collect data.')
+                raise shared.IllDefinedError(self.__class__.__name__ + '.warning: vasp moonphase is not 2. skipped collect data.')
             if not os.path.isfile(node.path+'/OUTCAR'):
-                raise shared.CustomError(self.__class__.__name__ + '.warning: no OUTCAR found. skipped collect data.')
+                raise shared.IllDefinedError(self.__class__.__name__ + '.warning: no OUTCAR found. skipped collect data.')
             # parse outcar for time (s) / #elecstep
             os.chdir(node.path)
             with open(node.path + '/OUTCAR', 'r') as f:
@@ -1041,14 +1023,14 @@ class Vasp(object):
                 # total time
                 line = [l for l in lines if 'Total CPU time used' in l]
                 if not line:
-                    raise shared.CustomError(self.__class__.__name__ + '.warning: no Total CPU time line found. skipped collect data.')
+                    raise shared.IllDefinedError(self.__class__.__name__ + '.warning: no Total CPU time line found. skipped collect data.')
                 total_time = float(line[-1].split()[-1])
                 if total_time < 1:
-                    raise shared.CustomError(self.__class__.__name__ + '.warning: total time does not feel right. skipped collect data.')
+                    raise shared.IllDefinedError(self.__class__.__name__ + '.warning: total time does not feel right. skipped collect data.')
                 return total_time
         elif info == 'queue_time':
             if platform == 'dellpc' or platform == 'dellpc_gpu':
-                raise shared.CustomError(self.__class__.__name__ + '.info: there is no queue time for dell. Yes, it can be 0, but bad for the data.')
+                raise shared.IllDefinedError(self.__class__.__name__ + '.info: there is no queue time for dell. Yes, it can be 0, but bad for the data.')
             elif platform in ['nanaimo', 'irmik', 'comet', 'edison', 'cori']:
                 output = ssh_and_run(platform=self.node().gen.getkw('platform'), command="sacct -S 0101 --format=jobname%%100,submit,start -u xzhang1 --name=%s" %(self.remote_folder_name)).splitlines()
                 lines = [l.split() for l in output]
@@ -1058,17 +1040,17 @@ class Vasp(object):
                 start = time.mktime(dateparser.parse(start).timetuple())
                 now = time.mktime(dateparser.parse('now').timetuple())
                 # if start < now - 5184000:
-                #     raise shared.CustomError('Data is over 2 months old. ')
+                #     raise shared.IllDefinedError('Data is over 2 months old. ')
                 if start - submit < 10:
-                    raise shared.CustomError(self.__class__.__name__ + '.info: no wait time - good news, but not what I need')
+                    raise shared.IllDefinedError(self.__class__.__name__ + '.info: no wait time - good news, but not what I need')
                 return start - submit
             else:
-                raise shared.CustomError(self.__class__.__name__ + '.info: invalid platform')
+                raise shared.IllDefinedError(self.__class__.__name__ + '.info: invalid platform')
         elif info == 'n_electronic_step':
             if self.moonphase() != 2:
-                raise shared.CustomError(self.__class__.__name__ + '.warning: vasp moonphase is not 2. skipped collect data.')
+                raise shared.IllDefinedError(self.__class__.__name__ + '.warning: vasp moonphase is not 2. skipped collect data.')
             if not os.path.isfile(node.path+'/OUTCAR'):
-                raise shared.CustomError(self.__class__.__name__ + '.warning: no OUTCAR found. skipped collect data.')
+                raise shared.IllDefinedError(self.__class__.__name__ + '.warning: no OUTCAR found. skipped collect data.')
             # parse outcar for time (s) / #elecstep
             os.chdir(node.path)
             with open(node.path + '/OUTCAR', 'r') as f:
@@ -1148,7 +1130,7 @@ class Grepen(object):
             self.nelectrons = int( eigenval[5][0] )
             self.nkpts = int( eigenval[5][1] )
             if self.nkpts != (len(eigenval) - 6) / (self.nbands+2):
-                raise shared.CustomError(self.__class__.__name__ + '__init__: EIGENVAL file length not matching nkpts.')
+                raise shared.IllDefinedError(self.__class__.__name__ + '__init__: EIGENVAL file length not matching nkpts.')
 
         for name, value in vars(self).iteritems():
             if name != 'log':
@@ -1182,7 +1164,7 @@ class Dos(object):
         print '-' * 130
 
         if not electron.grepen.is_doscar_usable:
-            raise shared.CustomError(self.__class__.__name__ + '.__init__: DOSCAR is not usable.')
+            raise shared.IllDefinedError(self.__class__.__name__ + '.__init__: DOSCAR is not usable.')
 
         # all DOSCAR lines, including dos and pdos
         with open("DOSCAR","r") as f:
@@ -1335,7 +1317,7 @@ class Charge(object):
     @shared.log_wrap
     def __init__(self, electron):
         if electron.dos.norbitals_pdos > len(shared.ELEMENTS.orbitals):
-            raise shared.CustomError(self.__class__.__name__ +' __init__: more orbitals than supported.')
+            raise shared.IllDefinedError(self.__class__.__name__ +' __init__: more orbitals than supported.')
 
         # let's start!
         # pristine electronic configuration
@@ -1365,7 +1347,7 @@ class Charge(object):
         print "\n\nBader charge. Boundaries are defined as zero-flux surfaces. Note that certain flags should be set (e.g. LAECHG) for this to be reasonable.\n"
         print 'running bader...', ; sys.stdout.flush()
         if not os.path.isfile('AECCAR0') or not os.path.isfile('AECCAR2'):
-            raise shared.CustomError(self.__class__.__name__ + '.__init__: no AECCAR found. You forgot to add LAECHG-tag. Bader will not run reliably.')
+            raise shared.IllDefinedError(self.__class__.__name__ + '.__init__: no AECCAR found. You forgot to add LAECHG-tag. Bader will not run reliably.')
         os.popen('chgsum.pl AECCAR0 AECCAR2').read()
         os.popen('bader CHGCAR_sum').read()
         print '\r                 \r', ; sys.stdout.flush()
@@ -1492,7 +1474,7 @@ class Electron(Dummy):
 
         if not getattr(self, 'log', None):
             if os.path.isdir(self.path):
-                raise shared.CustomError(self.__class__.__name__ + ' compute: self.path {%s} taken' %self.path)
+                raise shared.IllDefinedError(self.__class__.__name__ + ' compute: self.path {%s} taken' %self.path)
 
             if self.gen.parse_if('cell'):
 
@@ -1523,7 +1505,7 @@ class Electron(Dummy):
                     print getattr(getattr(self, name), 'log').encode('utf-8')
 
         else:
-            raise shared.CustomError(self.__class__.__name__ + ' compute: moonphase is 2. why are you here?')
+            raise shared.IllDefinedError(self.__class__.__name__ + ' compute: moonphase is 2. why are you here?')
 
 
 
@@ -1673,9 +1655,9 @@ class Compare(Dummy):
             # preliminary checks
             print '-' * 130
             if not eelectron.grepen.is_kpoints_mesh and belectron.grepen.is_kpoints_mesh:
-                raise shared.CustomError(self.__class__.__name__ + '.compute: only these: i) both mesh ii) neither mesh iii) backdrop only mesh.')
+                raise shared.IllDefinedError(self.__class__.__name__ + '.compute: only these: i) both mesh ii) neither mesh iii) backdrop only mesh.')
             if eelectron.bands.bands.shape[0] != blectron.bands.bands.shape[0]:
-                raise shared.CustomError(self.__class__.__name__ + '.compute: experiment and backdrop bands have incompatible NBANDS')
+                raise shared.IllDefinedError(self.__class__.__name__ + '.compute: experiment and backdrop bands have incompatible NBANDS')
 
             print u'energy difference between self and belectron is %s eV.\n' % ( abs(eelectron.grepen.energy - belectron.grepen.energy) )
 
@@ -1694,7 +1676,7 @@ class Compare(Dummy):
             elif not eelectron.grepen.is_kpoints_mesh and not belectron.grepen.is_kpoints_mesh:
 
                 if not np.array_equal(eelectron.bands.kpts, belectron.bands.kpts):
-                    raise shared.CustomError(self.__class__.__name__ + '.compute: compare neither-mesh cases require same kpoints')
+                    raise shared.IllDefinedError(self.__class__.__name__ + '.compute: compare neither-mesh cases require same kpoints')
 
                 idx_spin = 0
                 if eelectron.grepen.nbands == belectron.grepen.nbands:
@@ -1711,7 +1693,7 @@ class Compare(Dummy):
 
             elif not eelectron.grepen.is_kpoints_mesh and belectron.grepen.is_kpoints_mesh:
 
-                raise shared.CustomError(self.__class__.__name__ + 'WARNING: non-mesh vs mesh feature has not been implemented!')
+                raise shared.IllDefinedError(self.__class__.__name__ + 'WARNING: non-mesh vs mesh feature has not been implemented!')
 
         # compare=optimized_cell
 
@@ -1727,7 +1709,7 @@ class Compare(Dummy):
                 boc = bnode.vasp.optimized_cell if self.gen.parse_if('btype=ocell') else bnode.cell
 
             if not np.array_equal(eoc.stoichiometry, boc.stoichiometry):
-                raise shared.CustomError(self.__class__.__name__ + '.compute: cell stoichiometry are not the same, cannot compute')
+                raise shared.IllDefinedError(self.__class__.__name__ + '.compute: cell stoichiometry are not the same, cannot compute')
 
             # base
             print u'<base difference> between self and backdrop is %s A.' % ( np.average( abs(eoc.base - boc.base).flatten() ) )

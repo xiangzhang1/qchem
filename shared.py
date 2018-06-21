@@ -34,7 +34,7 @@ Program-wide configuration
 Helper functions and constants
 - euler2mat: generate rotation matrices
 - bcolors: print color to stdout
-- CustomError, DeferError, [LookupError]: understandable errors
+- IllDefinedError, MaybeTemporaryError, [LookupError]: understandable errors
 - save/load: pickle-based variable persistency
 - elements: periodic table database
 - color_palette
@@ -62,7 +62,7 @@ scratch_dir = script_dir + '/.scr'
 # verbose
 # ===========================================================================
 
-DEBUG = 0
+VERBOSE = 0
 
 # Pickle-based variable persistency
 # ===========================================================================
@@ -288,11 +288,14 @@ color_palette = {-1: '#a94442', 0: '#000000',  1: '#8a6d3b', 2: '#3c763d', -2: '
 
 # ===========================================================================
 
-class CustomError(Exception):
+class IllDefinedError(Exception):
+    # Generic unrecoverable error - Job is ill-defined (e.g. opt & dos)
+    # Eventually, it boils down to forall x in empty set
     pass
 
 
-class DeferError(Exception):   # DeferError name seems to conflict
+class MaybeTemporaryError(Exception):
+    # Either ill-defined, or maybe temporary in iteration.
     pass
 
 # sshs: open ssh connections
@@ -330,11 +333,11 @@ class MWT(object):
             key = (args, tuple(kw))
             try:
                 v = self.cache[key]
-                if DEBUG>=2:    print "cache"
+                if VERBOSE>=2:    print "cache"
                 if (time.time() - v[1]) > self.timeout:
                     raise KeyError
             except KeyError:
-                if DEBUG>=2:    print "new"
+                if VERBOSE>=2:    print "new"
                 v = self.cache[key] = f(*args,**kwargs),time.time()
             return v[0]
         func.func_name = f.func_name
@@ -407,7 +410,7 @@ class bcolors:
 def debug_wrap(func):
     @wraps(func)
     def wrapped(*args, **kwargs):
-        if DEBUG >= 2:
+        if VERBOSE >= 2:
             try:
                 return func(*args, **kwargs)    # the important part
             except:
