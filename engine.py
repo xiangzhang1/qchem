@@ -278,6 +278,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
                             print self.__class__.__name__+'.__init__ warning: during final round, optional parse_require (or parse_if with kw-not-found) still results in empty set. Expression is { %s : %s : %s }.' % (line[0],line[1],line[3])
                     else:
                         raise shared.IllDefinedError( self.__class__.__name__+'.__init__ error: during final round, non-optional parse_require (or parse_if with kw-not-found) still produces empty set. Expression is { %s : %s :  %s }.' % (line[0],line[1],line[3]) )
+            i_attempt += 1
         # 检验
         ## Entering the last phase. Data structure of self.mod and self.kw simplifies.
         for modname in set(self.mod.keys())-self.mod_legal_set:
