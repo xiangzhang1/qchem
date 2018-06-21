@@ -3,3 +3,5 @@ data/
 *.pyc
 
 ._*
+
+check_memory_*
