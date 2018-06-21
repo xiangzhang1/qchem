@@ -800,7 +800,6 @@ class Vasp(object):
                     done) &
                     bgPID=$!
                     mpiexec.hydra -n %s /home/xzhang1/src/vasp.5.4.1/bin/vasp_%s </dev/null
-                    mail -s "VASP job finished: {${PWD##*/}}" 8576361405@vtext.com <<<EOM
                     kill "$bgPID"
                     ''' %(ncore_total, flavor))
                 self.wrapper += 'nohup ./subfile 2>&1 >> run.log &'
