@@ -101,15 +101,15 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
         else:   # literal
             return expression
 
-    def parse_require(self, expression, run=False):  # Executes single require expression. Accepts empty expression as True.
-        if len(expression.splitlines()) > 1:    # grammar check
+    def parse_require(self, expression, run=False):  # Executes a require expression. Accepts empty expression as True.
+        if len(expression.splitlines()) > 1:    # one line, then strip
             raise shared.CustomError(self.__class__.__name__ + '.parse_require: expression {%s} contains line break' %expression)
+        expression = expression.strip()
         operation_map = {
                 '=': lambda x, y: x & y,
                 '!=': lambda x, y: x - y,
                 }
-        expression = expression.strip()
-        if re.search('=', expression):           # evaluation        ## parse kwname!=kwval|(funcname)
+        if re.search('=', expression):           # parse kwname!=kwval|(funcname)
             l = [ p.strip() for p in re.split('(!=|=)', expression)]; kwname = l[0] ; operator = l[1] ; kwval_expression = l[2]
             kwvalset = set()
             for kwval_part in kwval_expression.split('|'):
@@ -129,24 +129,14 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
                 print self.__class__.__name__ + ' parse_require warning: parse_require results in empty set, deferred: kwname {%s}, value {%s}, required_value {%s}' %(kwname, self.kw[kwname] if kwname in self.kw else 'null', kwvalset)
             self.kw_legal_set.add(kwname)
             return bool(result)
-        elif 'internal' in expression:      ## parse kwname internal
+        elif 'internal' in expression:      ## parse <kwname internal>
             kwname = re.sub('internal', '', expression).strip()
             self.kw_internal_set.add(kwname)
             return True
-        elif not '(' in expression and not 'null' in expression:    ## parse !modname
-            modname = re.sub('!', '', expression).strip()
-            if '!' in expression:
-                result = (self.mod[modname] if modname in self.mod else set()) - set([True])
-            else:
-                result = (self.mod[modname] if modname in self.mod else set()) | set([True])
-            if run and bool(result):        ### output
-                self.mod[modname] = result
-            self.mod_legal_set.add(modname)
-            return bool(result)
-        else:                               ## parse if expression
+        else:                               ## parse <if expression>
             result = self.parse_if(expression)
-            if not run and not result and shared.DEBUG >= 1:
-                    print self.__class__.__name__ + ' parse_require warning: parse_require results in empty set, deferred: expression {%s}' %(expression)
+            if not result and shared.DEBUG >= 1:
+                print self.__class__.__name__ + ' parse_require warning: parse_require results in empty set, deferred: expression {%s}' %(expression)
             return result
 
     def parse_if(self,expression):  # recursively evaluate complex if condition. accepts empty expression.
