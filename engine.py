@@ -298,6 +298,7 @@ class Gen(object):  # Stores the logical structure of keywords and modules. A un
             memory_predicted_gb = ( (m.projector_real + m.projector_reciprocal)*int(self.getkw('npar')) + m.wavefunction*float(self.getkw('kpar')) )/1024.0/1024/1024 + int(self.getkw('nnode'))*0.7    # Global data cannot be obtained for multi-node multi-CPU case. ML is not suitable. Memory estimations might just also be applicable to GPU.
             memory_available_gb = int(self.getkw('nnode')) * int(self.getkw('mem_node'))
             print self.__class__.__name__ + ' memory %s: %s GB used out of %s GB' %('prediction' if memory_available_gb>memory_predicted_gb else 'WARNING', memory_predicted_gb, memory_available_gb)
+            print self.__class__.__name__ + ' time: platform=nanaimo, expected queue time=?h, expected run time=?h' # demo
 
     # 3. nbands, ncore_total, encut
     # -----------------------------
