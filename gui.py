@@ -75,7 +75,7 @@ def login_required(func):
 	if not auth:
 	    print 'no username/pswd!'
             return Response('Bad username/pswd', 403, {'WWW-Authenticate': 'Basic realm="Need login."'})
-        elif auth.username!='xzhang1' or hashlib.sha1(auth.password).hexdigest()!='d1ddfb5774938e88bc4702e9851677a9ade5fc68':
+        elif auth.username!='xzhang1' or hashlib.sha1(auth.password).hexdigest()!='674a58a6d19361a8f125ffef9bb2d253966fa48f':
             print 'bad username/pswd detected: %s | %s' %(auth.username, hashlib.sha1(auth.password).hexdigest())
             return Response('Bad username/pswd', 403, {'WWW-Authenticate': 'Basic realm="Need login."'})
         else:

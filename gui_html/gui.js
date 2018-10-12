@@ -1,12 +1,11 @@
 overlay/** DATA STRUCTURE AND FUNCTIONS **/
 // flask_url = 'http://52.205.255.228:8080';       // the security is fine, unless in airport where someone sniffs your data. but at home or school, fine.
-flask_url = 'https://dellpcxzhang1.dyndns.org:5000';
 // flask_url = 'http://localhost:5000';
+flask_url = 'https://dellpcxzhang1.dyndns.org:5000';
 master = { id: 'master', name: 'master', label: 'master', map: { nodes: [], edges: [] } } ;
 cur = 'master';
 clipboard = { };  // store pre-drag x|y; store cut-paste name; store path and remote_folder_name
 VERBOSE = 0;
-
 
 var spinner = {
     start : function(){
@@ -26,8 +25,8 @@ var spinner = {
 // spinner.stop()
 
 //login.
-var username = prompt("Username:", "xzhang1");
-var password = prompt("Password:", "Zeppola");
+var username = "xzhang1"; //prompt("Username:", "xzhang1");
+var password = "13563312172"; //prompt("Password:", "Zeppola");
 
 
 var ajaxPending = false;
