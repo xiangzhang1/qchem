@@ -437,7 +437,7 @@ def ipython():
 
 def flaskThread():
     app.run(host='0.0.0.0',port=5000, debug = False,
-                ssl_context=('/home/xzhang1/.openssl/mycert.pem','/home/xzhang1/.openssl/mykey.pem'))
+                ssl_context=('/home/xzhang1/.openssl/fullchain.pem','/home/xzhang1/.openssl/privkey.pem'))
 
 def GUI(safe=True):
     print "Note: Flask dies hard. If 'another program is using your port', you need to pkill -9 python. Needless to say, dangerous."
