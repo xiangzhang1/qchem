@@ -1,6 +1,7 @@
 overlay/** DATA STRUCTURE AND FUNCTIONS **/
 // flask_url = 'http://52.205.255.228:8080';       // the security is fine, unless in airport where someone sniffs your data. but at home or school, fine.
 // flask_url = 'http://localhost:5000';
+// flask_url = 'https://dellpcxzhang1.dyndns.org:5000';
 flask_url = 'https://dellpcxzhang1.dyndns.org:5000';
 master = { id: 'master', name: 'master', label: 'master', map: { nodes: [], edges: [] } } ;
 cur = 'master';
@@ -274,15 +275,15 @@ function load(){
         $.get(flask_url + '/load_sigma', function(d){ read(d, refresh);});
     });
 }
-// function ipython(){
-//     $.ajax({
-//         url: flask_url + '/ipython',
-//         success: log,
-//         async: true     // async is a mentality. you start something, show a spinner, complete something, hide spinner; the fact that it's in series doesn't mean it's synchronous. ajax is async!
-//     });
-//     console.log('hiding spinner during ipython; however, flask is still occupied and no get/post will go through.')
-//     spinner.stop();
-// }
+function ipython(){
+    $.ajax({
+        url: flask_url + '/ipython',
+        success: log,
+        async: true     // async is a mentality. you start something, show a spinner, complete something, hide spinner; the fact that it's in series doesn't mean it's synchronous. ajax is async!
+    });
+    console.log('hiding spinner during ipython; however, flask is still occupied and no get/post will go through.')
+    spinner.stop();
+}
 function shutdown(){
     //global cur
     $.get(flask_url + '/shutdown', log);
@@ -300,7 +301,9 @@ function refresh(err, data, cb){
 
 function new_node(){
     //global cur
-    $.post(flask_url + '/new_node', JSON.stringify({'cur':cur, 'name':'newnode'}), log);
+    $.post(flask_url + '/new_node', JSON.stringify({'cur':cur, 'name':'newnode'}), function(d){
+      refresh();
+    });
 }
 function del_node(err, name, cb){
     //global cur
