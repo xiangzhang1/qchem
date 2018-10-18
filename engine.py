@@ -704,7 +704,7 @@ def ssh_and_run(platform, command):
             if not ssh.get_transport().is_active():
                 raise shared.IllDefinedError
         except (KeyError, shared.IllDefinedError) as e:
-            ssh = shared.sshs[platform] = paramiko.SSHClient()
+            ssh = shared.sshs[platform] = paramiko.SSHClient()ss
             ssh._policy = paramiko.WarningPolicy()
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             ssh_config = paramiko.SSHConfig()
@@ -713,7 +713,7 @@ def ssh_and_run(platform, command):
                 with open(user_config_file) as f:
                     ssh_config.parse(f)
             ssh.load_system_host_keys()
-            ssh.connect(platform, username='xzhang1')
+            ssh.connect(ssh_config.lookup(platform)['hostname'], username='xzhang1')
         ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command(command)
         return ssh_stdout.read()
 
@@ -798,7 +798,7 @@ class Vasp(object):
                     rsync -avP . y510p:~/%s
                     ssh y510p <<EOF
                       cd %s
-                      nohup bash -i subfile 2>&1 >> run.log &
+                      nohup ./subfile 2>&1 >> run.log &
                     EOF
                     ''' %(self.remote_folder_name, self.remote_folder_name))
                 self.subfile += dedent('''\
