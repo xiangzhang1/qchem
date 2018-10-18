@@ -798,7 +798,7 @@ class Vasp(object):
                     rsync -avP . y510p:~/%s
                     ssh y510p <<EOF
                       cd %s
-                      nohup ./subfile 2>&1 >> run.log &
+                      nohup bash -i subfile 2>&1 >> run.log &
                     EOF
                     ''' %(self.remote_folder_name, self.remote_folder_name))
                 self.subfile += dedent('''\
