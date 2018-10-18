@@ -704,7 +704,7 @@ def ssh_and_run(platform, command):
             if not ssh.get_transport().is_active():
                 raise shared.IllDefinedError
         except (KeyError, shared.IllDefinedError) as e:
-            ssh = shared.sshs[platform] = paramiko.SSHClient()ss
+            ssh = shared.sshs[platform] = paramiko.SSHClient()
             ssh._policy = paramiko.WarningPolicy()
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             ssh_config = paramiko.SSHConfig()
