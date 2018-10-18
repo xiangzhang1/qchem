@@ -802,6 +802,7 @@ class Vasp(object):
                     EOF
                     ''' %(self.remote_folder_name, self.remote_folder_name))
                 self.subfile += dedent('''\
+                    source ~/bashrc.append
                     mpiexec.hydra -n %s /home/xzhang1/src/vasp.5.4.1/bin/vasp_%s </dev/null
                     ''' %(ncore_total, flavor))
             elif gen.parse_if('platform=nanaimo'):  # netspeed is ~50M/s. compression might slow it down.
