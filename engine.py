@@ -800,7 +800,7 @@ class Vasp(object):
                       cd %s
                       nohup ./subfile 2>&1 >> run.log &
                     EOF
-                    ''' %(self.remote_folder_name, self.remote_folder_name, gen.getkw('nnode'), ncore_total, self.remote_folder_name))
+                    ''' %(self.remote_folder_name, self.remote_folder_name))
                 self.subfile += dedent('''\
                     mpiexec.hydra -n %s /home/xzhang1/src/vasp.5.4.1/bin/vasp_%s </dev/null
                     ''' %(ncore_total, flavor))
