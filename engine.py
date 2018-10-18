@@ -693,7 +693,7 @@ class Map(object):
 
 #@retry(wait_random_min=1000, wait_random_max=2000, stop_max_attempt_number=10)
 def ssh_and_run(platform, command):
-    if platform not in ['dellpc', 'nanaimo', 'irmik']:
+    if platform not in ['dellpc', 'nanaimo', 'irmik', 'y510p', 'edison', 'cori']:
         raise shared.IllDefinedError('ssh_and_run: unsupported platform %s' %platform)
     # paramiko ssh run command
     if platform == 'dellpc':
@@ -793,6 +793,17 @@ class Vasp(object):
                     kill "$bgPID"
                     ''' %(ncore_total, flavor))
                 self.wrapper += 'nohup ./subfile 2>&1 >> run.log &'
+            elif gen.parse_if('platform=y510p'):
+                self.wrapper += dedent('''\
+                    rsync -avP . y510p:~/%s
+                    ssh y510p <<EOF
+                      cd %s
+                      nohup ./subfile 2>&1 >> run.log &
+                    EOF
+                    ''' %(self.remote_folder_name, self.remote_folder_name, gen.getkw('nnode'), ncore_total, self.remote_folder_name))
+                self.subfile += dedent('''\
+                    mpiexec.hydra -n %s /home/xzhang1/src/vasp.5.4.1/bin/vasp_%s </dev/null
+                    ''' %(ncore_total, flavor))
             elif gen.parse_if('platform=nanaimo'):  # netspeed is ~50M/s. compression might slow it down.
                 self.wrapper += dedent('''\
                     rsync -avP . nanaimo:~/%s
@@ -846,7 +857,20 @@ class Vasp(object):
                     rsync -avP . edison:~/%s
                     ssh edison <<EOF
                       cd %s
-                      sbatch --nodes=%s --ntasks=%s --job-name=%s -t 36:00:00 --partition=regular subfile
+                      sbatch --nodes=%s --ntasks=%s --job-name=%s -t 48:00:00 --partition=regular subfile
+                    EOF
+                    ''' %(self.remote_folder_name, self.remote_folder_name, gen.getkw('nnode'), ncore_total, self.remote_folder_name))
+                self.subfile += dedent('''\
+                    #!/bin/bash
+                    module load vasp
+                    srun -n %s vasp_%s
+                    ''' %(ncore_total, flavor))
+            elif gen.parse_if('platform=cori'):
+                self.wrapper += dedent('''\
+                    rsync -avP . cori:~/%s
+                    ssh cori <<EOF
+                      cd %s
+                      sbatch --nodes=%s --ntasks=%s --job-name=%s -t 48:00:00 --partition=regular subfile
                     EOF
                     ''' %(self.remote_folder_name, self.remote_folder_name, gen.getkw('nnode'), ncore_total, self.remote_folder_name))
                 self.subfile += dedent('''\
@@ -877,7 +901,7 @@ class Vasp(object):
         elif not getattr(self,'log',None):
             os.chdir(path)
             # download folder
-            if gen.parse_if('platform=nanaimo|platform=irmik|platform=hodduk'):
+            if gen.parse_if('platform=nanaimo|platform=irmik|platform=hodduk|platform=edison|platform=cori|platform=y510p'):
                 print '%s.compute: copying remote folder {%s} back to path {%s}' %(self.__class__.__name__, self.remote_folder_name, path)
                 subprocess.Popen(['rsync', '-a', '-h', '--info=progress2', '%s:%s/' %(gen.getkw('platform'),self.remote_folder_name), '%s'%path]).wait()
                 #os.system('scp -r /home/xzhang1/Shared/%s/%s/ %s' %(gen.getkw('platform'), self.remote_folder_name, path))
@@ -990,6 +1014,9 @@ class Vasp(object):
                     return pgrep_output.strip() != ''
                 except CalledProcessError:
                     return False
+            elif platform == 'y510p':
+                result = ssh_and_run(platform='y510p', command="pgrep vasp")
+                return ( len(result.splitlines()) > 0 )
             elif platform in ['nanaimo', 'irmik', 'comet', 'edison', 'cori']:
                 if shared.VERBOSE>=2: print self.__class__.__name__ + '.moonphase: asking %s for status of {%s}' %(gen.getkw('platform'), path)
                 result = ssh_and_run(platform=self.node().gen.getkw('platform'), command="squeue -n '%s'" %(self.remote_folder_name))
