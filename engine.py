@@ -830,11 +830,9 @@ class Vasp(object):
                     EOF
                     ''' %(self.remote_folder_name, self.remote_folder_name, gen.getkw('nnode'), ncore_total, self.remote_folder_name))
                 self.subfile += dedent('''\
-                    #!/bin/bash
-                    # . /usr/share/Modules/init/bash
-                    # module purge
-                    # module load mvapich2-2.2/intel
-                    # mpirun -np %%s /opt/vasp.5.4.4/bin/vasp_%%s
+                    . /usr/share/Modules/init/bash
+                    module purge
+                    module load mvapich2-2.2/intel
                     mpirun -np %s vasp_%s
                     ''' %(ncore_total, flavor))
             elif gen.parse_if('platform=nanaimo'):
