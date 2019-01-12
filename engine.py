@@ -869,7 +869,7 @@ class Vasp(object):
                     rsync -avP . cori:~/%s
                     ssh cori <<EOF
                       cd %s
-                      sbatch --nodes=%s --ntasks=%s --job-name=%s -t 48:00:00 --partition=regular subfile
+                      sbatch --nodes=%s --ntasks=%s --job-name=%s -t 48:00:00 --partition=regular -C haswell subfile
                     EOF
                     ''' %(self.remote_folder_name, self.remote_folder_name, gen.getkw('nnode'), ncore_total, self.remote_folder_name))
                 self.subfile += dedent('''\
