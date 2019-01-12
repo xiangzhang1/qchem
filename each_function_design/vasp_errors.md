@@ -370,3 +370,40 @@ WARNING: dimensions on CHGCAR file are different
 ERROR: charge density could not be read from file CHGCAR for ICHARG>10
 
 > use same prec
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------
+
+
+Segfault at the start of each job
+
+My solution: upgrade to Slurm 14.03.2-1, OpenMPI 1.8.1.
+
+Bizarrely, I ran into exactly this problem on some of my nodes (segfault on btl openib) after an Infiniband network reorganisation. I was using Slurm 2.6.9 and OpenMPI 1.8.
+
+On the racks with Dell/AMD Opteron/Mellanox it would segfault (and it was working before a the network reorganisation.)
+
+Racks with HP/Intel/Mellanox continue to work pre- and post- reorg.
+
+This may have something to do with the Infiniband topology.
+
+实际：irmik:
+srun bash
+srun --mem=
+sbatch
+> segfault shortly after NO ENERGY line
+ssh node31
+> no segfault
+认为是编译比如OpenMPI和Inifniband的不可troubleshoot问题。试图重编译。
+
+--
+
+Intel Parallel Studio XE 2017 has officially broken (unable to initiate FLXEM license or something). 
+我认为最简单、省时的办法就是根本不用irmik，有空找人修。
+
+--
+
+2019/01/03
+偷空node。连续两天，看到sinfo有3个node的小空位，提交3node-job。
+有时候是立即运行，有时候等等，可能你等几个小时就可以补空了。感觉好像有效。
