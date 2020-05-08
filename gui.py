@@ -54,8 +54,9 @@ gui.py
 # ======================================================================
 
 app = Flask(__name__)
-CORS(app, supports_credentials=True)
-app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
+CORS(app)
+#CORS(app, supports_credentials=True)
+#app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
 #Compress(app)   # compress respons#e
 
 # cron server using apscheduler
@@ -436,8 +437,9 @@ def ipython():
 # ======================================================================
 
 def flaskThread():
-    app.run(host='0.0.0.0',port=5000, debug = False,
-                ssl_context=('/home/xzhang1/.openssl/fullchain.pem','/home/xzhang1/.openssl/privkey.pem'))
+#    app.run(host='0.0.0.0',port=5000, debug = False,
+#                ssl_context=('/home/xzhang1/.openssl/fullchain.pem','/home/xzhang1/.openssl/privkey.pem'))
+     app.run(host='0.0.0.0',port=5000, debug = False)
 
 def GUI(safe=True):
     print "Note: Flask dies hard. If 'another program is using your port', you need to pkill -9 python. Needless to say, dangerous."
